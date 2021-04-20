@@ -1,3 +1,5 @@
+package hypergraphs
+
 /* Ids for everything */
 var id : UInt64 = 0
 func genId() : UInt64 {
@@ -6,14 +8,16 @@ func genId() : UInt64 {
     return id
 }
 
-open class Vertex {
-    protected let id : UInt64
+/* Base atom class, every element of a hypergraph (vertex, edge, label) is an atom */
+open class Atom {
+    let id : UInt64
     init() { this.id = genId() }
-    open func ToString() { "Vertex v${this.id}" }
-    operator func ==(lhs : Vertex, rhs : Vertex) { lhs.id == rhs.id }
-    operator func <(lhs : Vertex, rhs : Vertex) { lhs.id < rhs.id }
 }
 
+/* Vertices */
+open class Vertex <: Atom {
+    open func ToString() { "Vertex v${this.id}" }
+}
 class Source <: Vertex {
     private let name : String
     init() { this.name = ""}
@@ -27,13 +31,12 @@ class Target <: Vertex {
     override func ToString() { return "Target t${this.id}" }
 }
 
-class Label {
-    private let id : UInt64
+/* Labels */
+class Label <: Atom {
     private let name : String
     private let dom : UInt64
     private let cod : UInt64
     init(name : String, dom : UInt64, cod : UInt64) {
-        this.id = genId()
         this.name = name
         this.dom = dom
         this.cod = cod
@@ -42,12 +45,10 @@ class Label {
     func GetName() { return name }
 }
 
-open class Edge {
-    protected let id : UInt64
-    init() { this.id = genId() }
+/* Edges */
+open class Edge <: Atom {
     open func ToString() { return "Edge e${this.id}" }
 }
-
 class RegularEdge <: Edge {
     private let label : Label
     init(label : Label) {
@@ -55,11 +56,9 @@ class RegularEdge <: Edge {
     }
     override func ToString() { return "Edge e${this.id} - ${this.label.GetName()}" }
 }
-
 class IdentityEdge <: Edge {
     override func ToString() { return "Edge e${this.id} - identity edge" }
 }
-
 class LinkSpec {
     private let id : UInt64
     private let name : String
@@ -81,6 +80,20 @@ class LinkEdge <: Edge {
     override func ToString() { return "Link e${this.id} - ${this.spec.GetName()}" }
 }
 
+// TODO: Can these not be done just for atom?
+// It currently doesn't compile
+append Target with Hashable, Equatable {
+    operator func ==(lhs : Target, rhs : Target) : Bool { lhs.id == rhs.id }
+    operator func !=(lhs : Target, rhs : Target) : Bool { lhs.id != rhs.id }
+    func hashCode(t : Target) : UInt64 { id }
+}
+append Edge with Hashable, Equatable {
+    operator func ==(lhs : Edge, rhs : Edge) : Bool { lhs.id == rhs.id }
+    operator func !=(lhs : Edge, rhs : Edge) : Bool { lhs.id != rhs.id }
+    func hashCode(t : Edge) : UInt64 { id }
+}
+
+/* Hypergraph */
 class Hypergraph {
     private let sourceVertices : List<Source>
     private let targetVertices : List<Target>
@@ -104,7 +117,8 @@ class Hypergraph {
     }
 }
 
-func main(){
+external func Test() {
+    print("Beginning the test\n")
     let and = Label("AND", 2, 1)
     let e1 = RegularEdge(and)
     print(e1.ToString() + "\n")
@@ -114,3 +128,5 @@ func main(){
     print(s2.ToString() + "\n")
     return 0
 }
+
+external func Hello (){ print("Hello!") }

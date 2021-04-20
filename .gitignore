@@ -1,1 +1,10 @@
-/.vscode/
+.vscode/
+
+// Output files
+bin/
+build/
+*.out
+*.bc
+*.cjo
+*.o
+*.cj.o
