@@ -1,1 +1,2 @@
-hypergraphs=build/hypergraphs/hypergraphs.cjo
+hypergraph=/home/gkaye/circuits-cj/build/hypergraphs/hypergraph.cjo
+components=/home/gkaye/circuits-cj/build/hypergraphs/components.cjo

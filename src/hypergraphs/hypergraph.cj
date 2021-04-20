@@ -1,24 +1,30 @@
-package hypergraphs
+package hypergraph
 
-/* Ids for everything */
-var id : UInt64 = 0
-func genId() : UInt64 {
-    let next = id
-    id++
-    return id
-}
-
-/* Base atom class, every element of a hypergraph (vertex, edge, label) is an atom */
+/**
+ * Base atom class, every element of a hypergraph (vertex, edge, label) is an atom
+ * Each atom has a unique id, and this is what comparisons should be performed on
+ */
 open class Atom {
+    static var nextid : UInt64 = 0
     let id : UInt64
-    init() { this.id = genId() }
+    init() { 
+        this.id = nextid 
+        nextid++
+    }
 }
 
-/* Vertices */
+/**
+ * Vertices are atoms
+ */
 open class Vertex <: Atom {
     open func ToString() { "Vertex v${this.id}" }
 }
-class Source <: Vertex {
+
+/**
+ * Source vertices are outwards facing ports: they are the sources of edges.
+ * Sources have names so that we can reference them later and connect them to new edges
+ */
+external class Source <: Vertex {
     private let name : String
     init() { this.name = ""}
     init(name: String) { this.name = name }
@@ -27,12 +33,19 @@ class Source <: Vertex {
         return "Source s${this.id}${s2}"
     }
 }
-class Target <: Vertex {
+
+/**
+ * Target vertices are inwards facing ports: they are the targets of edges.
+ * Target vertices currently don't have anything particularly special about them
+ */
+external class Target <: Vertex {
     override func ToString() { return "Target t${this.id}" }
 }
 
-/* Labels */
-class Label <: Atom {
+/**
+ * Labels have a name, domain and codomain
+ */
+external class Label <: Atom {
     private let name : String
     private let dom : UInt64
     private let cod : UInt64
@@ -45,34 +58,48 @@ class Label <: Atom {
     func GetName() { return name }
 }
 
-/* Edges */
+/**
+ * Edges are atoms
+ */
 open class Edge <: Atom {
     open func ToString() { return "Edge e${this.id}" }
 }
-class RegularEdge <: Edge {
+
+/**
+ * Most edges are 'regular edges': they have a label
+ */
+external class RegularEdge <: Edge {
     private let label : Label
     init(label : Label) {
         this.label = label
     }
     override func ToString() { return "Edge e${this.id} - ${this.label.GetName()}" }
 }
+/**
+ * Identity edges are introduced between links when we resolve them
+ * They do not have labels
+ */
 class IdentityEdge <: Edge {
     override func ToString() { return "Edge e${this.id} - identity edge" }
 }
-class LinkSpec {
-    private let id : UInt64
+/**
+ * A link spec contains information about a link
+ * It has an id, a name, and a width 
+ */
+external class LinkSpec <: Atom {
     private let name : String
     private let width : UInt64
     init(name : String, width : UInt64) {
-        this.id = genId()
         this.name = name
         this.width = width
     }
     open func ToString() { return "LinkSpec ${this.id} - ${this.name} width ${this.width}" }
     func GetName() { return name }
 }
-
-class LinkEdge <: Edge {
+/**
+ * A link edge has no label, but it does have an associated link spec
+ */
+external class LinkEdge <: Edge {
     private let spec : LinkSpec
     init(spec : LinkSpec){
         this.spec = spec
@@ -85,16 +112,16 @@ class LinkEdge <: Edge {
 append Target with Hashable, Equatable {
     operator func ==(lhs : Target, rhs : Target) : Bool { lhs.id == rhs.id }
     operator func !=(lhs : Target, rhs : Target) : Bool { lhs.id != rhs.id }
-    func hashCode(t : Target) : UInt64 { id }
+    func hashCode(t : Target) : UInt64 { t.id }
 }
 append Edge with Hashable, Equatable {
     operator func ==(lhs : Edge, rhs : Edge) : Bool { lhs.id == rhs.id }
     operator func !=(lhs : Edge, rhs : Edge) : Bool { lhs.id != rhs.id }
-    func hashCode(t : Edge) : UInt64 { id }
+    func hashCode(t : Edge) : UInt64 { t.id }
 }
 
 /* Hypergraph */
-class Hypergraph {
+external class Hypergraph {
     private let sourceVertices : List<Source>
     private let targetVertices : List<Target>
     private let conns          : Map<Target, Source>
@@ -118,15 +145,5 @@ class Hypergraph {
 }
 
 external func Test() {
-    print("Beginning the test\n")
-    let and = Label("AND", 2, 1)
-    let e1 = RegularEdge(and)
-    print(e1.ToString() + "\n")
-    let s1 = Source()
-    let s2 = Source("foo")
-    print(s1.ToString() + "\n")
-    print(s2.ToString() + "\n")
     return 0
 }
-
-external func Hello (){ print("Hello!") }
