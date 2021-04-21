@@ -11,6 +11,8 @@ mkdir bin
 rm $IMPORTS
 touch $IMPORTS
 
+printf "core=/home/gkaye/arklang-sync/build/build/modules/core/core.cjo\n" >> $IMPORTS
+
 compile_object() {
     echo "Building object $2/$1.o"
     BUILD_DIR="$DIR/build/$2"
@@ -33,7 +35,6 @@ compile_object() {
 }
 
 compile_exec() { 
-    echo $OBJS
     COMMAND="cjc -import-config $IMPORTS $OBJS $DIR/src/$1.cj -o $DIR/bin/$1.out"
     echo $COMMAND
     $COMMAND
@@ -65,5 +66,6 @@ compile_all_objects() {
 }
 
 compile_object "hypergraph" "hypergraphs"
-compile_object "components" "hypergraphs"
+compile_object "labels" "hypergraphs"
+
 compile_exec "main"

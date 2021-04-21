@@ -1,2 +1,1 @@
-hypergraph=/home/gkaye/circuits-cj/build/hypergraphs/hypergraph.cjo
-components=/home/gkaye/circuits-cj/build/hypergraphs/components.cjo
+core=/home/gkaye/arklang-sync/build/build/modules/core/core.cjo

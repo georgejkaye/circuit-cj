@@ -1,4 +1,7 @@
+// TODO package hypergraphs when I figure out how packages work
 package hypergraph
+import core.*
+//import core.ArrayList
 
 /**
  * Base atom class, every element of a hypergraph (vertex, edge, label) is an atom
@@ -29,7 +32,7 @@ external class Source <: Vertex {
     init() { this.name = ""}
     init(name: String) { this.name = name }
     override func ToString() { 
-        let s2 = name == "" ? "" : " - ${this.name}"
+        let s2 = (name == "") ? "" : " - ${this.name}"
         return "Source s${this.id}${s2}"
     }
 }
@@ -39,48 +42,57 @@ external class Source <: Vertex {
  * Target vertices currently don't have anything particularly special about them
  */
 external class Target <: Vertex {
-    override func ToString() { return "Target t${this.id}" }
+    override func ToString() { "Target t${this.id}" }
 }
 
 /**
  * Labels have a name, domain and codomain
  */
 external class Label <: Atom {
-    private let name : String
-    private let dom : UInt64
-    private let cod : UInt64
+    let name : String
+    let dom : UInt64
+    let cod : UInt64
     init(name : String, dom : UInt64, cod : UInt64) {
         this.name = name
         this.dom = dom
         this.cod = cod
     }
-    func ToString() { return "Label ${this.id} - ${this.name} : ${this.dom} → ${this.cod}" }
-    func GetName() { return name }
+    func ToString() { "Label ${this.id} - ${this.name} : ${this.dom} → ${this.cod}" }
+    func GetName() { name }
 }
 
 /**
  * Edges are atoms
  */
-open class Edge <: Atom {
-    open func ToString() { return "Edge e${this.id}" }
+external open class Edge <: Atom {
+    let sources : ArrayList<Source>
+    let targets : ArrayList<Target>
+    init(sources : ArrayList<Source>, targets : ArrayList<Target>){
+        this.sources = sources
+        this.targets = targets
+    }
+    open func ToString() { "Edge e${this.id}" }
 }
-
 /**
  * Most edges are 'regular edges': they have a label
  */
 external class RegularEdge <: Edge {
     private let label : Label
-    init(label : Label) {
+    init(label : Label, sources : ArrayList<Source>, targets : ArrayList<Target>) {
+        super(sources, targets)
         this.label = label
     }
-    override func ToString() { return "Edge e${this.id} - ${this.label.GetName()}" }
+    override func ToString() { "Edge e${this.id} - ${this.label.GetName()}" }
 }
 /**
  * Identity edges are introduced between links when we resolve them
  * They do not have labels
  */
 class IdentityEdge <: Edge {
-    override func ToString() { return "Edge e${this.id} - identity edge" }
+    init(sources : ArrayList<Source>, targets : ArrayList<Target>) {
+        super(sources, targets)
+    }
+    override func ToString() { "Edge e${this.id} - identity edge" }
 }
 /**
  * A link spec contains information about a link
@@ -93,22 +105,28 @@ external class LinkSpec <: Atom {
         this.name = name
         this.width = width
     }
-    open func ToString() { return "LinkSpec ${this.id} - ${this.name} width ${this.width}" }
-    func GetName() { return name }
+    open func ToString() { "LinkSpec ${this.id} - ${this.name} width ${this.width}" }
+    func GetName() { name }
 }
 /**
  * A link edge has no label, but it does have an associated link spec
  */
 external class LinkEdge <: Edge {
     private let spec : LinkSpec
-    init(spec : LinkSpec){
+    init(spec : LinkSpec, sources : ArrayList<Source>, targets : ArrayList<Target>){
+        super(sources, targets)
         this.spec = spec
     }
-    override func ToString() { return "Link e${this.id} - ${this.spec.GetName()}" }
+    override func ToString() { "Link e${this.id} - ${this.spec.GetName()}" }
 }
 
 // TODO: Can these not be done just for atom?
 // It currently doesn't compile
+append Source with Hashable, Equatable {
+    operator func ==(lhs : Source, rhs : Source) : Bool { lhs.id == rhs.id }
+    operator func !=(lhs : Source, rhs : Source) : Bool { lhs.id != rhs.id }
+    func hashCode(t : Source) : UInt64 { t.id }
+}
 append Target with Hashable, Equatable {
     operator func ==(lhs : Target, rhs : Target) : Bool { lhs.id == rhs.id }
     operator func !=(lhs : Target, rhs : Target) : Bool { lhs.id != rhs.id }
@@ -122,28 +140,98 @@ append Edge with Hashable, Equatable {
 
 /* Hypergraph */
 external class Hypergraph {
-    private let sourceVertices : List<Source>
-    private let targetVertices : List<Target>
-    private let conns          : Map<Target, Source>
-    private let edges          : List<Edge>
-    private let sources        : Map<Edge, List<Source>>
-    private let targets        : Map<Edge, List<Target>>
-    init(sourceVertices : List<Source>, 
-         targetVertices : List<Target>, 
-         conns          : Map<Target, Source>,
-         edges          : List<Edge>, 
-         sources        : Map<Edge, List<Source>>, 
-         targets        : Map<Edge, List<Target>>
+    private let edges   : Set<Edge>
+    private let inputs  : ArrayList<Target>
+    private let outputs : ArrayList<Source>
+    private let conns   : Map<Target, Source>
+
+    init(edges    : Set<Edge>, 
+         inputs   : ArrayList<Target>,
+         outputs  : ArrayList<Source>,
+         conns    : Map<Target, Source>
     ){
-        this.sourceVertices = sourceVertices
-        this.targetVertices = targetVertices
-        this.conns = conns
-        this.edges = edges
-        this.sources = sources
-        this.targets = targets
+        this.edges    = edges
+        this.inputs   = inputs
+        this.outputs  = outputs
+        this.conns    = conns
+    }
+
+    func ToString() {
+        var s = ""
+        for (e in edges) {
+            s = "${s} ${e.id} ("
+            match (e) {
+                case .RegularEdge => e.label.name
+                case .IdentityEdge => "id"
+                case .LinkEdge => "link ${e.spec.name}"
+            }
+            s = "${s} ${lab}"
+            s = "${s} ${e.id} (${e.label.name}) : ("
+            for (v in e.sources) {
+                s = "${s} ${v.id}"
+            }
+            s = "${s} ) ("
+            for (v in e.targets) {
+                s = "${s} ${v.id}"
+            }
+            s = "S{s} )"
+        }
+        s
     }
 }
 
+// TODO I want everything in separate files, because that is how neat code is done
+// But I haven't figured out how to use packages yet
+// And using Maps for classes defined in this file causes segfaults for some reason
+// Eventually I'll spread everything into its own file
+
+/*************************************************************************************************************************
+ * Components                                                                                                            *
+ **************************************************************************************************************************/
+
+class BadOutputPortsException <: Exception {}
+class BadDomainException <: Exception {}
+class BadCodomainException <: Exception {}
+
+func OpMToN(m : UInt64, n : UInt64, label : Label, ports : ArrayList<String>){
+
+    if(m != label.dom){
+        throw BadDomainException()
+    }
+    if(n != label.cod){
+        throw BadCodomainException()
+    }
+
+    //print("${outputs.size()}")
+
+    //if(outputs.size() != n){
+    //    throw BadOutputPortsException()
+   // }
+
+    let inputs = ArrayList<Target>(Int64(m), {x => Target()})
+    let sources = ArrayList<Source>(Int64(m), {x => Source()})
+    let targets = ArrayList<Target>(Int64(n), {x => Target()})
+    let outputs = ArrayList<Source>(Int64(n), {x => Source(ports.get(x))})
+
+    let op = RegularEdge(label, sources, targets)
+
+    let conns = MapBuilder<Target, Source>()
+    for (i : Int64 in 0..m) {
+        print("${sources.get(i).ToString()}\n")
+        conns.add(inputs.get(i), sources.get(i))
+    }
+    for (i : Int64 in 0..n) {
+        conns.add(targets.get(i), outputs.get(i))
+    }
+
+    let graph = Hypergraph(#{op}, inputs, outputs, conns.toMap())
+    //print(graph.ToString())
+}
+//func OpMToN(m : UInt64, n : UInt64, label : Label){ OpMToN(m,n,label,ArrayList<String>(n,"")) }
+
+func AndGate(out : String) { OpMToN(2,1,Label("AND", 2, 1),ArrayList<String>([out])) }
+
 external func Test() {
+    AndGate("out")
     return 0
 }
