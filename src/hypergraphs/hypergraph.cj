@@ -1,7 +1,5 @@
-// TODO package hypergraphs when I figure out how packages work
-package hypergraph
+package hypergraphs
 import core.*
-//import core.ArrayList
 
 /**
  * Base atom class, every element of a hypergraph (vertex, edge, label) is an atom
@@ -39,16 +37,17 @@ open class Vertex <: Atom {
  * Source vertices are outwards facing ports: they are the sources of edges.
  * Sources have names so that we can reference them later and connect them to new edges
  */
-external class Source <: Vertex {
-    private let name : String
+class Source <: Vertex {
+    let name : String
     init() { this.name = ""}
     init(name: String) { this.name = name }
-    override func ToString() { 
-        let s2 = (name == "") ? "" : " - ${this.name}"
-        return "Source s${this.id}${s2}"
+}
+append Source with ToString {
+    func toString(s : Source) {
+        let s2 = (s.name == "") ? "" : " - ${s.name}"
+        return "Source s${s.id}${s2}" 
     }
 }
-
 // TODO should be redundant if inheritance works
 func AtomListToString(xs : ArrayList<Source>){ 
         var str = "["
@@ -59,12 +58,16 @@ func AtomListToString(xs : ArrayList<Source>){
     str
 }
 
+
 /**
  * Target vertices are inwards facing ports: they are the targets of edges.
  * Target vertices currently don't have anything particularly special about them
  */
-external class Target <: Vertex {
+class Target <: Vertex {
     override func ToString() { "Target t${this.id}" }
+}
+append Target with ToString {
+    func toString(t : Target) { "Target t${t.id}" }
 }
 
 // TODO should be redundant if inheritance works
@@ -80,30 +83,34 @@ func AtomListToString(xs : ArrayList<Target>){
 /**
  * Labels have a name, domain and codomain
  */
-external class Label <: Atom {
+class Label <: Atom {
     let name : String
-    let dom : UInt64
-    let cod : UInt64
-    init(name : String, dom : UInt64, cod : UInt64) {
+    let dom : Int64
+    let cod : Int64
+    init(name : String, dom : Int64, cod : Int64) {
         this.name = name
         this.dom = dom
         this.cod = cod
     }
-    func ToString() { "Label ${this.id} - ${this.name} : ${this.dom} → ${this.cod}" }
+}
+append Label with ToString {
+    func toString(l : Label) { "Label ${l.id} - ${l.name} : ${l.dom} → ${l.cod}" }
 }
 
 /**
  * A link spec contains information about a link
  * It has an id, a name, and a width 
  */
-external class LinkSpec <: Atom {
+class LinkSpec <: Atom {
     let name : String
-    let width : UInt64
-    init(name : String, width : UInt64) {
+    let width : Int64
+    init(name : String, width : Int64) {
         this.name = name
         this.width = width
     }
-    open func ToString() { "LinkSpec ${this.id} - ${this.name} width ${this.width}" }
+}
+append LinkSpec with ToString {
+    func toString(spec : LinkSpec) { "LinkSpec ${spec.id} - ${spec.name} width ${spec.width}" }
 }
 
 enum LinkKind { IN | OUT }
@@ -113,7 +120,7 @@ enum EdgeKind { REGULAR(Label) | IDENTITY | LINK(LinkSpec, LinkKind) }
 /**
  * Edges are atoms
  */
-external open class Edge <: Atom {
+open class Edge <: Atom {
     let kind : EdgeKind
     let sources : ArrayList<Source>
     let targets : ArrayList<Target>
@@ -122,7 +129,6 @@ external open class Edge <: Atom {
         this.sources = sources
         this.targets = targets
     }
-    open func ToString() { "Edge e${this.id}" }
 }
 
 // TODO should be redundant if inheritance works
@@ -138,13 +144,15 @@ func AtomListToString(xs : ArrayList<Edge>){
 /**
  * Most edges are 'regular edges': they have a label
  */
-external class RegularEdge <: Edge {
-    private let label : Label
+class RegularEdge <: Edge {
+    let label : Label
     init(label : Label, sources : ArrayList<Source>, targets : ArrayList<Target>) {
         super(REGULAR(label), sources, targets)
         this.label = label
     }
-    override func ToString() { "Edge e${this.id} - ${this.label.name}" }
+}
+append RegularEdge with ToString {
+    func toString(e : RegularEdge) { "Edge e${e.id} - ${e.label.name}" }
 }
 
 /**
@@ -155,42 +163,48 @@ class IdentityEdge <: Edge {
     init(sources : ArrayList<Source>, targets : ArrayList<Target>) {
         super(IDENTITY, sources, targets)
     }
-    override func ToString() { "Edge e${this.id} - identity edge" }
+}
+append IdentityEdge with ToString {
+    func toString(e : IdentityEdge) { "Identity e${e.id}" }
 }
 
 /**
  * A link edge has no label, but it does have an associated link spec
  */
-external open class LinkEdge <: Edge {
+open class LinkEdge <: Edge {
     let spec : LinkSpec
     init(kind : LinkKind, spec : LinkSpec, sources : ArrayList<Source>, targets : ArrayList<Target>){
         super(LINK(spec, kind), sources, targets)
         this.spec = spec
     }
-    override open func ToString() { "Link e${this.id} - ${this.spec.name}" }
 }
 
 /**
  * In links
  */
-external class InLinkEdge <: LinkEdge {
+class InLinkEdge <: LinkEdge {
     init(spec : LinkSpec, sources : ArrayList<Source>){
         super(IN, spec, sources, ArrayList<Target>())
     }
-    override func ToString() { "In link e${this.id} - ${this.spec.name}" }
+}
+append InLinkEdge with ToString {
+    func toString(e : InLinkEdge) { "Inlink e${e.id} - ${e.spec.name}" }
 }
 
 /**
  * Out links
  */
-external class OutLinkEdge <: LinkEdge {
+class OutLinkEdge <: LinkEdge {
     init(spec : LinkSpec, targets : ArrayList<Target>){
         super(OUT, spec, ArrayList<Source>(), targets)
     }
-    override func ToString() { "Out link e${this.id} - ${this.spec.name}" }
+}
+append OutLinkEdge with ToString {
+    func toString(e : OutLinkEdge) { "Outlink e${e.id} - ${e.spec.name}" }
 }
 
 // TODO: Can these not be done just for atom?
+
 // It currently doesn't compile
 append Source with Hashable, Equatable {
     operator func ==(lhs : Source, rhs : Source) : Bool { lhs.id == rhs.id }
@@ -211,7 +225,7 @@ append Edge with Hashable, Equatable {
 /**
  * Hypergraph
  */
-external class Hypergraph {
+class Hypergraph {
     private let edges   : Set<Edge>
     private let inputs  : ArrayList<Target>
     private let outputs : ArrayList<Source>
@@ -228,10 +242,17 @@ external class Hypergraph {
         this.conns    = conns
     }
 
-    func ToString() {
+    func GetEdges() { edges }
+    func GetInputs() { inputs }
+    func GetOutputs() { outputs }
+    func GetConns() { conns }
+}
+
+append Hypergraph with ToString {
+    func toString(f : Hypergraph) : String {
         var str = ""
-        let inputString = "inputs ${AtomListToString(inputs)}"
-        for (e in edges) {
+        let inputString = "inputs ${AtomListToString(f.GetInputs())}"
+        for (e in f.GetEdges()) {
             let id = "e${e.id}"
             let label = match (e.kind) {
                 case .REGULAR(label)   => label.name
@@ -247,9 +268,9 @@ external class Hypergraph {
             let targetString = AtomListToString(e.targets)
             str = "${str}${id} (${label}) ${sourceString} ${targetString}\n"
         }
-        let outputString = "outputs ${AtomListToString(outputs)}"
+        let outputString = "outputs ${AtomListToString(f.GetOutputs())}"
         var connstr = "connections "
-        for ((t, s) in conns) {
+        for ((t, s) in f.GetConns()) {
             connstr = "${connstr}(${t.id} ${s.id}) "
         }
         "${inputString}\n${str}${outputString}\n${connstr}"

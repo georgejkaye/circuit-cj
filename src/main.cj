@@ -1,5 +1,6 @@
-import code.Test
+import hypergraphs.Test
 
 func main(){
-    return Test()
+    Test()
+    return 0
 }

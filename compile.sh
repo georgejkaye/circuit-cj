@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DIR="/home/gkaye/circuits-cj"
-IMPORTS="$DIR/pkg.cfg1"
+IMPORTS="$DIR/import.conf"
 OBJS=""
 
 rm -rf build/
@@ -41,6 +41,25 @@ compile_object() {
     printf "$1=$CJO\n" >> $IMPORTS
 }
 
+compile_package() {
+    echo "Building package $1"
+    BUILD_DIR="$DIR/build/$1"
+    SRC_DIR="$DIR/src/$1"
+    mkdir $BUILD_DIR
+    COMMAND="cjc -import-config $IMPORTS -c -p $SRC_DIR -o $BUILD_DIR" 
+    echo $COMMAND
+    $COMMAND
+    CODE=$?
+    if [ "$CODE" != "0" ] ; then
+        echo "Error $CODE, aborting..."
+        exit 1
+    fi
+    OBJ=$BUILD_DIR/$1.o
+    CJO=$BUILD_DIR/$1.cjo
+    OBJS="$OBJS $OBJ"
+    printf "$1=$CJO\n" >> $IMPORTS
+}
+
 compile_exec() { 
     SRC="$DIR/src/$1.cj"
     echo "Building executable $SRC"
@@ -74,7 +93,5 @@ compile_all_objects() {
     done
 }
 
-python3 process.py
-compile_object "code" ""
+compile_package "hypergraphs"
 compile_exec "main"
-rm src/code.cj

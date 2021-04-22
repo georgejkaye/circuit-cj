@@ -1,6 +1,6 @@
 package hypergraphs
 
-import hypergraphs.Label
+import core.*
 
 /**
  * Structural generators
