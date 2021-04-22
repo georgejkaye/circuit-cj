@@ -14,14 +14,21 @@ touch $IMPORTS
 printf "core=/home/gkaye/arklang-sync/build/build/modules/core/core.cjo\n" >> $IMPORTS
 
 compile_object() {
-    echo "Building object $2/$1.o"
-    BUILD_DIR="$DIR/build/$2"
-    if [ ! -d $BUILD_DIR ] ; then
-        mkdir $BUILD_DIR
+    if [ "$2" != "" ] ; then
+        BUILD_DIR="$DIR/build/$2"
+        SRC_DIR="$DIR/src/$2"
+        if [ ! -d $BUILD_DIR ] ; then
+            mkdir $BUILD_DIR
+        fi
+    else
+        BUILD_DIR="$DIR/build"
+        SRC_DIR="$DIR/src"
     fi
+        
     BASE="$BUILD_DIR/$1"
+    echo "Building object $BASE.o"
     OBJ="$BASE.o"
-    COMMAND="cjc -import-config $IMPORTS -c $DIR/src/$2/$1.cj -o $OBJ"
+    COMMAND="cjc -import-config $IMPORTS -c $SRC_DIR/$1.cj -o $OBJ"
     OBJS="$OBJS $OBJ"
     echo $COMMAND
     $COMMAND
@@ -35,6 +42,8 @@ compile_object() {
 }
 
 compile_exec() { 
+    SRC="$DIR/src/$1.cj"
+    echo "Building executable $SRC"
     COMMAND="cjc -import-config $IMPORTS $OBJS $DIR/src/$1.cj -o $DIR/bin/$1.out"
     echo $COMMAND
     $COMMAND
@@ -65,7 +74,7 @@ compile_all_objects() {
     done
 }
 
-compile_object "hypergraph" "hypergraphs"
-compile_object "labels" "hypergraphs"
-
+python3 process.py
+compile_object "code" ""
 compile_exec "main"
+rm src/code.cj

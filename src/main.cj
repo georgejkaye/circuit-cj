@@ -1,4 +1,4 @@
-import hypergraph.Test
+import code.Test
 
 func main(){
     return Test()

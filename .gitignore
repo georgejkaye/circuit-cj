@@ -4,6 +4,7 @@
 // Output files
 bin/
 build/
+code.cj
 *.out
 *.bc
 *.cjo

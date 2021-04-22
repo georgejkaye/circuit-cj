@@ -16,6 +16,18 @@ open class Atom {
     }
 }
 
+/** 
+ * Get a string representing a list of atoms 
+ */
+func AtomListToString(xs : ArrayList<Atom>){
+    var str = "["
+    for (x in xs) {
+        str = "${str} ${x.id}"
+    }
+    str = "${str} ]"
+    str
+}
+
 /**
  * Vertices are atoms
  */
@@ -37,12 +49,32 @@ external class Source <: Vertex {
     }
 }
 
+// TODO should be redundant if inheritance works
+func AtomListToString(xs : ArrayList<Source>){ 
+        var str = "["
+    for (x in xs) {
+        str = "${str} ${x.id}"
+    }
+    str = "${str} ]"
+    str
+}
+
 /**
  * Target vertices are inwards facing ports: they are the targets of edges.
  * Target vertices currently don't have anything particularly special about them
  */
 external class Target <: Vertex {
     override func ToString() { "Target t${this.id}" }
+}
+
+// TODO should be redundant if inheritance works
+func AtomListToString(xs : ArrayList<Target>){ 
+        var str = "["
+    for (x in xs) {
+        str = "${str} ${x.id}"
+    }
+    str = "${str} ]"
+    str
 }
 
 /**
@@ -58,66 +90,104 @@ external class Label <: Atom {
         this.cod = cod
     }
     func ToString() { "Label ${this.id} - ${this.name} : ${this.dom} → ${this.cod}" }
-    func GetName() { name }
 }
+
+/**
+ * A link spec contains information about a link
+ * It has an id, a name, and a width 
+ */
+external class LinkSpec <: Atom {
+    let name : String
+    let width : UInt64
+    init(name : String, width : UInt64) {
+        this.name = name
+        this.width = width
+    }
+    open func ToString() { "LinkSpec ${this.id} - ${this.name} width ${this.width}" }
+}
+
+enum LinkKind { IN | OUT }
+/** Edges can be one of three kinds: Regular (a normal edge), Identity (a special edge with no label), or Link */
+enum EdgeKind { REGULAR(Label) | IDENTITY | LINK(LinkSpec, LinkKind) }
 
 /**
  * Edges are atoms
  */
 external open class Edge <: Atom {
+    let kind : EdgeKind
     let sources : ArrayList<Source>
     let targets : ArrayList<Target>
-    init(sources : ArrayList<Source>, targets : ArrayList<Target>){
+    init(kind : EdgeKind, sources : ArrayList<Source>, targets : ArrayList<Target>){
+        this.kind = kind
         this.sources = sources
         this.targets = targets
     }
     open func ToString() { "Edge e${this.id}" }
 }
+
+// TODO should be redundant if inheritance works
+func AtomListToString(xs : ArrayList<Edge>){ 
+    var str = "["
+    for (x in xs) {
+        str = "${str} ${x.id}"
+    }
+    str = "${str} ]"
+    str
+}
+
 /**
  * Most edges are 'regular edges': they have a label
  */
 external class RegularEdge <: Edge {
     private let label : Label
     init(label : Label, sources : ArrayList<Source>, targets : ArrayList<Target>) {
-        super(sources, targets)
+        super(REGULAR(label), sources, targets)
         this.label = label
     }
-    override func ToString() { "Edge e${this.id} - ${this.label.GetName()}" }
+    override func ToString() { "Edge e${this.id} - ${this.label.name}" }
 }
+
 /**
  * Identity edges are introduced between links when we resolve them
  * They do not have labels
  */
 class IdentityEdge <: Edge {
     init(sources : ArrayList<Source>, targets : ArrayList<Target>) {
-        super(sources, targets)
+        super(IDENTITY, sources, targets)
     }
     override func ToString() { "Edge e${this.id} - identity edge" }
 }
-/**
- * A link spec contains information about a link
- * It has an id, a name, and a width 
- */
-external class LinkSpec <: Atom {
-    private let name : String
-    private let width : UInt64
-    init(name : String, width : UInt64) {
-        this.name = name
-        this.width = width
-    }
-    open func ToString() { "LinkSpec ${this.id} - ${this.name} width ${this.width}" }
-    func GetName() { name }
-}
+
 /**
  * A link edge has no label, but it does have an associated link spec
  */
-external class LinkEdge <: Edge {
-    private let spec : LinkSpec
-    init(spec : LinkSpec, sources : ArrayList<Source>, targets : ArrayList<Target>){
-        super(sources, targets)
+external open class LinkEdge <: Edge {
+    let spec : LinkSpec
+    init(kind : LinkKind, spec : LinkSpec, sources : ArrayList<Source>, targets : ArrayList<Target>){
+        super(LINK(spec, kind), sources, targets)
         this.spec = spec
     }
-    override func ToString() { "Link e${this.id} - ${this.spec.GetName()}" }
+    override open func ToString() { "Link e${this.id} - ${this.spec.name}" }
+}
+
+/**
+ * In links
+ */
+external class InLinkEdge <: LinkEdge {
+    init(spec : LinkSpec, sources : ArrayList<Source>){
+        super(IN, spec, sources, ArrayList<Target>())
+    }
+    override func ToString() { "In link e${this.id} - ${this.spec.name}" }
+}
+
+/**
+ * Out links
+ */
+external class OutLinkEdge <: LinkEdge {
+    init(spec : LinkSpec, targets : ArrayList<Target>){
+        super(OUT, spec, ArrayList<Source>(), targets)
+    }
+    override func ToString() { "Out link e${this.id} - ${this.spec.name}" }
 }
 
 // TODO: Can these not be done just for atom?
@@ -138,7 +208,9 @@ append Edge with Hashable, Equatable {
     func hashCode(t : Edge) : UInt64 { t.id }
 }
 
-/* Hypergraph */
+/**
+ * Hypergraph
+ */
 external class Hypergraph {
     private let edges   : Set<Edge>
     private let inputs  : ArrayList<Target>
@@ -157,81 +229,29 @@ external class Hypergraph {
     }
 
     func ToString() {
-        var s = ""
+        var str = ""
+        let inputString = "inputs ${AtomListToString(inputs)}"
         for (e in edges) {
-            s = "${s} ${e.id} ("
-            match (e) {
-                case .RegularEdge => e.label.name
-                case .IdentityEdge => "id"
-                case .LinkEdge => "link ${e.spec.name}"
+            let id = "e${e.id}"
+            let label = match (e.kind) {
+                case .REGULAR(label)   => label.name
+                case .IDENTITY         => "id"
+                case .LINK(spec, kind) => {
+                    match (kind) {
+                        case. IN  => "inlink ${spec.name}"
+                        case. OUT => "outlink ${spec.name}"
+                    }
+                }
             }
-            s = "${s} ${lab}"
-            s = "${s} ${e.id} (${e.label.name}) : ("
-            for (v in e.sources) {
-                s = "${s} ${v.id}"
-            }
-            s = "${s} ) ("
-            for (v in e.targets) {
-                s = "${s} ${v.id}"
-            }
-            s = "S{s} )"
+            let sourceString = AtomListToString(e.sources)
+            let targetString = AtomListToString(e.targets)
+            str = "${str}${id} (${label}) ${sourceString} ${targetString}\n"
         }
-        s
+        let outputString = "outputs ${AtomListToString(outputs)}"
+        var connstr = "connections "
+        for ((t, s) in conns) {
+            connstr = "${connstr}(${t.id} ${s.id}) "
+        }
+        "${inputString}\n${str}${outputString}\n${connstr}"
     }
-}
-
-// TODO I want everything in separate files, because that is how neat code is done
-// But I haven't figured out how to use packages yet
-// And using Maps for classes defined in this file causes segfaults for some reason
-// Eventually I'll spread everything into its own file
-
-/*************************************************************************************************************************
- * Components                                                                                                            *
- **************************************************************************************************************************/
-
-class BadOutputPortsException <: Exception {}
-class BadDomainException <: Exception {}
-class BadCodomainException <: Exception {}
-
-func OpMToN(m : UInt64, n : UInt64, label : Label, ports : ArrayList<String>){
-
-    if(m != label.dom){
-        throw BadDomainException()
-    }
-    if(n != label.cod){
-        throw BadCodomainException()
-    }
-
-    //print("${outputs.size()}")
-
-    //if(outputs.size() != n){
-    //    throw BadOutputPortsException()
-   // }
-
-    let inputs = ArrayList<Target>(Int64(m), {x => Target()})
-    let sources = ArrayList<Source>(Int64(m), {x => Source()})
-    let targets = ArrayList<Target>(Int64(n), {x => Target()})
-    let outputs = ArrayList<Source>(Int64(n), {x => Source(ports.get(x))})
-
-    let op = RegularEdge(label, sources, targets)
-
-    let conns = MapBuilder<Target, Source>()
-    for (i : Int64 in 0..m) {
-        print("${sources.get(i).ToString()}\n")
-        conns.add(inputs.get(i), sources.get(i))
-    }
-    for (i : Int64 in 0..n) {
-        conns.add(targets.get(i), outputs.get(i))
-    }
-
-    let graph = Hypergraph(#{op}, inputs, outputs, conns.toMap())
-    //print(graph.ToString())
-}
-//func OpMToN(m : UInt64, n : UInt64, label : Label){ OpMToN(m,n,label,ArrayList<String>(n,"")) }
-
-func AndGate(out : String) { OpMToN(2,1,Label("AND", 2, 1),ArrayList<String>([out])) }
-
-external func Test() {
-    AndGate("out")
-    return 0
 }

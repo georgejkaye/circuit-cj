@@ -1,7 +1,6 @@
-// TODO package hypergraph when I figure out how packages work
-package labels
+package hypergraphs
 
-import hypergraph.Label
+import hypergraphs.Label
 
 /**
  * Structural generators
