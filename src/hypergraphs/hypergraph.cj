@@ -72,7 +72,7 @@ append Target with ToString {
 
 // TODO should be redundant if inheritance works
 func AtomListToString(xs : ArrayList<Target>){ 
-        var str = "["
+    var str = "["
     for (x in xs) {
         str = "${str} ${x.id}"
     }
@@ -204,7 +204,6 @@ append OutLinkEdge with ToString {
 }
 
 // TODO: Can these not be done just for atom?
-
 // It currently doesn't compile
 append Source with Hashable, Equatable {
     operator func ==(lhs : Source, rhs : Source) : Bool { lhs.id == rhs.id }

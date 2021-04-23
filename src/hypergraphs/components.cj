@@ -7,13 +7,12 @@ class BadCodomainException <: Exception {}
 
 func OpMToN(m : Int64, n : Int64, label : Label, ports : ArrayList<String>){
 
-    if(m != label.dom){
+    if(m != label.dom || m < 0){
         throw BadDomainException()
     }
-    if(n != label.cod){
+    if(n != label.cod || n < 0){
         throw BadCodomainException()
     }
-
     if(ports.size() != n){
         throw BadOutputPortsException()
     }
@@ -39,9 +38,14 @@ func OpMToN(m : Int64, n : Int64, label : Label, ports : ArrayList<String>){
 
 func OpMToN(m : Int64, n : Int64, label : Label){ OpMToN(m,n,label,ArrayList<String>(n,{x => ""})) }
 
-func AndGate(out : String) { OpMToN(2,1,AND,ArrayList<String>([out])) }
+func OpOneToOne(label : Label, ports : ArrayList<String>){ OpMToN(1, 1, label, ports) }
+func OpTwoToOne(label : Label, ports : ArrayList<String>){ OpMToN(2, 1, label, ports) }
+func OpThreeToOne(label : Label, ports : ArrayList<String>){ OpMToN(3, 1, label, ports) }
 
-external func Test() {
+func AndGate(out : String) { OpTwoToOne(AND, ArrayList<String>([out])) }
+func NotGate(out : String) { OpOneToOne(NOT, ArrayList<String>([out])) }
+
+external func TestComponents() {
     let graph = AndGate("out")
     print("${graph}")
     return 0

@@ -1,6 +1,7 @@
-import hypergraphs.Test
+import hypergraphs.*
 
 func main(){
-    Test()
+    TestComponents()
+    TestOps()
     return 0
 }
