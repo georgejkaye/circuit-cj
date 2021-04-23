@@ -11,16 +11,21 @@ func indent(n : Int64, str : String){
 }
 
 let tableStyle = "border=\"0\" cellborder=\"1\" cellspacing=\"0\""
-let graphOptions = indent(1, "rankdir=LR")
-let edgeNodeOptions = indent(1, "node[shape=plaintext]")
-let vertexNodeOptions = indent(1, "node[shape=circle]")
+let graphOptions = "rankdir=LR"
+let edgeNodeOptions = "shape=plaintext fillcolor=white fixedsize=false"
+let vertexNodeOptions = "shape=circle style=filled fillcolor=black height=0.25 fixedsize=true"
+let portHeight = 10
+let portWidth = 10
+let vertexComment = "Vertices"
+let edgeComment = "Edges"
+let connsComment = "Connections"
 
 // TODO should be doable with a single ArrayList<Vertex> method
 func TargetListToTable(vs : ArrayList<Target>, id : String, n : Int64){
     let header = indent(n,"<table>")
     var rows = ""
     for (i in 0..vs.size()) {
-        let row = indent(n+1, "<tr><td port = \"${id}${i}\"></td></tr>")
+        let row = indent(n+1, "<tr><td height=\"${portHeight}\" width=\"${portWidth}\" port = \"${id}${i}\"></td></tr>")
         rows = rows == "" ? "${row}" : "${rows}\n${row}"
     }
     let footer = indent(n,"</table>")
@@ -30,7 +35,7 @@ func SourceListToTable(vs : ArrayList<Source>, id : String, n : Int64){
     let header = indent(n,"<table>")
     var rows = ""
     for (i in 0..vs.size()) {
-        let row = indent(n+1, "<tr><td port = \"${id}${i}\"></td></tr>")
+        let row = indent(n+1, "<tr><td height=\"${portHeight}\" width=\"${portWidth}\" port = \"${id}${i}\"></td></tr>")
         rows = rows == "" ? "${row}" : "${rows}\n${row}"
     }
     let footer = indent(n,"</table>")
@@ -84,29 +89,49 @@ func DrawTargetVertices(vs : ArrayList<Target>){
 }
 
 func DrawVertex(t : Target, s : Source) {
-    "v${t.id}[label=\"${s.name}\"]"
+    "v${t.id}[label=\"\" xlabel=\"${s.name}\"]"
 }
 
 func DotGraph(f : Hypergraph){
     let declaration = "graph G {"
+    let graphOptions = indent(1, graphOptions)
+    let vertexNodeOptions = indent(1, "node[${vertexNodeOptions}]")
+    let edgeNodeOptions = indent(1, "node[${edgeNodeOptions}]")
+    let vertexComment = indent(1, "// ${vertexComment}")
+    let edgeComment = indent(1, "// ${edgeComment}")
+    let connsComment = indent(1, "// ${connsComment}")
 
     var vertices = ""
+    var conns = ""
     for (t in f.GetTargets()) {
-        let vertex = indent(1, DrawVertex(t, f.GetConn(t)))
+        let s = f.GetConn(t)
+        let vertex = indent(1, DrawVertex(t, s))
         vertices = vertices == "" ? vertex : "${vertices}\n${vertex}"
+
+        let left = match(f.GetEdge(t)){
+            case .EdgePort(e,n)     => "e${e.id}:t${n}"
+            case .InterfacePort(n)  => "ei:t${n}"
+        }
+        let right = match(f.GetEdge(s)){
+            case .EdgePort(e,n)     => "e${e.id}:s${n}"
+            case .InterfacePort(n)  => "eo:s${n}"
+        }
+
+        let connl = indent(1, "${left} -- v${t.id}:w")
+        let connr = indent(1, "v${t.id}:e -- ${right}")
+        let conn = "${connl}\n${connr}"
+        conns = conns == "" ? conn : "${conns}\n${conn}" 
     }
 
     let inputtext = DrawEdgeNode("ei", indent(5,"inputs"), ArrayList<Source>(), f.GetInputs())
     var edges = inputtext
-
-    var conns = ""
-    for(e in f.GetEdges()){
+    for (e in f.GetEdges()){
         let edgetext = DrawEdge(e)
         edges = "${edges}\n${edgetext}"
     }
     let outputtext = DrawEdgeNode("eo", indent(5,"outputs"), f.GetOutputs(), ArrayList<Target>())
     edges = "${edges}\n${outputtext}"
 
-    let dot = "${declaration}\n${graphOptions}\n${vertexNodeOptions}\n\n${vertices}\n\n${edgeNodeOptions}\n\n${edges}\n}"
+    let dot = "${declaration}\n${graphOptions}\n\n${vertexComment}\n${vertexNodeOptions}\n${vertices}\n\n${edgeComment}\n${edgeNodeOptions}\n\n${edges}\n\n${connsComment}\n${conns}\n}"
     print(dot)
 }

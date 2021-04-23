@@ -225,6 +225,8 @@ append Edge with Hashable, Equatable {
     func hashCode(t : Edge) : UInt64 { t.id }
 }
 
+enum Port { EdgePort(Edge, Int64) | InterfacePort(Int64) }
+
 /**
  * Hypergraph
  */
@@ -237,8 +239,8 @@ class Hypergraph {
     // TODO should be sets but I don't know how to make them dynamically
     private var sources : ArrayList<Source>
     private var targets : ArrayList<Target>
-    private let lefts : Map<Target, Edge>
-    private let rights : Map<Source, Edge>
+    private let lefts : Map<Target, Port>
+    private let rights : Map<Source, Port>
 
     init(edges    : Set<Edge>, 
          inputs   : ArrayList<Target>,
@@ -250,26 +252,30 @@ class Hypergraph {
         this.outputs  = outputs
         this.conns    = conns
 
-        var leftMap = MapBuilder<Target, Edge>()
-        var rightMap = MapBuilder<Source, Edge>()
+        var leftMap = MapBuilder<Target, Port>()
+        var rightMap = MapBuilder<Source, Port>()
         this.sources = ArrayList<Source>()
         this.targets = ArrayList<Target>()
 
-        for(v in inputs){
-            targets.add(v)
+        for(i in 0..inputs.size()){
+            targets.add(inputs.get(i))
+            leftMap.add(inputs.get(i), InterfacePort(i))
         }
-        for(v in outputs) {
-            sources.add(v)
+        for(i in 0..outputs.size()) {
+            sources.add(outputs.get(i))
+            rightMap.add(outputs.get(i), InterfacePort(i))
         }
 
         for(e in edges){
-            for(v in e.sources){
+            for(i in 0..e.sources.size()){
+                let v = e.sources.get(i)
                 sources.add(v)
-                rightMap.add(v, e)
+                rightMap.add(v, EdgePort(e,i))
             }
-            for(v in e.targets){
+            for(i in 0..e.targets.size()){
+                let v = e.targets.get(i)
                 targets.add(v)
-                leftMap.add(v, e)
+                leftMap.add(v, EdgePort(e,i))
             }
         }
 
@@ -291,11 +297,17 @@ class Hypergraph {
             case .Some(s) => s
         }
     }
-    func GetEdgeFromSource(s : Source) { 
-        return rights.get(s)
+    func GetEdge(s : Source) { 
+        match(rights.get(s)){
+            case .None => throw VertexNotInGraphException(s)
+            case .Some(p) => p 
+        }
     }
-    func GetEdgeFromTarget(t : Target) { 
-        return lefts.get(t)
+    func GetEdge(t : Target) { 
+        match(lefts.get(t)){
+            case .None => throw VertexNotInGraphException(t)
+            case .Some(p) => p
+        }
     }
 }
 
