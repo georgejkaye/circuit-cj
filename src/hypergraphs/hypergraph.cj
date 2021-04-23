@@ -44,17 +44,17 @@ open class Vertex <: Atom {
  * Sources have names so that we can reference them later and connect them to new edges
  */
 class Source <: Vertex {
-    let name : ArrayList<String>
-    init() { this.name = ArrayList<String>()}
-    init(name: String) { this.name = ArrayList<String>([name]) }
-    init(names: ArrayList<String>) { this.name = names }
-    func AddName(name : String) { this.name.add(name) }
-    func AddNames(names : ArrayList<String>) { this.name.addAll(names) }
+    let names : ArrayList<String>
+    init() { this.names = ArrayList<String>()}
+    init(name: String) { this.names = ArrayList<String>([name]) }
+    init(names: ArrayList<String>) { this.names = names }
+    func AddName(name : String) { this.names.add(name) }
+    func AddNames(names : ArrayList<String>) { this.names.addAll(names) }
 }
 append Source with ToString {
     func toString(s : Source) {
         var names = ""
-        for (name in s.name){
+        for (name in s.names){
             names = name == "" ? "${name}" : "${names}, ${name}"
         }
         return "Source s${s.id} ${names}" 
@@ -62,9 +62,15 @@ append Source with ToString {
 }
 // TODO should be redundant if inheritance works
 func AtomListToString(xs : ArrayList<Source>){ 
-        var str = "["
+    var str = "["
     for (x in xs) {
         str = "${str} ${x.id}"
+        var names = ""
+        for(name in x.names){
+            names = names == "" ? " (${name}" : "${names}, ${name}"
+        }
+        names = names == "" ? "" : "${names})"
+        str = "${str}${names}"
     }
     str = "${str} ]"
     str
@@ -245,8 +251,8 @@ class Hypergraph {
     private let conns   : Map<Target, Source>
 
     // TODO should be sets but I don't know how to make them dynamically
-    private var sources : ArrayList<Source>
-    private var targets : ArrayList<Target>
+    private let sources : ArrayList<Source>
+    private let targets : ArrayList<Target>
     private let lefts : Map<Target, Port>
     private let rights : Map<Source, Port>
 
@@ -260,8 +266,8 @@ class Hypergraph {
         this.outputs  = outputs
         this.conns    = conns
 
-        var leftMap = MapBuilder<Target, Port>()
-        var rightMap = MapBuilder<Source, Port>()
+        let leftMap = MapBuilder<Target, Port>()
+        let rightMap = MapBuilder<Source, Port>()
         this.sources = ArrayList<Source>()
         this.targets = ArrayList<Target>()
 
@@ -319,20 +325,20 @@ class Hypergraph {
     }
 
     func Clone(){
-        var newSourceMapBuilder = MapBuilder<Source, Source>()
-        var newTargetMapBuilder = MapBuilder<Target, Target>()
+        let newSourceMapBuilder = MapBuilder<Source, Source>()
+        let newTargetMapBuilder = MapBuilder<Target, Target>()
         for(v in sources){
-            let v2 = Source(v.name) 
+            let v2 = Source(ArrayList<String>(v.names)) 
             newSourceMapBuilder.add(v,v2)
         }
         for(v in targets){
             let v2 = Target()
             newTargetMapBuilder.add(v,v2)
         }
-        var newInputs = ArrayList<Target>()
-        var newOutputs = ArrayList<Source>()
+        let newInputs = ArrayList<Target>()
+        let newOutputs = ArrayList<Source>()
         for(v in outputs){
-            let v2 = Source(v.name)
+            let v2 = Source(ArrayList<String>(v.names))
             newSourceMapBuilder.add(v,v2)
             newOutputs.add(v2)
         }
@@ -344,7 +350,7 @@ class Hypergraph {
         let newSourceMap = newSourceMapBuilder.toMap()
         let newTargetMap = newTargetMapBuilder.toMap()
 
-        var newEdges = ArrayList<Edge>()
+        let newEdges = ArrayList<Edge>()
         for(e in edges){
             let s = e.sources
             let t = e.targets
@@ -368,7 +374,7 @@ class Hypergraph {
             newEdges.add(e2)
         }
 
-        var newConnsBuilder = MapBuilder<Target, Source>()
+        let newConnsBuilder = MapBuilder<Target, Source>()
         for(v in targets){
             let newT = match(newTargetMap.get(v)){
                     case .Some(v2) => v2

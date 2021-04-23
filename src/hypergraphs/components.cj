@@ -32,13 +32,6 @@ func OpMToN(m : Int64, n : Int64, label : Label, ports : ArrayList<String>){
         conns.add(targets.get(i), outputs.get(i))
     }
 
-    let connsm = conns.toMap()
-    let connsn = conns.toMap()
-
-    if(connsm.containsKey(targets.get(0))){
-        print("Contains key ${targets.get(0).id}\n")
-    }
-
     let graph = Hypergraph(ArrayList<Edge>([op]), inputs, outputs, conns.toMap())
     graph
 }

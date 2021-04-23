@@ -13,7 +13,7 @@ func indent(n : Int64, str : String){
 let tableStyle = "border=\"0\" cellborder=\"1\" cellspacing=\"0\""
 let graphOptions = "rankdir=LR"
 let edgeNodeOptions = "shape=plaintext fillcolor=white fixedsize=false"
-let vertexNodeOptions = "shape=circle style=filled fillcolor=black height=0.25 fixedsize=true"
+let vertexNodeOptions = "shape=circle style=filled fillcolor=black height=0.15 fixedsize=true"
 let portHeight = 10
 let portWidth = 10
 let vertexComment = "Vertices"
@@ -90,7 +90,7 @@ func DrawTargetVertices(vs : ArrayList<Target>){
 
 func DrawVertex(t : Target, s : Source) {
     var names = ""
-    for(name in s.name){
+    for(name in s.names){
         names = names == "" ? name : "${names}, ${name}"
     }
     "v${t.id}[label=\"\" xlabel=\"${names}\"]"

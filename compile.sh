@@ -19,7 +19,7 @@ rm -rf build/
 rm -rf bin/
 mkdir build
 mkdir bin
-rm $IMPORTS
+rm -f $IMPORTS
 touch $IMPORTS
 
 printf "core=$CORE\n" >> $IMPORTS
