@@ -47,6 +47,7 @@ func NotGate(out : String) { OpOneToOne(NOT, ArrayList<String>([out])) }
 
 external func TestComponents() {
     let graph = AndGate("out")
-    print("${graph}")
+    print("${graph}\n")
+    DotGraph(graph)
     return 0
 }

@@ -1,6 +1,10 @@
 package hypergraphs
 import core.*
 
+class VertexNotInGraphException <: Exception {
+    init(v : Vertex){}
+}
+
 /**
  * Base atom class, every element of a hypergraph (vertex, edge, label) is an atom
  * Each atom has a unique id, and this is what comparisons should be performed on
@@ -230,6 +234,12 @@ class Hypergraph {
     private let outputs : ArrayList<Source>
     private let conns   : Map<Target, Source>
 
+    // TODO should be sets but I don't know how to make them dynamically
+    private var sources : ArrayList<Source>
+    private var targets : ArrayList<Target>
+    private let lefts : Map<Target, Edge>
+    private let rights : Map<Source, Edge>
+
     init(edges    : Set<Edge>, 
          inputs   : ArrayList<Target>,
          outputs  : ArrayList<Source>,
@@ -239,12 +249,54 @@ class Hypergraph {
         this.inputs   = inputs
         this.outputs  = outputs
         this.conns    = conns
+
+        var leftMap = MapBuilder<Target, Edge>()
+        var rightMap = MapBuilder<Source, Edge>()
+        this.sources = ArrayList<Source>()
+        this.targets = ArrayList<Target>()
+
+        for(v in inputs){
+            targets.add(v)
+        }
+        for(v in outputs) {
+            sources.add(v)
+        }
+
+        for(e in edges){
+            for(v in e.sources){
+                sources.add(v)
+                rightMap.add(v, e)
+            }
+            for(v in e.targets){
+                targets.add(v)
+                leftMap.add(v, e)
+            }
+        }
+
+        this.lefts = leftMap.toMap()
+        this.rights = rightMap.toMap()
     }
 
     func GetEdges() { edges }
     func GetInputs() { inputs }
     func GetOutputs() { outputs }
     func GetConns() { conns }
+
+    func GetSources() { sources }
+    func GetTargets() { targets }
+
+    func GetConn(t : Target) {
+        match(conns.get(t)){
+            case .None => throw VertexNotInGraphException(t)
+            case .Some(s) => s
+        }
+    }
+    func GetEdgeFromSource(s : Source) { 
+        return rights.get(s)
+    }
+    func GetEdgeFromTarget(t : Target) { 
+        return lefts.get(t)
+    }
 }
 
 append Hypergraph with ToString {
