@@ -2,7 +2,9 @@ package hypergraphs
 import core.*
 
 class VertexNotInGraphException <: Exception {
-    init(v : Vertex){}
+    init(v : Vertex){
+        print("Exception ${v.id}")
+    }
 }
 
 /**
@@ -42,14 +44,20 @@ open class Vertex <: Atom {
  * Sources have names so that we can reference them later and connect them to new edges
  */
 class Source <: Vertex {
-    let name : String
-    init() { this.name = ""}
-    init(name: String) { this.name = name }
+    let name : ArrayList<String>
+    init() { this.name = ArrayList<String>()}
+    init(name: String) { this.name = ArrayList<String>([name]) }
+    init(names: ArrayList<String>) { this.name = names }
+    func AddName(name : String) { this.name.add(name) }
+    func AddNames(names : ArrayList<String>) { this.name.addAll(names) }
 }
 append Source with ToString {
     func toString(s : Source) {
-        let s2 = (s.name == "") ? "" : " - ${s.name}"
-        return "Source s${s.id}${s2}" 
+        var names = ""
+        for (name in s.name){
+            names = name == "" ? "${name}" : "${names}, ${name}"
+        }
+        return "Source s${s.id} ${names}" 
     }
 }
 // TODO should be redundant if inheritance works
@@ -231,7 +239,7 @@ enum Port { EdgePort(Edge, Int64) | InterfacePort(Int64) }
  * Hypergraph
  */
 class Hypergraph {
-    private let edges   : Set<Edge>
+    private let edges   : ArrayList<Edge>
     private let inputs  : ArrayList<Target>
     private let outputs : ArrayList<Source>
     private let conns   : Map<Target, Source>
@@ -242,7 +250,7 @@ class Hypergraph {
     private let lefts : Map<Target, Port>
     private let rights : Map<Source, Port>
 
-    init(edges    : Set<Edge>, 
+    init(edges    : ArrayList<Edge>, 
          inputs   : ArrayList<Target>,
          outputs  : ArrayList<Source>,
          conns    : Map<Target, Source>
@@ -309,6 +317,73 @@ class Hypergraph {
             case .Some(p) => p
         }
     }
+
+    func Clone(){
+        var newSourceMapBuilder = MapBuilder<Source, Source>()
+        var newTargetMapBuilder = MapBuilder<Target, Target>()
+        for(v in sources){
+            let v2 = Source(v.name) 
+            newSourceMapBuilder.add(v,v2)
+        }
+        for(v in targets){
+            let v2 = Target()
+            newTargetMapBuilder.add(v,v2)
+        }
+        var newInputs = ArrayList<Target>()
+        var newOutputs = ArrayList<Source>()
+        for(v in outputs){
+            let v2 = Source(v.name)
+            newSourceMapBuilder.add(v,v2)
+            newOutputs.add(v2)
+        }
+        for(v in inputs){
+            let v2 = Target()
+            newTargetMapBuilder.add(v,v2)
+            newInputs.add(v2)
+        }
+        let newSourceMap = newSourceMapBuilder.toMap()
+        let newTargetMap = newTargetMapBuilder.toMap()
+
+        var newEdges = ArrayList<Edge>()
+        for(e in edges){
+            let s = e.sources
+            let t = e.targets
+            let s2 = ArrayList<Source>()
+            let t2 = ArrayList<Target>()
+            for (v in s){
+                let v2 = match(newSourceMap.get(v)){
+                    case .Some(v2) => v2
+                    case .None     => throw VertexNotInGraphException(v)
+                }
+                s2.add(v2)
+            }
+            for (v in t){
+                let v2 = match(newTargetMap.get(v)){
+                    case .Some(v2) => v2
+                    case .None     => throw VertexNotInGraphException(v)
+                }
+                t2.add(v2)
+            }
+            let e2 = Edge(e.kind, s2, t2)
+            newEdges.add(e2)
+        }
+
+        var newConnsBuilder = MapBuilder<Target, Source>()
+        for(v in targets){
+            let newT = match(newTargetMap.get(v)){
+                    case .Some(v2) => v2
+                    case .None     => throw VertexNotInGraphException(v)
+            }
+            let newS = match(newSourceMap.get(GetConn(v))){
+                    case .Some(v2) => v2
+                    case .None     => throw VertexNotInGraphException(GetConn(v))
+            }
+            newConnsBuilder.add(newT, newS)
+        }
+        let newConns = newConnsBuilder.toMap()
+        Hypergraph(newEdges, newInputs, newOutputs, newConns)
+    }
+
 }
 
 append Hypergraph with ToString {
@@ -333,8 +408,8 @@ append Hypergraph with ToString {
         }
         let outputString = "outputs ${AtomListToString(f.GetOutputs())}"
         var connstr = "connections "
-        for ((t, s) in f.GetConns()) {
-            connstr = "${connstr}(${t.id} ${s.id}) "
+        for (t in f.GetTargets()) {
+            connstr = "${connstr}(${t.id} ${f.GetConn(t).id}) "
         }
         "${inputString}\n${str}${outputString}\n${connstr}"
     }

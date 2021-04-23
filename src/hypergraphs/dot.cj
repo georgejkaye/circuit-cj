@@ -89,7 +89,11 @@ func DrawTargetVertices(vs : ArrayList<Target>){
 }
 
 func DrawVertex(t : Target, s : Source) {
-    "v${t.id}[label=\"\" xlabel=\"${s.name}\"]"
+    var names = ""
+    for(name in s.name){
+        names = names == "" ? name : "${names}, ${name}"
+    }
+    "v${t.id}[label=\"\" xlabel=\"${names}\"]"
 }
 
 func DotGraph(f : Hypergraph){
@@ -132,6 +136,10 @@ func DotGraph(f : Hypergraph){
     let outputtext = DrawEdgeNode("eo", indent(5,"outputs"), f.GetOutputs(), ArrayList<Target>())
     edges = "${edges}\n${outputtext}"
 
-    let dot = "${declaration}\n${graphOptions}\n\n${vertexComment}\n${vertexNodeOptions}\n${vertices}\n\n${edgeComment}\n${edgeNodeOptions}\n\n${edges}\n\n${connsComment}\n${conns}\n}"
-    print(dot)
+    "${declaration}\n${graphOptions}\n\n${vertexComment}\n${vertexNodeOptions}\n${vertices}\n\n${edgeComment}\n${edgeNodeOptions}\n\n${edges}\n\n${connsComment}\n${conns}\n}"
+}
+
+external func TestDot(){
+    let f = AndGate("out")
+    print(DotGraph(f))
 }

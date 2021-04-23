@@ -1,7 +1,9 @@
 import hypergraphs.*
+import core.*
 
 func main(){
-    TestComponents()
+    //TestComponents()
     TestOps()
+    //TestDot()
     return 0
 }
