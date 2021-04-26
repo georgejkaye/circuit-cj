@@ -6,9 +6,9 @@ import core.*
  * Structural generators
  */
 
-external let FORK : MorphismKind = STRUCTURAL(Label("≺", 2, 1))
+external let FORK : MorphismKind = STRUCTURAL(Label("≺", 1, 2))
 external let JOIN : MorphismKind = STRUCTURAL(Label("≻", 2, 1))
-external let STUB : MorphismKind = STRUCTURAL(Label("~", 2, 1))
+external let STUB : MorphismKind = STRUCTURAL(Label("~", 1, 0))
 
 /**
  * Unary gates

@@ -7,8 +7,7 @@ class OutputInputMismatchException <: Exception {
     }
 }
 
-func Seq(f : Hypergraph, g : Hypergraph) { Seq("", f, g) }
-func Seq(name : String, f : Hypergraph, g : Hypergraph){
+func Seq(f : Hypergraph, g : Hypergraph, name!: String = ""){
     
     if(f.GetN() != g.GetM()){
         throw OutputInputMismatchException(f,g)
@@ -40,8 +39,34 @@ func Seq(name : String, f : Hypergraph, g : Hypergraph){
     Hypergraph(newEdges, newF.GetInputs(), newG.GetOutputs(), newConns.toMap())
 }
 
-func Par(f : Hypergraph, g : Hypergraph){ Par("", f, g)}
-func Par(name : String, f : Hypergraph, g : Hypergraph){
+class NegativeIdentityException <: Exception {
+    init(){
+        print("Identities must be positive")
+    }
+}
+
+func Identity(n : Int64){ Identity(n, ArrayList<String>(n, {x => ""}))}
+func Identity(n : Int64, ports: ArrayList<String>, name!: String = ""){
+    if(n < 0){
+        throw NegativeIdentityException()
+    }
+    if(ports.size() != n){
+        throw BadOutputPortsException()
+    }
+    let inputs = ArrayList<Target>()
+    let outputs = ArrayList<Source>()
+    let conns = MapBuilder<Target,Source>()
+    for(i in 0..n){
+        let t = Target()
+        let s = Source(ports.get(i))
+        inputs.add(t)
+        outputs.add(s)
+        conns.add(t,s)
+    }
+    Hypergraph(name, ArrayList<Edge>(), inputs, outputs, conns.toMap())
+}
+
+func Par(f : Hypergraph, g : Hypergraph, name!: String = ""){
     let newF = f.Clone()
     let newG = g.Clone()
 
@@ -65,6 +90,25 @@ func Par(name : String, f : Hypergraph, g : Hypergraph){
         newConns.add(v, newG.GetConn(v))
     }
     Hypergraph(name, newEdges, newInputs, newOutputs, newConns.toMap())
+}
+
+func Empty(){ Identity(0) }
+
+func Swap(m : Int64, n : Int64, name!: String = ""){
+    let inputs = ArrayList<Target>()
+    let outputs = ArrayList<Source>()
+    for(i in 0..m+n){
+        inputs.add(Target())
+        outputs.add(Source())
+    }
+    let conns = MapBuilder<Target,Source>()
+    for(i in 0..m){
+        conns.add(inputs.get(i), outputs.get(n+i))
+    }
+    for(i in 0..n){
+        conns.add(inputs.get(m + i), outputs.get(i))
+    }
+    Hypergraph(name, ArrayList<Edge>(), inputs, outputs, conns.toMap())
 }
 
 class NegativeTraceException <: Exception {
@@ -108,9 +152,6 @@ func Trace(name : String, f : Hypergraph, x : Int64){
 
 
 external func TestOps(){
-    let f = AndGate("and")
-    let g = NotGate("not")   
-    let h = NotGate("or")    
-    let k = Seq(Trace(Par(f, g), 1), h)
-    print(DotGraph(k))
+    let f = Trace(Seq(Seq(Par(Identity(1), Swap(1,1)), Par(AndGate(), Identity(1))), Par(Fork(), Identity(1))), 1)
+    print(DotGraph(f))
 }

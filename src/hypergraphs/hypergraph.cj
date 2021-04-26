@@ -3,7 +3,7 @@ import core.*
 
 class VertexNotInGraphException <: Exception {
     init(v : Vertex){
-        print("Exception ${v.id}")
+        print("Vertex ${v.id} is not in the graph")
     }
 }
 

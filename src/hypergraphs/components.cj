@@ -1,11 +1,23 @@
 package hypergraphs
 import core.*
 
-class BadOutputPortsException <: Exception {}
-class BadDomainException <: Exception {}
-class BadCodomainException <: Exception {}
+class BadOutputPortsException <: Exception {
+    init(){
+        print("Length of output ports list is not the same as the number of outputs")
+    }
+}
+class BadDomainException <: Exception {
+    init(){
+        print("Number of inputs does not match the domain of the label")
+    }
+}
+class BadCodomainException <: Exception {
+    init(){
+        print("Number of outputs does not match the codomain of the label")
+    }
+}
 
-func OpMToN(name : String, m : Int64, n : Int64, kind : MorphismKind, ports : ArrayList<String>){
+func OpMToN(m : Int64, n : Int64, kind : MorphismKind, ports : ArrayList<String>, name: String){
 
     let (dom, cod) = match(kind){
         case .STRUCTURAL(label) => (label.dom, label.cod)
@@ -42,18 +54,17 @@ func OpMToN(name : String, m : Int64, n : Int64, kind : MorphismKind, ports : Ar
     graph
 }
 
-func OpMToN(m : Int64, n : Int64, kind : MorphismKind){ OpMToN("", m,n,kind,ArrayList<String>(n,{x => ""})) }
-func OpMToN(m : Int64, n : Int64, kind : MorphismKind, ports : ArrayList<String>){ OpMToN("", m,n,kind,ports) }
+func OpOneToOne(kind : MorphismKind, out : String, name : String){ OpMToN(1, 1, kind, ArrayList<String>([out]), name) }
+func OpTwoToOne(kind : MorphismKind, out : String, name : String){ OpMToN(2, 1, kind, ArrayList<String>([out]), name) }
+func OpThreeToOne(kind : MorphismKind, out : String, name : String){ OpMToN(3, 1, kind, ArrayList<String>([out]), name) }
+func OpOneToTwo(kind : MorphismKind, lhs : String, rhs : String, name : String){ OpMToN(1,2, kind, ArrayList<String>([lhs,rhs]), name) }
 
-func OpOneToOne(kind : MorphismKind, ports : ArrayList<String>){ OpMToN(1, 1, kind, ports) }
-func OpTwoToOne(kind : MorphismKind, ports : ArrayList<String>){ OpMToN(2, 1, kind, ports) }
-func OpThreeToOne(kind : MorphismKind, ports : ArrayList<String>){ OpMToN(3, 1, kind, ports) }
-
-func AndGate(out : String) { OpTwoToOne(AND, ArrayList<String>([out])) }
-func NotGate(out : String) { OpOneToOne(NOT, ArrayList<String>([out])) }
+func Fork(lhs!: String = "", rhs!: String = "", name!: String = "") { OpOneToTwo(FORK, lhs, rhs, name) }
+func AndGate(output!: String = "", name!: String = "") { OpTwoToOne(AND, output, name) }
+func NotGate(output!: String = "", name!: String = "") { OpOneToOne(NOT, output, name) }
 
 external func TestComponents() {
-    let graph = AndGate("out")
+    let graph = AndGate(output: "out")
     print("${graph}\n")
     DotGraph(graph)
     return 0

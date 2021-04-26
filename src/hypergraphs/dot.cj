@@ -159,6 +159,6 @@ func DotGraph(f : Hypergraph){
 }
 
 external func TestDot(){
-    let f = AndGate("out")
+    let f = AndGate(output: "out")
     print(DotGraph(f))
 }
