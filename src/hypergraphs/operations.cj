@@ -1,9 +1,15 @@
 package hypergraphs
 import core.*
 
+class NegativeWireException <: Exception {
+    init(){
+        print("Number of wires cannot be negative")
+    }
+}
+
 class OutputInputMismatchException <: Exception {
     init(f : Hypergraph, g : Hypergraph){
-        print("Outputs of ${f.GetName()} do not match inputs of ${g.GetName()}")
+        print("Outputs of ${f.GetName()} (${f.GetN()}) do not match inputs of ${g.GetName()} (${g.GetM()})")
     }
 }
 
@@ -39,16 +45,21 @@ func Seq(f : Hypergraph, g : Hypergraph, name!: String = ""){
     Hypergraph(newEdges, newF.GetInputs(), newG.GetOutputs(), newConns.toMap())
 }
 
-class NegativeIdentityException <: Exception {
-    init(){
-        print("Identities must be positive")
+func Seq(fs : ArrayList<Hypergraph>){
+    if(fs.size() == 0){
+        Empty()
     }
+    var res = fs[0]
+    for(i in 1..fs.size()){
+        res = Seq(res, fs[i])
+    }
+    res
 }
 
 func Identity(n : Int64){ Identity(n, ArrayList<String>(n, {x => ""}))}
 func Identity(n : Int64, ports: ArrayList<String>, name!: String = ""){
     if(n < 0){
-        throw NegativeIdentityException()
+        throw NegativeWireException()
     }
     if(ports.size() != n){
         throw BadOutputPortsException()
@@ -58,7 +69,7 @@ func Identity(n : Int64, ports: ArrayList<String>, name!: String = ""){
     let conns = MapBuilder<Target,Source>()
     for(i in 0..n){
         let t = Target()
-        let s = Source(ports.get(i))
+        let s = ports.get(i) == "" ? Source() : Source(ports.get(i))
         inputs.add(t)
         outputs.add(s)
         conns.add(t,s)
@@ -90,6 +101,17 @@ func Par(f : Hypergraph, g : Hypergraph, name!: String = ""){
         newConns.add(v, newG.GetConn(v))
     }
     Hypergraph(name, newEdges, newInputs, newOutputs, newConns.toMap())
+}
+
+func Par(fs : ArrayList<Hypergraph>){
+    if(fs.size() == 0){
+        Empty()
+    }
+    var res = fs[0]
+    for(i in 1..fs.size()){
+        res = Par(res, fs[i])
+    }
+    res
 }
 
 func Empty(){ Identity(0) }
@@ -152,6 +174,7 @@ func Trace(name : String, f : Hypergraph, x : Int64){
 
 
 external func TestOps(){
-    let f = Trace(Seq(Seq(Seq(Par(Identity(1), Swap(1,1)), Par(AndGate(), Identity(1))), Par(Fork(), Identity(1))), Par(Delay(1), Par(InLink(LinkSpec("x", 1)), Identity(1)))), 1)
-    print(DotGraph(f))
+    let and = AndGate(name: "and")
+    let not = NotGate(input: and)
+    print(DotGraph(not))
 }

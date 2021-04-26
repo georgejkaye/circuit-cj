@@ -23,6 +23,9 @@ class Label <: Atom {
     let dom : Int64
     let cod : Int64
     init(name : String, dom : Int64, cod : Int64) {
+        if(dom < 0 || cod < 0){
+            throw NegativeWireException()
+        }
         this.name = name
         this.dom = dom
         this.cod = cod

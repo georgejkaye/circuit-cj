@@ -15,7 +15,7 @@ open class Atom {
     static var nextid : UInt64 = 0
     let id : UInt64
     init() { 
-        this.id = nextid 
+        this.id = nextid
         nextid++
     }
 }
