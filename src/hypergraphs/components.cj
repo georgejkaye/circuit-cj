@@ -5,12 +5,18 @@ class BadOutputPortsException <: Exception {}
 class BadDomainException <: Exception {}
 class BadCodomainException <: Exception {}
 
-func OpMToN(m : Int64, n : Int64, label : Label, ports : ArrayList<String>){
+func OpMToN(m : Int64, n : Int64, kind : MorphismKind, ports : ArrayList<String>){
 
-    if(m != label.dom || m < 0){
+    let (dom, cod) = match(kind){
+        case .STRUCTURAL(label) => (label.dom, label.cod)
+        case .GATE(label)       => (label.dom, label.cod)
+        case .DELAY(dur)        => (1,1)
+    }
+
+    if(m != dom || m < 0){
         throw BadDomainException()
     }
-    if(n != label.cod || n < 0){
+    if(n != cod || n < 0){
         throw BadCodomainException()
     }
     if(ports.size() != n){
@@ -22,7 +28,7 @@ func OpMToN(m : Int64, n : Int64, label : Label, ports : ArrayList<String>){
     let targets = ArrayList<Target>(n, {x => Target()})
     let outputs = ArrayList<Source>(n, {x => Source(ports.get(x))})
 
-    let op = RegularEdge(label, sources, targets)
+    let op = RegularEdge(kind, sources, targets)
 
     let conns = MapBuilder<Target, Source>()
     for (i in 0..m) {
@@ -36,11 +42,11 @@ func OpMToN(m : Int64, n : Int64, label : Label, ports : ArrayList<String>){
     graph
 }
 
-func OpMToN(m : Int64, n : Int64, label : Label){ OpMToN(m,n,label,ArrayList<String>(n,{x => ""})) }
+func OpMToN(m : Int64, n : Int64, kind : MorphismKind){ OpMToN(m,n,kind,ArrayList<String>(n,{x => ""})) }
 
-func OpOneToOne(label : Label, ports : ArrayList<String>){ OpMToN(1, 1, label, ports) }
-func OpTwoToOne(label : Label, ports : ArrayList<String>){ OpMToN(2, 1, label, ports) }
-func OpThreeToOne(label : Label, ports : ArrayList<String>){ OpMToN(3, 1, label, ports) }
+func OpOneToOne(kind : MorphismKind, ports : ArrayList<String>){ OpMToN(1, 1, kind, ports) }
+func OpTwoToOne(kind : MorphismKind, ports : ArrayList<String>){ OpMToN(2, 1, kind, ports) }
+func OpThreeToOne(kind : MorphismKind, ports : ArrayList<String>){ OpMToN(3, 1, kind, ports) }
 
 func AndGate(out : String) { OpTwoToOne(AND, ArrayList<String>([out])) }
 func NotGate(out : String) { OpOneToOne(NOT, ArrayList<String>([out])) }

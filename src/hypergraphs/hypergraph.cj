@@ -132,8 +132,9 @@ append LinkSpec with ToString {
 }
 
 enum LinkKind { IN | OUT }
+enum MorphismKind { STRUCTURAL(Label) | GATE(Label) | DELAY(Int64) }
 /** Edges can be one of three kinds: Regular (a normal edge), Identity (a special edge with no label), or Link */
-enum EdgeKind { REGULAR(Label) | IDENTITY | LINK(LinkSpec, LinkKind) }
+enum EdgeKind { REGULAR(MorphismKind) | IDENTITY | LINK(LinkSpec, LinkKind) }
 
 /**
  * Edges are atoms
@@ -163,14 +164,21 @@ func AtomListToString(xs : ArrayList<Edge>){
  * Most edges are 'regular edges': they have a label
  */
 class RegularEdge <: Edge {
-    let label : Label
-    init(label : Label, sources : ArrayList<Source>, targets : ArrayList<Target>) {
-        super(REGULAR(label), sources, targets)
-        this.label = label
+    let morphismKind : MorphismKind
+    init(kind : MorphismKind, sources : ArrayList<Source>, targets : ArrayList<Target>) {
+        super(REGULAR(kind), sources, targets)
+        this.morphismKind = kind
     }
 }
 append RegularEdge with ToString {
-    func toString(e : RegularEdge) { "Edge e${e.id} - ${e.label.name}" }
+    func toString(e : RegularEdge) { 
+        let name = match(e.morphismKind){
+            case .STRUCTURAL(label) => "${label.name} (structural)"
+            case .GATE(label)       => "${label.name} (gate)"
+            case .DELAY(dur)        => "Delay ${dur}"
+        }
+        "Edge e${e.id} - ${name}" 
+    }
 }
 
 /**
@@ -399,12 +407,18 @@ append Hypergraph with ToString {
         for (e in f.GetEdges()) {
             let id = "e${e.id}"
             let label = match (e.kind) {
-                case .REGULAR(label)   => label.name
+                case .REGULAR(kind)   => {
+                    match(kind){
+                        case .STRUCTURAL(label) => "structural ${label.name}"
+                        case .GATE(label)       => "gate ${label.name}"
+                        case .DELAY(dur)        => "delay ${dur}"
+                    }
+                }
                 case .IDENTITY         => "id"
                 case .LINK(spec, kind) => {
                     match (kind) {
-                        case. IN  => "inlink ${spec.name}"
-                        case. OUT => "outlink ${spec.name}"
+                        case .IN  => "inlink ${spec.name}"
+                        case .OUT => "outlink ${spec.name}"
                     }
                 }
             }

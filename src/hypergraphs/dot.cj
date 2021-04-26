@@ -10,12 +10,25 @@ func indent(n : Int64, str : String){
     "${out}${str}"
 }
 
+func subscript(n : Int64){
+    "<sub>${n}</sub>"
+}
+
 let tableStyle = "border=\"0\" cellborder=\"1\" cellspacing=\"0\""
 let graphOptions = "rankdir=LR"
 let edgeNodeOptions = "shape=plaintext fillcolor=white fixedsize=false"
 let vertexNodeOptions = "shape=circle style=filled fillcolor=black height=0.15 fixedsize=true"
+
 let portHeight = 10
 let portWidth = 10
+
+let interfaceStyle = "bgcolor=\"gray\""
+let identityStyle = "bgcolor=\"gray\""
+let linkStyle = "bgcolor=\"blue\""
+let gateStyle = ""
+let structuralStyle = "bgcolor=\"green\""
+let delayStyle = "bgcolor=\"yellow\""
+
 let vertexComment = "Vertices"
 let edgeComment = "Edges"
 let connsComment = "Connections"
@@ -56,9 +69,9 @@ func WrapInTd(str : String, n : Int64) {
     WrapIn("td", str, n)
 }
 
-func DrawEdgeNode(id : String, text : String, sources : ArrayList<Source>, targets : ArrayList<Target>){
+func DrawEdgeNode(id : String, nodeStyle : String, text : String, sources : ArrayList<Source>, targets : ArrayList<Target>){
     let declaration = indent(1, "${id} [label=<")
-    let tableheader = indent(2,"<table ${tableStyle}>")
+    let tableheader = indent(2,"<table ${nodeStyle} ${tableStyle}>")
     let sourceTable = sources.size() == 0 ? "" : WrapInTd(SourceListToTable(sources, "s", 5), 4)
     let targetTable = targets.size() == 0 ? "" : WrapInTd(TargetListToTable(targets, "t", 5), 4)
     let sourceNewline = sourceTable == "" ? "" : "\n"
@@ -71,12 +84,18 @@ func DrawEdgeNode(id : String, text : String, sources : ArrayList<Source>, targe
 }
 
 func DrawEdge(e : Edge){
-    let edgedetails = match(e.kind){
-        case .REGULAR(label)   => indent(5, label.name)
-        case .IDENTITY         => indent(5, "id")
-        case .LINK(spec, kind) => indent(5, spec.name)
+    let (style, text) = match(e.kind){
+        case .REGULAR(kind)   => {
+            match(kind) {
+                case .STRUCTURAL(label) => (structuralStyle, label.name)
+                case .GATE(label)       => (gateStyle, label.name)
+                case .DELAY(n)          => (delayStyle, "𝛿${subscript(n)}")
+            }
+        }
+        case .IDENTITY         => (identityStyle, "id")
+        case .LINK(spec, kind) => (linkStyle, spec.name)
     }
-    DrawEdgeNode("e${e.id}", edgedetails, e.sources, e.targets)
+    DrawEdgeNode("e${e.id}", style, indent(5, text), e.sources, e.targets)
 }
 
 func DrawTargetVertices(vs : ArrayList<Target>){
@@ -127,16 +146,16 @@ func DotGraph(f : Hypergraph){
         conns = conns == "" ? conn : "${conns}\n${conn}" 
     }
 
-    let inputtext = DrawEdgeNode("ei", indent(5,"inputs"), ArrayList<Source>(), f.GetInputs())
+    let inputtext = DrawEdgeNode("ei", interfaceStyle, indent(5,"inputs"), ArrayList<Source>(), f.GetInputs())
     var edges = inputtext
     for (e in f.GetEdges()){
         let edgetext = DrawEdge(e)
         edges = "${edges}\n${edgetext}"
     }
-    let outputtext = DrawEdgeNode("eo", indent(5,"outputs"), f.GetOutputs(), ArrayList<Target>())
+    let outputtext = DrawEdgeNode("eo", interfaceStyle, indent(5,"outputs"), f.GetOutputs(), ArrayList<Target>())
     edges = "${edges}\n${outputtext}"
 
-    "${declaration}\n${graphOptions}\n\n${vertexComment}\n${vertexNodeOptions}\n${vertices}\n\n${edgeComment}\n${edgeNodeOptions}\n\n${edges}\n\n${connsComment}\n${conns}\n}"
+    "${declaration}\n${graphOptions}\n\n${vertexComment}\n${vertexNodeOptions}\n${vertices}\n\n${edgeComment}\n${edgeNodeOptions}\n${edges}\n\n${connsComment}\n${conns}\n}"
 }
 
 external func TestDot(){
