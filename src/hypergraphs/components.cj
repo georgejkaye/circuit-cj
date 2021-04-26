@@ -17,12 +17,16 @@ class BadCodomainException <: Exception {
     }
 }
 
-func OpMToN(m : Int64, n : Int64, kind : MorphismKind, ports : ArrayList<String>, name: String){
+func OpMToN(m : Int64, n : Int64, generator : Generator, ports : ArrayList<String>, name: String){
 
-    let (dom, cod) = match(kind){
+    let (dom, cod) = match(generator){
+        case .VALUE(val)        => (0,1)
         case .STRUCTURAL(label) => (label.dom, label.cod)
         case .GATE(label)       => (label.dom, label.cod)
         case .DELAY(dur)        => (1,1)
+        case .IDENTITY          => (1,1)
+        case .INLINK(spec)      => (spec.width, 0)
+        case .OUTLINK(spec)     => (0, spec.width)
     }
 
     if(m != dom || m < 0){
@@ -40,7 +44,7 @@ func OpMToN(m : Int64, n : Int64, kind : MorphismKind, ports : ArrayList<String>
     let targets = ArrayList<Target>(n, {x => Target()})
     let outputs = ArrayList<Source>(n, {x => Source(ports.get(x))})
 
-    let op = RegularEdge(kind, sources, targets)
+    let op = Edge(generator, sources, targets)
 
     let conns = MapBuilder<Target, Source>()
     for (i in 0..m) {
@@ -54,14 +58,31 @@ func OpMToN(m : Int64, n : Int64, kind : MorphismKind, ports : ArrayList<String>
     graph
 }
 
-func OpOneToOne(kind : MorphismKind, out : String, name : String){ OpMToN(1, 1, kind, ArrayList<String>([out]), name) }
-func OpTwoToOne(kind : MorphismKind, out : String, name : String){ OpMToN(2, 1, kind, ArrayList<String>([out]), name) }
-func OpThreeToOne(kind : MorphismKind, out : String, name : String){ OpMToN(3, 1, kind, ArrayList<String>([out]), name) }
-func OpOneToTwo(kind : MorphismKind, lhs : String, rhs : String, name : String){ OpMToN(1,2, kind, ArrayList<String>([lhs,rhs]), name) }
+func OpZeroToOne(gen : Generator, out : String, name : String){ OpMToN(0,1, gen, ArrayList<String>([out]), name) }
+func OpOneToZero(gen : Generator, name : String){ OpMToN(1, 0, gen, ArrayList<String>(), name) }
+func OpOneToOne(gen : Generator, out : String, name : String){ OpMToN(1, 1, gen, ArrayList<String>([out]), name) }
+func OpTwoToOne(gen : Generator, out : String, name : String){ OpMToN(2, 1, gen, ArrayList<String>([out]), name) }
+func OpThreeToOne(gen : Generator, out : String, name : String){ OpMToN(3, 1, gen, ArrayList<String>([out]), name) }
+func OpOneToTwo(gen : Generator, lhs : String, rhs : String, name : String){ OpMToN(1,2, gen, ArrayList<String>([lhs,rhs]), name) }
 
 func Fork(lhs!: String = "", rhs!: String = "", name!: String = "") { OpOneToTwo(FORK, lhs, rhs, name) }
-func AndGate(output!: String = "", name!: String = "") { OpTwoToOne(AND, output, name) }
+func Join(output!: String = "", name!: String = ""){ OpTwoToOne(JOIN, output, name) }
+func Stub(name!: String = ""){ OpOneToZero(STUB, name) }
+
 func NotGate(output!: String = "", name!: String = "") { OpOneToOne(NOT, output, name) }
+
+func AndGate(output!: String = "", name!: String = "") { OpTwoToOne(AND, output, name) }
+func OrGate(output!: String = "", name!: String = "") { OpTwoToOne(OR, output, name) }
+func XorGate(output!: String = "", name!: String = "") { OpTwoToOne(XOR, output, name) }
+
+func NandGate(output!: String = "", name!: String = "") { OpTwoToOne(NAND, output, name) }
+func NorGate(output!: String = "", name!: String = "") { OpTwoToOne(NOR, output, name) }
+func XnorGate(output!: String = "", name!: String = "") { OpTwoToOne(XNOR, output, name) }
+
+func Delay(n : Int64, output!: String = "", name!: String = "") { OpOneToOne(DELAY(n), output, name) }
+
+func InLink(spec : LinkSpec, name!:String = "") { OpOneToZero(INLINK(spec), name) }
+func OutLink(spec : LinkSpec, output!: String, name!:String = "") { OpZeroToOne(INLINK(spec), output, name) }
 
 external func TestComponents() {
     let graph = AndGate(output: "out")

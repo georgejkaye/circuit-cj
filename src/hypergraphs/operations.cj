@@ -143,7 +143,7 @@ func Trace(name : String, f : Hypergraph, x : Int64){
         idTargets.add(newInputs.removeAt(0))
     }
 
-    let idEdge = IdentityEdge(idSources, idTargets)
+    let idEdge = Edge(IDENTITY, idSources, idTargets)
     let newEdges = newF.GetEdges()
     newEdges.add(idEdge)
 
@@ -152,6 +152,6 @@ func Trace(name : String, f : Hypergraph, x : Int64){
 
 
 external func TestOps(){
-    let f = Trace(Seq(Seq(Par(Identity(1), Swap(1,1)), Par(AndGate(), Identity(1))), Par(Fork(), Identity(1))), 1)
+    let f = Trace(Seq(Seq(Seq(Par(Identity(1), Swap(1,1)), Par(AndGate(), Identity(1))), Par(Fork(), Identity(1))), Par(Delay(1), Par(InLink(LinkSpec("x", 1)), Identity(1)))), 1)
     print(DotGraph(f))
 }

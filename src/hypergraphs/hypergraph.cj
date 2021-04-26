@@ -99,54 +99,21 @@ func AtomListToString(xs : ArrayList<Target>){
 }
 
 /**
- * Labels have a name, domain and codomain
- */
-class Label <: Atom {
-    let name : String
-    let dom : Int64
-    let cod : Int64
-    init(name : String, dom : Int64, cod : Int64) {
-        this.name = name
-        this.dom = dom
-        this.cod = cod
-    }
-}
-append Label with ToString {
-    func toString(l : Label) { "Label ${l.id} - ${l.name} : ${l.dom} → ${l.cod}" }
-}
-
-/**
- * A link spec contains information about a link
- * It has an id, a name, and a width 
- */
-class LinkSpec <: Atom {
-    let name : String
-    let width : Int64
-    init(name : String, width : Int64) {
-        this.name = name
-        this.width = width
-    }
-}
-append LinkSpec with ToString {
-    func toString(spec : LinkSpec) { "LinkSpec ${spec.id} - ${spec.name} width ${spec.width}" }
-}
-
-enum LinkKind { IN | OUT }
-enum MorphismKind { STRUCTURAL(Label) | GATE(Label) | DELAY(Int64) }
-/** Edges can be one of three kinds: Regular (a normal edge), Identity (a special edge with no label), or Link */
-enum EdgeKind { REGULAR(MorphismKind) | IDENTITY | LINK(LinkSpec, LinkKind) }
-
-/**
  * Edges are atoms
  */
 open class Edge <: Atom {
-    let kind : EdgeKind
+    let generator : Generator
     let sources : ArrayList<Source>
     let targets : ArrayList<Target>
-    init(kind : EdgeKind, sources : ArrayList<Source>, targets : ArrayList<Target>){
-        this.kind = kind
+    init(generator : Generator, sources : ArrayList<Source>, targets : ArrayList<Target>){
+        this.generator = generator
         this.sources = sources
         this.targets = targets
+    }
+}
+append Edge with ToString {
+    func toString(e : Edge) { 
+        "Edge e${e.id} - ${e.generator}" 
     }
 }
 
@@ -158,75 +125,6 @@ func AtomListToString(xs : ArrayList<Edge>){
     }
     str = "${str} ]"
     str
-}
-
-/**
- * Most edges are 'regular edges': they have a label
- */
-class RegularEdge <: Edge {
-    let morphismKind : MorphismKind
-    init(kind : MorphismKind, sources : ArrayList<Source>, targets : ArrayList<Target>) {
-        super(REGULAR(kind), sources, targets)
-        this.morphismKind = kind
-    }
-}
-append RegularEdge with ToString {
-    func toString(e : RegularEdge) { 
-        let name = match(e.morphismKind){
-            case .STRUCTURAL(label) => "${label.name} (structural)"
-            case .GATE(label)       => "${label.name} (gate)"
-            case .DELAY(dur)        => "Delay ${dur}"
-        }
-        "Edge e${e.id} - ${name}" 
-    }
-}
-
-/**
- * Identity edges are introduced between links when we resolve them
- * They do not have labels
- */
-class IdentityEdge <: Edge {
-    init(sources : ArrayList<Source>, targets : ArrayList<Target>) {
-        super(IDENTITY, sources, targets)
-    }
-}
-append IdentityEdge with ToString {
-    func toString(e : IdentityEdge) { "Identity e${e.id}" }
-}
-
-/**
- * A link edge has no label, but it does have an associated link spec
- */
-open class LinkEdge <: Edge {
-    let spec : LinkSpec
-    init(kind : LinkKind, spec : LinkSpec, sources : ArrayList<Source>, targets : ArrayList<Target>){
-        super(LINK(spec, kind), sources, targets)
-        this.spec = spec
-    }
-}
-
-/**
- * In links
- */
-class InLinkEdge <: LinkEdge {
-    init(spec : LinkSpec, sources : ArrayList<Source>){
-        super(IN, spec, sources, ArrayList<Target>())
-    }
-}
-append InLinkEdge with ToString {
-    func toString(e : InLinkEdge) { "Inlink e${e.id} - ${e.spec.name}" }
-}
-
-/**
- * Out links
- */
-class OutLinkEdge <: LinkEdge {
-    init(spec : LinkSpec, targets : ArrayList<Target>){
-        super(OUT, spec, ArrayList<Source>(), targets)
-    }
-}
-append OutLinkEdge with ToString {
-    func toString(e : OutLinkEdge) { "Outlink e${e.id} - ${e.spec.name}" }
 }
 
 // TODO: Can these not be done just for atom?
@@ -408,7 +306,7 @@ class Hypergraph <: Atom {
                 }
                 t2.add(v2)
             }
-            let e2 = Edge(e.kind, s2, t2)
+            let e2 = Edge(e.generator, s2, t2)
             newEdges.add(e2)
         }
 
@@ -436,25 +334,10 @@ append Hypergraph with ToString {
         let inputString = "inputs ${AtomListToString(f.GetInputs())}"
         for (e in f.GetEdges()) {
             let id = "e${e.id}"
-            let label = match (e.kind) {
-                case .REGULAR(kind)   => {
-                    match(kind){
-                        case .STRUCTURAL(label) => "structural ${label.name}"
-                        case .GATE(label)       => "gate ${label.name}"
-                        case .DELAY(dur)        => "delay ${dur}"
-                    }
-                }
-                case .IDENTITY         => "id"
-                case .LINK(spec, kind) => {
-                    match (kind) {
-                        case .IN  => "inlink ${spec.name}"
-                        case .OUT => "outlink ${spec.name}"
-                    }
-                }
-            }
+            let gen = "${e.generator}"
             let sourceString = AtomListToString(e.sources)
             let targetString = AtomListToString(e.targets)
-            str = "${str}${id} (${label}) ${sourceString} ${targetString}\n"
+            str = "${str}${id} (${gen}) ${sourceString} ${targetString}\n"
         }
         let outputString = "outputs ${AtomListToString(f.GetOutputs())}"
         var connstr = "connections "
