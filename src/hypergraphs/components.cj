@@ -5,7 +5,7 @@ class BadOutputPortsException <: Exception {}
 class BadDomainException <: Exception {}
 class BadCodomainException <: Exception {}
 
-func OpMToN(m : Int64, n : Int64, kind : MorphismKind, ports : ArrayList<String>){
+func OpMToN(name : String, m : Int64, n : Int64, kind : MorphismKind, ports : ArrayList<String>){
 
     let (dom, cod) = match(kind){
         case .STRUCTURAL(label) => (label.dom, label.cod)
@@ -38,11 +38,12 @@ func OpMToN(m : Int64, n : Int64, kind : MorphismKind, ports : ArrayList<String>
         conns.add(targets.get(i), outputs.get(i))
     }
 
-    let graph = Hypergraph(ArrayList<Edge>([op]), inputs, outputs, conns.toMap())
+    let graph = Hypergraph(name, ArrayList<Edge>([op]), inputs, outputs, conns.toMap())
     graph
 }
 
-func OpMToN(m : Int64, n : Int64, kind : MorphismKind){ OpMToN(m,n,kind,ArrayList<String>(n,{x => ""})) }
+func OpMToN(m : Int64, n : Int64, kind : MorphismKind){ OpMToN("", m,n,kind,ArrayList<String>(n,{x => ""})) }
+func OpMToN(m : Int64, n : Int64, kind : MorphismKind, ports : ArrayList<String>){ OpMToN("", m,n,kind,ports) }
 
 func OpOneToOne(kind : MorphismKind, ports : ArrayList<String>){ OpMToN(1, 1, kind, ports) }
 func OpTwoToOne(kind : MorphismKind, ports : ArrayList<String>){ OpMToN(2, 1, kind, ports) }

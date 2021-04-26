@@ -252,7 +252,10 @@ enum Port { EdgePort(Edge, Int64) | InterfacePort(Int64) }
 /**
  * Hypergraph
  */
-class Hypergraph {
+class Hypergraph <: Atom {
+
+    private let name    : String
+
     private let edges   : ArrayList<Edge>
     private let inputs  : ArrayList<Target>
     private let outputs : ArrayList<Source>
@@ -261,18 +264,40 @@ class Hypergraph {
     // TODO should be sets but I don't know how to make them dynamically
     private let sources : ArrayList<Source>
     private let targets : ArrayList<Target>
-    private let lefts : Map<Target, Port>
-    private let rights : Map<Source, Port>
+    private let lefts   : Map<Target, Port>
+    private let rights  : Map<Source, Port>
+
+    private let m       : Int64
+    private let n       : Int64
 
     init(edges    : ArrayList<Edge>, 
          inputs   : ArrayList<Target>,
          outputs  : ArrayList<Source>,
          conns    : Map<Target, Source>
+    ) {
+        this("", edges, inputs, outputs, conns)
+    }
+
+    init(name     : String,
+         edges    : ArrayList<Edge>, 
+         inputs   : ArrayList<Target>,
+         outputs  : ArrayList<Source>,
+         conns    : Map<Target, Source>
     ){
+
+        if(name == ""){
+            this.name = "Hypergraph ${id}"
+        } else {
+            this.name = name
+        }
+
         this.edges    = edges
         this.inputs   = inputs
         this.outputs  = outputs
         this.conns    = conns
+
+        this.m = inputs.size()
+        this.n = outputs.size()
 
         let leftMap = MapBuilder<Target, Port>()
         let rightMap = MapBuilder<Source, Port>()
@@ -305,10 +330,15 @@ class Hypergraph {
         this.rights = rightMap.toMap()
     }
 
+    func GetName() { name }
+
     func GetEdges() { edges }
     func GetInputs() { inputs }
     func GetOutputs() { outputs }
     func GetConns() { conns }
+
+    func GetM() { m }
+    func GetN() { n }
 
     func GetSources() { sources }
     func GetTargets() { targets }
@@ -431,6 +461,6 @@ append Hypergraph with ToString {
         for (t in f.GetTargets()) {
             connstr = "${connstr}(${t.id} ${f.GetConn(t).id}) "
         }
-        "${inputString}\n${str}${outputString}\n${connstr}"
+        "${f.GetName()}\n${inputString}\n${str}${outputString}\n${connstr}"
     }
 }

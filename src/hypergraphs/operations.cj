@@ -1,7 +1,19 @@
 package hypergraphs
 import core.*
 
-func Seq(f : Hypergraph, g : Hypergraph){
+class OutputInputMismatchException <: Exception {
+    init(f : Hypergraph, g : Hypergraph){
+        print("Outputs of ${f.GetName()} do not match inputs of ${g.GetName()}")
+    }
+}
+
+func Seq(f : Hypergraph, g : Hypergraph) { Seq("", f, g) }
+func Seq(name : String, f : Hypergraph, g : Hypergraph){
+    
+    if(f.GetN() != g.GetM()){
+        throw OutputInputMismatchException(f,g)
+    }
+    
     let newF = f.Clone()
     let newG = g.Clone()
 
@@ -28,7 +40,8 @@ func Seq(f : Hypergraph, g : Hypergraph){
     Hypergraph(newEdges, newF.GetInputs(), newG.GetOutputs(), newConns.toMap())
 }
 
-func Par(f : Hypergraph, g : Hypergraph){
+func Par(f : Hypergraph, g : Hypergraph){ Par("", f, g)}
+func Par(name : String, f : Hypergraph, g : Hypergraph){
     let newF = f.Clone()
     let newG = g.Clone()
 
@@ -51,16 +64,53 @@ func Par(f : Hypergraph, g : Hypergraph){
     for(v in newG.GetTargets()){
         newConns.add(v, newG.GetConn(v))
     }
-    Hypergraph(newEdges, newInputs, newOutputs, newConns.toMap())
+    Hypergraph(name, newEdges, newInputs, newOutputs, newConns.toMap())
 }
+
+class NegativeTraceException <: Exception {
+    init(){
+        print("Cannot trace negative number of wires")
+    }
+}
+class TooMuchTraceException <: Exception {
+    init(){
+        print("Tried to trace more wires than outputs")
+    }
+}
+
+func Trace(f : Hypergraph, x : Int64){ Trace("", f, x) }
+func Trace(name : String, f : Hypergraph, x : Int64){
+    if(x < 0){
+        throw NegativeTraceException() 
+    }
+    if(x > f.GetM() || x > f.GetN()){
+        throw TooMuchTraceException()
+    }
+
+    let newF = f.Clone()
+    let newInputs = newF.GetInputs()
+    let newOutputs = newF.GetOutputs()
+
+    let idSources = ArrayList<Source>()
+    let idTargets = ArrayList<Target>()
+
+    for(i in 0..x){
+        idSources.add(newOutputs.removeAt(0))
+        idTargets.add(newInputs.removeAt(0))
+    }
+
+    let idEdge = IdentityEdge(idSources, idTargets)
+    let newEdges = newF.GetEdges()
+    newEdges.add(idEdge)
+
+    Hypergraph(name, newEdges, newInputs, newOutputs, newF.GetConns())
+}
+
 
 external func TestOps(){
     let f = AndGate("and")
-    let g = NotGate("not")    
-    let h = Seq(f,g)
-    print(DotGraph(h))
-    print("\n\n")
-    let k = Par(f,g)
+    let g = NotGate("not")   
+    let h = NotGate("or")    
+    let k = Seq(Trace(Par(f, g), 1), h)
     print(DotGraph(k))
-    print("\n\n")
 }
