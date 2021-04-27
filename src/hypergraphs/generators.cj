@@ -1,16 +1,15 @@
 package hypergraphs
-
-import core.*
+// import core.*
 
 enum Value { BOTTOM | TRUE | FALSE | TOP }
 
 append Value with ToString {
     func toString(v : Value) {
         match(v){
-            case .BOTTOM => "⊥"
-            case .TRUE   => "t"
-            case .FALSE  => "f"
-            case .TOP    => "⊤"
+            case BOTTOM => "⊥"
+            case TRUE   => "t"
+            case FALSE  => "f"
+            case TOP    => "⊤"
         }
     }
 }
@@ -55,13 +54,13 @@ enum Generator { VALUE(Value) | STRUCTURAL(Label) | GATE(Label) | DELAY(Int64) |
 append Generator with ToString{
     func toString(gen : Generator){
         match(gen){
-            case .VALUE(value)        => "value ${value}"
-            case .STRUCTURAL(label)   => "structural ${label.name}"
-            case .GATE(label)         => "gate ${label.name}"
-            case .DELAY(dur)          => "delay ${dur}"
-            case .IDENTITY            => "identity"
-            case .INLINK(spec)        => "in link ${spec.name}"
-            case .OUTLINK(spec)       => "out link ${spec.name}"
+            case VALUE(value)        => "value ${value}"
+            case STRUCTURAL(label)   => "structural ${label.name}"
+            case GATE(label)         => "gate ${label.name}"
+            case DELAY(dur)          => "delay ${dur}"
+            case IDENTITY            => "identity"
+            case INLINK(spec)        => "in link ${spec.name}"
+            case OUTLINK(spec)       => "out link ${spec.name}"
         }
     }
 }

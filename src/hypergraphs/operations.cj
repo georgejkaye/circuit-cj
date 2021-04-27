@@ -1,5 +1,5 @@
 package hypergraphs
-import core.*
+// import core.*
 
 class NegativeWireException <: Exception {
     init(){
@@ -9,11 +9,23 @@ class NegativeWireException <: Exception {
 
 class OutputInputMismatchException <: Exception {
     init(f : Hypergraph, g : Hypergraph){
-        print("Outputs of ${f.GetName()} (${f.GetN()}) do not match inputs of ${g.GetName()} (${g.GetM()})")
+        print("Outputs of '${f.GetName()}' (${f.GetN()}) do not match inputs of '${g.GetName()}' (${g.GetM()})")
     }
 }
 
-func Seq(f : Hypergraph, g : Hypergraph, name!: String = ""){
+class BadOutputException <: Exception {
+    init(f : Hypergraph, n : Int64){
+        //print("Hypergraph ${f.GetName()} only has ${f.getN()} outputs, ${n} attempted")
+    }
+}
+
+class PortNotFoundException <: Exception {
+    init(f : Hypergraph, s : String){
+        print("Hypergraph '${f.GetName()}' does not have a port named '${s}'")
+    }
+}
+
+func Seq(f : Hypergraph, g : Hypergraph, name!: String = "") : Hypergraph {
     
     if(f.GetN() != g.GetM()){
         throw OutputInputMismatchException(f,g)
@@ -30,8 +42,8 @@ func Seq(f : Hypergraph, g : Hypergraph, name!: String = ""){
     for(t in newF.GetTargets()){
         let s = newF.GetConn(t)
         let s2 = match(newF.GetEdge(newF.GetConn(t))){
-            case .EdgePort(e, n) => s
-            case .InterfacePort(n) => {
+            case EdgePort(e, n) => s
+            case InterfacePort(n) => {
                 let newv = newG.GetConn(newG.GetInputs().get(n))
                 newv.AddNames(s.names)
                 newv
@@ -45,7 +57,7 @@ func Seq(f : Hypergraph, g : Hypergraph, name!: String = ""){
     Hypergraph(newEdges, newF.GetInputs(), newG.GetOutputs(), newConns.toMap())
 }
 
-func Seq(fs : ArrayList<Hypergraph>){
+func Seq(fs : ArrayList<Hypergraph>) : Hypergraph {
     if(fs.size() == 0){
         Empty()
     }
@@ -56,8 +68,14 @@ func Seq(fs : ArrayList<Hypergraph>){
     res
 }
 
-func Identity(n : Int64){ Identity(n, ArrayList<String>(n, {x => ""}))}
-func Identity(n : Int64, ports: ArrayList<String>, name!: String = ""){
+func Seq(fs : List<Hypergraph>) : Hypergraph {
+    Seq(ArrayList<Hypergraph>(fs))
+}
+
+func Identity(n : Int64) : Hypergraph { 
+    Identity(n, ArrayList<Option<WireName>>(n, {x => None<WireName>}))
+}
+func Identity(n : Int64, ports: ArrayList<Option<WireName>>, name!: String = "") : Hypergraph {
     if(n < 0){
         throw NegativeWireException()
     }
@@ -69,7 +87,10 @@ func Identity(n : Int64, ports: ArrayList<String>, name!: String = ""){
     let conns = MapBuilder<Target,Source>()
     for(i in 0..n){
         let t = Target()
-        let s = ports.get(i) == "" ? Source() : Source(ports.get(i))
+        let s = match(ports.get(i)){
+            case Some(w) => Source(w)
+            case $None    => Source()
+        }
         inputs.add(t)
         outputs.add(s)
         conns.add(t,s)
@@ -77,7 +98,7 @@ func Identity(n : Int64, ports: ArrayList<String>, name!: String = ""){
     Hypergraph(name, ArrayList<Edge>(), inputs, outputs, conns.toMap())
 }
 
-func Par(f : Hypergraph, g : Hypergraph, name!: String = ""){
+func Par(f : Hypergraph, g : Hypergraph, name!: String = "") : Hypergraph {
     let newF = f.Clone()
     let newG = g.Clone()
 
@@ -103,7 +124,7 @@ func Par(f : Hypergraph, g : Hypergraph, name!: String = ""){
     Hypergraph(name, newEdges, newInputs, newOutputs, newConns.toMap())
 }
 
-func Par(fs : ArrayList<Hypergraph>){
+func Par(fs : ArrayList<Hypergraph>) : Hypergraph {
     if(fs.size() == 0){
         Empty()
     }
@@ -114,9 +135,14 @@ func Par(fs : ArrayList<Hypergraph>){
     res
 }
 
-func Empty(){ Identity(0) }
+func Par(f : Hypergraph, n : Int64) : Hypergraph {
+    let fs = ArrayList<Hypergraph>(n, {x => f})
+    Par(fs)
+}
 
-func Swap(m : Int64, n : Int64, name!: String = ""){
+func Empty() : Hypergraph { Identity(0) }
+
+func Swap(m : Int64, n : Int64, name!: String = "") : Hypergraph {
     let inputs = ArrayList<Target>()
     let outputs = ArrayList<Source>()
     for(i in 0..m+n){
@@ -172,9 +198,63 @@ func Trace(name : String, f : Hypergraph, x : Int64){
     Hypergraph(name, newEdges, newInputs, newOutputs, newF.GetConns())
 }
 
+/**
+ * Transform a hypergraph of type m->n to one of type m->1, preserving the nth 
+ * output and stubbing the rest.
+ * @param f The hypergraph
+ * @param n The index of the output to preserve
+ */
+func Get(f : Hypergraph, n : Int64){
+    if(n < 0){
+        throw BadOutputException(f, n)
+    }
+    Seq(f, Par(ArrayList<Hypergraph>([Erase(n),Identity(1),Erase(f.GetN() - n - 1)])))    
+}
+
+func Get(f : Hypergraph, ns : ArrayList<Int64>){
+    var stubs = Empty()
+    for(i in 0..f.GetN()){
+        var found = false
+        for(n in ns){
+            if (n == i){
+                stubs = Par(stubs, Identity(1))
+                found = true
+                break
+            }
+        }
+        if(!found){
+            stubs = Par(stubs, Stub())
+        }
+    }
+    Seq(f, stubs)
+}
+
+func Get(f : Hypergraph, s : String){
+    let outputs = f.GetOutputs()
+    let ns = ArrayList<Int64>()
+    for(i in 0..outputs.size()){
+        for(name in outputs[i].names){
+            if(name.name == s){
+                ns.add(i)
+            }
+        }
+    }
+    if(ns.size() == 0){
+        throw PortNotFoundException(f, s)
+    } 
+    Get(f, ns)
+}
 
 external func TestOps(){
-    let and = AndGate(name: "and")
-    let not = NotGate(input: and)
-    print(DotGraph(not))
+    let and = AndGate(output: "and", name: "and")
+    //let and2 = Par(and, and)  
+
+    //let not = NotGate(output: "not")
+
+    //let fork = Fork()  
+    //let g = Seq(NotGate(), Seq(Fork(), and))
+
+    //let trace = Trace(Seq(AndGate(), Fork()), 4)
+
+    print(DotGraph(and))
 }

@@ -22,7 +22,7 @@ mkdir bin
 rm -f $IMPORTS
 touch $IMPORTS
 
-printf "core=$CORE\n" >> $IMPORTS
+#printf "core=$CORE\n" >> $IMPORTS
 
 compile_package() {
     echo "Building package $1..."

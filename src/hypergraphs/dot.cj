@@ -1,5 +1,5 @@
 package hypergraphs
-import core.*
+// import core.*
 
 let tab = "  "
 
@@ -97,13 +97,13 @@ func DrawEdgeNode(n : Int64, id : String, nodeStyle : String, text : String, sou
 
 func DrawEdge(n : Int64, e : Edge){
     let (style, text) = match(e.generator){
-        case .VALUE(value)      => (valueStyle, "${value}")
-        case .STRUCTURAL(label) => (structuralStyle, label.name)
-        case .GATE(label)       => (gateStyle, label.name)
-        case .DELAY(dur)        => (delayStyle, "𝛿${subscript(dur)}")
-        case .IDENTITY          => (identityStyle, "id")
-        case .INLINK(spec)      => (linkStyle, spec.name)
-        case .OUTLINK(spec)     => (linkStyle, spec.name)
+        case VALUE(value)      => (valueStyle, "${value}")
+        case STRUCTURAL(label) => (structuralStyle, label.name)
+        case GATE(label)       => (gateStyle, label.name)
+        case DELAY(dur)        => (delayStyle, "𝛿${subscript(dur)}")
+        case IDENTITY          => (identityStyle, "id")
+        case INLINK(spec)      => (linkStyle, spec.name)
+        case OUTLINK(spec)     => (linkStyle, spec.name)
     }
     DrawEdgeNode(n, "e${e.id}", style, text, e.sources, e.targets)
 }
@@ -120,7 +120,7 @@ func DrawTargetVertices(vs : ArrayList<Target>){
 func DrawVertex(t : Target, s : Source) {
     var names = ""
     for(name in s.names){
-        names = names == "" ? name : "${names}, ${name}"
+        names = names == "" ? "${name}" : "${names}, ${name}"
     }
     "v${t.id}[label=\"\" xlabel=\"${names}\"]"
 }
@@ -148,12 +148,12 @@ func DotGraph(f : Hypergraph){
         vertices = vertices == "" ? vertex : "${vertices}\n${vertex}"
 
         let left = match(f.GetEdge(t)){
-            case .EdgePort(e,n)     => "e${e.id}:t${n}"
-            case .InterfacePort(n)  => "ei:t${n}"
+            case EdgePort(e,n)     => "e${e.id}:t${n}"
+            case InterfacePort(n)  => "ei:t${n}"
         }
         let right = match(f.GetEdge(s)){
-            case .EdgePort(e,n)     => "e${e.id}:s${n}"
-            case .InterfacePort(n)  => "eo:s${n}"
+            case EdgePort(e,n)     => "e${e.id}:s${n}"
+            case InterfacePort(n)  => "eo:s${n}"
         }
 
         let connl = indent(1, "${left}:e -- v${t.id}:w")

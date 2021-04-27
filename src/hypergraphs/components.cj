@@ -1,5 +1,5 @@
 package hypergraphs
-import core.*
+//// import core.*
 
 class BadOutputPortsException <: Exception {
     init(){
@@ -25,13 +25,13 @@ class BadPrecException <: Exception {
 func OpMToN(m : Int64, n : Int64, generator : Generator,  input : Hypergraph, ports : ArrayList<String>, name: String){
 
     let (dom, cod) = match(generator){
-        case .VALUE(val)        => (0,1)
-        case .STRUCTURAL(label) => (label.dom, label.cod)
-        case .GATE(label)       => (label.dom, label.cod)
-        case .DELAY(dur)        => (1,1)
-        case .IDENTITY          => (1,1)
-        case .INLINK(spec)      => (spec.width, 0)
-        case .OUTLINK(spec)     => (0, spec.width)
+        case VALUE(val)        => (0,1)
+        case STRUCTURAL(label) => (label.dom, label.cod)
+        case GATE(label)       => (label.dom, label.cod)
+        case DELAY(dur)        => (1,1)
+        case IDENTITY          => (1,1)
+        case INLINK(spec)      => (spec.width, 0)
+        case OUTLINK(spec)     => (0, spec.width)
     }
 
     if(m != dom || m < 0){
@@ -47,12 +47,27 @@ func OpMToN(m : Int64, n : Int64, generator : Generator,  input : Hypergraph, po
         throw BadPrecException()
     }
 
+    let wires = ArrayList<Option<WireName>>();
+
+    for(p in ports){
+        if(p == ""){
+            wires.add(None<WireName>)
+        } else {
+            let x = FindWires(p, wires)
+            let wire = WireName(p, x)
+            wires.add(Some(wire)) 
+        }
+    }
+
     let inputs = ArrayList<Target>(m, {x => Target()})
     let sources = ArrayList<Source>(m, {x => Source()})
     let targets = ArrayList<Target>(n, {x => Target()})
-    let outputs = ArrayList<Source>(n, {x =>
-        let port = ports.get(x)
-        port == "" ? Source() : Source(ports.get(x))})
+    let outputs = ArrayList<Source>(n, {x => 
+        match(wires.get(x)){
+           case Some(w) => Source(w)
+           case $None    => Source()
+        }
+    })
 
     let op = Edge(generator, sources, targets)
 
@@ -66,22 +81,52 @@ func OpMToN(m : Int64, n : Int64, generator : Generator,  input : Hypergraph, po
 
     let graph = Hypergraph(name, ArrayList<Edge>([op]), inputs, outputs, conns.toMap())
     Seq(input, graph)
+    graph
 }
 
-func OpZeroToOne(gen : Generator, out : String, name : String){ OpMToN(0,1, gen, Empty(), ArrayList<String>([out]), name) }
-func OpOneToZero(gen : Generator, input : Hypergraph, name : String){ OpMToN(1, 0, gen, input, ArrayList<String>(), name) }
-func OpOneToOne(gen : Generator, input : Hypergraph, out : String, name : String){ OpMToN(1, 1, gen, input, ArrayList<String>([out]), name) }
-func OpTwoToOne(gen : Generator, input : Hypergraph, out : String, name : String){ OpMToN(2, 1, gen, input, ArrayList<String>([out]), name) }
-func OpThreeToOne(gen : Generator, input : Hypergraph, out : String, name : String){ OpMToN(3, 1, gen, input, ArrayList<String>([out]), name) }
-func OpOneToTwo(gen : Generator, input : Hypergraph, lhs : String, rhs : String, name : String){ OpMToN(1,2, gen, input, ArrayList<String>([lhs,rhs]), name) }
+func OpZeroToOne(gen : Generator, out : String, name : String){ 
+    OpMToN(0,1, gen, Empty(), ArrayList<String>([out]), name) 
+}
+func OpOneToZero(gen : Generator, input : Hypergraph, name : String){ 
+    OpMToN(1, 0, gen, input, ArrayList<String>(), name) 
+}
+func OpOneToOne(gen : Generator, input : Hypergraph, out : String, name : String){
+    OpMToN(1, 1, gen, input, ArrayList<String>([out]), name) 
+}
+func OpTwoToOne(gen : Generator, input : Hypergraph, out : String, name : String){ 
+    OpMToN(2, 1, gen, input, ArrayList<String>([out]), name) 
+}
+func OpThreeToOne(gen : Generator, input : Hypergraph, out : String, name : String){ 
+    OpMToN(3, 1, gen, input, ArrayList<String>([out]), name) 
+}
+func OpOneToTwo(gen : Generator, input : Hypergraph, lhs : String, rhs : String, name : String){ 
+    OpMToN(1,2, gen, input, ArrayList<String>([lhs, rhs]), name) 
+}
 
-func Bottom(output!: String = "", name!: String = "") { OpZeroToOne(VALUE(BOTTOM), output, name) }
+func Bottom(output!: String = "", name!: String = "") { 
+    OpZeroToOne(VALUE(BOTTOM), output, name) 
+}
+func Top(output!: String = "", name!: String = ""){
+    OpZeroToOne(VALUE(TOP), output, name)
+}
+func True(output!: String = "", name!: String = "") { 
+    OpZeroToOne(VALUE(TRUE), output, name) 
+}
+func False(output!: String = "", name!: String = ""){
+    OpZeroToOne(VALUE(FALSE), output, name)
+}
 
-func Fork(input!: Hypergraph = Identity(1), lhs!: String = "", rhs!: String = "", name!: String = "") { OpOneToTwo(FORK, input, lhs, rhs, name) }
-func Join(input!: Hypergraph = Identity(2), output!: String = "", name!: String = ""){ OpTwoToOne(JOIN, input,  output, name) }
-func Stub(input!: Hypergraph = Identity(1), name!: String = ""){ OpOneToZero(STUB, input, name) }
 
-// TODO currently copy(3) segfaults because the map blows the stack
+func Fork(input!: Hypergraph = Identity(1), lhs!: String = "", rhs!: String = "", name!: String = "") { 
+    OpOneToTwo(FORK, input, lhs, rhs, name) 
+}
+func Join(input!: Hypergraph = Identity(2), output!: String = "", name!: String = ""){ 
+    OpTwoToOne(JOIN, input, output, name) 
+}
+func Stub(input!: Hypergraph = Identity(1), name!: String = ""){ 
+    OpOneToZero(STUB, input, name) 
+}
+
 func Copy(n : Int64) : Hypergraph {
     if(n < 0){
         throw NegativeWireException()
@@ -89,7 +134,7 @@ func Copy(n : Int64) : Hypergraph {
     if(n == 0){
         Empty()
     } else {
-        Seq(Par(Copy(n-1), Fork()), Par(ArrayList([Identity(n-1), Swap(n-1,1), Identity(1)])))
+        Seq(Par(Copy(n-1), Fork()), Par(ArrayList<Hypergraph>([Identity(n-1), Swap(n-1,1), Identity(1)])))
     }
 }
 
@@ -108,7 +153,7 @@ func Merge(n : Int64) : Hypergraph {
     if(n == 0){
         Empty()
     } else {
-        Seq(Par(ArrayList([Identity(n-1), Swap(n-1,1), Identity(1)])), Par(Merge(n-1), Join()))
+        Seq(Par(ArrayList<Hypergraph>([Identity(n-1), Swap(n-1,1), Identity(1)])), Par(Merge(n-1), Join()))
     }
 }
 
@@ -142,3 +187,4 @@ external func TestComponents() {
     print(DotGraph(graph))
     return 0
 }
+

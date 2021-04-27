@@ -1,10 +1,44 @@
 package hypergraphs
-import core.*
+// import core.*
 
 class VertexNotInGraphException <: Exception {
     init(v : Vertex){
         print("Vertex ${v.id} is not in the graph")
     }
+}
+
+class WireName {
+    let name : String
+    let i : Int64
+    init(name : String, i : Int64){
+        this.name = name
+        this.i = i
+    }
+}
+append WireName with ToString{
+    func toString(w : WireName){
+        "${w.name}[${w.i}]"
+    }
+}
+
+func FindWires(s : String, ws : ArrayList<Option<WireName>>){
+    var x = 0
+    for(wire in ws){
+        match (wire){
+            case Some(w) => { if(w.name == s){ x++ } }
+            case $None    => {}
+        }
+    }
+    return x
+}
+
+func includes(a : String, xs : ArrayList<String>){
+    for (x in xs){
+        if(x == a){
+            return true
+        }
+    }
+    false
 }
 
 /**
@@ -44,18 +78,18 @@ open class Vertex <: Atom {
  * Sources have names so that we can reference them later and connect them to new edges
  */
 class Source <: Vertex {
-    let names : ArrayList<String>
-    init() { this.names = ArrayList<String>()}
-    init(name: String) { this.names = ArrayList<String>([name]) }
-    init(names: ArrayList<String>) { this.names = names }
-    func AddName(name : String) { this.names.add(name) }
-    func AddNames(names : ArrayList<String>) { this.names.addAll(names) }
+    let names : ArrayList<WireName>
+    init() { this.names = ArrayList<WireName>()}
+    init(name: WireName) { this.names = ArrayList<WireName>([name]) }
+    init(names: ArrayList<WireName>) { this.names = names }
+    func AddName(name : WireName) { this.names.add(name) }
+    func AddNames(names : ArrayList<WireName>) { this.names.addAll(names) }
 }
 append Source with ToString {
     func toString(s : Source) {
         var names = ""
         for (name in s.names){
-            names = name == "" ? "${name}" : "${names}, ${name}"
+            names = (names == "" ? "${name}" : "${names}, ${name}")
         }
         return "Source s${s.id} ${names}" 
     }
@@ -168,6 +202,8 @@ class Hypergraph <: Atom {
     private let m       : Int64
     private let n       : Int64
 
+    private let wires   : ArrayList<String>
+
     init(edges    : ArrayList<Edge>, 
          inputs   : ArrayList<Target>,
          outputs  : ArrayList<Source>,
@@ -184,7 +220,7 @@ class Hypergraph <: Atom {
     ){
 
         if(name == ""){
-            this.name = "Hypergraph ${id}"
+            this.name = "h${id}"
         } else {
             this.name = name
         }
@@ -201,14 +237,22 @@ class Hypergraph <: Atom {
         let rightMap = MapBuilder<Source, Port>()
         this.sources = ArrayList<Source>()
         this.targets = ArrayList<Target>()
+        this.wires = ArrayList<String>()
 
         for(i in 0..inputs.size()){
-            targets.add(inputs.get(i))
-            leftMap.add(inputs.get(i), InterfacePort(i))
+            let v = inputs.get(i)
+            targets.add(v)
+            leftMap.add(v, InterfacePort(i))
         }
         for(i in 0..outputs.size()) {
-            sources.add(outputs.get(i))
-            rightMap.add(outputs.get(i), InterfacePort(i))
+            let v = outputs.get(i)
+            sources.add(v)
+            rightMap.add(v, InterfacePort(i))
+            for(w in v.names){
+                if(!includes(w.name, wires)){
+                    wires.add(w.name)
+                }
+            }
         }
 
         for(e in edges){
@@ -216,6 +260,11 @@ class Hypergraph <: Atom {
                 let v = e.sources.get(i)
                 sources.add(v)
                 rightMap.add(v, EdgePort(e,i))
+                for(w in v.names){
+                    if(!includes(w.name, wires)){
+                        wires.add(w.name)
+                    }
+                }
             }
             for(i in 0..e.targets.size()){
                 let v = e.targets.get(i)
@@ -226,6 +275,7 @@ class Hypergraph <: Atom {
 
         this.lefts = leftMap.toMap()
         this.rights = rightMap.toMap()
+
     }
 
     func GetName() { name }
@@ -243,20 +293,20 @@ class Hypergraph <: Atom {
 
     func GetConn(t : Target) {
         match(conns.get(t)){
-            case .None => throw VertexNotInGraphException(t)
-            case .Some(s) => s
+            case $None => throw VertexNotInGraphException(t)
+            case Some(s) => s
         }
     }
     func GetEdge(s : Source) { 
         match(rights.get(s)){
-            case .None => throw VertexNotInGraphException(s)
-            case .Some(p) => p 
+            case $None => throw VertexNotInGraphException(s)
+            case Some(p) => p 
         }
     }
     func GetEdge(t : Target) { 
         match(lefts.get(t)){
-            case .None => throw VertexNotInGraphException(t)
-            case .Some(p) => p
+            case $None => throw VertexNotInGraphException(t)
+            case Some(p) => p
         }
     }
 
@@ -264,7 +314,7 @@ class Hypergraph <: Atom {
         let newSourceMapBuilder = MapBuilder<Source, Source>()
         let newTargetMapBuilder = MapBuilder<Target, Target>()
         for(v in sources){
-            let v2 = Source(ArrayList<String>(v.names)) 
+            let v2 = Source(ArrayList<WireName>(v.names)) 
             newSourceMapBuilder.add(v,v2)
         }
         for(v in targets){
@@ -274,7 +324,7 @@ class Hypergraph <: Atom {
         let newInputs = ArrayList<Target>()
         let newOutputs = ArrayList<Source>()
         for(v in outputs){
-            let v2 = Source(ArrayList<String>(v.names))
+            let v2 = Source(ArrayList<WireName>(v.names))
             newSourceMapBuilder.add(v,v2)
             newOutputs.add(v2)
         }
@@ -294,15 +344,15 @@ class Hypergraph <: Atom {
             let t2 = ArrayList<Target>()
             for (v in s){
                 let v2 = match(newSourceMap.get(v)){
-                    case .Some(v2) => v2
-                    case .None     => throw VertexNotInGraphException(v)
+                    case Some(v2) => v2
+                    case $None     => throw VertexNotInGraphException(v)
                 }
                 s2.add(v2)
             }
             for (v in t){
                 let v2 = match(newTargetMap.get(v)){
-                    case .Some(v2) => v2
-                    case .None     => throw VertexNotInGraphException(v)
+                    case Some(v2) => v2
+                    case $None     => throw VertexNotInGraphException(v)
                 }
                 t2.add(v2)
             }
@@ -313,17 +363,24 @@ class Hypergraph <: Atom {
         let newConnsBuilder = MapBuilder<Target, Source>()
         for(v in targets){
             let newT = match(newTargetMap.get(v)){
-                    case .Some(v2) => v2
-                    case .None     => throw VertexNotInGraphException(v)
+                    case Some(v2) => v2
+                    case $None     => throw VertexNotInGraphException(v)
             }
             let newS = match(newSourceMap.get(GetConn(v))){
-                    case .Some(v2) => v2
-                    case .None     => throw VertexNotInGraphException(GetConn(v))
+                    case Some(v2) => v2
+                    case $None     => throw VertexNotInGraphException(GetConn(v))
             }
             newConnsBuilder.add(newT, newS)
         }
         let newConns = newConnsBuilder.toMap()
         Hypergraph(newEdges, newInputs, newOutputs, newConns)
+    }
+
+    operator func [](f : Hypergraph, n : Int64){
+        Get(f,n)
+    }
+    operator func [](f : Hypergraph, s : String){
+        Get(f,s)
     }
 
 }
