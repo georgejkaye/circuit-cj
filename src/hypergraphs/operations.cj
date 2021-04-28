@@ -25,7 +25,7 @@ class PortNotFoundException <: Exception {
     }
 }
 
-func Seq(f : Hypergraph, g : Hypergraph, name!: String = "") : Hypergraph {
+external func Seq(f : Hypergraph, g : Hypergraph, name!: String = "") : Hypergraph {
     
     if(f.GetN() != g.GetM()){
         throw OutputInputMismatchException(f,g)
@@ -57,7 +57,7 @@ func Seq(f : Hypergraph, g : Hypergraph, name!: String = "") : Hypergraph {
     Hypergraph(newEdges, newF.GetInputs(), newG.GetOutputs(), newConns.toMap())
 }
 
-func Seq(fs : ArrayList<Hypergraph>) : Hypergraph {
+external func Seq(fs : ArrayList<Hypergraph>) : Hypergraph {
     if(fs.size() == 0){
         Empty()
     }
@@ -68,14 +68,10 @@ func Seq(fs : ArrayList<Hypergraph>) : Hypergraph {
     res
 }
 
-func Seq(fs : List<Hypergraph>) : Hypergraph {
-    Seq(ArrayList<Hypergraph>(fs))
-}
-
-func Identity(n : Int64) : Hypergraph { 
+external func Identity(n : Int64) : Hypergraph { 
     Identity(n, ArrayList<Option<WireName>>(n, {x => None<WireName>}))
 }
-func Identity(n : Int64, ports: ArrayList<Option<WireName>>, name!: String = "") : Hypergraph {
+external func Identity(n : Int64, ports: ArrayList<Option<WireName>>, name!: String = "") : Hypergraph {
     if(n < 0){
         throw NegativeWireException()
     }
@@ -98,7 +94,7 @@ func Identity(n : Int64, ports: ArrayList<Option<WireName>>, name!: String = "")
     Hypergraph(name, ArrayList<Edge>(), inputs, outputs, conns.toMap())
 }
 
-func Par(f : Hypergraph, g : Hypergraph, name!: String = "") : Hypergraph {
+external func Par(f : Hypergraph, g : Hypergraph, name!: String = "") : Hypergraph {
     let newF = f.Clone()
     let newG = g.Clone()
 
@@ -124,7 +120,7 @@ func Par(f : Hypergraph, g : Hypergraph, name!: String = "") : Hypergraph {
     Hypergraph(name, newEdges, newInputs, newOutputs, newConns.toMap())
 }
 
-func Par(fs : ArrayList<Hypergraph>) : Hypergraph {
+external func Par(fs : ArrayList<Hypergraph>) : Hypergraph {
     if(fs.size() == 0){
         Empty()
     }
@@ -135,14 +131,14 @@ func Par(fs : ArrayList<Hypergraph>) : Hypergraph {
     res
 }
 
-func Par(f : Hypergraph, n : Int64) : Hypergraph {
+external func Par(f : Hypergraph, n : Int64) : Hypergraph {
     let fs = ArrayList<Hypergraph>(n, {x => f})
     Par(fs)
 }
 
-func Empty() : Hypergraph { Identity(0) }
+external func Empty() : Hypergraph { Identity(0) }
 
-func Swap(m : Int64, n : Int64, name!: String = "") : Hypergraph {
+external func Swap(m : Int64, n : Int64, name!: String = "") : Hypergraph {
     let inputs = ArrayList<Target>()
     let outputs = ArrayList<Source>()
     for(i in 0..m+n){
@@ -170,8 +166,8 @@ class TooMuchTraceException <: Exception {
     }
 }
 
-func Trace(f : Hypergraph, x : Int64){ Trace("", f, x) }
-func Trace(name : String, f : Hypergraph, x : Int64){
+external func Trace(f : Hypergraph, x : Int64){ Trace("", f, x) }
+external func Trace(name : String, f : Hypergraph, x : Int64){
     if(x < 0){
         throw NegativeTraceException() 
     }
@@ -204,14 +200,14 @@ func Trace(name : String, f : Hypergraph, x : Int64){
  * @param f The hypergraph
  * @param n The index of the output to preserve
  */
-func Get(f : Hypergraph, n : Int64){
+external func Get(f : Hypergraph, n : Int64){
     if(n < 0){
         throw BadOutputException(f, n)
     }
     Seq(f, Par(ArrayList<Hypergraph>([Erase(n),Identity(1),Erase(f.GetN() - n - 1)])))    
 }
 
-func Get(f : Hypergraph, ns : ArrayList<Int64>){
+external func Get(f : Hypergraph, ns : ArrayList<Int64>){
     var stubs = Empty()
     for(i in 0..f.GetN()){
         var found = false
@@ -229,7 +225,7 @@ func Get(f : Hypergraph, ns : ArrayList<Int64>){
     Seq(f, stubs)
 }
 
-func Get(f : Hypergraph, s : String){
+external func Get(f : Hypergraph, s : String){
     let outputs = f.GetOutputs()
     let ns = ArrayList<Int64>()
     for(i in 0..outputs.size()){

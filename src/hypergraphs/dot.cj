@@ -131,7 +131,7 @@ func DrawSubgraph(n : Int64, opt : String, text : String){
     "${opener} ${opt}\n${text}\n${closer}"
 }
 
-func DotGraph(f : Hypergraph){
+external func DotGraph(f : Hypergraph){
     let declaration = "graph G {"
     let graphOptions = indent(1, graphOptions)
     let vertexNodeOptions = indent(1, "node[${vertexNodeOptions}]")

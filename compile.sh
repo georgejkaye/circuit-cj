@@ -1,37 +1,31 @@
 #!/bin/bash
 
-CANGJIE_ROOT=$1
-CORE="$CANGJIE_ROOT/build/build/modules/core/core.cjo"
+ROOT=`pwd`
+BUILD="$ROOT/build"
+SRC="$ROOT/src"
+BIN="$ROOT/bin"
+DOT="$DOT/dot"
 
-if [ -f "$CORE" ] ; then
-    echo "Found core library at $CORE, continuing..."
-else 
-    echo "Core library not found at $CORE, aborting..."
-    exit 1
-fi
-
-echo
-
-IMPORTS="import.conf"
+IMPORTS="$ROOT/import.conf"
 OBJS=""
 
-rm -rf build/
-rm -rf bin/
-mkdir build
-mkdir bin
+MAIN="main"
+PACKAGES=("hypergraphs" "examples")
+PKGNO=${#PACKAGES[@]}
+
+rm -rf $BUILD
+rm -rf $BIN
+mkdir $BUILD
+mkdir $BIN
 rm -f $IMPORTS
 touch $IMPORTS
 
-#printf "core=$CORE\n" >> $IMPORTS
-
 compile_package() {
-    echo "Building package $1..."
-    BUILD_DIR="build/$1"
-    SRC_DIR="src/$1"
+    echo "Building package $1 ($2/$3)"
+    BUILD_DIR="$BUILD/$1"
+    SRC_DIR="$SRC/$1"
     mkdir $BUILD_DIR
-    COMMAND="cjc -import-config $IMPORTS -c -p $SRC_DIR -o $BUILD_DIR" 
-    echo $COMMAND
-    $COMMAND
+    cjc -import-config $IMPORTS $OBJS -c -p $SRC_DIR -o $BUILD_DIR
     CODE=$?
     if [ "$CODE" != "0" ] ; then
         echo "Error $CODE, aborting..."
@@ -41,22 +35,24 @@ compile_package() {
     CJO=$BUILD_DIR/$1.cjo
     OBJS="$OBJS $OBJ"
     printf "$1=$CJO\n" >> $IMPORTS
-    echo
 }
 
 compile_exec() { 
-    echo "Building executable $1..."
-    SRC="src/$1.cj"
-    COMMAND="cjc -import-config $IMPORTS $OBJS src/$1.cj -o bin/$1.out"
-    echo $COMMAND
-    $COMMAND
+    echo "Building executable $1 ($2/$3)"
+    SRC="$SRC/$1.cj"
+    OUT="$BIN/$1.out"
+    cjc -import-config $IMPORTS $OBJS $SRC -o $OUT
     CODE=$?
     if [ "$CODE" != "0" ] ; then
         echo "Error $CODE, aborting..."
         exit 1
     fi
-    echo
 }
 
-compile_package "hypergraphs"
-compile_exec "main"
+i=1
+for p in ${PACKAGES[@]} ; do
+    compile_package $p $i $(($PKGNO+1))
+    (( i++ ))
+done
+
+compile_exec $MAIN $i $(($PKGNO+1))

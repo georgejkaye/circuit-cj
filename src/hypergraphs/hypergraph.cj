@@ -184,7 +184,7 @@ enum Port { EdgePort(Edge, Int64) | InterfacePort(Int64) }
 /**
  * Hypergraph
  */
-class Hypergraph <: Atom {
+external class Hypergraph <: Atom {
 
     private let name    : String
 

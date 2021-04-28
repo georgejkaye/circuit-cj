@@ -1,9 +1,8 @@
 import hypergraphs.*
-// import core.*
+import examples.HalfAdderCombinator
 
 func main(){
-    //TestComponents()
-    TestOps()
-    //TestDot()
+    let circ = HalfAdderCombinator()
+    print(DotGraph(circ))
     return 0
 }

@@ -117,17 +117,17 @@ func False(output!: String = "", name!: String = ""){
 }
 
 
-func Fork(input!: Hypergraph = Identity(1), lhs!: String = "", rhs!: String = "", name!: String = "") { 
+external func Fork(input!: Hypergraph = Identity(1), lhs!: String = "", rhs!: String = "", name!: String = "") { 
     OpOneToTwo(FORK, input, lhs, rhs, name) 
 }
-func Join(input!: Hypergraph = Identity(2), output!: String = "", name!: String = ""){ 
+external func Join(input!: Hypergraph = Identity(2), output!: String = "", name!: String = ""){ 
     OpTwoToOne(JOIN, input, output, name) 
 }
-func Stub(input!: Hypergraph = Identity(1), name!: String = ""){ 
+external func Stub(input!: Hypergraph = Identity(1), name!: String = ""){ 
     OpOneToZero(STUB, input, name) 
 }
 
-func Copy(n : Int64) : Hypergraph {
+external func Copy(n : Int64) : Hypergraph {
     if(n < 0){
         throw NegativeWireException()
     }
@@ -138,7 +138,7 @@ func Copy(n : Int64) : Hypergraph {
     }
 }
 
-func Erase(n : Int64) : Hypergraph {
+external func Erase(n : Int64) : Hypergraph {
     if(n == 0){
         Empty()
     } else {
@@ -146,7 +146,7 @@ func Erase(n : Int64) : Hypergraph {
     }
 }
 
-func Merge(n : Int64) : Hypergraph {
+external func Merge(n : Int64) : Hypergraph {
     if(n < 0){
         throw NegativeWireException()
     }
@@ -157,7 +157,7 @@ func Merge(n : Int64) : Hypergraph {
     }
 }
 
-func Init(n : Int64) : Hypergraph {
+external func Init(n : Int64) : Hypergraph {
     if(n == 0){
         Empty()
     } else {
@@ -165,20 +165,20 @@ func Init(n : Int64) : Hypergraph {
     }
 }
 
-func NotGate(input!: Hypergraph = Identity(1), output!: String = "", name!: String = "") { OpOneToOne(NOT, input, output, name) }
+external func NotGate(input!: Hypergraph = Identity(1), output!: String = "", name!: String = "") { OpOneToOne(NOT, input, output, name) }
 
-func AndGate(input!: Hypergraph = Identity(2), output!: String = "", name!: String = "") { OpTwoToOne(AND, input, output, name) }
-func OrGate(input!: Hypergraph = Identity(2), output!: String = "", name!: String = "") { OpTwoToOne(OR, input, output, name) }
-func XorGate(input!: Hypergraph = Identity(2), output!: String = "", name!: String = "") { OpTwoToOne(XOR, input, output, name) }
+external func AndGate(input!: Hypergraph = Identity(2), output!: String = "", name!: String = "") { OpTwoToOne(AND, input, output, name) }
+external func OrGate(input!: Hypergraph = Identity(2), output!: String = "", name!: String = "") { OpTwoToOne(OR, input, output, name) }
+external func XorGate(input!: Hypergraph = Identity(2), output!: String = "", name!: String = "") { OpTwoToOne(XOR, input, output, name) }
 
-func NandGate(input!: Hypergraph = Identity(2), output!: String = "", name!: String = "") { OpTwoToOne(NAND, input, output, name) }
-func NorGate(input!: Hypergraph = Identity(2), output!: String = "", name!: String = "") { OpTwoToOne(NOR, input, output, name) }
-func XnorGate(input!: Hypergraph = Identity(2), output!: String = "", name!: String = "") { OpTwoToOne(XNOR, input, output, name) }
+external func NandGate(input!: Hypergraph = Identity(2), output!: String = "", name!: String = "") { OpTwoToOne(NAND, input, output, name) }
+external func NorGate(input!: Hypergraph = Identity(2), output!: String = "", name!: String = "") { OpTwoToOne(NOR, input, output, name) }
+external func XnorGate(input!: Hypergraph = Identity(2), output!: String = "", name!: String = "") { OpTwoToOne(XNOR, input, output, name) }
 
-func Delay(n : Int64, input!: Hypergraph = Identity(1), output!: String = "", name!: String = "") { OpOneToOne(DELAY(n), input, output, name) }
+external func Delay(n : Int64, input!: Hypergraph = Identity(1), output!: String = "", name!: String = "") { OpOneToOne(DELAY(n), input, output, name) }
 
-func InLink(spec : LinkSpec, input!: Hypergraph = Identity(spec.width), name!:String = "") { OpOneToZero(INLINK(spec), input, name) }
-func OutLink(spec : LinkSpec, output!: String, name!:String = "") { OpZeroToOne(INLINK(spec), output, name) }
+external func InLink(spec : LinkSpec, input!: Hypergraph = Identity(spec.width), name!:String = "") { OpOneToZero(INLINK(spec), input, name) }
+external func OutLink(spec : LinkSpec, output!: String, name!:String = "") { OpZeroToOne(INLINK(spec), output, name) }
 
 external func TestComponents() {
     let n = 3

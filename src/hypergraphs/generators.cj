@@ -50,7 +50,7 @@ append LinkSpec with ToString {
     func toString(spec : LinkSpec) { "LinkSpec ${spec.id} - ${spec.name} width ${spec.width}" }
 }
 
-enum Generator { VALUE(Value) | STRUCTURAL(Label) | GATE(Label) | DELAY(Int64) | IDENTITY | INLINK(LinkSpec) | OUTLINK(LinkSpec) }
+external enum Generator { VALUE(Value) | STRUCTURAL(Label) | GATE(Label) | DELAY(Int64) | IDENTITY | INLINK(LinkSpec) | OUTLINK(LinkSpec) }
 append Generator with ToString{
     func toString(gen : Generator){
         match(gen){
