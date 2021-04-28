@@ -10,7 +10,6 @@ external func HalfAdderPorts(){
     let sum = XorGate(lhs: a, rhs: b, port: "sum")
     // We need to return both the carry and the sum
     carry
-    // Seq(Par(a,b), carry)
     //Output([carry, sum])
 }
 

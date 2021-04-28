@@ -1,5 +1,4 @@
 package hypergraphs
-// import core.*
 
 let tab = "  "
 
@@ -126,7 +125,7 @@ func DrawVertex(t : Target, s : Source) {
             case $None      => ""
         }
 
-        wires = wires == "" ? "${wiretext}" : "${wires}, ${wiretext}"
+        wires = wires == "" ? "${wiretext}" : wiretext == "" ? "${wires}" : "${wires}, ${wiretext}"
     }
     "v${t.id}[label=\"\" xlabel=\"${wires}\"]"
 }

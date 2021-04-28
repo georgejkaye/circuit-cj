@@ -1,8 +1,17 @@
+/**
+ * generators.cj
+ *
+ * This file contains the definition of generators (in the free categorical sense)
+ * and also defines preset generators for the user
+ */
+
 package hypergraphs
-// import core.*
 
+/**
+ * We use a value lattice with four values
+ * ⊥ < t,f < ⊤
+ */
 enum Value { BOTTOM | TRUE | FALSE | TOP }
-
 append Value with ToString {
     func toString(v : Value) {
         match(v){
@@ -50,7 +59,18 @@ append LinkSpec with ToString {
     func toString(spec : LinkSpec) { "LinkSpec ${spec.id} - ${spec.name} width ${spec.width}" }
 }
 
-external enum Generator { VALUE(Value) | STRUCTURAL(Label) | GATE(Label) | DELAY(Int64) | IDENTITY | INLINK(LinkSpec) | OUTLINK(LinkSpec) }
+/**
+ * Enum for the different types of generators
+ */
+external enum Generator { 
+    | VALUE(Value)            // A value 0 -> 1
+    | STRUCTURAL(Label)       // A structural generator 
+    | GATE(Label)             // A gate m -> 1
+    | DELAY(Int64)            // A delay parameterised by a duration
+    | IDENTITY                // An identity 1 -> 1
+    | INLINK(LinkSpec)        // An in-link m -> 0, where wires can disappear into
+    | OUTLINK(LinkSpec)       // An out-link 0 -> m, where wires can emerge from
+}
 append Generator with ToString{
     func toString(gen : Generator){
         match(gen){
