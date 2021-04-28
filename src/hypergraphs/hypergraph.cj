@@ -7,38 +7,11 @@ class VertexNotInGraphException <: Exception {
     }
 }
 
-class WireName {
-    let name : String
-    let i : Int64
-    init(name : String, i : Int64){
-        this.name = name
-        this.i = i
-    }
-}
-append WireName with ToString{
-    func toString(w : WireName){
-        "${w.name}[${w.i}]"
-    }
-}
-
-func FindWires(s : String, ws : ArrayList<Option<WireName>>){
-    var x = 0
-    for(wire in ws){
-        match (wire){
-            case Some(w) => { if(w.name == s){ x++ } }
-            case $None    => {}
-        }
-    }
-    return x
-}
-
-func includes(a : String, xs : ArrayList<String>){
-    for (x in xs){
-        if(x == a){
-            return true
-        }
-    }
-    false
+var nextid : UInt64 = 0
+func genId(){
+    let id = nextid
+    nextid++
+    id
 }
 
 /**
@@ -46,12 +19,98 @@ func includes(a : String, xs : ArrayList<String>){
  * Each atom has a unique id, and this is what comparisons should be performed on
  */
 open class Atom {
-    static var nextid : UInt64 = 0
     let id : UInt64
     init() { 
-        this.id = nextid
-        nextid++
+        this.id = genId()
     }
+}
+append Atom with Equatable, Hashable {
+    operator func ==(lhs : Atom, rhs : Atom) : Bool { lhs.id == rhs.id }
+    operator func !=(lhs : Atom, rhs : Atom) : Bool { lhs.id != rhs.id }
+    func hashCode(a : Atom) : UInt64 { a.id }
+}
+
+class Bus <: Atom {
+    let name : Option<String>
+    var width : Int64
+    init() {
+        this.name = None<String>
+        this.width = 0
+    }
+    init(name : String) {
+        this.name = name
+        this.width = 0
+    }
+    func AddWire(){
+        let nextindex = this.width
+        this.width++
+        nextindex
+    }
+}
+append Bus with ToString, Equatable {
+    func toString(b : Bus){
+        let name = match(b.name){
+            case Some(name) => name
+            case $None      => "b${b.id}"
+        }
+        "bus ${name}"
+    }
+    operator func ==(lhs : Bus, rhs : Bus) : Bool { lhs.id == rhs.id }
+    operator func !=(lhs : Bus, rhs : Bus) : Bool { lhs.id != rhs.id }
+}
+
+class Wire <: Atom {
+    let bus : Bus
+    let i : Int64
+    init(bus: Bus, i : Int64){
+        this.bus = bus
+        this.i = i
+    }
+    init(){
+        this.bus = Bus()
+        this.i = 0
+    }
+}
+append Wire with ToString, Equatable{
+    func toString(w : Wire){
+        let name = match(w.bus.name){
+            case Some(name) => name
+            case $None      => "b${w.bus.id}"
+        }
+        "${name}[${w.i}]"
+    }
+    operator func ==(lhs : Wire, rhs : Wire) : Bool { lhs.bus == rhs.bus && lhs.i == rhs.i }
+    operator func !=(lhs : Wire, rhs : Wire) : Bool { lhs.id != rhs.id || lhs.i != rhs.i }
+}
+
+func FindWires(s : String, ws : ArrayList<Option<Wire>>){
+    var x = 0
+    for(wire in ws){
+        match (wire){
+            case Some(w) => match(w.bus.name){
+                case Some(name) => if(name == s){ x++ }
+                case $None      => {} 
+            }
+            case $None    => {}
+        }
+    }
+    return x
+}
+
+func GetBus(wire : String, buses : ArrayList<Bus>){
+    for (bus in buses){
+        match(bus.name){
+            case Some(name) => if(wire == name){ return bus }
+            case $None      => {}
+        }
+    }
+    None<Bus>
+}
+func GetBus(wire : Wire, buses : ArrayList<Bus>){
+    for (bus in buses){
+        if(bus == wire.bus){ return bus }
+    }
+    None<Bus>
 }
 
 /** 
@@ -78,20 +137,20 @@ open class Vertex <: Atom {
  * Sources have names so that we can reference them later and connect them to new edges
  */
 class Source <: Vertex {
-    let names : ArrayList<WireName>
-    init() { this.names = ArrayList<WireName>()}
-    init(name: WireName) { this.names = ArrayList<WireName>([name]) }
-    init(names: ArrayList<WireName>) { this.names = names }
-    func AddName(name : WireName) { this.names.add(name) }
-    func AddNames(names : ArrayList<WireName>) { this.names.addAll(names) }
+    let wires : ArrayList<Wire>
+    init() { this.wires = ArrayList<Wire>([Wire()])}
+    init(wire: Wire) { this.wires = ArrayList<Wire>([wire]) }
+    init(wires: ArrayList<Wire>) { this.wires = wires }
+    func AddWire(wire : Wire) { this.wires.add(wire) }
+    func AddWires(wires : ArrayList<Wire>) { this.wires.addAll(wires) }
 }
 append Source with ToString {
     func toString(s : Source) {
-        var names = ""
-        for (name in s.names){
-            names = (names == "" ? "${name}" : "${names}, ${name}")
+        var wires = ""
+        for (wire in s.wires){
+            wires = (wires == "" ? "${wire}" : "${wires}, ${wire}")
         }
-        return "Source s${s.id} ${names}" 
+        return "Source s${s.id} ${wires}" 
     }
 }
 // TODO should be redundant if inheritance works
@@ -99,12 +158,12 @@ func AtomListToString(xs : ArrayList<Source>){
     var str = "["
     for (x in xs) {
         str = "${str} ${x.id}"
-        var names = ""
-        for(name in x.names){
-            names = names == "" ? " (${name}" : "${names}, ${name}"
+        var wires = ""
+        for(wire in x.wires){
+            wires = wires == "" ? " (${wire}" : "${wires}, ${wire}"
         }
-        names = names == "" ? "" : "${names})"
-        str = "${str}${names}"
+        wires = wires == "" ? "" : "${wires})"
+        str = "${str}${wires}"
     }
     str = "${str} ]"
     str
@@ -202,27 +261,26 @@ external class Hypergraph <: Atom {
     private let m       : Int64
     private let n       : Int64
 
-    private let wires   : ArrayList<String>
+    private let buses   : ArrayList<Bus>
 
     init(edges    : ArrayList<Edge>, 
          inputs   : ArrayList<Target>,
          outputs  : ArrayList<Source>,
          conns    : Map<Target, Source>
     ) {
-        this("", edges, inputs, outputs, conns)
+        this(None<String>, edges, inputs, outputs, conns)
     }
 
-    init(name     : String,
+    init(name     : Option<String>,
          edges    : ArrayList<Edge>, 
          inputs   : ArrayList<Target>,
          outputs  : ArrayList<Source>,
          conns    : Map<Target, Source>
     ){
 
-        if(name == ""){
-            this.name = "h${id}"
-        } else {
-            this.name = name
+        match(name){
+            case Some(text) => this.name = text
+            case $None      => this.name = "h${this.id}"
         }
 
         this.edges    = edges
@@ -237,7 +295,7 @@ external class Hypergraph <: Atom {
         let rightMap = MapBuilder<Source, Port>()
         this.sources = ArrayList<Source>()
         this.targets = ArrayList<Target>()
-        this.wires = ArrayList<String>()
+        this.buses = ArrayList<Bus>()
 
         for(i in 0..inputs.size()){
             let v = inputs.get(i)
@@ -248,9 +306,10 @@ external class Hypergraph <: Atom {
             let v = outputs.get(i)
             sources.add(v)
             rightMap.add(v, InterfacePort(i))
-            for(w in v.names){
-                if(!includes(w.name, wires)){
-                    wires.add(w.name)
+            for(wire in v.wires){
+                match(GetBus(wire, buses)){
+                    case Some(bus) => {}
+                    case $None     => buses.add(wire.bus)
                 }
             }
         }
@@ -260,9 +319,10 @@ external class Hypergraph <: Atom {
                 let v = e.sources.get(i)
                 sources.add(v)
                 rightMap.add(v, EdgePort(e,i))
-                for(w in v.names){
-                    if(!includes(w.name, wires)){
-                        wires.add(w.name)
+                for(wire in v.wires){
+                    match(GetBus(wire, buses)){
+                        case Some(bus) => {}
+                        case $None     => buses.add(wire.bus)
                     }
                 }
             }
@@ -314,7 +374,7 @@ external class Hypergraph <: Atom {
         let newSourceMapBuilder = MapBuilder<Source, Source>()
         let newTargetMapBuilder = MapBuilder<Target, Target>()
         for(v in sources){
-            let v2 = Source(ArrayList<WireName>(v.names)) 
+            let v2 = Source(ArrayList<Wire>(v.wires)) 
             newSourceMapBuilder.add(v,v2)
         }
         for(v in targets){
@@ -324,7 +384,7 @@ external class Hypergraph <: Atom {
         let newInputs = ArrayList<Target>()
         let newOutputs = ArrayList<Source>()
         for(v in outputs){
-            let v2 = Source(ArrayList<WireName>(v.names))
+            let v2 = Source(ArrayList<Wire>(v.wires))
             newSourceMapBuilder.add(v,v2)
             newOutputs.add(v2)
         }

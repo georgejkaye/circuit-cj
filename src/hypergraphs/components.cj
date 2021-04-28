@@ -1,9 +1,14 @@
 package hypergraphs
-//// import core.*
+
+class InaccessibleCodeException <: Exception {
+    init(){
+        print("This code should not be accessible")
+    }
+}
 
 class BadOutputPortsException <: Exception {
     init(){
-        print("Length of output ports list is not the same as the number of outputs")
+        print("Length of port ports list is not the same as the number of ports")
     }
 }
 class BadDomainException <: Exception {
@@ -13,12 +18,12 @@ class BadDomainException <: Exception {
 }
 class BadCodomainException <: Exception {
     init(){
-        print("Number of outputs does not match the codomain of the label")
+        print("Number of ports does not match the codomain of the label")
     }
 }
-class BadPrecException <: Exception {
-    init(){
-        print("Number of outputs of input circuit does not match the inputs of the operation")
+class BadOutputsException <: Exception {
+    init(f : Hypergraph, n : Int64){
+        print("Hypergraph '${f.GetName()}' has ${f.GetN()} ports but requires ${n}")
     }
 }
 
@@ -44,28 +49,28 @@ func OpMToN(m : Int64, n : Int64, generator : Generator,  input : Hypergraph, po
         throw BadOutputPortsException()
     }
     if(input.GetN() != m){
-        throw BadPrecException()
+        throw BadOutputsException(input, m)
     }
 
-    let wires = ArrayList<Option<WireName>>();
-
-    for(p in ports){
-        if(p == ""){
-            wires.add(None<WireName>)
-        } else {
-            let x = FindWires(p, wires)
-            let wire = WireName(p, x)
-            wires.add(Some(wire)) 
-        }
-    }
+    let busMap = MapBuilder<String, Bus>()
 
     let inputs = ArrayList<Target>(m, {x => Target()})
     let sources = ArrayList<Source>(m, {x => Source()})
     let targets = ArrayList<Target>(n, {x => Target()})
     let outputs = ArrayList<Source>(n, {x => 
-        match(wires.get(x)){
-           case Some(w) => Source(w)
-           case $None    => Source()
+        let port = ports.get(x)
+        if(port == ""){
+            Source(Wire())
+        } else {
+            let bus = match(busMap.toMap().get(port)){
+                case Some(bus) => bus
+                case $None => {
+                    let newBus = Bus(port)
+                    busMap.add(port, newBus)
+                    newBus
+                }
+            }
+            Source(Wire(bus, bus.AddWire()))
         }
     })
 
@@ -81,47 +86,86 @@ func OpMToN(m : Int64, n : Int64, generator : Generator,  input : Hypergraph, po
 
     let graph = Hypergraph(name, ArrayList<Edge>([op]), inputs, outputs, conns.toMap())
     Seq(input, graph)
-    graph
 }
 
 func OpZeroToOne(gen : Generator, out : String, name : String){ 
     OpMToN(0,1, gen, Empty(), ArrayList<String>([out]), name) 
 }
 func OpOneToZero(gen : Generator, input : Hypergraph, name : String){ 
+    if(input.GetN() != 1){
+        throw BadOutputException(input, 1)
+    }
     OpMToN(1, 0, gen, input, ArrayList<String>(), name) 
 }
 func OpOneToOne(gen : Generator, input : Hypergraph, out : String, name : String){
+    if(input.GetN() != 1){
+        throw BadOutputException(input, 1)
+    }
     OpMToN(1, 1, gen, input, ArrayList<String>([out]), name) 
 }
 func OpTwoToOne(gen : Generator, input : Hypergraph, out : String, name : String){ 
+    if(input.GetN() != 2){
+        throw BadOutputException(input, 2)
+    }
     OpMToN(2, 1, gen, input, ArrayList<String>([out]), name) 
 }
+func OpTwoToOne(gen : Generator, lhs : Hypergraph, rhs : Hypergraph, out : String, name : String){
+    if(lhs.GetN() != 1){
+        throw BadOutputException(lhs, 1)
+    }
+    if(rhs.GetN() != 1){
+        throw BadOutputException(rhs, 1)
+    }
+    OpMToN(2, 1, gen, Par(lhs,rhs), ArrayList<String>([out]), name)
+}
 func OpThreeToOne(gen : Generator, input : Hypergraph, out : String, name : String){ 
+    if(input.GetN() != 3){
+        throw BadOutputException(input, 3)
+    }
     OpMToN(3, 1, gen, input, ArrayList<String>([out]), name) 
 }
+func OpThreeToOne(gen : Generator, x : Hypergraph, y : Hypergraph, z : Hypergraph, out : String, name : String){
+    if(x.GetN() != 1){
+        throw BadOutputException(x, 1)
+    }
+    if(y.GetN() != 1){
+        throw BadOutputException(y, 1)
+    }
+    if(y.GetN() != 1){
+        throw BadOutputException(z, 1)
+    }
+    OpMToN(3, 1, gen, Par([x,y,z]), ArrayList<String>([out]), name)
+}
+
 func OpOneToTwo(gen : Generator, input : Hypergraph, lhs : String, rhs : String, name : String){ 
+    if(input.GetN() != 1){
+        throw BadOutputException(input, 2)
+    }
     OpMToN(1,2, gen, input, ArrayList<String>([lhs, rhs]), name) 
 }
 
-func Bottom(output!: String = "", name!: String = "") { 
-    OpZeroToOne(VALUE(BOTTOM), output, name) 
+func Bottom(port!: String = "", name!: String = "") { 
+    OpZeroToOne(VALUE(BOTTOM), port, name) 
 }
-func Top(output!: String = "", name!: String = ""){
-    OpZeroToOne(VALUE(TOP), output, name)
+func Top(port!: String = "", name!: String = ""){
+    OpZeroToOne(VALUE(TOP), port, name)
 }
-func True(output!: String = "", name!: String = "") { 
-    OpZeroToOne(VALUE(TRUE), output, name) 
+func True(port!: String = "", name!: String = "") { 
+    OpZeroToOne(VALUE(TRUE), port, name) 
 }
-func False(output!: String = "", name!: String = ""){
-    OpZeroToOne(VALUE(FALSE), output, name)
+func False(port!: String = "", name!: String = ""){
+    OpZeroToOne(VALUE(FALSE), port, name)
 }
 
 
 external func Fork(input!: Hypergraph = Identity(1), lhs!: String = "", rhs!: String = "", name!: String = "") { 
     OpOneToTwo(FORK, input, lhs, rhs, name) 
 }
-external func Join(input!: Hypergraph = Identity(2), output!: String = "", name!: String = ""){ 
-    OpTwoToOne(JOIN, input, output, name) 
+external func Join(input!: Hypergraph = Identity(2), port!: String = "", name!: String = ""){ 
+    OpTwoToOne(JOIN, input, port, name) 
+}
+external func Join(lhs!: Hypergraph, rhs!: Hypergraph, port!: String = "", name!: String = ""){
+    OpTwoToOne(JOIN, lhs, rhs, port, name)
 }
 external func Stub(input!: Hypergraph = Identity(1), name!: String = ""){ 
     OpOneToZero(STUB, input, name) 
@@ -165,20 +209,38 @@ external func Init(n : Int64) : Hypergraph {
     }
 }
 
-external func NotGate(input!: Hypergraph = Identity(1), output!: String = "", name!: String = "") { OpOneToOne(NOT, input, output, name) }
+external func NotGate(input!: Hypergraph = Identity(1), port!: String = "", name!: String = "") { OpOneToOne(NOT, input, port, name) }
 
-external func AndGate(input!: Hypergraph = Identity(2), output!: String = "", name!: String = "") { OpTwoToOne(AND, input, output, name) }
-external func OrGate(input!: Hypergraph = Identity(2), output!: String = "", name!: String = "") { OpTwoToOne(OR, input, output, name) }
-external func XorGate(input!: Hypergraph = Identity(2), output!: String = "", name!: String = "") { OpTwoToOne(XOR, input, output, name) }
+external func AndGate(input!: Hypergraph = Identity(2), port!: String = "", name!: String = "") { OpTwoToOne(AND, input, port, name) }
+external func AndGate(lhs!: Hypergraph, rhs!: Hypergraph, port!: String = "", name!: String = ""){ OpTwoToOne(AND, lhs, rhs, port, name) }
 
-external func NandGate(input!: Hypergraph = Identity(2), output!: String = "", name!: String = "") { OpTwoToOne(NAND, input, output, name) }
-external func NorGate(input!: Hypergraph = Identity(2), output!: String = "", name!: String = "") { OpTwoToOne(NOR, input, output, name) }
-external func XnorGate(input!: Hypergraph = Identity(2), output!: String = "", name!: String = "") { OpTwoToOne(XNOR, input, output, name) }
+external func OrGate(input!: Hypergraph = Identity(2), port!: String = "", name!: String = "") { OpTwoToOne(OR, input, port, name) }
+external func OrGate(lhs!: Hypergraph, rhs!: Hypergraph, port!: String = "", name!: String = ""){ OpTwoToOne(OR, lhs, rhs, port, name) }
 
-external func Delay(n : Int64, input!: Hypergraph = Identity(1), output!: String = "", name!: String = "") { OpOneToOne(DELAY(n), input, output, name) }
+external func XorGate(input!: Hypergraph = Identity(2), port!: String = "", name!: String = "") { OpTwoToOne(XOR, input, port, name) }
+external func XorGate(lhs!: Hypergraph, rhs!: Hypergraph, port!: String = "", name!: String = ""){ OpTwoToOne(XOR, lhs, rhs, port, name) }
+
+external func NandGate(input!: Hypergraph = Identity(2), port!: String = "", name!: String = "") { OpTwoToOne(NAND, input, port, name) }
+external func NandGate(lhs!: Hypergraph, rhs!: Hypergraph, port!: String = "", name!: String = ""){ OpTwoToOne(NAND, lhs, rhs, port, name) }
+
+external func NorGate(input!: Hypergraph = Identity(2), port!: String = "", name!: String = "") { OpTwoToOne(NOR, input, port, name) }
+external func NorGate(lhs!: Hypergraph, rhs!: Hypergraph, port!: String = "", name!: String = ""){ OpTwoToOne(NOR, lhs, rhs, port, name) }
+
+external func XnorGate(input!: Hypergraph = Identity(2), port!: String = "", name!: String = "") { OpTwoToOne(XNOR, input, port, name) }
+external func XnorGate(lhs!: Hypergraph, rhs!: Hypergraph, port!: String = "", name!: String = ""){ OpTwoToOne(XNOR, lhs, rhs, port, name) }
+
+external func Delay(n : Int64, input!: Hypergraph = Identity(1), port!: String = "", name!: String = "") { OpOneToOne(DELAY(n), input, port, name) }
 
 external func InLink(spec : LinkSpec, input!: Hypergraph = Identity(spec.width), name!:String = "") { OpOneToZero(INLINK(spec), input, name) }
-external func OutLink(spec : LinkSpec, output!: String, name!:String = "") { OpZeroToOne(INLINK(spec), output, name) }
+external func OutLink(spec : LinkSpec, port!: String, name!:String = "") { OpZeroToOne(INLINK(spec), port, name) }
+
+
+external func Input(port!: String, width!: Int64 = 1){
+    if(width < 1){
+        throw NegativeWireException()
+    }
+    Identity(width, port: port)
+}
 
 external func TestComponents() {
     let n = 3

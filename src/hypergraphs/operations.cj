@@ -45,7 +45,7 @@ external func Seq(f : Hypergraph, g : Hypergraph, name!: String = "") : Hypergra
             case EdgePort(e, n) => s
             case InterfacePort(n) => {
                 let newv = newG.GetConn(newG.GetInputs().get(n))
-                newv.AddNames(s.names)
+                newv.AddWires(s.wires)
                 newv
             }
         }
@@ -67,11 +67,19 @@ external func Seq(fs : ArrayList<Hypergraph>) : Hypergraph {
     }
     res
 }
+external func Seq(fs : List<Hypergraph>) {
+    Seq(ArrayList<Hypergraph>(fs))
+}
+
 
 external func Identity(n : Int64) : Hypergraph { 
-    Identity(n, ArrayList<Option<WireName>>(n, {x => None<WireName>}))
+    Identity(n, ports: ArrayList<Option<Wire>>(n, {x : Int64 => None<Wire>}))
 }
-external func Identity(n : Int64, ports: ArrayList<Option<WireName>>, name!: String = "") : Hypergraph {
+external func Identity(n : Int64, port!: String, name!: Option<String> = None<String>) : Hypergraph {
+    let bus = Bus(port)
+    Identity(n, ports: ArrayList<Option<Wire>>(n, {x : Int64 => Wire(bus, bus.AddWire()) }))
+}
+external func Identity(n : Int64, ports!: ArrayList<Option<Wire>>, name!: Option<String> = None<String>) : Hypergraph {
     if(n < 0){
         throw NegativeWireException()
     }
@@ -129,6 +137,10 @@ external func Par(fs : ArrayList<Hypergraph>) : Hypergraph {
         res = Par(res, fs[i])
     }
     res
+}
+
+external func Par(fs : List<Hypergraph>) : Hypergraph {
+    Par(ArrayList<Hypergraph>(fs))
 }
 
 external func Par(f : Hypergraph, n : Int64) : Hypergraph {
@@ -229,9 +241,10 @@ external func Get(f : Hypergraph, s : String){
     let outputs = f.GetOutputs()
     let ns = ArrayList<Int64>()
     for(i in 0..outputs.size()){
-        for(name in outputs[i].names){
-            if(name.name == s){
-                ns.add(i)
+        for(wire in outputs[i].wires){
+            match(wire.bus.name){
+                case Some(name) => if(s == name){ ns.add(i) }
+                case $None      => {}
             }
         }
     }
@@ -242,8 +255,9 @@ external func Get(f : Hypergraph, s : String){
 }
 
 external func TestOps(){
-    let and = AndGate(output: "and", name: "and")
+    //let and = AndGate(port: "and")
     //let and2 = Par(and, and)  
+    //let not = NotGate(port: "not")
 
     //let not = NotGate(output: "not")
 
@@ -252,5 +266,5 @@ external func TestOps(){
 
     //let trace = Trace(Seq(AndGate(), Fork()), 4)
 
-    print(DotGraph(and))
+    //print(DotGraph(Seq(and, not)))
 }

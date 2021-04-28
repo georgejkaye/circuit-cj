@@ -1,8 +1,10 @@
 import hypergraphs.*
-import examples.HalfAdderCombinator
+import examples.*
 
 func main(){
-    let circ = HalfAdderCombinator()
+    //let circ = HalfAdderCombinator()
+    let circ = HalfAdderPorts()
     print(DotGraph(circ))
+    //TestOps()
     return 0
 }

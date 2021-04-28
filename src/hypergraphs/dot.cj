@@ -118,11 +118,17 @@ func DrawTargetVertices(vs : ArrayList<Target>){
 }
 
 func DrawVertex(t : Target, s : Source) {
-    var names = ""
-    for(name in s.names){
-        names = names == "" ? "${name}" : "${names}, ${name}"
+    var wires = ""
+    for(wire in s.wires){
+
+        let wiretext = match(wire.bus.name){
+            case Some(name) => "${name}[${wire.i}]"
+            case $None      => ""
+        }
+
+        wires = wires == "" ? "${wiretext}" : "${wires}, ${wiretext}"
     }
-    "v${t.id}[label=\"\" xlabel=\"${names}\"]"
+    "v${t.id}[label=\"\" xlabel=\"${wires}\"]"
 }
 
 func DrawSubgraph(n : Int64, opt : String, text : String){
@@ -177,6 +183,6 @@ external func DotGraph(f : Hypergraph){
 }
 
 external func TestDot(){
-    let f = AndGate(output: "out")
-    print(DotGraph(f))
+    let f = AndGate(port: "out")
+    //print(DotGraph(f))
 }
