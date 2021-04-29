@@ -54,8 +54,8 @@ class TypeMismatchException <: Exception {
  */
 
 class BadOutputPortsException <: Exception {
-    init(){
-        print("Length of port ports list is not the same as the number of ports")
+    init(m : Int64, n : Int64){
+        print("Length of ports list (${m}) does not match the outputs(${n})")
     }
 }
 class PortNotFoundException <: Exception {

@@ -55,6 +55,7 @@ func AtomListToString(xs : ArrayList<Atom>){
  */
 class Bus <: Atom {
     let name : Option<String>
+    let wires : ArrayList<Wire> = ArrayList<Wire>()
     var width : Int64
     init() {
         this.name = None<String>
@@ -69,9 +70,10 @@ class Bus <: Atom {
      * @return The position of the new wire in the bundle
      */
     func AddWire(){
-        let nextindex = this.width
+        let wire = Wire(this, this.width)
         this.width++
-        nextindex
+        wires.add(wire)
+        wire
     }
 }
 append Bus with ToString, Equatable, Hashable {
@@ -424,14 +426,21 @@ external class Hypergraph <: Atom {
         }
     }
 
+    func ContainsBus(b : String) {
+        match(GetBus(b, buses)){
+            case Some(x) => return true
+            case $None   => return false
+        }
+    }
+
     /**
      * Assign wires to the outputs of this graph
      * Throws BadOutputPortsException if the list of ports != the outputs
      * @param ports The list of wire names to assign
      */
     func NameOutputs(ports : ArrayList<String>){
-        if(ports.size() != outputs.size()){
-            throw BadOutputPortsException()
+        if(ports.size() != n){
+            throw BadOutputPortsException(ports.size(), n)
         }
         for(i in 0..ports.size()){
             let name = ports.get(i)
@@ -451,8 +460,7 @@ external class Hypergraph <: Atom {
                     }
                 }
             }
-            let wire = Wire(bus, bus.AddWire())
-            outputs.get(i).AddWire(wire)
+            outputs.get(i).AddWire(bus.AddWire())
         }
     }
 

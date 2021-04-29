@@ -34,7 +34,7 @@ func OpMToN(m : Int64, n : Int64, generator : Generator,  input : Hypergraph, po
         throw BadCodomainException(n, cod)
     }
     if(ports.size() != n){
-        throw BadOutputPortsException()
+        throw BadOutputPortsException(ports.size(), n)
     }
     if(input.GetN() != m){
         throw TypeMismatchException(input, m)
@@ -58,7 +58,7 @@ func OpMToN(m : Int64, n : Int64, generator : Generator,  input : Hypergraph, po
                     newBus
                 }
             }
-            Source(Wire(bus, bus.AddWire()))
+            Source(bus.AddWire())
         }
     })
 
@@ -317,7 +317,7 @@ func CreateCopy(n : Int64) : Hypergraph {
  */
 external func Copy(n : Int64, input!: Hypergraph = Identity(n), ports!: ArrayList<String> = ArrayList<String>(n, {x => ""}), name!: String = ""){
     if(ports.size() != n * 2) {
-        throw BadOutputPortsException()
+        throw BadOutputPortsException(ports.size(), n * 2)
     }
     var circ = Seq(input, CreateCopy(n), ports: ports, name: name)
     circ.NameOutputs(ports)
@@ -375,7 +375,7 @@ external func CreateMerge(n : Int64) : Hypergraph {
  */
 external func Merge(n : Int64, input!: Hypergraph = Identity(n), ports!: ArrayList<String> = ArrayList<String>(n, {x => ""}), name!: String = ""){
     if(ports.size() != n) {
-        throw BadOutputPortsException()
+        throw BadOutputPortsException(ports.size(), n)
     }
     var circ = Seq(input, CreateMerge(n), ports: ports, name: name)
     circ.NameOutputs(ports)
