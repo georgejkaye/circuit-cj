@@ -124,7 +124,9 @@ append Wire with ToString, Equatable {
 func GetBus(name : String, buses : ArrayList<Bus>){
     for (bus in buses){
         match(bus.name){
-            case Some(text) => if(name == text){ return bus }
+            case Some(text) => {
+                if(name == text){ return bus }
+            }
             case $None      => {}
         }
     }
@@ -433,20 +435,23 @@ external class Hypergraph <: Atom {
         }
         for(i in 0..ports.size()){
             let name = ports.get(i)
-            var wire : Wire
+            let bus : Bus
             if(name == ""){
-                let bus = Bus()
-                wire = Wire(bus, bus.AddWire())
+                bus = Bus()
+                buses.add(bus)
             } else {
-                let bus = GetBus(name, buses)
-                match(bus){
-                    case Some(b) => wire = Wire(b, b.AddWire())
+                let b = GetBus(name, buses)
+                match(b){
+                    case Some(x) => {
+                        bus = x
+                    }
                     case $None   => {
-                        let b = Bus(ports.get(i))
-                        wire = Wire(b, b.AddWire())
+                        bus = Bus(name)
+                        buses.add(bus)
                     }
                 }
             }
+            let wire = Wire(bus, bus.AddWire())
             outputs.get(i).AddWire(wire)
         }
     }
