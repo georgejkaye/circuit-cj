@@ -30,11 +30,11 @@ external func Seq(f : Hypergraph, g : Hypergraph, ports!: ArrayList<String> = Ar
 
     let newConns = MapBuilder<Target,Source>()
     for(t in newF.GetTargets()){
-        let s = newF.GetConn(t)
-        let s2 = match(newF.GetEdge(newF.GetConn(t))){
+        let s = newF.GetConnR(t)
+        let s2 = match(newF.GetEdge(newF.GetConnR(t))){
             case EdgePort(e, n) => s
             case InterfacePort(n) => {
-                let newv = newG.GetConn(newG.GetInputs().get(n))
+                let newv = newG.GetConnR(newG.GetInputs().get(n))
                 newv.AddWires(s.wires)
                 newv
             }
@@ -42,7 +42,7 @@ external func Seq(f : Hypergraph, g : Hypergraph, ports!: ArrayList<String> = Ar
         newConns.add(t,s2)
     }
     for(t in newG.GetTargets()){
-        newConns.add(t,newG.GetConn(t))
+        newConns.add(t,newG.GetConnR(t))
     }
     var res = Hypergraph(name, newEdges, newF.GetInputs(), newG.GetOutputs(), newConns.toMap())
     res.NameOutputs(ports)
@@ -146,10 +146,10 @@ external func Par(f : Hypergraph, g : Hypergraph, ports!: ArrayList<String> = Ar
 
     let newConns = MapBuilder<Target,Source>()
     for(v in newF.GetTargets()){
-        newConns.add(v, newF.GetConn(v))
+        newConns.add(v, newF.GetConnR(v))
     }
     for(v in newG.GetTargets()){
-        newConns.add(v, newG.GetConn(v))
+        newConns.add(v, newG.GetConnR(v))
     }
     var res = Hypergraph(name, newEdges, newInputs, newOutputs, newConns.toMap())
     res.NameOutputs(ports)
@@ -269,7 +269,7 @@ external func Trace(f : Hypergraph, x : Int64, ports!: ArrayList<String> = Array
     let newEdges = newF.GetEdges()
     newEdges.add(idEdge)
 
-    var res = Hypergraph(name, newEdges, newInputs, newOutputs, newF.GetConns())
+    var res = Hypergraph(name, newEdges, newInputs, newOutputs, newF.GetConnsR())
     res.NameOutputs(ports)
     res
 }
@@ -336,6 +336,50 @@ external func Get(f : Hypergraph, s : String, name!: Option<String> = None<Strin
         throw PortNotFoundException(f, s)
     } 
     Get(f, ns, name: name)
+}
+
+func includesEdge(x : Edge, es : ArrayList<Edge>){
+    for(e in es){
+        if (e == x){
+            return true
+        }
+    }
+    return false
+}
+
+external func Output(fs : ArrayList<Hypergraph>){
+    var res : Hypergraph = fs[0]
+    var encounteredBuses = ArrayList<Bus>(res.GetBuses())
+    for(i in 1..fs.size()){
+        let f = fs[i]
+        let visited = ArrayList<Edge>()
+        let frontier = ArrayList<Source>(f.GetOutputs())
+        while(frontier.size() != 0){
+            let v = frontier.removeAt(0)
+            for(w in v.wires){
+                match(GetBus(w, encounteredBuses)){
+                    case $None    => {}
+                    case Some(b)  => { print("encountered bus ${b} (wire ${w.i})!\n") }
+                }
+            }
+            let edge = f.GetEdge(f.GetConnL(v))
+            match(edge){
+                case InterfacePort(j) => {}
+                case EdgePort(e, j) => {
+                    if(!includesEdge(e, visited)){
+                        frontier.addAll(e.sources)
+                    }
+                }
+            }
+            
+
+        }
+    }
+    Par(fs)
+}
+
+external func Output(fs : List<Hypergraph>){
+    Output(ArrayList<Hypergraph>(fs))
 }
 
 external func TestOps(){

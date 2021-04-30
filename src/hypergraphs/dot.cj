@@ -1,5 +1,7 @@
 package hypergraphs
 
+let debugDot = false
+
 let tab = "  "
 
 func indent(n : Int64, str : String){
@@ -122,9 +124,8 @@ func DrawVertex(t : Target, s : Source) {
 
         let wiretext = match(wire.bus.name){
             case Some(name) => "${name}[${wire.i}]"
-            case $None      => ""
+            case $None      => debugDot ? "${wire}" : ""
         }
-
         wires = wires == "" ? "${wiretext}" : wiretext == "" ? "${wires}" : "${wires}, ${wiretext}"
     }
     "v${t.id}[label=\"\" xlabel=\"${wires}\"]"
@@ -148,7 +149,7 @@ external func DotGraph(f : Hypergraph){
     var vertices = ""
     var conns = ""
     for (t in f.GetTargets()) {
-        let s = f.GetConn(t)
+        let s = f.GetConnR(t)
         let vertex = indent(1, DrawVertex(t, s))
         vertices = vertices == "" ? vertex : "${vertices}\n${vertex}"
 

@@ -315,7 +315,7 @@ func CreateCopy(n : Int64) : Hypergraph {
  * @param name  The name of the resulting hypergraph
  * @return A hypergraph for a copy
  */
-external func Copy(n : Int64, input!: Hypergraph = Identity(n), ports!: ArrayList<String> = ArrayList<String>(n, {x => ""}), name!: String = ""){
+external func Copy(n : Int64, input!: Hypergraph = Identity(n), ports!: ArrayList<String> = ArrayList<String>(2 * n, {x => ""}), name!: String = ""){
     if(ports.size() != n * 2) {
         throw BadOutputPortsException(ports.size(), n * 2)
     }

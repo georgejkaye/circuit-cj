@@ -297,7 +297,8 @@ external class Hypergraph <: Atom {
     private let edges   : ArrayList<Edge>
     private let inputs  : ArrayList<Target>
     private let outputs : ArrayList<Source>
-    private let conns   : Map<Target, Source>
+    private let connsr  : Map<Target, Source>
+    private let connsl  : Map<Source, Target> 
 
     // TODO should be sets but I don't know how to make them dynamically
     private let sources : ArrayList<Source>
@@ -336,7 +337,7 @@ external class Hypergraph <: Atom {
         this.edges    = edges
         this.inputs   = inputs
         this.outputs  = outputs
-        this.conns    = conns
+        this.connsr    = conns
 
         this.m = inputs.size()
         this.n = outputs.size()
@@ -392,6 +393,12 @@ external class Hypergraph <: Atom {
         this.lefts = leftMap.toMap()
         this.rights = rightMap.toMap()
 
+        let connslMap = MapBuilder<Source, Target>()
+
+        for(v in targets){
+            connslMap.add(GetConnR(v), v)
+        }
+        this.connsl = connslMap.toMap()
     }
 
     func GetName() { name }
@@ -399,7 +406,8 @@ external class Hypergraph <: Atom {
     func GetEdges() { edges }
     func GetInputs() { inputs }
     func GetOutputs() { outputs }
-    func GetConns() { conns }
+    func GetConnsR() { connsr }
+    func GetConnsL() { connsl }
 
     func GetM() { m }
     func GetN() { n }
@@ -407,10 +415,18 @@ external class Hypergraph <: Atom {
     func GetSources() { sources }
     func GetTargets() { targets }
 
-    func GetConn(t : Target) {
-        match(conns.get(t)){
+    func GetBuses() { buses }
+
+    func GetConnR(t : Target) {
+        match(connsr.get(t)){
             case $None => throw VertexNotInGraphException(t)
             case Some(s) => s
+        }
+    }
+    func GetConnL(s : Source) {
+        match(connsl.get(s)){
+            case $None => throw VertexNotInGraphException(s)
+            case Some(t) => t
         }
     }
     func GetEdge(s : Source) { 
@@ -495,14 +511,14 @@ external class Hypergraph <: Atom {
             for (v in s){
                 let v2 = match(newSourceMap.get(v)){
                     case Some(v2) => v2
-                    case $None     => throw VertexNotInGraphException(v)
+                    case $None    => throw VertexNotInGraphException(v)
                 }
                 s2.add(v2)
             }
             for (v in t){
                 let v2 = match(newTargetMap.get(v)){
                     case Some(v2) => v2
-                    case $None     => throw VertexNotInGraphException(v)
+                    case $None    => throw VertexNotInGraphException(v)
                 }
                 t2.add(v2)
             }
@@ -535,14 +551,85 @@ external class Hypergraph <: Atom {
                     case Some(v2) => v2
                     case $None     => throw VertexNotInGraphException(v)
             }
-            let newS = match(newSourceMap.get(GetConn(v))){
+            let newS = match(newSourceMap.get(GetConnR(v))){
                     case Some(v2) => v2
-                    case $None     => throw VertexNotInGraphException(GetConn(v))
+                    case $None     => throw VertexNotInGraphException(GetConnR(v))
             }
             newConnsBuilder.add(newT, newS)
         }
         let newConns = newConnsBuilder.toMap()
         Hypergraph(newEdges, newInputs, newOutputs, newConns)
+    }
+
+    /**
+     * Remove all parts of the graph that can be accessed by travelling left from a source vertex
+     * @param s The source vertex
+     * @return A clone of the hypergraph with all parts of the hypergraph left of a given source vertex removed
+     */
+    func RemoveLeft(s : Source){
+        let frontier = ArrayList<Source>([s])
+        let explored = ArrayList<Edge>()
+        let removedInputs = ArrayList<Int64>()
+        let removedTargets = ArrayList<Target>()
+        // Traverse the graph
+        while(frontier.size() != 0){
+            let s = frontier.removeAt(0)
+            let t = GetConnL(s)
+            match(GetEdge(t)){
+                case EdgePort(e, i) => {
+                    explored.add(e)
+                    frontier.addAll(e.sources)
+                    removedTargets.addAll(e.targets)
+                }
+                case InterfacePort(i) => {
+                    removedInputs.add(i)
+                }
+            }
+        }
+        // Only include edges not found by the search
+        let newEdges = ArrayList<Edge>()
+        for(e in edges){
+            if(!includes(explored, e)){
+                newEdges.add(e)
+            }
+        }
+        // Only include vertices not found by the search
+        let newInputs = ArrayList<Target>()
+        for(i in 0..inputs.size()){
+            if(!includes(removedInputs, i)){
+                newInputs.add(inputs[i])
+            }
+        }
+        // If there are any dangling sources, add their targets to the inputs
+        for(e in newEdges){
+            let t = GetConnL(s)
+            if(includes(removedTargets, t)){
+                newInputs.add(t)
+            }
+        }
+        // If there are any dangling outputs, add their targets to the inputs
+        for(v in outputs){
+            let t = GetConnL(v)
+            if(includes(removedTargets, t)){
+                newInputs.add(t)
+            }
+        }
+        // Outputs are unchanged
+        let newOutputs = ArrayList<Source>(outputs)
+        // Build the new connections map
+        let connsMap = MapBuilder<Target, Source>()
+        for(v in newInputs){
+            connsMap.add(v, GetConnR(v))
+        }
+        for(e in newEdges){
+            for(v in e.targets){
+                connsMap.add(v, GetConnR(v))
+            }
+        }
+        // Make the new hypergraph
+        let h = Hypergraph(newEdges, newInputs, newOutputs, connsMap.toMap())
+        // Clone it in case this graph interacts with the original
+        h.Clone()
     }
 
     /**
@@ -581,12 +668,33 @@ append Hypergraph with ToString {
         let outputString = "outputs ${SourceListToString(f.GetOutputs())}"
         var connstr = "connections "
         for (t in f.GetTargets()) {
-            connstr = "${connstr}(${t.id} ${f.GetConn(t).id}) "
+            connstr = "${connstr}(${t.id} ${f.GetConnR(t).id}) "
         }
-        "${f.GetName()}\n${inputString}\n${str}${outputString}\n${connstr}"
+        var leftstr = "left "
+        for(t in f.GetTargets()) {
+            leftstr = "${leftstr}(${t.id} => "
+            match(f.GetEdge(t)){
+                case EdgePort(e, i) => leftstr = "${leftstr}${e.id}:${i}) "
+                case InterfacePort(i) => leftstr = "${leftstr}input:${i}) "
+            }
+        }
+        var rightstr = "right "
+        for(s in f.GetSources()) {
+            rightstr = "${rightstr}(${s.id} => "
+            match(f.GetEdge(s)){
+                case EdgePort(e, i) => rightstr = "${rightstr}${e.id}:${i}) "
+                case InterfacePort(i) => rightstr = "${rightstr}output:${i}) "
+            }
+        }
+        "${f.GetName()}\n${inputString}\n${str}${outputString}\n${connstr}\n${leftstr}\n${rightstr}"
     }
 }
 
+/**
+ * Get the number of outputs of a list of hypergraphs 
+ * @param fs The list of hypergraphs
+ * @return The combined outputs of all hypergraphs in the list
+ */
 func GetListOutputs(fs : ArrayList<Hypergraph>){
     var n = 0
     for(f in fs){
@@ -594,10 +702,31 @@ func GetListOutputs(fs : ArrayList<Hypergraph>){
     }
     n
 }
+/**
+ * Get the number of outputs of a list of hypergraphs 
+ * @param fs The list of hypergraphs
+ * @return The combined outputs of all hypergraphs in the list
+ */
 func GetListOutputs(fs : List<Hypergraph>){
     var n = 0
     for(f in fs){
         n += f.GetN()
     }
     n
+}
+
+/**
+ * Generic includes function for arraylists
+ * Presumably this will make its way into the standard library at some points
+ * @param xs The arraylist to search
+ * @param a  The element to search for
+ * @return Whether this element is in the arraylist
+ */
+func includes<T>(xs : ArrayList<T>, a : T) where T <: Equatable {
+    for(x in xs){
+        if(x == a){
+            return true
+        }
+    }
+    return false
 }
