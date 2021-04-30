@@ -183,6 +183,6 @@ external func DotGraph(f : Hypergraph){
 }
 
 external func TestDot(){
-    let f = AndGate(port: "out")
+    let f = AndGate(label: "out")
     //print(DotGraph(f))
 }

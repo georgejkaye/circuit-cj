@@ -68,7 +68,7 @@ class TypeMismatchException <: Exception {
  * Port exceptions
  */
 
-class BadOutputPortsException <: Exception {
+class BadOutputLabelsException <: Exception {
     init(m : Int64, n : Int64){
         print("Length of ports list (${m}) does not match the outputs(${n})")
     }

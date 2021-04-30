@@ -15,7 +15,7 @@ package hypergraphs
  * @param name      The name to give the resulting hypergraph
  * @return A hypergraph corresponding to this operation
  */
-func OpMToN(m : Int64, n : Int64, generator : Generator,  input : Hypergraph, ports : ArrayList<String>, name: String){
+func OpMToN(m : Int64, n : Int64, generator : Generator,  input : Hypergraph, labels : ArrayList<String>, name: String){
 
     let (dom, cod) = match(generator){
         case VALUE(val)        => (0,1)
@@ -33,8 +33,8 @@ func OpMToN(m : Int64, n : Int64, generator : Generator,  input : Hypergraph, po
     if(n != cod || n < 0){
         throw BadCodomainException(n, cod)
     }
-    if(ports.size() != n){
-        throw BadOutputPortsException(ports.size(), n)
+    if(labels.size() != n){
+        throw BadOutputLabelsException(labels.size(), n)
     }
     if(input.GetN() != m){
         throw TypeMismatchException(input, m)
@@ -46,15 +46,15 @@ func OpMToN(m : Int64, n : Int64, generator : Generator,  input : Hypergraph, po
     let sources = ArrayList<Source>(m, {x => Source()})
     let targets = ArrayList<Target>(n, {x => Target()})
     let outputs = ArrayList<Source>(n, {x => 
-        let port = ports.get(x)
-        if(port == ""){
+        let label = labels.get(x)
+        if(label == ""){
             Source(Wire())
         } else {
-            let bus = match(busMap.toMap().get(port)){
+            let bus = match(busMap.toMap().get(label)){
                 case Some(bus) => bus
                 case $None => {
-                    let newBus = Bus(port)
-                    busMap.add(port, newBus)
+                    let newBus = Bus(label)
+                    busMap.add(label, newBus)
                     newBus
                 }
             }
@@ -78,13 +78,13 @@ func OpMToN(m : Int64, n : Int64, generator : Generator,  input : Hypergraph, po
 
 /**
  * Create a hypergraph for an operation 0 -> 1
- * @param gen  The generator that corresponds to this operation
- * @param out  The name of the output port
- * @param name The name of the resulting hypergraph
+ * @param gen   The generator that corresponds to this operation
+ * @param label The label of the output port
+ * @param name  The name of the resulting hypergraph
  * @return The hypergraph corresponding to this operation
  */
-func OpZeroToOne(gen : Generator, out : String, name : String){ 
-    OpMToN(0,1, gen, Empty(), ArrayList<String>([out]), name) 
+func OpZeroToOne(gen : Generator, label : String, name : String){ 
+    OpMToN(0,1, gen, Empty(), ArrayList<String>([label]), name) 
 }
 /**
  * Create a hypergraph for an operation 1 -> 0
@@ -103,61 +103,61 @@ func OpOneToZero(gen : Generator, input : Hypergraph, name : String){
  * Create a hypergraph for an operation 1 -> 1
  * @param gen   The generator that corresponds to this operation
  * @param input The hypergraph that will be input to this operation
- * @param out   The name of the output port
+ * @param label The label of the output port
  * @param name  The name of the resulting hypergraph
  * @return The hypergraph corresponding to this operation
  */
-func OpOneToOne(gen : Generator, input : Hypergraph, out : String, name : String){
+func OpOneToOne(gen : Generator, input : Hypergraph, label : String, name : String){
     if(input.GetN() != 1){
         throw TypeMismatchException(input, 1)
     }
-    OpMToN(1, 1, gen, input, ArrayList<String>([out]), name) 
+    OpMToN(1, 1, gen, input, ArrayList<String>([label]), name) 
 }
 /**
  * Create a hypergraph for an operation 2 -> 1
  * @param gen   The generator that corresponds to this operation
  * @param input The hypergraph that will be input to this operation
- * @param out   The name of the output port
+ * @param label The label of the output port
  * @param name  The name of the resulting hypergraph
  * @return The hypergraph corresponding to this operation
  */
-func OpTwoToOne(gen : Generator, input : Hypergraph, out : String, name : String){ 
+func OpTwoToOne(gen : Generator, input : Hypergraph, label : String, name : String){ 
     if(input.GetN() != 2){
         throw TypeMismatchException(input, 2)
     }
-    OpMToN(2, 1, gen, input, ArrayList<String>([out]), name) 
+    OpMToN(2, 1, gen, input, ArrayList<String>([label]), name) 
 }
 /**
  * Create a hypergraph for an operation 2 -> 1
  * @param gen   The generator that corresponds to this operation
  * @param lhs   The hypergraph that will be the first argument to this operation
  * @param rhs   The hypergraph that will be the second argument to this operation
- * @param out   The name of the output port
+ * @param label The label of the output port
  * @param name  The name of the resulting hypergraph
  * @return The hypergraph corresponding to this operation
  */
-func OpTwoToOne(gen : Generator, lhs : Hypergraph, rhs : Hypergraph, out : String, name : String){
+func OpTwoToOne(gen : Generator, lhs : Hypergraph, rhs : Hypergraph, label : String, name : String){
     if(lhs.GetN() != 1){
         throw TypeMismatchException(lhs, 1)
     }
     if(rhs.GetN() != 1){
         throw TypeMismatchException(rhs, 1)
     }
-    OpMToN(2, 1, gen, Par(lhs,rhs), ArrayList<String>([out]), name)
+    OpMToN(2, 1, gen, Par(lhs,rhs), ArrayList<String>([label]), name)
 }
 /**
  * Create a hypergraph for an operation 3 -> 1
  * @param gen   The generator that corresponds to this operation
  * @param input The hypergraph that will be input to this operation
- * @param out   The name of the output port
+ * @param label The label of the output port
  * @param name  The name of the resulting hypergraph
  * @return The hypergraph corresponding to this operation
  */
-func OpThreeToOne(gen : Generator, input : Hypergraph, out : String, name : String){ 
+func OpThreeToOne(gen : Generator, input : Hypergraph, label : String, name : String){ 
     if(input.GetN() != 3){
         throw TypeMismatchException(input, 3)
     }
-    OpMToN(3, 1, gen, input, ArrayList<String>([out]), name) 
+    OpMToN(3, 1, gen, input, ArrayList<String>([label]), name) 
 }
 /**
  * Create a hypergraph for an operation 3 -> 1
@@ -165,11 +165,11 @@ func OpThreeToOne(gen : Generator, input : Hypergraph, out : String, name : Stri
  * @param x     The hypergraph that will be the first argument to this operation
  * @param y     The hypergraph that will be the second argument to this operation
  * @param z     The hypergraph that will be the third argument to this operation
- * @param out   The name of the output port
+ * @param label The label of the output port
  * @param name  The name of the resulting hypergraph
  * @return The hypergraph corresponding to this operation
  */
-func OpThreeToOne(gen : Generator, x : Hypergraph, y : Hypergraph, z : Hypergraph, out : String, name : String){
+func OpThreeToOne(gen : Generator, x : Hypergraph, y : Hypergraph, z : Hypergraph, label : String, name : String){
     if(x.GetN() != 1){
         throw TypeMismatchException(x, 1)
     }
@@ -179,7 +179,7 @@ func OpThreeToOne(gen : Generator, x : Hypergraph, y : Hypergraph, z : Hypergrap
     if(y.GetN() != 1){
         throw TypeMismatchException(z, 1)
     }
-    OpMToN(3, 1, gen, Par([x,y,z]), ArrayList<String>([out]), name)
+    OpMToN(3, 1, gen, Par([x,y,z]), ArrayList<String>([label]), name)
 }
 /**
  * Create a hypergraph for an operation 1 -> 2
@@ -204,11 +204,11 @@ func OpOneToTwo(gen : Generator, input : Hypergraph, lhs : String, rhs : String,
  * @param name  The name of the resulting hypergraph
  * @return The hypergraph corresponding to this operation
  */
-func OpOneToTwo(gen : Generator, input : Hypergraph, out : String, name : String){ 
+func OpOneToTwo(gen : Generator, input : Hypergraph, label : String, name : String){ 
     if(input.GetN() != 1){
         throw TypeMismatchException(input, 2)
     }
-    OpMToN(1,2, gen, input, ArrayList<String>([out]), name) 
+    OpMToN(1,2, gen, input, ArrayList<String>([label]), name) 
 }
 
 /**
@@ -311,17 +311,28 @@ func CreateCopy(n : Int64) : Hypergraph {
  * Create a copy hypergraph n -> 2n
  * @param n     The number of wires to copy
  * @param input The input to the copy
- * @param ports The names of the output ports 
+ * @param labels The labels of the output ports
  * @param name  The name of the resulting hypergraph
  * @return A hypergraph for a copy
  */
-external func Copy(n : Int64, input!: Hypergraph = Identity(n), ports!: ArrayList<String> = ArrayList<String>(2 * n, {x => ""}), name!: String = ""){
-    if(ports.size() != n * 2) {
-        throw BadOutputPortsException(ports.size(), n * 2)
+external func Copy(n : Int64, input!: Hypergraph = Identity(n), labels!: ArrayList<String> = ArrayList<String>(2 * n, {x => ""}), name!: Option<String> = None<String>){
+    if(labels.size() != n * 2) {
+        throw BadOutputLabelsException(labels.size(), n * 2)
     }
-    var circ = Seq(input, CreateCopy(n), ports: ports, name: name)
-    //circ.NameOutputs(ports)
-    circ
+    Seq(input, CreateCopy(n), labels: labels, name: name)
+}
+
+/**
+ * Create a copy hypergraph n -> 2n
+ * @param n     The number of wires to copy
+ * @param input The input to the copy
+ * @param lhs   The labels of the lhs copy ports
+ * @param rhs   The labels of the rhs copy ports
+ * @param name  The name of the resulting hypergraph
+ * @return A hypergraph for a copy
+ */
+external func Copy(n : Int64, input!: Hypergraph = Identity(n), labelLHS!:String, labelRHS!:String, name!: Option<String> = None<String>){
+    Copy(n, input: input, labels: ArrayList<String>(2 * n, {x : Int64 => x < n ? labelLHS : labelRHS}), name: name)
 }
 
 /**
@@ -345,8 +356,7 @@ func CreateErase(n : Int64) : Hypergraph {
  * @return A hypergraph for a erase
  */
 external func Erase(n : Int64, input!: Hypergraph = Identity(n), name!: String = ""){
-    var circ = Seq(input, CreateErase(n), name: name)
-    circ
+    Seq(input, CreateErase(n), name: name)
 }
 
 /**
@@ -367,19 +377,29 @@ external func CreateMerge(n : Int64) : Hypergraph {
 
 /**
  * Create a merge hypergraph 2n -> n
- * @param n     The number of wires to merge
- * @param input The input to the merge
- * @param ports The names of the output ports 
- * @param name  The name of the resulting hypergraph
+ * @param n      The number of wires to merge
+ * @param input  The input to the merge
+ * @param labels The labels of the output ports
+ * @param name   The name of the resulting hypergraph
  * @return A hypergraph for a merge
  */
-external func Merge(n : Int64, input!: Hypergraph = Identity(n), ports!: ArrayList<String> = ArrayList<String>(n, {x => ""}), name!: String = ""){
-    if(ports.size() != n) {
-        throw BadOutputPortsException(ports.size(), n)
+external func Merge(n : Int64, input!: Hypergraph = Identity(n), labels!: ArrayList<String> = ArrayList<String>(n, {x => ""}), name!: String = ""){
+    if(labels.size() != n) {
+        throw BadOutputLabelsException(labels.size(), n)
     }
-    var circ = Seq(input, CreateMerge(n), ports: ports, name: name)
-    //circ.NameOutputs(ports)
-    circ
+    Seq(input, CreateMerge(n), labels: labels, name: name)
+}
+
+/**
+ * Create a merge hypergraph 2n -> n
+ * @param n      The number of wires to merge
+ * @param input  The input to the merge
+ * @param label  The label of the output ports
+ * @param name   The name of the resulting hypergraph
+ * @return A hypergraph for a merge
+ */
+external func Merge(n : Int64, input!: Hypergraph = Identity(n), label!: String, name!: String = ""){
+    Merge(n, input: input, labels: ArrayList<String>(n, {x : Int64 => label}), name: name)
 }
 
 /**
@@ -397,54 +417,52 @@ external func CreateInit(n : Int64) : Hypergraph {
 
 /**
  * Create an init hypergraph 0 -> n
- * @param n     The number of wires to init
- * @param input The input to the erase
- * @param ports The name of the output ports
- * @param name  The name of the resulting hypergraph
+ * @param n      The number of wires to init
+ * @param input  The input to the erase
+ * @param labels The labels of the output ports
+ * @param name   The name of the resulting hypergraph
  * @return A hypergraph for a erase
  */
-external func Init(n : Int64, input!: Hypergraph = Identity(n), ports!: ArrayList<String> = ArrayList<String>(n, {x => ""}), name!: String = ""){
-    var circ = Seq(input, CreateInit(n), name: name)
-    //circ.NameOutputs(ports)
-    circ
+external func Init(n : Int64, input!: Hypergraph = Identity(n), labels!: ArrayList<String> = ArrayList<String>(n, {x => ""}), name!: String = ""){
+    Seq(input, CreateInit(n), name: name)
 }
 
-external func NotGate(input!: Hypergraph = Identity(1), port!: String = "", name!: String = "") { OpOneToOne(NOT, input, port, name) }
+external func NotGate(input!: Hypergraph = Identity(1), label!: String = "", name!: String = "") { OpOneToOne(NOT, input, label, name) }
 
-external func AndGate(input!: Hypergraph = Identity(2), port!: String = "", name!: String = "") { OpTwoToOne(AND, input, port, name) }
-external func AndGate(lhs!: Hypergraph, rhs!: Hypergraph, port!: String = "", name!: String = ""){ OpTwoToOne(AND, lhs, rhs, port, name) }
+external func AndGate(input!: Hypergraph = Identity(2), label!: String = "", name!: String = "") { OpTwoToOne(AND, input, label, name) }
+external func AndGate(lhs!: Hypergraph, rhs!: Hypergraph, label!: String = "", name!: String = ""){ OpTwoToOne(AND, lhs, rhs, label, name) }
 
-external func OrGate(input!: Hypergraph = Identity(2), port!: String = "", name!: String = "") { OpTwoToOne(OR, input, port, name) }
-external func OrGate(lhs!: Hypergraph, rhs!: Hypergraph, port!: String = "", name!: String = ""){ OpTwoToOne(OR, lhs, rhs, port, name) }
+external func OrGate(input!: Hypergraph = Identity(2), label!: String = "", name!: String = "") { OpTwoToOne(OR, input, label, name) }
+external func OrGate(lhs!: Hypergraph, rhs!: Hypergraph, label!: String = "", name!: String = ""){ OpTwoToOne(OR, lhs, rhs, label, name) }
 
-external func XorGate(input!: Hypergraph = Identity(2), port!: String = "", name!: String = "") { OpTwoToOne(XOR, input, port, name) }
-external func XorGate(lhs!: Hypergraph, rhs!: Hypergraph, port!: String = "", name!: String = ""){ OpTwoToOne(XOR, lhs, rhs, port, name) }
+external func XorGate(input!: Hypergraph = Identity(2), label!: String = "", name!: String = "") { OpTwoToOne(XOR, input, label, name) }
+external func XorGate(lhs!: Hypergraph, rhs!: Hypergraph, label!: String = "", name!: String = ""){ OpTwoToOne(XOR, lhs, rhs, label, name) }
 
-external func NandGate(input!: Hypergraph = Identity(2), port!: String = "", name!: String = "") { OpTwoToOne(NAND, input, port, name) }
-external func NandGate(lhs!: Hypergraph, rhs!: Hypergraph, port!: String = "", name!: String = ""){ OpTwoToOne(NAND, lhs, rhs, port, name) }
+external func NandGate(input!: Hypergraph = Identity(2), label!: String = "", name!: String = "") { OpTwoToOne(NAND, input, label, name) }
+external func NandGate(lhs!: Hypergraph, rhs!: Hypergraph, label!: String = "", name!: String = ""){ OpTwoToOne(NAND, lhs, rhs, label, name) }
 
-external func NorGate(input!: Hypergraph = Identity(2), port!: String = "", name!: String = "") { OpTwoToOne(NOR, input, port, name) }
-external func NorGate(lhs!: Hypergraph, rhs!: Hypergraph, port!: String = "", name!: String = ""){ OpTwoToOne(NOR, lhs, rhs, port, name) }
+external func NorGate(input!: Hypergraph = Identity(2), label!: String = "", name!: String = "") { OpTwoToOne(NOR, input, label, name) }
+external func NorGate(lhs!: Hypergraph, rhs!: Hypergraph, label!: String = "", name!: String = ""){ OpTwoToOne(NOR, lhs, rhs, label, name) }
 
-external func XnorGate(input!: Hypergraph = Identity(2), port!: String = "", name!: String = "") { OpTwoToOne(XNOR, input, port, name) }
-external func XnorGate(lhs!: Hypergraph, rhs!: Hypergraph, port!: String = "", name!: String = ""){ OpTwoToOne(XNOR, lhs, rhs, port, name) }
+external func XnorGate(input!: Hypergraph = Identity(2), label!: String = "", name!: String = "") { OpTwoToOne(XNOR, input, label, name) }
+external func XnorGate(lhs!: Hypergraph, rhs!: Hypergraph, label!: String = "", name!: String = ""){ OpTwoToOne(XNOR, lhs, rhs, label, name) }
 
-external func Delay(n : Int64, input!: Hypergraph = Identity(1), port!: String = "", name!: String = "") { OpOneToOne(DELAY(n), input, port, name) }
+external func Delay(n : Int64, input!: Hypergraph = Identity(1), label!: String = "", name!: String = "") { OpOneToOne(DELAY(n), input, label, name) }
 
 external func InLink(spec : LinkSpec, input!: Hypergraph = Identity(spec.width), name!:String = "") { OpOneToZero(INLINK(spec), input, name) }
-external func OutLink(spec : LinkSpec, port!: String, name!:String = "") { OpZeroToOne(INLINK(spec), port, name) }
+external func OutLink(spec : LinkSpec, label!: String, name!:String = "") { OpZeroToOne(INLINK(spec), label, name) }
 
 /**
  * Create an input to the graph with associated handles
- * @param port The name of the bus
+ * @param out The name of the bus
  * @param width The width of the bus
  * @return The input circuit
  */
-external func Input(port!: String, width!: Int64 = 1){
+external func Input(label!: String, width!: Int64 = 1){
     if(width < 1){
         throw NegativeWireException()
     }
-    Identity(width, port: port)
+    Identity(width, label: label)
 }
 
 /**
@@ -487,10 +505,10 @@ external func Output(fs : List<Hypergraph>, name!: Option<String> = None<String>
 }
 
 external func TestComponents() {
-    let n = 3
-    let fs : ArrayList<Hypergraph> = ArrayList<Hypergraph>([Copy(n), Par(Erase(n), Identity(n)), Par(Identity(n), Init(n)), Merge(n)])
-    let graph = Seq(fs)
-    print(DotGraph(graph))
+    let a = AndGate(label: "hello")
+    let b = NotGate(label: "Not")
+    let c = Seq(a, b)
+    print(DotGraph(c))
     return 0
 }
 
