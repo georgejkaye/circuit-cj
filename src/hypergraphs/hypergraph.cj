@@ -55,7 +55,6 @@ func AtomListToString(xs : ArrayList<Atom>){
  */
 class Bus <: Atom {
     let name : Option<String>
-    let wires : ArrayList<Wire> = ArrayList<Wire>()
     var width : Int64
     init() {
         this.name = None<String>
@@ -65,6 +64,10 @@ class Bus <: Atom {
         this.name = name
         this.width = 0
     }
+    init(width : Int64){
+        this.name = None<String>
+        this.width = width
+    }
     /**
      * Add a wire to the bundle of wires and get its position
      * @return The position of the new wire in the bundle
@@ -72,7 +75,6 @@ class Bus <: Atom {
     func AddWire(){
         let wire = Wire(this, this.width)
         this.width++
-        wires.add(wire)
         wire
     }
 }
@@ -101,7 +103,7 @@ class Wire <: Atom {
         this.i = i
     }
     init(){
-        this.bus = Bus()
+        this.bus = Bus(1)
         this.i = 0
     }
 }
@@ -254,6 +256,9 @@ open class Edge <: Atom {
         this.sources = sources
         this.targets = targets
     }
+    init(generator : Generator, sources : List<Source>, targets: List<Target>){
+        this(generator, ArrayList<Source>(sources), ArrayList<Target>(targets))
+    }
 }
 append Edge with ToString, Equatable, Hashable {
     func toString(e : Edge) { 
@@ -287,12 +292,13 @@ enum Port {
     | InterfacePort(Int64) 
 }
 
-func UpdateBuses(wireMap : MapBuilder<Bus, ArrayList<Option<Source>>>, busMap : MapBuilder<String, Bus>, busList : ArrayList<Bus>, v : Source){
+func UpdateBuses(wireMap : MapBuilder<Bus, ArrayList<Option<Source>>>, busMap : MapBuilder<String, Bus>, busList : ArrayList<Bus>, wireList : ArrayList<Wire>, v : Source){
         for(wire in v.wires){
+            wireList.add(wire)
             let bus = wire.bus
             let x = match(wireMap.get(bus)){
                 case Some(ws) => {
-                    ws[wire.i] = Some(v)
+                    ws.set(wire.i, Some(v))
                     true
                 }
                 case $None     => {
@@ -310,7 +316,7 @@ func UpdateBuses(wireMap : MapBuilder<Bus, ArrayList<Option<Source>>>, busMap : 
                 }
             }
         }
-        (wireMap, busMap, busList)
+        (wireMap, busMap, busList, wireList)
     }
 
 /**
@@ -338,9 +344,10 @@ external class Hypergraph <: Atom {
     private let m       : Int64
     private let n       : Int64
 
-    private let busNames : Map<String, Bus>
-    private let buses    : ArrayList<Bus>
-    private let wires    : Map<Bus, ArrayList<Option<Source>>>
+    private let busNames     : Map<String, Bus>
+    private let buses        : ArrayList<Bus>
+    private let wires        : ArrayList<Wire>
+    private let wireVertices : Map<Bus, ArrayList<Option<Source>>>
 
     init(edges    : ArrayList<Edge>, 
          inputs   : ArrayList<Target>,
@@ -378,6 +385,7 @@ external class Hypergraph <: Atom {
         var wireMap = MapBuilder<Bus, ArrayList<Option<Source>>>()
         var busMap = MapBuilder<String, Bus>()
         var busList = ArrayList<Bus>()
+        var wireList = ArrayList<Wire>()
 
         // Add inputs to the list of targets
         for(i in 0..inputs.size()){
@@ -391,7 +399,7 @@ external class Hypergraph <: Atom {
             sources.add(v)
             rightMap.add(v, InterfacePort(i))
             // Update the buses list with any output buses
-            (wireMap, busMap, busList) = UpdateBuses(wireMap, busMap, busList, v)
+            (wireMap, busMap, busList, wireList) = UpdateBuses(wireMap, busMap, busList, wireList, v)
         }
 
         for(e in edges){
@@ -401,7 +409,7 @@ external class Hypergraph <: Atom {
                 sources.add(v)
                 rightMap.add(v, EdgePort(e,i))
                 // Update the buses list with any intermediate buses
-                (wireMap, busMap, busList) = UpdateBuses(wireMap, busMap, busList, v)
+                (wireMap, busMap, busList, wireList) = UpdateBuses(wireMap, busMap, busList, wireList, v)
                 
             }
             // Add targets to the list of targets
@@ -415,9 +423,10 @@ external class Hypergraph <: Atom {
         this.lefts = leftMap.toMap()
         this.rights = rightMap.toMap()
 
-        this.busNames = busMap.toMap()
-        this.wires = wireMap.toMap()
-        this.buses = busList
+        this.busNames     = busMap.toMap()
+        this.wireVertices = wireMap.toMap()
+        this.buses        = busList
+        this.wires        = wireList
 
         let connslMap = MapBuilder<Source, Target>()
 
@@ -442,23 +451,34 @@ external class Hypergraph <: Atom {
     func GetTargets() { targets }
 
     func GetWires() { wires }
+    func GetWireVertexMap() { wireVertices }
     func GetBusNames(){ busNames }
     func GetBuses() { buses }
 
     func GetWireVertex(w : Wire) { 
-        match(wires.get(w.bus)){
-             case Some(ws) => match(ws.get(w.i)){
+        match(wireVertices.get(w.bus)){
+             case Some(ws) => {
+                 match(ws.get(w.i)){
                  case Some(v) => v
                  case $None   => throw WireNotInGraphException(w)
+                 }
              }
              case $None    => throw WireNotInGraphException(w)
         }
     }
 
+    func GetWireVertexOption(w : Wire){
+        match(wireVertices.get(w.bus)){
+            case Some(ws) => ws.get(w.i)
+            case $None    => None<Source>
+        }
+    }
+
+
     func GetBusVertices(s : String) {
         match(busNames.get(s)){
             case Some(b) => {
-                match(wires.get(b)){
+                match(wireVertices.get(b)){
                     case Some(ws) => ws
                     case $None    => throw BusNotInGraphException(s)
                 }

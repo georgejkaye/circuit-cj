@@ -1,7 +1,7 @@
 package examples
 import hypergraphs.*
 
-external func HalfAdderPorts(){
+external func HalfAdderFunctional(){
     // First we declare our inputs so we have handles on them
     let a = Input(port: "a", width: 1)
     let b = Input(port: "b", width: 1)
@@ -9,15 +9,20 @@ external func HalfAdderPorts(){
     let carry = AndGate(lhs: a, rhs: b, port: "carry")
     let sum = XorGate(lhs: a, rhs: b, port: "sum")
     // We need to return both the carry and the sum
-    sum
-    //Output([carry, sum])
+    Output([carry, sum], name: "half adder - functional style")
 }
 
 external func HalfAdderCombinator(){
-    let id = Identity(2, port: "input")
+    // Not necessary but nice if we want to label our inputs
+    let a = Identity(1, port: "a")
+    let b = Identity(1, port: "b")
+    let inputs = Par(a,b)
+    // We need to copy our inputs so there are versions for the AND and the XOR
+    let copy = Copy(2)
+    // Define the stack of the two gates
     let carry = AndGate(port: "carry")
     let sum = XorGate(port: "sum")
-    let comp = Par(sum, carry)
-    let copy = Copy(2)
-    Seq([id, copy, comp])
+    let gates = Par(sum, carry)
+    // Compose these three slices together
+    Seq([inputs, copy, gates], name: "half adder - combinator style")
 }

@@ -281,7 +281,6 @@ external func Trace(f : Hypergraph, x : Int64, ports!: ArrayList<String> = Array
     let idEdge = Edge(IDENTITY, idSources, idTargets)
     let newEdges = newF.GetEdges()
     newEdges.add(idEdge)
-
     Hypergraph(name, newEdges, newInputs, AddBusesToOutputs(ports, newOutputs), newF.GetConnsR())
 }
 
@@ -347,50 +346,6 @@ external func Get(f : Hypergraph, s : String, name!: Option<String> = None<Strin
         throw PortNotFoundException(f, s)
     } 
     Get(f, ns, name: name)
-}
-
-func includesEdge(x : Edge, es : ArrayList<Edge>){
-    for(e in es){
-        if (e == x){
-            return true
-        }
-    }
-    return false
-}
-
-external func Output(fs : ArrayList<Hypergraph>){
-    var res : Hypergraph = fs[0]
-    var encounteredBuses = ArrayList<Bus>(res.GetBuses())
-    for(i in 1..fs.size()){
-        let f = fs[i]
-        let visited = ArrayList<Edge>()
-        let frontier = ArrayList<Source>(f.GetOutputs())
-        while(frontier.size() != 0){
-            let v = frontier.removeAt(0)
-            for(w in v.wires){
-                match(GetBus(w, encounteredBuses)){
-                    case $None    => {}
-                    case Some(b)  => { print("encountered bus ${b} (wire ${w.i})!\n") }
-                }
-            }
-            let edge = f.GetEdge(f.GetConnL(v))
-            match(edge){
-                case InterfacePort(j) => {}
-                case EdgePort(e, j) => {
-                    if(!includesEdge(e, visited)){
-                        frontier.addAll(e.sources)
-                    }
-                }
-            }
-            
-
-        }
-    }
-    Par(fs)
-}
-
-external func Output(fs : List<Hypergraph>){
-    Output(ArrayList<Hypergraph>(fs))
 }
 
 external func TestOps(){

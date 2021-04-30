@@ -434,12 +434,56 @@ external func Delay(n : Int64, input!: Hypergraph = Identity(1), port!: String =
 external func InLink(spec : LinkSpec, input!: Hypergraph = Identity(spec.width), name!:String = "") { OpOneToZero(INLINK(spec), input, name) }
 external func OutLink(spec : LinkSpec, port!: String, name!:String = "") { OpZeroToOne(INLINK(spec), port, name) }
 
-
+/**
+ * Create an input to the graph with associated handles
+ * @param port The name of the bus
+ * @param width The width of the bus
+ * @return The input circuit
+ */
 external func Input(port!: String, width!: Int64 = 1){
     if(width < 1){
         throw NegativeWireException()
     }
     Identity(width, port: port)
+}
+
+/**
+ * Combine a list of hypergraphs into a single hypergraph, ensuring that any shared wires are
+ * shared in the resulting hypergraph. The order of the outputs is determined by the 
+ * order the hypergraphs are given in
+ * @param fs   The list of hypergraphs
+ * @param name The name of the resulting hypergraph
+ */
+external func Output(fs : ArrayList<Hypergraph>, name!: Option<String> = None<String>){
+    var f = fs[0]
+    var encounteredWires = ArrayList<Wire>(f.GetWires())
+    for(i in 1..fs.size()){
+        var g = fs[i]
+        let visited = ArrayList<Edge>()
+        let frontier = ArrayList<Source>(g.GetOutputs())
+        while(frontier.size() != 0){
+            let v = frontier.removeAt(0)
+            for(w in v.wires){
+                if(includes(encounteredWires, w)){
+                    g = RemoveLeft(g, w)
+                } else {
+                    encounteredWires.add(w)
+                }
+            }
+        }
+        f = Inject(f, g, name: name)
+    }
+    f
+}
+/**
+ * Combine a list of hypergraphs into a single hypergraph, ensuring that any shared wires are
+ * shared in the resulting hypergraph. The order of the outputs is determined by the 
+ * order the hypergraphs are given in
+ * @param fs   The list of hypergraphs
+ * @param name The name of the resulting hypergraph
+ */
+external func Output(fs : List<Hypergraph>, name!: Option<String> = None<String>){
+    Output(ArrayList<Hypergraph>(fs), name: name)
 }
 
 external func TestComponents() {
