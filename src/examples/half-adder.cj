@@ -14,9 +14,10 @@ external func HalfAdderPorts(){
 }
 
 external func HalfAdderCombinator(){
+    let id = Identity(2, port: "input")
     let carry = AndGate(port: "carry")
     let sum = XorGate(port: "sum")
     let comp = Par(sum, carry)
     let copy = Copy(2)
-    Seq(copy, comp)
+    Seq([id, copy, comp])
 }

@@ -26,6 +26,21 @@ class VertexNotInGraphException <: Exception {
     }
 }
 
+class WireNotInGraphException <: Exception {
+    init(w : Wire){
+        print("Wire ${w} is not in the graph")
+    }
+}
+
+class BusNotInGraphException <: Exception {
+    init(b : Bus){
+        print("Bus ${b} is not in the graph")
+    }
+    init(s : String){
+        print("Bus ${s} is not in the graph")
+    }
+}
+
 /**
  * Type error exceptions 
  */

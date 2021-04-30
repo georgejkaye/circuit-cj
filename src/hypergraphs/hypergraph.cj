@@ -287,6 +287,32 @@ enum Port {
     | InterfacePort(Int64) 
 }
 
+func UpdateBuses(wireMap : MapBuilder<Bus, ArrayList<Option<Source>>>, busMap : MapBuilder<String, Bus>, busList : ArrayList<Bus>, v : Source){
+        for(wire in v.wires){
+            let bus = wire.bus
+            let x = match(wireMap.get(bus)){
+                case Some(ws) => {
+                    ws[wire.i] = Some(v)
+                    true
+                }
+                case $None     => {
+                    let wires = ArrayList<Option<Source>>(bus.width, { x => (x == wire.i) ? Some(v) : None<Source> })
+                    wireMap.add(bus, wires)
+                    let x = match(bus.name){
+                        case Some(text) => {
+                            busMap.add(text, bus)
+                            busList.add(bus) 
+                            true 
+                        }
+                        case $None      => { false }
+                    }
+                    true
+                }
+            }
+        }
+        (wireMap, busMap, busList)
+    }
+
 /**
  * Hypergraph
  */
@@ -312,7 +338,9 @@ external class Hypergraph <: Atom {
     private let m       : Int64
     private let n       : Int64
 
-    private let buses   : ArrayList<Bus>
+    private let busNames : Map<String, Bus>
+    private let buses    : ArrayList<Bus>
+    private let wires    : Map<Bus, ArrayList<Option<Source>>>
 
     init(edges    : ArrayList<Edge>, 
          inputs   : ArrayList<Target>,
@@ -344,9 +372,12 @@ external class Hypergraph <: Atom {
 
         this.sources = ArrayList<Source>()
         this.targets = ArrayList<Target>()
-        this.buses = ArrayList<Bus>()
+
         let leftMap = MapBuilder<Target, Port>()
         let rightMap = MapBuilder<Source, Port>()
+        var wireMap = MapBuilder<Bus, ArrayList<Option<Source>>>()
+        var busMap = MapBuilder<String, Bus>()
+        var busList = ArrayList<Bus>()
 
         // Add inputs to the list of targets
         for(i in 0..inputs.size()){
@@ -360,12 +391,7 @@ external class Hypergraph <: Atom {
             sources.add(v)
             rightMap.add(v, InterfacePort(i))
             // Update the buses list with any output buses
-            for(wire in v.wires){
-                match(GetBus(wire, buses)){
-                    case Some(bus) => {}
-                    case $None     => buses.add(wire.bus)
-                }
-            }
+            (wireMap, busMap, busList) = UpdateBuses(wireMap, busMap, busList, v)
         }
 
         for(e in edges){
@@ -375,12 +401,8 @@ external class Hypergraph <: Atom {
                 sources.add(v)
                 rightMap.add(v, EdgePort(e,i))
                 // Update the buses list with any intermediate buses
-                for(wire in v.wires){
-                    match(GetBus(wire, buses)){
-                        case Some(bus) => {}
-                        case $None     => buses.add(wire.bus)
-                    }
-                }
+                (wireMap, busMap, busList) = UpdateBuses(wireMap, busMap, busList, v)
+                
             }
             // Add targets to the list of targets
             for(i in 0..e.targets.size()){
@@ -392,6 +414,10 @@ external class Hypergraph <: Atom {
 
         this.lefts = leftMap.toMap()
         this.rights = rightMap.toMap()
+
+        this.busNames = busMap.toMap()
+        this.wires = wireMap.toMap()
+        this.buses = busList
 
         let connslMap = MapBuilder<Source, Target>()
 
@@ -415,7 +441,31 @@ external class Hypergraph <: Atom {
     func GetSources() { sources }
     func GetTargets() { targets }
 
+    func GetWires() { wires }
+    func GetBusNames(){ busNames }
     func GetBuses() { buses }
+
+    func GetWireVertex(w : Wire) { 
+        match(wires.get(w.bus)){
+             case Some(ws) => match(ws.get(w.i)){
+                 case Some(v) => v
+                 case $None   => throw WireNotInGraphException(w)
+             }
+             case $None    => throw WireNotInGraphException(w)
+        }
+    }
+
+    func GetBusVertices(s : String) {
+        match(busNames.get(s)){
+            case Some(b) => {
+                match(wires.get(b)){
+                    case Some(ws) => ws
+                    case $None    => throw BusNotInGraphException(s)
+                }
+            }
+            case $None => throw BusNotInGraphException(s)
+        }
+    }
 
     func GetConnR(t : Target) {
         match(connsr.get(t)){
@@ -441,42 +491,10 @@ external class Hypergraph <: Atom {
             case Some(p) => p
         }
     }
-
     func ContainsBus(b : String) {
-        match(GetBus(b, buses)){
+        match(busNames.get(b)){
             case Some(x) => return true
             case $None   => return false
-        }
-    }
-
-    /**
-     * Assign wires to the outputs of this graph
-     * Throws BadOutputPortsException if the list of ports != the outputs
-     * @param ports The list of wire names to assign
-     */
-    func NameOutputs(ports : ArrayList<String>){
-        if(ports.size() != n){
-            throw BadOutputPortsException(ports.size(), n)
-        }
-        for(i in 0..ports.size()){
-            let name = ports.get(i)
-            let bus : Bus
-            if(name == ""){
-                bus = Bus()
-                buses.add(bus)
-            } else {
-                let b = GetBus(name, buses)
-                match(b){
-                    case Some(x) => {
-                        bus = x
-                    }
-                    case $None   => {
-                        bus = Bus(name)
-                        buses.add(bus)
-                    }
-                }
-            }
-            outputs.get(i).AddWire(bus.AddWire())
         }
     }
 
@@ -559,77 +577,6 @@ external class Hypergraph <: Atom {
         }
         let newConns = newConnsBuilder.toMap()
         Hypergraph(newEdges, newInputs, newOutputs, newConns)
-    }
-
-    /**
-     * Remove all parts of the graph that can be accessed by travelling left from a source vertex
-     * @param s The source vertex
-     * @return A clone of the hypergraph with all parts of the hypergraph left of a given source vertex removed
-     */
-    func RemoveLeft(s : Source){
-        let frontier = ArrayList<Source>([s])
-        let explored = ArrayList<Edge>()
-        let removedInputs = ArrayList<Int64>()
-        let removedTargets = ArrayList<Target>()
-        // Traverse the graph
-        while(frontier.size() != 0){
-            let s = frontier.removeAt(0)
-            let t = GetConnL(s)
-            match(GetEdge(t)){
-                case EdgePort(e, i) => {
-                    explored.add(e)
-                    frontier.addAll(e.sources)
-                    removedTargets.addAll(e.targets)
-                }
-                case InterfacePort(i) => {
-                    removedInputs.add(i)
-                }
-            }
-        }
-        // Only include edges not found by the search
-        let newEdges = ArrayList<Edge>()
-        for(e in edges){
-            if(!includes(explored, e)){
-                newEdges.add(e)
-            }
-        }
-        // Only include vertices not found by the search
-        let newInputs = ArrayList<Target>()
-        for(i in 0..inputs.size()){
-            if(!includes(removedInputs, i)){
-                newInputs.add(inputs[i])
-            }
-        }
-        // If there are any dangling sources, add their targets to the inputs
-        for(e in newEdges){
-            let t = GetConnL(s)
-            if(includes(removedTargets, t)){
-                newInputs.add(t)
-            }
-        }
-        // If there are any dangling outputs, add their targets to the inputs
-        for(v in outputs){
-            let t = GetConnL(v)
-            if(includes(removedTargets, t)){
-                newInputs.add(t)
-            }
-        }
-        // Outputs are unchanged
-        let newOutputs = ArrayList<Source>(outputs)
-        // Build the new connections map
-        let connsMap = MapBuilder<Target, Source>()
-        for(v in newInputs){
-            connsMap.add(v, GetConnR(v))
-        }
-        for(e in newEdges){
-            for(v in e.targets){
-                connsMap.add(v, GetConnR(v))
-            }
-        }
-        // Make the new hypergraph
-        let h = Hypergraph(newEdges, newInputs, newOutputs, connsMap.toMap())
-        // Clone it in case this graph interacts with the original
-        h.Clone()
     }
 
     /**

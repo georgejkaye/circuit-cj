@@ -6,6 +6,27 @@
 
 package hypergraphs
 
+func AddBusesToOutputs(ports: ArrayList<String>, outputs: ArrayList<Source>){
+    let buses = ArrayList<Bus>()
+    for(i in 0..ports.size()){
+        let port = ports[i]
+        if(port != "") { 
+            let bus = match(GetBus(port, buses)){
+                case $None => {
+                        let bus = Bus(port)
+                        buses.add(bus)
+                        bus
+                }
+                case Some(b) => {
+                    b
+                }
+            }
+            outputs[i].AddWire(bus.AddWire())
+        }
+    }
+    outputs
+}
+
 /**
  * Sequentially compose hypergraphs f : m -> n and g : n -> p, creating h : m -> p
  * Throws TypeMismatchException if outputs of f != inputs of g
@@ -44,9 +65,7 @@ external func Seq(f : Hypergraph, g : Hypergraph, ports!: ArrayList<String> = Ar
     for(t in newG.GetTargets()){
         newConns.add(t,newG.GetConnR(t))
     }
-    var res = Hypergraph(name, newEdges, newF.GetInputs(), newG.GetOutputs(), newConns.toMap())
-    res.NameOutputs(ports)
-    res
+    Hypergraph(name, newEdges, newF.GetInputs(), AddBusesToOutputs(ports, newG.GetOutputs()), newConns.toMap())
 }
 
 /**
@@ -115,9 +134,7 @@ external func Identity(n : Int64, ports!: ArrayList<String>, name!: Option<Strin
         outputs.add(s)
         conns.add(t,s)
     }
-    var res = Hypergraph(name, ArrayList<Edge>(), inputs, outputs, conns.toMap())
-    res.NameOutputs(ports)
-    res
+    Hypergraph(name, ArrayList<Edge>(), inputs, AddBusesToOutputs(ports, outputs), conns.toMap())
 }
 
 /**
@@ -151,9 +168,7 @@ external func Par(f : Hypergraph, g : Hypergraph, ports!: ArrayList<String> = Ar
     for(v in newG.GetTargets()){
         newConns.add(v, newG.GetConnR(v))
     }
-    var res = Hypergraph(name, newEdges, newInputs, newOutputs, newConns.toMap())
-    res.NameOutputs(ports)
-    res
+    Hypergraph(name, newEdges, newInputs, AddBusesToOutputs(ports, newOutputs), newConns.toMap())
 }
 /**
  * Compose in parallel a list of hypergraphs from left to right 
@@ -230,9 +245,7 @@ external func Swap(m : Int64, n : Int64, ports!: ArrayList<String> = ArrayList<S
     for(i in 0..n){
         conns.add(inputs.get(m + i), outputs.get(i))
     }
-    var res = Hypergraph(name, ArrayList<Edge>(), inputs, outputs, conns.toMap())
-    res.NameOutputs(ports)
-    res
+    Hypergraph(name, ArrayList<Edge>(), inputs, AddBusesToOutputs(ports, outputs), conns.toMap())
 }
 
 /**
@@ -269,9 +282,7 @@ external func Trace(f : Hypergraph, x : Int64, ports!: ArrayList<String> = Array
     let newEdges = newF.GetEdges()
     newEdges.add(idEdge)
 
-    var res = Hypergraph(name, newEdges, newInputs, newOutputs, newF.GetConnsR())
-    res.NameOutputs(ports)
-    res
+    Hypergraph(name, newEdges, newInputs, AddBusesToOutputs(ports, newOutputs), newF.GetConnsR())
 }
 
 /**
@@ -327,7 +338,7 @@ external func Get(f : Hypergraph, s : String, name!: Option<String> = None<Strin
     for(i in 0..outputs.size()){
         for(wire in outputs[i].wires){
             match(wire.bus.name){
-                case Some(text) => if(s == text){ ns.add(i) }
+                case Some(text) => if(text == s) { ns.add(i) }
                 case $None      => {}
             }
         }

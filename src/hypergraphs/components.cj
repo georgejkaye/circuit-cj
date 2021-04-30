@@ -320,7 +320,7 @@ external func Copy(n : Int64, input!: Hypergraph = Identity(n), ports!: ArrayLis
         throw BadOutputPortsException(ports.size(), n * 2)
     }
     var circ = Seq(input, CreateCopy(n), ports: ports, name: name)
-    circ.NameOutputs(ports)
+    //circ.NameOutputs(ports)
     circ
 }
 
@@ -378,7 +378,7 @@ external func Merge(n : Int64, input!: Hypergraph = Identity(n), ports!: ArrayLi
         throw BadOutputPortsException(ports.size(), n)
     }
     var circ = Seq(input, CreateMerge(n), ports: ports, name: name)
-    circ.NameOutputs(ports)
+    //circ.NameOutputs(ports)
     circ
 }
 
@@ -405,7 +405,7 @@ external func CreateInit(n : Int64) : Hypergraph {
  */
 external func Init(n : Int64, input!: Hypergraph = Identity(n), ports!: ArrayList<String> = ArrayList<String>(n, {x => ""}), name!: String = ""){
     var circ = Seq(input, CreateInit(n), name: name)
-    circ.NameOutputs(ports)
+    //circ.NameOutputs(ports)
     circ
 }
 
