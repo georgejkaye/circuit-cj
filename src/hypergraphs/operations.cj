@@ -181,7 +181,10 @@ external func Par(fs : ArrayList<Hypergraph>,
                   labels!: ArrayList<String> = ArrayList<String>(GetListOutputs(fs), {x => ""}), 
                   name!: Option<String> = None<String>) : Hypergraph {
     if(fs.size() == 0){
-        Empty()
+        return Empty()
+    }
+    if(fs.size() == 1){
+        return fs[0]
     }
     var res = fs[0]
     for(i in 1..fs.size() - 1){

@@ -162,7 +162,7 @@ append Vertex with ToString {
  * Source vertices are outwards facing ports: they are the sources of edges.
  * Sources have names so that we can reference them later and connect them to new edges
  */
-class Source <: Vertex {
+external class Source <: Vertex {
     /** The wires that the vertex represents */
     let wires : ArrayList<Wire>
 
@@ -220,7 +220,7 @@ func SourceListToString(xs : ArrayList<Source>){
  * Target vertices are inwards facing ports: they are the targets of edges.
  * Target vertices currently don't have anything particularly special about them
  */
-class Target <: Vertex {}
+external class Target <: Vertex {}
 append Target with ToString, Equatable, Hashable {
     func toString(t : Target) { "Target t${t.id}" }
     operator func ==(lhs : Target, rhs : Target) : Bool { lhs.id == rhs.id }
@@ -247,7 +247,7 @@ func TargetListToString(xs : ArrayList<Target>){
 /**
  * Edges have an associated generator, and lists of sources and targets
  */
-open class Edge <: Atom {
+external open class Edge <: Atom {
     let generator : Generator
     let sources : ArrayList<Source>
     let targets : ArrayList<Target>
@@ -355,6 +355,14 @@ external class Hypergraph <: Atom {
          conns    : Map<Target, Source>
     ) {
         this(None<String>, edges, inputs, outputs, conns)
+    }
+
+    init(edges   : List<Edge>, 
+         inputs  : List<Target>, 
+         outputs : List<Source>, 
+         conns: Map<Target,Source>
+    ){
+        this(None<String>, ArrayList<Edge>(edges), ArrayList<Target>(inputs), ArrayList<Source>(outputs), conns)
     }
 
     init(name     : Option<String>,

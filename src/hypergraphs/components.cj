@@ -143,7 +143,7 @@ func OpTwoToOne(gen : Generator, lhs : Hypergraph, rhs : Hypergraph, label : Str
     if(rhs.GetN() != 1){
         throw TypeMismatchException(rhs, 1)
     }
-    OpMToN(2, 1, gen, Par(lhs,rhs), ArrayList<String>([label]), name)
+    OpMToN(2, 1, gen, Output([lhs,rhs]), ArrayList<String>([label]), name)
 }
 /**
  * Create a hypergraph for an operation 3 -> 1
@@ -179,7 +179,7 @@ func OpThreeToOne(gen : Generator, x : Hypergraph, y : Hypergraph, z : Hypergrap
     if(y.GetN() != 1){
         throw TypeMismatchException(z, 1)
     }
-    OpMToN(3, 1, gen, Par([x,y,z]), ArrayList<String>([label]), name)
+    OpMToN(3, 1, gen, Output([x,y,z]), ArrayList<String>([label]), name)
 }
 /**
  * Create a hypergraph for an operation 1 -> 2

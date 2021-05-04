@@ -89,9 +89,9 @@ append Generator with ToString{
  * Structural generators
  */
 
-external let FORK : Generator = STRUCTURAL(Label("≺", 1, 2))
-external let JOIN : Generator = STRUCTURAL(Label("≻", 2, 1))
-external let STUB : Generator = STRUCTURAL(Label("~", 1, 0))
+external let FORK : Generator = STRUCTURAL(Label("fork", 1, 2))
+external let JOIN : Generator = STRUCTURAL(Label("join", 2, 1))
+external let STUB : Generator = STRUCTURAL(Label("stub", 1, 0))
 
 /**
  * Unary gates
