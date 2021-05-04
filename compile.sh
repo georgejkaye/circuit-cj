@@ -5,9 +5,15 @@ BUILD="$ROOT/build"
 SRC="$ROOT/src"
 BIN="$ROOT/bin"
 DOT="$DOT/dot"
+CJ_ROOT=$1
+
+IO_MODULE="$CJ_ROOT/build/build/modules/io"
+IO_O="$IO_MODULE/cangjieIO.o"
+IO_CJO="$IO_MODULE/io.cjo"
 
 IMPORTS="$ROOT/import.conf"
-OBJS=""
+OBJS="$IO_O"
+
 
 MAIN="main"
 PACKAGES=("hypergraphs" "examples")
@@ -19,6 +25,8 @@ mkdir $BUILD
 mkdir $BIN
 rm -f $IMPORTS
 touch $IMPORTS
+
+printf "io=$IO_CJO\n" >> $IMPORTS
 
 compile_package() {
     echo "Building package $1 ($2/$3)"

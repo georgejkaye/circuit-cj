@@ -97,3 +97,12 @@ class TooMuchTraceException <: Exception {
         print("Tried to trace more wires than outputs")
     }
 }
+
+/**
+ * File exceptions
+ */
+class CouldNotOpenFileException <: Exception {
+    init(file : String){
+        print("Could not open file ${file}")
+    }
+}

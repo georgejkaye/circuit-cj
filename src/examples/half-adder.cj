@@ -18,7 +18,7 @@ external func HalfAdderCombinator(){
     let b = Identity(1, label: "b")
     let inputs = Par(a,b)
     // We need to copy our inputs so there are versions for the AND and the XOR
-    let copy = Copy(2, labelLHS: "top", labelRHS: "bot")
+    let copy = Copy(2)
     // Define the stack of the two gates
     let carry = AndGate(label: "carry")
     let sum = XorGate(label: "sum")

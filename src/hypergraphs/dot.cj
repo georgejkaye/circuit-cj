@@ -1,7 +1,7 @@
 package hypergraphs
+import io.*
 
 let debugDot = false
-
 let tab = "  "
 
 func indent(n : Int64, str : String){
@@ -180,6 +180,21 @@ external func DotGraph(f : Hypergraph){
     edges = "${edges}\n${outputgraph}"
 
     "${declaration}\n${graphOptions}\n\n${vertexComment}\n${vertexNodeOptions}\n${vertices}\n\n${edgeComment}\n${edgeNodeOptions}\n${edges}\n\n${connsComment}\n${conns}\n}"
+}
+
+external func WriteDotToFile(f : Hypergraph, file : String){
+    let dot = DotGraph(f)
+    let fs = FileStream(file, OpenMode.ForceCreate)
+    if(fs.openFile()){
+        let ds = DataStream(fs)
+        ds.writeString(dot)
+        ds.flush()
+        ds.close()
+    } else {
+        fs.close()
+        throw CouldNotOpenFileException(file)
+    }
+    fs.close()
 }
 
 external func TestDot(){

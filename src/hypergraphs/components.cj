@@ -217,7 +217,7 @@ func OpOneToTwo(gen : Generator, input : Hypergraph, label : String, name : Stri
  * @param name="" The name of the resulting hypergraph
  * @return A hypergraph for a bottom value
  */
-func Bottom(port!: String = "", name!: String = "") { 
+external func Bottom(port!: String = "", name!: String = "") { 
     OpZeroToOne(VALUE(BOTTOM), port, name) 
 }
 /**
@@ -226,7 +226,7 @@ func Bottom(port!: String = "", name!: String = "") {
  * @param name="" The name of the resulting hypergraph
  * @return A hypergraph for a top value
  */
-func Top(port!: String = "", name!: String = ""){
+external func Top(port!: String = "", name!: String = ""){
     OpZeroToOne(VALUE(TOP), port, name)
 }
 /**
@@ -235,7 +235,7 @@ func Top(port!: String = "", name!: String = ""){
  * @param name="" The name of the resulting hypergraph
  * @return A hypergraph for a true value
  */
-func True(port!: String = "", name!: String = "") { 
+external func True(port!: String = "", name!: String = "") { 
     OpZeroToOne(VALUE(TRUE), port, name) 
 }
 /**
@@ -244,7 +244,7 @@ func True(port!: String = "", name!: String = "") {
  * @param name="" The name of the resulting hypergraph
  * @return A hypergraph for a false value
  */
-func False(port!: String = "", name!: String = ""){
+external func False(port!: String = "", name!: String = ""){
     OpZeroToOne(VALUE(FALSE), port, name)
 }
 

@@ -14,7 +14,7 @@ touch $DOT/$EXE.dot
 
 # run executable
 echo "Running $BIN/$EXE.out"
-$BIN/$EXE.out > $DOT/$EXE.dot
+$BIN/$EXE.out
 CODE=$?
 if [ "$CODE" != "0" ] ; then
     echo "Error $CODE, aborting..."

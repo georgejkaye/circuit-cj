@@ -15,10 +15,10 @@ enum Value { BOTTOM | TRUE | FALSE | TOP }
 append Value with ToString {
     func toString(v : Value) {
         match(v){
-            case BOTTOM => "⊥"
-            case TRUE   => "t"
-            case FALSE  => "f"
-            case TOP    => "⊤"
+            case $BOTTOM => "bot"
+            case $TRUE   => "t"
+            case $FALSE  => "f"
+            case $TOP    => "top"
         }
     }
 }

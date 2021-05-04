@@ -4,6 +4,7 @@ import examples.*
 func main(){
     let circ = HalfAdderCombinator()
     //let circ = HalfAdderFunctional()
-    print(DotGraph(circ))
+    WriteDotToFile(circ, "dot/main.dot")
+
     return 0
 }
