@@ -39,7 +39,7 @@ func AddBusesToOutputs(labels: ArrayList<String>, outputs: ArrayList<Source>){
 external func Seq(f : Hypergraph, g : Hypergraph, labels!: ArrayList<String> = ArrayList<String>(g.GetN(), {x => ""}), name!: Option<String> = None<String>) : Hypergraph {
     
     if(f.GetN() != g.GetM()){
-        throw TypeMismatchException(f,g)
+        throw TypeMismatchException("Seq", f,g)
     }
     
     let newF = f.Clone()
@@ -298,7 +298,7 @@ external func Trace(f : Hypergraph, x : Int64, labels!: ArrayList<String> = Arra
  */
 external func Get(f : Hypergraph, n : Int64, port! : String = "", name!: Option<String> = None<String>){
     if(n < 0){
-        throw TypeMismatchException(f, n)
+        throw TypeMismatchException("Get", f, n)
     }
     let stubs = Par([Erase(n),Identity(1),Erase(f.GetN() - n - 1)]) 
     Seq(f, stubs, labels: ArrayList<String>([port]), name: name)    
@@ -349,6 +349,13 @@ external func Get(f : Hypergraph, s : String, name!: Option<String> = None<Strin
         throw PortNotFoundException(f, s)
     } 
     Get(f, ns, name: name)
+}
+external func Drop(f : Hypergraph, n : Int64){
+    if(n < 0){
+        throw TypeMismatchException("Drop", f, n)
+    }
+    let stack = Par([Identity(n), Stub(), Identity(f.GetN() - n - 1)])
+    Seq(f, stack)
 }
 
 external func TestOps(){

@@ -47,7 +47,7 @@ append Label with ToString {
  * A link spec contains information about a link
  * It has an id, a name, and a width 
  */
-class LinkSpec <: Atom {
+external class LinkSpec <: Atom {
     let name : String
     let width : Int64
     init(name : String, width : Int64) {
@@ -68,8 +68,8 @@ external enum Generator {
     | GATE(Label)             // A gate m -> 1
     | DELAY(Int64)            // A delay parameterised by a duration
     | IDENTITY                // An identity 1 -> 1
-    | INLINK(LinkSpec)        // An in-link m -> 0, where wires can disappear into
-    | OUTLINK(LinkSpec)       // An out-link 0 -> m, where wires can emerge from
+    | INLINK(LinkSpec)        // An in-link 0 -> m, where wires come into the graph
+    | OUTLINK(LinkSpec)       // An out-link m -> 0, where wires come out of the graph
 }
 append Generator with ToString{
     func toString(gen : Generator){
@@ -78,7 +78,7 @@ append Generator with ToString{
             case STRUCTURAL(label)   => "structural ${label.name}"
             case GATE(label)         => "gate ${label.name}"
             case DELAY(dur)          => "delay ${dur}"
-            case IDENTITY            => "identity"
+            case $IDENTITY            => "identity"
             case INLINK(spec)        => "in link ${spec.name}"
             case OUTLINK(spec)       => "out link ${spec.name}"
         }

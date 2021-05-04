@@ -56,11 +56,16 @@ class BadCodomainException <: Exception {
     }
 }
 class TypeMismatchException <: Exception {
-    init(f : Hypergraph, g : Hypergraph){
-        print("Outputs of '${f.GetName()}' (${f.GetN()}) do not match inputs of '${g.GetName()}' (${g.GetM()})\n")
+    init(function : String, f : Hypergraph, g : Hypergraph){
+        print("${function}: Outputs of '${f.GetName()}' (${f.GetN()}) do not match inputs of '${g.GetName()}' (${g.GetM()})\n")
     }
-    init(f : Hypergraph, n : Int64) {
-        print("Outputs of '${f.GetName()}' (${f.GetN()}) do not match required inputs (${n})\n")
+    init(function : String, f : Hypergraph, n : Int64) {
+        print("${function}: Outputs of '${f.GetName()}' (${f.GetN()}) do not match required inputs (${n})\n")
+    }
+}
+class BadValueException <: Exception {
+    init(function : String, wire : String, n1 : Int64, name: String){
+        print("${function}: Expected input ${wire} to be a value i.e. type 0->n but '${name}' has type ${n1}->n\n")
     }
 }
 
@@ -104,5 +109,17 @@ class TooMuchTraceException <: Exception {
 class CouldNotOpenFileException <: Exception {
     init(file : String){
         print("Could not open file ${file}\n")
+    }
+}
+
+class BadInputException <: Exception {
+    init(function : String, wire : String, n1 : Int64, name: String, n2 : Int64){
+        print("${function}: Expected input '${wire}'' to be of type n->${n1} but '${name}' has type n->${n2}\n")
+    }
+}
+
+class NotEnoughBitsException <: Exception {
+    init(){
+        print("Must be at least one bit\n")
     }
 }

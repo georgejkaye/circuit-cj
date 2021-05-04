@@ -102,7 +102,7 @@ func DrawEdge(n : Int64, e : Edge){
         case STRUCTURAL(label) => (structuralStyle, label.name)
         case GATE(label)       => (gateStyle, label.name)
         case DELAY(dur)        => (delayStyle, "𝛿${subscript(dur)}")
-        case IDENTITY          => (identityStyle, "id")
+        case $IDENTITY         => (identityStyle, "id")
         case INLINK(spec)      => (linkStyle, spec.name)
         case OUTLINK(spec)     => (linkStyle, spec.name)
     }

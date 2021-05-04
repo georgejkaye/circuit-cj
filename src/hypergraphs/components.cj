@@ -22,12 +22,13 @@ func OpMToN(m : Int64, n : Int64, generator : Generator,  input : Hypergraph, la
         case STRUCTURAL(label) => (label.dom, label.cod)
         case GATE(label)       => (label.dom, label.cod)
         case DELAY(dur)        => (1,1)
-        case IDENTITY          => (1,1)
-        case INLINK(spec)      => (spec.width, 0)
-        case OUTLINK(spec)     => (0, spec.width)
+        case $IDENTITY          => (1,1)
+        case INLINK(spec)      => (0, spec.width)
+        case OUTLINK(spec)     => (spec.width, 0)
     }
 
     if(m != dom || m < 0){
+        print("Hello ${generator}\n")
         throw BadDomainException(m, dom)
     }
     if(n != cod || n < 0){
@@ -37,7 +38,7 @@ func OpMToN(m : Int64, n : Int64, generator : Generator,  input : Hypergraph, la
         throw BadOutputLabelsException(labels.size(), n)
     }
     if(input.GetN() != m){
-        throw TypeMismatchException(input, m)
+        throw TypeMismatchException("OpMToN", input, m)
     }
 
     let busMap = MapBuilder<String, Bus>()
@@ -95,7 +96,7 @@ func OpZeroToOne(gen : Generator, label : String, name : String){
  */
 func OpOneToZero(gen : Generator, input : Hypergraph, name : String){ 
     if(input.GetN() != 1){
-        throw TypeMismatchException(input, 1)
+        throw TypeMismatchException("OpOneToZero", input, 1)
     }
     OpMToN(1, 0, gen, input, ArrayList<String>(), name) 
 }
@@ -109,7 +110,7 @@ func OpOneToZero(gen : Generator, input : Hypergraph, name : String){
  */
 func OpOneToOne(gen : Generator, input : Hypergraph, label : String, name : String){
     if(input.GetN() != 1){
-        throw TypeMismatchException(input, 1)
+        throw TypeMismatchException("OpOneToOne", input, 1)
     }
     OpMToN(1, 1, gen, input, ArrayList<String>([label]), name) 
 }
@@ -123,7 +124,7 @@ func OpOneToOne(gen : Generator, input : Hypergraph, label : String, name : Stri
  */
 func OpTwoToOne(gen : Generator, input : Hypergraph, label : String, name : String){ 
     if(input.GetN() != 2){
-        throw TypeMismatchException(input, 2)
+        throw TypeMismatchException("OpTwoToOne", input, 2)
     }
     OpMToN(2, 1, gen, input, ArrayList<String>([label]), name) 
 }
@@ -138,10 +139,10 @@ func OpTwoToOne(gen : Generator, input : Hypergraph, label : String, name : Stri
  */
 func OpTwoToOne(gen : Generator, lhs : Hypergraph, rhs : Hypergraph, label : String, name : String){
     if(lhs.GetN() != 1){
-        throw TypeMismatchException(lhs, 1)
+        throw TypeMismatchException("OpTwoToOne", lhs, 1)
     }
     if(rhs.GetN() != 1){
-        throw TypeMismatchException(rhs, 1)
+        throw TypeMismatchException("OpTwoToOne", rhs, 1)
     }
     OpMToN(2, 1, gen, Output([lhs,rhs]), ArrayList<String>([label]), name)
 }
@@ -155,7 +156,7 @@ func OpTwoToOne(gen : Generator, lhs : Hypergraph, rhs : Hypergraph, label : Str
  */
 func OpThreeToOne(gen : Generator, input : Hypergraph, label : String, name : String){ 
     if(input.GetN() != 3){
-        throw TypeMismatchException(input, 3)
+        throw TypeMismatchException("OpThreeToOne", input, 3)
     }
     OpMToN(3, 1, gen, input, ArrayList<String>([label]), name) 
 }
@@ -171,13 +172,13 @@ func OpThreeToOne(gen : Generator, input : Hypergraph, label : String, name : St
  */
 func OpThreeToOne(gen : Generator, x : Hypergraph, y : Hypergraph, z : Hypergraph, label : String, name : String){
     if(x.GetN() != 1){
-        throw TypeMismatchException(x, 1)
+        throw TypeMismatchException("OpThreeToOne", x, 1)
     }
     if(y.GetN() != 1){
-        throw TypeMismatchException(y, 1)
+        throw TypeMismatchException("OpThreeToOne", y, 1)
     }
     if(y.GetN() != 1){
-        throw TypeMismatchException(z, 1)
+        throw TypeMismatchException("OpThreeToOne", z, 1)
     }
     OpMToN(3, 1, gen, Output([x,y,z]), ArrayList<String>([label]), name)
 }
@@ -192,7 +193,7 @@ func OpThreeToOne(gen : Generator, x : Hypergraph, y : Hypergraph, z : Hypergrap
  */
 func OpOneToTwo(gen : Generator, input : Hypergraph, lhs : String, rhs : String, name : String){ 
     if(input.GetN() != 1){
-        throw TypeMismatchException(input, 2)
+        throw TypeMismatchException("OpOneToTwo", input, 2)
     }
     OpMToN(1,2, gen, input, ArrayList<String>([lhs, rhs]), name) 
 }
@@ -206,7 +207,7 @@ func OpOneToTwo(gen : Generator, input : Hypergraph, lhs : String, rhs : String,
  */
 func OpOneToTwo(gen : Generator, input : Hypergraph, label : String, name : String){ 
     if(input.GetN() != 1){
-        throw TypeMismatchException(input, 2)
+        throw TypeMismatchException("OpOneToTwo", input, 2)
     }
     OpMToN(1,2, gen, input, ArrayList<String>([label]), name) 
 }
@@ -383,9 +384,12 @@ external func CreateMerge(n : Int64) : Hypergraph {
  * @param name   The name of the resulting hypergraph
  * @return A hypergraph for a merge
  */
-external func Merge(n : Int64, input!: Hypergraph = Identity(n), labels!: ArrayList<String> = ArrayList<String>(n, {x => ""}), name!: String = ""){
+external func Merge(n : Int64, input!: Hypergraph = Identity(2 * n), labels!: ArrayList<String> = ArrayList<String>(n, {x => ""}), name!: String = ""){
     if(labels.size() != n) {
         throw BadOutputLabelsException(labels.size(), n)
+    }
+    if(input.GetN() != 2 * n){
+        throw BadInputException("Merge", "input", 2 * n, input.GetName(), input.GetN())
     }
     Seq(input, CreateMerge(n), labels: labels, name: name)
 }
@@ -449,8 +453,24 @@ external func XnorGate(lhs!: Hypergraph, rhs!: Hypergraph, label!: String = "", 
 
 external func Delay(n : Int64, input!: Hypergraph = Identity(1), label!: String = "", name!: String = "") { OpOneToOne(DELAY(n), input, label, name) }
 
-external func InLink(spec : LinkSpec, input!: Hypergraph = Identity(spec.width), name!:String = "") { OpOneToZero(INLINK(spec), input, name) }
-external func OutLink(spec : LinkSpec, label!: String, name!:String = "") { OpZeroToOne(INLINK(spec), label, name) }
+external func Register(width!: Int64, initial!: Int64, input!: Hypergraph = Identity(width)){
+    if(input.GetN() != width){
+        throw BadInputException("Register", "input", width, input.GetName(), input.GetN())
+    }
+    let initialValue = SignedValueFromInt(initial, width: width)
+    let delays = Par(Delay(1), width)
+    print("del\n")
+    let merge = Merge(width)
+    print("merge\n")
+    Seq([input, Par(initialValue, delays), merge])
+}
+
+external func OutLink(spec!: LinkSpec, input!: Hypergraph = Identity(spec.width), name!:String = "") { 
+    OpMToN(spec.width, 0, OUTLINK(spec), input, ArrayList<String>(), name) 
+}
+external func InLink(spec!: LinkSpec, label!: String = "", name!:String = "") { 
+    OpMToN(0, spec.width, INLINK(spec), Empty(), ArrayList<String>(spec.width, {x : Int64 => label}), name) 
+}
 
 /**
  * Create an input to the graph with associated handles
