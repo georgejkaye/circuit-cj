@@ -49,12 +49,12 @@ class BusNotInGraphException <: Exception {
 
 class BadDomainException <: Exception {
     init(function : String, m : Int64, dom : Int64){
-        Error(function, "Number of ports (${m}) does not match the domain of the label (${dom})")
+        Error(function, "Number of inputs (${m}) does not match the domain of the label (${dom})")
     }
 }
 class BadCodomainException <: Exception {
     init(function : String, n : Int64, cod : Int64){
-        Error(function, "Number of ports (${n}) does not match the codomain of the label (${cod})")
+        Error(function, "Number of outputs (${n}) does not match the codomain of the label (${cod})")
     }
 }
 class TypeMismatchException <: Exception {
@@ -116,7 +116,7 @@ class CouldNotOpenFileException <: Exception {
 
 class BadInputException <: Exception {
     init(function : String, wire : String, n1 : Int64, name: String, n2 : Int64){
-        Error(function, "Expected input '${wire}'' to be of type n->${n1} but '${name}' has type n->${n2}")
+        Error(function, "Expected input '${wire}' to be of type n->${n1} but '${name}' has type n->${n2}")
     }
 }
 

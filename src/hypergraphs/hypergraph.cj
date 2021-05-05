@@ -6,6 +6,8 @@
 
 package hypergraphs
 
+import debug.*
+
 /**
  * Base atom class, every element of a hypergraph (vertex, edge, label) is an atom
  * Each atom has a unique id, and this is what comparisons should be performed on
@@ -372,10 +374,12 @@ external class Hypergraph <: Atom {
          conns    : Map<Target, Source>
     ){
 
-        match(name){
-            case Some(text) => this.name = text
-            case $None      => this.name = "h${this.id}"
+        this.name = match(name){
+            case Some(text) => text == "" ? "h${this.id}" : text
+            case $None      => "h${this.id}"
         }
+
+        Debug("Hypergraph", "Creating hypergraph '${this.name}'")
 
         this.edges    = edges
         this.inputs   = inputs
@@ -410,21 +414,24 @@ external class Hypergraph <: Atom {
             (wireMap, busMap, busList, wireList) = UpdateBuses(wireMap, busMap, busList, wireList, v)
         }
 
-        for(e in edges){
-            // Add sources to the list of sources
-            for(i in 0..e.sources.size()){
-                let v = e.sources.get(i)
-                sources.add(v)
-                rightMap.add(v, EdgePort(e,i))
-                // Update the buses list with any intermediate buses
-                (wireMap, busMap, busList, wireList) = UpdateBuses(wireMap, busMap, busList, wireList, v)
-                
-            }
-            // Add targets to the list of targets
-            for(i in 0..e.targets.size()){
-                let v = e.targets.get(i)
-                targets.add(v)
-                leftMap.add(v, EdgePort(e,i))
+        // HACK: for some reason it segfaults if you try to loop over the empty list
+        if(edges.size() != 0) {
+            for(e in edges){
+                // Add sources to the list of sources
+                for(i in 0..e.sources.size()){
+                    let v = e.sources.get(i)
+                    sources.add(v)
+                    rightMap.add(v, EdgePort(e,i))
+                    // Update the buses list with any intermediate buses
+                    (wireMap, busMap, busList, wireList) = UpdateBuses(wireMap, busMap, busList, wireList, v)
+                    
+                }
+                // Add targets to the list of targets
+                for(i in 0..e.targets.size()){
+                    let v = e.targets.get(i)
+                    targets.add(v)
+                    leftMap.add(v, EdgePort(e,i))
+                }
             }
         }
 
@@ -437,7 +444,7 @@ external class Hypergraph <: Atom {
         this.wires        = wireList
 
         let connslMap = MapBuilder<Source, Target>()
-
+ 
         for(v in targets){
             connslMap.add(GetConnR(v), v)
         }
@@ -532,6 +539,7 @@ external class Hypergraph <: Atom {
      * @return The deep clone of the original hypergraph
      */
     func Clone(){
+        Debug("Clone", "Cloning hypergraph ${this.name}")
         // Make deep copies of the source vertices and make map between old and new
         let newSourceMapBuilder = MapBuilder<Source, Source>()
         for(v in sources){
@@ -549,27 +557,30 @@ external class Hypergraph <: Atom {
 
         // Make deep copies of the edges, and associate the newly copied vertices with them
         let newEdges = ArrayList<Edge>()
-        for(e in edges){
-            let s = e.sources
-            let t = e.targets
-            let s2 = ArrayList<Source>()
-            let t2 = ArrayList<Target>()
-            for (v in s){
-                let v2 = match(newSourceMap.get(v)){
-                    case Some(v2) => v2
-                    case $None    => throw VertexNotInGraphException("Clone", v)
+        // HACK: for some reason it segfaults if you try to loop over the empty list
+        if(edges.size() != 0){
+            for(e in edges){
+                let s = e.sources
+                let t = e.targets
+                let s2 = ArrayList<Source>()
+                let t2 = ArrayList<Target>()
+                for (v in s){
+                    let v2 = match(newSourceMap.get(v)){
+                        case Some(v2) => v2
+                        case $None    => throw VertexNotInGraphException("Clone", v)
+                    }
+                    s2.add(v2)
                 }
-                s2.add(v2)
-            }
-            for (v in t){
-                let v2 = match(newTargetMap.get(v)){
-                    case Some(v2) => v2
-                    case $None    => throw VertexNotInGraphException("Clone", v)
+                for (v in t){
+                    let v2 = match(newTargetMap.get(v)){
+                        case Some(v2) => v2
+                        case $None    => throw VertexNotInGraphException("Clone", v)
+                    }
+                    t2.add(v2)
                 }
-                t2.add(v2)
+                let e2 = Edge(e.generator, s2, t2)
+                newEdges.add(e2)
             }
-            let e2 = Edge(e.generator, s2, t2)
-            newEdges.add(e2)
         }
 
         // Use the vertex maps to get the new inputs

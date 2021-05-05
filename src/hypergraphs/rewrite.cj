@@ -92,7 +92,7 @@ func RemoveLeft(f : Hypergraph, s : Source){
     // Make the new hypergraph
     let h = Hypergraph(newEdges, newInputs, newOutputs, connsMap.toMap())
     // Clone it in case this graph interacts with the original
-    h.Clone()
+    h
 }
 
 /**
@@ -115,7 +115,7 @@ func RemoveLeft(f : Hypergraph, s : Source){
  * @return A clone of hypergraph f with a clone of g injected into it
  */
 func Inject(f : Hypergraph, g : Hypergraph, name!: Option<String>){
-    let f = f.Clone()
+    let f = f
     let g = g.Clone()
     let newEdges = ArrayList<Edge>(f.GetEdges())
     let newConns = MapBuilder<Target,Source>()

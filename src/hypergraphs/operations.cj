@@ -44,7 +44,7 @@ external func Seq(f : Hypergraph, g : Hypergraph, name!: String = "", labels!: O
         throw TypeMismatchException("Seq", f,g)
     }
     
-    let newF = f.Clone()
+    let newF = f
     let newG = g.Clone()
 
     let newEdges = ArrayList<Edge>()
@@ -175,7 +175,7 @@ external func Par(f : Hypergraph, g : Hypergraph, name!: String = "", labels!: O
             }
         }
     }
-    let newF = f.Clone()
+    let newF = f
     let newG = g.Clone()
 
     let newEdges = ArrayList<Edge>()
@@ -324,7 +324,7 @@ external func Trace(f : Hypergraph, x : Int64, name!: String = "", labels!: Opti
         }
     }
 
-    let newF = f.Clone()
+    let newF = f
     let newInputs = newF.GetInputs()
     let newOutputs = newF.GetOutputs()
 
@@ -412,8 +412,8 @@ external func Get(f : Hypergraph, s : String, name!: String = ""){
     Get(f, ns, name: name)
 }
 external func Drop(f : Hypergraph, n : Int64){
-    Debug("Drop", "Dropping ${n}th port from ${f.GetName()}")
-    if(n < 0){
+    Debug("Drop", "Dropping ${n}th port from ${f.GetName()} : ${f.GetM()} -> ${f.GetN()}\n")
+    if(n < 0 || n >= f.GetN()){
         throw TypeMismatchException("Drop", f, n)
     }
     let stack = Par([Identity(n), Stub(), Identity(f.GetN() - n - 1)])

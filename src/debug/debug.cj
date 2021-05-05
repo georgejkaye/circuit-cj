@@ -1,6 +1,6 @@
 package debug
 
-let debugMessages = true
+let debugMessages = false
 
 enum MessageType{ DEBUG | ERROR }
 append MessageType with ToString {
@@ -13,13 +13,13 @@ append MessageType with ToString {
 }
 
 func PrintMessage(mt : MessageType, function : String, msg : String){
-    if(debugMessages){
-        print("${mt}: ${function}: ${msg}\n")
-    }
+    print("${mt}: ${function}: ${msg}\n")
 }
 
 external func Debug(fnc: String, msg : String){
-    PrintMessage(DEBUG, fnc, msg)
+    if(debugMessages){
+        PrintMessage(DEBUG, fnc, msg)
+    }
 }
 
 external func Error(fnc : String, msg : String){
