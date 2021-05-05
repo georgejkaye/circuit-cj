@@ -74,13 +74,13 @@ external enum Generator {
 append Generator with ToString{
     func toString(gen : Generator){
         match(gen){
-            case VALUE(value)        => "value ${value}"
-            case STRUCTURAL(label)   => "structural ${label.name}"
-            case GATE(label)         => "gate ${label.name}"
-            case DELAY(dur)          => "delay ${dur}"
+            case VALUE(value)        => "value (${value})"
+            case STRUCTURAL(label)   => "structural (${label.name})"
+            case GATE(label)         => "gate (${label.name})"
+            case DELAY(dur)          => "delay (${dur})"
             case $IDENTITY           => "identity"
-            case INLINK(spec)        => "in link ${spec.name}"
-            case OUTLINK(spec)       => "out link ${spec.name}"
+            case INLINK(spec)        => "in link (${spec.name} - ${spec.width})"
+            case OUTLINK(spec)       => "out link (${spec.name} - ${spec.width})"
         }
     }
 }

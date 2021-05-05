@@ -1,6 +1,7 @@
 package library
 
 import hypergraphs.*
+import debug.*
 
 /**
  * Adders
@@ -17,6 +18,7 @@ external func HalfAdder(a!: Hypergraph, b!: Hypergraph, sum!: String = "", carry
 }
 
 external func HalfAdder(sum!: String = "", carry!: String = "") : Hypergraph {
+    Debug("Making half adder, sum='${sum}', carry='${carry}'")
     Seq(Copy(2), Par(XorGate(label: sum), AndGate(label: carry)))
 }
 
@@ -34,6 +36,7 @@ external func FullAdder(a!: Hypergraph, b!: Hypergraph, cin!: Hypergraph, sum!: 
 }
 
 external func FullAdder(sum!: String = "", cout!: String = "") : Hypergraph {
+    Debug("Making full adder, sum='${sum}', cout='${cout}'")
     Seq([
         Par(Copy(2), Identity(1)),
         Par(XorGate(), Swap(2,1)),
@@ -44,6 +47,7 @@ external func FullAdder(sum!: String = "", cout!: String = "") : Hypergraph {
 }
 
 external func Adder(width!: Int64, sum!: String = "", cout!: String = "") : Hypergraph {
+    Debug("Making n-bit adder of width ${width}, sum='${sum}', cout='${cout}'")
     if(width < 1){
         throw NotEnoughBitsException()
     }
@@ -61,7 +65,7 @@ external func Adder(width!: Int64, sum!: String = "", cout!: String = "") : Hype
 }
 
 external func Adder(width!: Int64, 
-                    a!: Hypergraph, 
+                    a!: Option<Hypergraph>, 
                     b!: Hypergraph, 
                     cin!: Hypergraph = Zero(width: 1), 
                     sum!: String = "", 

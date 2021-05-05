@@ -6,6 +6,8 @@
 
 package hypergraphs
 
+import debug.*
+
 func AddBusesToOutputs(labels: ArrayList<String>, outputs: ArrayList<Source>){
     let buses = ArrayList<Bus>()
     for(i in 0..labels.size()){
@@ -37,7 +39,7 @@ func AddBusesToOutputs(labels: ArrayList<String>, outputs: ArrayList<Source>){
  * @return The composed hypergraph h = f . g
  */
 external func Seq(f : Hypergraph, g : Hypergraph, name!: String = "", labels!: Option<ArrayList<String>> = None<ArrayList<String>>) : Hypergraph {
-    
+    Debug("Sequentially composing ${f.GetName()} and ${g.GetName()}, labels=${LabelsOptToString(labels)}")
     if(f.GetN() != g.GetM()){
         throw TypeMismatchException("Seq", f,g)
     }
@@ -126,6 +128,7 @@ external func Identity(n : Int64, label!: String, name!: String = "") : Hypergra
  * @return An identity hypergraph on n
  */
 external func Identity(n : Int64, name!: String = "", labels!: Option<ArrayList<String>>) : Hypergraph {
+    Debug("Making identity on ${n}, labels=${LabelsOptToString(labels)}")
     if(n < 0){
         throw NegativeWireException("Identity")
     }
@@ -163,7 +166,7 @@ external func Identity(n : Int64, name!: String = "", labels!: Option<ArrayList<
  * @return The composed hypergraph h = f * g
  */
 external func Par(f : Hypergraph, g : Hypergraph, name!: String = "", labels!: Option<ArrayList<String>> = None<ArrayList<String>>) : Hypergraph {
-    
+    Debug("Parallel composing ${f.GetName()} and ${g.GetName()}, labels=${LabelsOptToString(labels)}")
     match(labels){
         case $None    => {}
         case Some(ls) => {
@@ -264,6 +267,7 @@ external func Empty(name!: String = "") : Hypergraph {
  * @param name="" The name of the resulting hypergraph
  */
 external func Swap(m : Int64, n : Int64, name!: String = "", labels!: Option<ArrayList<String>> = None<ArrayList<String>>) : Hypergraph {
+    Debug("Creating swap on ${m} and ${n}, labels=${LabelsOptToString(labels)}")
     if(m < 0 || n < 0){
         throw NegativeWireException("Swap")
     }
@@ -306,6 +310,7 @@ external func Swap(m : Int64, n : Int64, name!: String = "", labels!: Option<Arr
  * @return The traced hypergraph
  */ 
 external func Trace(f : Hypergraph, x : Int64, name!: String = "", labels!: Option<ArrayList<String>> = None<ArrayList<String>>){
+    Debug("Tracing ${f.GetName()} with ${x} wires, labels=${LabelsOptToString(labels)}")
     if(x < 0){
         throw NegativeTraceException() 
     }
@@ -353,6 +358,7 @@ external func Trace(f : Hypergraph, x : Int64, name!: String = "", labels!: Opti
  * @return The hypergraph with only the nth output exposed
  */
 external func Get(f : Hypergraph, n : Int64, port! : String = "", name!: String = ""){
+    Debug("Getting ${n}th port from ${f.GetName()}")
     if(n < 0){
         throw TypeMismatchException("Get", f, n)
     }
@@ -391,6 +397,7 @@ external func Get(f : Hypergraph, ns : ArrayList<Int64>, name!: String = ""){
  * @return The hypergraph with only the given bus exposed
  */
 external func Get(f : Hypergraph, s : String, name!: String = ""){
+    Debug("Getting bus ${s} from ${f.GetName()}")
     let outputs = f.GetOutputs()
     let ns = ArrayList<Int64>()
     for(i in 0..outputs.size()){
@@ -407,6 +414,7 @@ external func Get(f : Hypergraph, s : String, name!: String = ""){
     Get(f, ns, name: name)
 }
 external func Drop(f : Hypergraph, n : Int64){
+    Debug("Dropping ${n}th port from ${f.GetName()}")
     if(n < 0){
         throw TypeMismatchException("Drop", f, n)
     }

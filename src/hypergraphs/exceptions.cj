@@ -6,13 +6,15 @@
 
 package hypergraphs
 
+import debug.*
+
 /**
  * Miscellaneous exceptions
  */
 
 class InaccessibleCodeException <: Exception {
     init(){
-        print("This code should not be accessible\n")
+        Debug("This code should not be accessible")
     }
 }
 
@@ -22,22 +24,22 @@ class InaccessibleCodeException <: Exception {
 
 class VertexNotInGraphException <: Exception {
     init(v : Vertex){
-        print("Vertex ${v.id} is not in the graph\n")
+        Debug("Vertex ${v.id} is not in the graph")
     }
 }
 
 class WireNotInGraphException <: Exception {
     init(w : Wire){
-        print("Wire ${w} is not in the graph\n")
+        Debug("Wire ${w} is not in the graph")
     }
 }
 
 class BusNotInGraphException <: Exception {
     init(b : Bus){
-        print("Bus ${b} is not in the graph\n")
+        Debug("Bus ${b} is not in the graph")
     }
     init(s : String){
-        print("Bus ${s} is not in the graph\n")
+        Debug("Bus ${s} is not in the graph")
     }
 }
 
@@ -47,25 +49,25 @@ class BusNotInGraphException <: Exception {
 
 class BadDomainException <: Exception {
     init(m : Int64, dom : Int64){
-        print("Number of ports (${m}) does not match the domain of the label (${dom})\n")
+        Debug("Number of ports (${m}) does not match the domain of the label (${dom})")
     }
 }
 class BadCodomainException <: Exception {
     init(n : Int64, cod : Int64){
-        print("Number of ports (${n}) does not match the codomain of the label (${cod})\n")
+        Debug("Number of ports (${n}) does not match the codomain of the label (${cod})")
     }
 }
 class TypeMismatchException <: Exception {
     init(function : String, f : Hypergraph, g : Hypergraph){
-        print("${function}: Outputs of '${f.GetName()}' (${f.GetN()}) do not match inputs of '${g.GetName()}' (${g.GetM()})\n")
+        Debug("${function}: Outputs of '${f.GetName()}' (${f.GetN()}) do not match inputs of '${g.GetName()}' (${g.GetM()})")
     }
     init(function : String, f : Hypergraph, n : Int64) {
-        print("${function}: Outputs of '${f.GetName()}' (${f.GetN()}) do not match required inputs (${n})\n")
+        Debug("${function}: Outputs of '${f.GetName()}' (${f.GetN()}) do not match required inputs (${n})")
     }
 }
 class BadValueException <: Exception {
     init(function : String, wire : String, n1 : Int64, name: String){
-        print("${function}: Expected input ${wire} to be a value i.e. type 0->n but '${name}' has type ${n1}->n\n")
+        Debug("${function}: Expected input ${wire} to be a value i.e. type 0->n but '${name}' has type ${n1}->n")
     }
 }
 
@@ -75,12 +77,12 @@ class BadValueException <: Exception {
 
 class BadOutputLabelsException <: Exception {
     init(function : String, m : Int64, n : Int64){
-        print("${function}: Length of ports list (${m}) does not match the outputs(${n})\n")
+        Debug("${function}: Length of ports list (${m}) does not match the outputs(${n})")
     }
 }
 class PortNotFoundException <: Exception {
     init(f : Hypergraph, s : String){
-        print("Hypergraph '${f.GetName()}' does not have a port named '${s}'\n")
+        Debug("Hypergraph '${f.GetName()}' does not have a port named '${s}'")
     }
 }
 
@@ -89,17 +91,17 @@ class PortNotFoundException <: Exception {
  */
 class NegativeWireException <: Exception {
     init(function : String){
-        print("${function}: Number of wires cannot be negative\n")
+        Debug("${function}: Number of wires cannot be negative")
     }
 }
 class NegativeTraceException <: Exception {
     init(){
-        print("Cannot trace negative number of wires\n")
+        Debug("Cannot trace negative number of wires")
     }
 }
 class TooMuchTraceException <: Exception {
     init(){
-        print("Tried to trace more wires than outputs\n")
+        Debug("Tried to trace more wires than outputs")
     }
 }
 
@@ -108,18 +110,18 @@ class TooMuchTraceException <: Exception {
  */
 class CouldNotOpenFileException <: Exception {
     init(file : String){
-        print("Could not open file ${file}\n")
+        Debug("Could not open file ${file}")
     }
 }
 
 class BadInputException <: Exception {
     init(function : String, wire : String, n1 : Int64, name: String, n2 : Int64){
-        print("${function}: Expected input '${wire}'' to be of type n->${n1} but '${name}' has type n->${n2}\n")
+        Debug("${function}: Expected input '${wire}'' to be of type n->${n1} but '${name}' has type n->${n2}")
     }
 }
 
 class NotEnoughBitsException <: Exception {
     init(){
-        print("Must be at least one bit\n")
+        Debug("Must be at least one bit")
     }
 }

@@ -705,3 +705,16 @@ func includes<T>(xs : ArrayList<T>, a : T) where T <: Equatable {
     }
     return false
 }
+
+external func LabelsOptToString(ls : Option<ArrayList<String>>){
+    match(ls){
+        case $None    => "[]"
+        case Some(ls) => {
+            var str = "["
+            for(l in ls){
+                str = "${str} '${l}'"
+            }
+            "${str} ]"
+        }
+    }
+}
