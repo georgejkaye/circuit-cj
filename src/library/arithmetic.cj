@@ -18,7 +18,7 @@ external func HalfAdder(a!: Hypergraph, b!: Hypergraph, sum!: String = "", carry
 }
 
 external func HalfAdder(sum!: String = "", carry!: String = "") : Hypergraph {
-    Debug("Making half adder, sum='${sum}', carry='${carry}'")
+    Debug("Half adder", "Making half adder, sum='${sum}', carry='${carry}'")
     Seq(Copy(2), Par(XorGate(label: sum), AndGate(label: carry)))
 }
 
@@ -36,7 +36,7 @@ external func FullAdder(a!: Hypergraph, b!: Hypergraph, cin!: Hypergraph, sum!: 
 }
 
 external func FullAdder(sum!: String = "", cout!: String = "") : Hypergraph {
-    Debug("Making full adder, sum='${sum}', cout='${cout}'")
+    Debug("Full adder", "Making full adder, sum='${sum}', cout='${cout}'")
     Seq([
         Par(Copy(2), Identity(1)),
         Par(XorGate(), Swap(2,1)),
@@ -47,9 +47,9 @@ external func FullAdder(sum!: String = "", cout!: String = "") : Hypergraph {
 }
 
 external func Adder(width!: Int64, sum!: String = "", cout!: String = "") : Hypergraph {
-    Debug("Making n-bit adder of width ${width}, sum='${sum}', cout='${cout}'")
+    Debug("Adder", "Making n-bit adder of width ${width}, sum='${sum}', cout='${cout}'")
     if(width < 1){
-        throw NotEnoughBitsException()
+        throw NotEnoughBitsException("Adder")
     }
     if(width == 1){
         return FullAdder(sum: sum, cout: cout)
@@ -65,9 +65,9 @@ external func Adder(width!: Int64, sum!: String = "", cout!: String = "") : Hype
 }
 
 external func Adder(width!: Int64, 
-                    a!: Option<Hypergraph>, 
+                    a!: Hypergraph, 
                     b!: Hypergraph, 
-                    cin!: Hypergraph = Zero(width: 1), 
+                    cin!: Hypergraph = Zero(width: width), 
                     sum!: String = "", 
                     cout!: String = "") : Hypergraph {
     if(a.GetN() != width){
@@ -86,7 +86,7 @@ external func Plus(width!: Int64,
                    a!: Hypergraph = Identity(width), 
                    b!: Hypergraph = Identity(width), 
                    sum!: String = "") : Hypergraph {
+    Debug("Plus", "Making plus of width ${width}")
     let add = Adder(width: width, a: a, b: b, cin: Zero(width: 1), sum: sum)
-    print("add made\n")
     Drop(add, width)
 }

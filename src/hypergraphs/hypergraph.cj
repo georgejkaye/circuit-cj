@@ -468,10 +468,10 @@ external class Hypergraph <: Atom {
              case Some(ws) => {
                  match(ws.get(w.i)){
                  case Some(v) => v
-                 case $None   => throw WireNotInGraphException(w)
+                 case $None   => throw WireNotInGraphException("GetWireVertex", w)
                  }
              }
-             case $None    => throw WireNotInGraphException(w)
+             case $None    => throw WireNotInGraphException("GetWireVertex", w)
         }
     }
 
@@ -488,34 +488,34 @@ external class Hypergraph <: Atom {
             case Some(b) => {
                 match(wireVertices.get(b)){
                     case Some(ws) => ws
-                    case $None    => throw BusNotInGraphException(s)
+                    case $None    => throw BusNotInGraphException("GetBusVertices", s)
                 }
             }
-            case $None => throw BusNotInGraphException(s)
+            case $None => throw BusNotInGraphException("GetBusVertices", s)
         }
     }
 
     func GetConnR(t : Target) {
         match(connsr.get(t)){
-            case $None => throw VertexNotInGraphException(t)
+            case $None => throw VertexNotInGraphException("GetConnR", t)
             case Some(s) => s
         }
     }
     func GetConnL(s : Source) {
         match(connsl.get(s)){
-            case $None => throw VertexNotInGraphException(s)
+            case $None => throw VertexNotInGraphException("GetConnL", s)
             case Some(t) => t
         }
     }
     func GetEdge(s : Source) { 
         match(rights.get(s)){
-            case $None => throw VertexNotInGraphException(s)
+            case $None => throw VertexNotInGraphException("GetEdge", s)
             case Some(p) => p 
         }
     }
     func GetEdge(t : Target) { 
         match(lefts.get(t)){
-            case $None => throw VertexNotInGraphException(t)
+            case $None => throw VertexNotInGraphException("GetEdge", t)
             case Some(p) => p
         }
     }
@@ -557,14 +557,14 @@ external class Hypergraph <: Atom {
             for (v in s){
                 let v2 = match(newSourceMap.get(v)){
                     case Some(v2) => v2
-                    case $None    => throw VertexNotInGraphException(v)
+                    case $None    => throw VertexNotInGraphException("Clone", v)
                 }
                 s2.add(v2)
             }
             for (v in t){
                 let v2 = match(newTargetMap.get(v)){
                     case Some(v2) => v2
-                    case $None    => throw VertexNotInGraphException(v)
+                    case $None    => throw VertexNotInGraphException("Clone", v)
                 }
                 t2.add(v2)
             }
@@ -577,7 +577,7 @@ external class Hypergraph <: Atom {
         for(v in inputs){
             let v2 = match(newTargetMap.get(v)){
                 case Some(v2) => v2
-                case $None    => throw VertexNotInGraphException(v)
+                case $None    => throw VertexNotInGraphException("Clone", v)
             }
             newInputs.add(v2)
         }
@@ -586,7 +586,7 @@ external class Hypergraph <: Atom {
         for(v in outputs){
             let v2 = match(newSourceMap.get(v)){
                 case Some(v2) => v2
-                case $None    => throw VertexNotInGraphException(v)
+                case $None    => throw VertexNotInGraphException("Clone", v)
             }
             newOutputs.add(v2)
         }
@@ -595,11 +595,11 @@ external class Hypergraph <: Atom {
         for(v in targets){
             let newT = match(newTargetMap.get(v)){
                     case Some(v2) => v2
-                    case $None     => throw VertexNotInGraphException(v)
+                    case $None     => throw VertexNotInGraphException("Clone", v)
             }
             let newS = match(newSourceMap.get(GetConnR(v))){
                     case Some(v2) => v2
-                    case $None     => throw VertexNotInGraphException(GetConnR(v))
+                    case $None     => throw VertexNotInGraphException("Clone", GetConnR(v))
             }
             newConnsBuilder.add(newT, newS)
         }

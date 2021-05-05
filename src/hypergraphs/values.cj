@@ -1,8 +1,10 @@
 package hypergraphs
 
+import debug.*
+
 func DecToBin(w : Int64, x : Int64, signed: Bool){
     if(w < 1){
-        throw NotEnoughBitsException()
+        throw NotEnoughBitsException("DecToBin")
     }
     var num = signed ? x < 0 ? x + (2 ** w) : x : x
     let bin = ArrayList<Bool>(w, {x : Int64 => false})
@@ -25,15 +27,18 @@ func ValueFromInt(x : Int64, width!: Int64, signed!: Bool, name!: String = ""){
 }
 
 external func SignedValueFromInt(x : Int64, width!: Int64, name!: String = ""){
+    Debug("SignedValueFromInt", "Creating signed value for ${x} of width ${width}")
     ValueFromInt(x, width: width, signed: true, name: name) 
 }
 external func UnsignedValueFromInt(x : Int64, width!: Int64, name!: String = ""){
+    Debug("UnsignedValueFromInt", "Creating unsigned value for ${x} of width ${width}")
     ValueFromInt(x, width: width, signed: false, name: name) 
 }
 
 external func Zero(width!: Int64 = 1){
+    Debug("Zero", "Creating zero value of width ${width}")
     if(width < 1){
-        throw NotEnoughBitsException()
+        throw NotEnoughBitsException("Zero")
     }
     Par(False(), width)
 }

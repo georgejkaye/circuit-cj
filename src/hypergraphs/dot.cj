@@ -192,7 +192,7 @@ external func WriteDotToFile(f : Hypergraph, file : String){
         ds.close()
     } else {
         fs.close()
-        throw CouldNotOpenFileException(file)
+        throw CouldNotOpenFileException("WriteDotToFile", file)
     }
     fs.close()
 }

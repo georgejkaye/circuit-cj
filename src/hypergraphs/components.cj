@@ -18,7 +18,7 @@ import debug.*
  */
 func OpMToN(m : Int64, n : Int64, generator : Generator, name!: String = "", labels!: Option<ArrayList<String>> = None<ArrayList<String>>, input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
 
-    Debug("Creating operation (${generator}), labels = ${LabelsOptToString(labels)}")
+    Debug("OpMToN - ${generator}", "Creating operation, labels = ${LabelsOptToString(labels)}")
 
     let (dom, cod) = match(generator){
         case VALUE(val)        => (0,1)
@@ -30,11 +30,10 @@ func OpMToN(m : Int64, n : Int64, generator : Generator, name!: String = "", lab
         case OUTLINK(spec)     => (spec.width, 0)
     }
     if(m != dom || m < 0){
-        print("Hello ${generator}\n")
-        throw BadDomainException(m, dom)
+        throw BadDomainException("OpMToN - ${generator}", m, dom)
     }
     if(n != cod || n < 0){
-        throw BadCodomainException(n, cod)
+        throw BadCodomainException("OpMToN - ${generator}", n, cod)
     }
 
     match(labels){
@@ -83,18 +82,15 @@ func OpMToN(m : Int64, n : Int64, generator : Generator, name!: String = "", lab
 }
 
 func OpMToZero(m : Int64, gen : Generator, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
-    //OpMToN(m, 0, gen, name: name, input: input)
-    Empty()
+    OpMToN(m, 0, gen, name: name, input: input)
 }
 
 func OpMToOne(m : Int64, gen : Generator, label!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
-    //label == "" ? OpMToN(m, 1, gen, name: name, input: input) : OpMToN(m, 1, gen, name: name, labels: ArrayList<String>([label]), input: input)
-    Empty()
+    label == "" ? OpMToN(m, 1, gen, name: name, input: input) : OpMToN(m, 1, gen, name: name, labels: ArrayList<String>([label]), input: input)
 }
 
 func OpMToTwo(m : Int64, gen : Generator, lhs!: String = "", rhs!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
-    //lhs == "" && rhs == "" ? OpMToN(m, 1, gen, name: name, input: input) : OpMToN(m, 1, gen, name: name, labels: ArrayList<String>([lhs, rhs]), input: input)
-    Empty()
+    lhs == "" && rhs == "" ? OpMToN(m, 1, gen, name: name, input: input) : OpMToN(m, 1, gen, name: name, labels: ArrayList<String>([lhs, rhs]), input: input)
 }
 
 /**
@@ -225,8 +221,8 @@ func OpOneToTwo(gen : Generator, label!: String = "", name!: String = "", input!
  * @param name="" The name of the resulting hypergraph
  * @return A hypergraph for a bottom value
  */
-external func Bottom(label!: String = "", name!: String = "") { 
-    OpZeroToOne(VALUE(BOTTOM), label: label, name: name) 
+external func Bottom(label!: String = "") { 
+    OpZeroToOne(VALUE(BOTTOM), label: label, name: "Bottom") 
 }
 /**
  * Create a hypergraph for a top value
@@ -234,8 +230,8 @@ external func Bottom(label!: String = "", name!: String = "") {
  * @param name="" The name of the resulting hypergraph
  * @return A hypergraph for a top value
  */
-external func Top(label!: String = "", name!: String = ""){
-    OpZeroToOne(VALUE(TOP), label: label, name: name)
+external func Top(label!: String = ""){
+    OpZeroToOne(VALUE(TOP), label: label, name: "Top")
 }
 /**
  * Create a hypergraph for a true value
@@ -243,8 +239,8 @@ external func Top(label!: String = "", name!: String = ""){
  * @param name="" The name of the resulting hypergraph
  * @return A hypergraph for a true value
  */
-external func True(label!: String = "", name!: String = "") { 
-    OpZeroToOne(VALUE(TRUE), label: label, name: name) 
+external func True(label!: String = "") { 
+    OpZeroToOne(VALUE(TRUE), label: label, name: "True") 
 }
 /**
  * Create a hypergraph for a false value
@@ -252,8 +248,8 @@ external func True(label!: String = "", name!: String = "") {
  * @param name="" The name of the resulting hypergraph
  * @return A hypergraph for a false value
  */
-external func False(label!: String = "", name!: String = ""){
-    OpZeroToOne(VALUE(FALSE), label: label, name: name)
+external func False(label!: String = ""){
+    OpZeroToOne(VALUE(FALSE), label: label, name: "False")
 }
 
 /**
@@ -264,8 +260,8 @@ external func False(label!: String = "", name!: String = ""){
  * @param name=""      The name of the resulting hypergraph
  * @return A hypergraph for a fork
  */
-external func Fork(input!: Option<Hypergraph> = None<Hypergraph>, lhs!: String = "", rhs!: String = "", name!: String = "") { 
-    OpOneToTwo(FORK, lhs: lhs, rhs: rhs, name: name, input: input) 
+external func Fork(input!: Option<Hypergraph> = None<Hypergraph>, lhs!: String = "", rhs!: String = "") { 
+    OpOneToTwo(FORK, lhs: lhs, rhs: rhs, name: "Fork", input: input) 
 }
 /**
  * Create a hypergraph for a join
@@ -274,8 +270,8 @@ external func Fork(input!: Option<Hypergraph> = None<Hypergraph>, lhs!: String =
  * @param name=""    The name of the resulting hypergraph
  * @return A hypergraph for a join
  */
-external func Join(label!: String = "", name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>){ 
-    OpTwoToOne(JOIN, label: label, name: name, input: input) 
+external func Join(label!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>){ 
+    OpTwoToOne(JOIN, label: label, name: "Join", input: input) 
 }
 /**
  * Create a hypergraph for a join
@@ -285,8 +281,8 @@ external func Join(label!: String = "", name!: String = "",  input!: Option<Hype
  * @param name=""    The name of the resulting hypergraph
  * @return A hypergraph for a join
  */
-external func Join(lhs!: Option<Hypergraph>, rhs!: Option<Hypergraph>, label!: String = "", name!: String = ""){
-    OpTwoToOne(JOIN, label: label, name: name, lhs: lhs, rhs: rhs)
+external func Join(lhs!: Option<Hypergraph>, rhs!: Option<Hypergraph>, label!: String = ""){
+    OpTwoToOne(JOIN, label: label, name: "Join", lhs: lhs, rhs: rhs)
 }
 /**
  * Create a hypergraph for a stub
@@ -295,8 +291,8 @@ external func Join(lhs!: Option<Hypergraph>, rhs!: Option<Hypergraph>, label!: S
  * @param name=""     The name of the resulting hypergraph
  * @return A hypergraph for a stub
  */
-external func Stub(input!: Option<Hypergraph> = None<Hypergraph>, name!: String = ""){ 
-    OpOneToZero(STUB, name: name, input: input) 
+external func Stub(input!: Option<Hypergraph> = None<Hypergraph>){ 
+    OpOneToZero(STUB, name: "Stub", input: input) 
 }
 
 /**
@@ -304,7 +300,7 @@ external func Stub(input!: Option<Hypergraph> = None<Hypergraph>, name!: String 
  * @param n The number of wires to copy
  * @return The copy hypergraph
  */
-func CreateCopy(n : Int64, name!: String = "", labels!: Option<ArrayList<String>> = None<ArrayList<String>>) : Hypergraph {
+func CreateCopy(n : Int64, labels!: Option<ArrayList<String>> = None<ArrayList<String>>) : Hypergraph {
     if(n < 0){
         throw NegativeWireException("CreateCopy")
     }
@@ -322,8 +318,8 @@ func CreateCopy(n : Int64, name!: String = "", labels!: Option<ArrayList<String>
         let c1 = Par(CreateCopy(n-1), Fork())
         let c2 = Par([Identity(n-1), Swap(n-1,1), Identity(1)])
         match(labels){
-            case Some(ls) => Seq(c1,c2, name: name, labels: ls)
-            case $None    => Seq(c1,c2, name: name)
+            case Some(ls) => Seq(c1,c2, name: "Copy ${n}", labels: ls)
+            case $None    => Seq(c1,c2, name: "Copy ${n}")
         }
     }
 }
@@ -335,14 +331,14 @@ func CreateCopy(n : Int64, name!: String = "", labels!: Option<ArrayList<String>
  * @param input The input to the copy
  * @return A hypergraph for a copy
  */
-external func Copy(n : Int64,  name!: String = "", labels!: Option<ArrayList<String>> = None<ArrayList<String>>, input!: Option<Hypergraph> = None<Hypergraph>){
+external func Copy(n : Int64, name!: String = "", labels!: Option<ArrayList<String>> = None<ArrayList<String>>, input!: Option<Hypergraph> = None<Hypergraph>){
     match(input){
         case Some(f) => {
-            let copy = CreateCopy(n, name: name)
+            let copy = CreateCopy(n)
             Seq(f, copy, name: name, labels: labels)
         }
         case $None   => {
-            let copy = CreateCopy(n, name: name, labels: labels)
+            let copy = CreateCopy(n, labels: labels)
             copy
         }
     }
