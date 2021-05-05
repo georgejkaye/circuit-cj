@@ -32,7 +32,7 @@ class Label <: Atom {
     let cod : Int64
     init(name : String, dom : Int64, cod : Int64) {
         if(dom < 0 || cod < 0){
-            throw NegativeWireException()
+            throw NegativeWireException("Label")
         }
         this.name = name
         this.dom = dom
@@ -78,7 +78,7 @@ append Generator with ToString{
             case STRUCTURAL(label)   => "structural ${label.name}"
             case GATE(label)         => "gate ${label.name}"
             case DELAY(dur)          => "delay ${dur}"
-            case $IDENTITY            => "identity"
+            case $IDENTITY           => "identity"
             case INLINK(spec)        => "in link ${spec.name}"
             case OUTLINK(spec)       => "out link ${spec.name}"
         }

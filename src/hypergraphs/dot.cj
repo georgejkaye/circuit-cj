@@ -198,6 +198,6 @@ external func WriteDotToFile(f : Hypergraph, file : String){
 }
 
 external func TestDot(){
-    let f = AndGate(label: "out")
+    //let f = AndGate(label: "out")
     //print(DotGraph(f))
 }

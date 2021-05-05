@@ -74,8 +74,8 @@ class BadValueException <: Exception {
  */
 
 class BadOutputLabelsException <: Exception {
-    init(m : Int64, n : Int64){
-        print("Length of ports list (${m}) does not match the outputs(${n})\n")
+    init(function : String, m : Int64, n : Int64){
+        print("${function}: Length of ports list (${m}) does not match the outputs(${n})\n")
     }
 }
 class PortNotFoundException <: Exception {
@@ -88,8 +88,8 @@ class PortNotFoundException <: Exception {
  * Operation exceptions
  */
 class NegativeWireException <: Exception {
-    init(){
-        print("Number of wires cannot be negative\n")
+    init(function : String){
+        print("${function}: Number of wires cannot be negative\n")
     }
 }
 class NegativeTraceException <: Exception {
