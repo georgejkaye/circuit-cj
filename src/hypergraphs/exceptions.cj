@@ -18,6 +18,29 @@ class InaccessibleCodeException <: Exception {
     }
 }
 
+
+/**
+ * Bus exceptions 
+ */
+
+class NoSuchBusException <: Exception {
+    init(function : String, name : String){
+        Error(function, "Bus ${name} does not exist")
+    }
+}
+
+class DuplicateBusException <: Exception {
+    init(function : String, name : String){
+        Error(function, "Bus ${name} already exists")
+    }
+}
+
+class DuplicateWireException <: Exception {
+    init(function : String, bus : Bus, i : Int64){
+        Error(function, "Bus ${bus} already has wire ${i}")
+    }
+}
+
 /**
  * Hypergraph exceptions
  */

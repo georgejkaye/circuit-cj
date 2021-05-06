@@ -1,13 +1,14 @@
 package debug
 
-let debugMessages = false
+let debugMessages = true
 
-enum MessageType{ DEBUG | ERROR }
+enum MessageType{ DEBUG | ERROR | WARNING }
 append MessageType with ToString {
     func toString(mt : MessageType){
         match(mt){
-            case $DEBUG => "[DEBUG]"
-            case $ERROR => "[ERROR]"
+            case $DEBUG   => "[DEBUG]"
+            case $ERROR   => "[ERROR]"
+            case $WARNING => "[WARNING]"
         }
     }
 }
@@ -24,4 +25,8 @@ external func Debug(fnc: String, msg : String){
 
 external func Error(fnc : String, msg : String){
     PrintMessage(ERROR, fnc, msg)
+}
+
+external func Warning(fnc: String, msg: String){
+    PrintMessage(WARNING, fnc, msg)
 }

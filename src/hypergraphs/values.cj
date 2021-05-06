@@ -11,15 +11,25 @@ func DecToBin(w : Int64, x : Int64, signed: Bool){
 
     for(i in 0..w-1){
         let rem = num % 2 == 1
-        bin.set(w-i-1, rem)
+        bin.set(i, rem)
         num = num / 2
     }
     if(signed && x < 0){
-        bin.set(0, true)
+        bin.set(w-1, true)
     }
     return bin
 }
 
+/**
+ * Create a tensor of values from an int
+ * This tensor is ordered with the lsb at the top
+ * e.g. 10 => 0 * 1 * 0 * 1
+ * If the value is required to be signed, will be encoded in twos complement
+ * @param x      The number to create a value for
+ * @param width  The width of the bus to create
+ * @param signed Whether the number is signed  or not
+ * @param name   The name to assign the value
+ */
 func ValueFromInt(x : Int64, width!: Int64, signed!: Bool, name!: String = ""){
     let bin = DecToBin(width, x, signed)
     let values : ArrayList<Hypergraph> = map(bin, {b : Bool => b ? True() : False()})

@@ -92,7 +92,7 @@ func RemoveLeft(f : Hypergraph, s : Source){
     // Make the new hypergraph
     let h = Hypergraph(newEdges, newInputs, newOutputs, connsMap.toMap())
     // Clone it in case this graph interacts with the original
-    h
+    h.Clone()
 }
 
 /**
@@ -117,9 +117,12 @@ func RemoveLeft(f : Hypergraph, s : Source){
 func Inject(f : Hypergraph, g : Hypergraph, name!: Option<String>){
     let f = f
     let g = g.Clone()
+    // We will preserve all the inputs of f, but some of the inputs of g will be injected in
+    let newInputs = ArrayList<Target>(f.GetInputs())
     let newEdges = ArrayList<Edge>(f.GetEdges())
     let newConns = MapBuilder<Target,Source>()
     for(t in g.GetInputs()){
+        var assigned = false
         let s = g.GetConnR(t)
         for(w in s.wires){
             // Different buses may be assigned, as long as one matches we're fine
@@ -152,12 +155,17 @@ func Inject(f : Hypergraph, g : Hypergraph, name!: Option<String>){
                 }
             }
             // Dually, duplicate buses may be shared, so once we have one we can stop
-            if(b) { break }
+            if(b) { 
+                assigned = true
+                break 
+            }
+        }
+        if(!assigned){
+            newInputs.add(t)
         }
     }
     newEdges.addAll(g.GetEdges())
-    // Only the inputs of f will be preserved, since all the inputs of g have been injected in
-    let newInputs = ArrayList<Target>(f.GetInputs())
+
     // The outputs of both graphs are preserved
     let newOutputs = ArrayList<Source>(f.GetOutputs())
     newOutputs.addAll(g.GetOutputs())
