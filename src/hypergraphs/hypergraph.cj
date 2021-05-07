@@ -198,16 +198,6 @@ func UpdateBuses(wireMap : MapBuilder<Bus, MapBuilder<Int64, Source>>, busList :
         for(wire in v.wires){
             wireList.add(wire)
             let bus = wire.bus
-            // match(bus.name){
-            //     case Some(s) =>  {
-            //         print("got bus ${s} wire ${wire.i}\n")
-            //         match(wireMap.toMap().get(bus)){
-            //             case Some(ws) => print("it's in the map too \n")
-            //             case $None    => print("It's not in the map \n")
-            //         }
-            //     }
-            //     case $None => {}
-            // }
             match(wireMap.toMap().get(bus)){
                 case Some(ws) => {
                     let x = ws.add(wire.i, v)
@@ -261,12 +251,13 @@ external class Hypergraph <: Atom {
         this(None<String>, edges, inputs, outputs, conns)
     }
 
-    init(edges   : List<Edge>, 
+    init(name    : Option<String>,
+         edges   : List<Edge>, 
          inputs  : List<Target>, 
          outputs : List<Source>, 
-         conns: Map<Target,Source>
+         conns   : Map<Target,Source>
     ){
-        this(None<String>, ArrayList<Edge>(edges), ArrayList<Target>(inputs), ArrayList<Source>(outputs), conns)
+        this(name, ArrayList<Edge>(edges), ArrayList<Target>(inputs), ArrayList<Source>(outputs), conns)
     }
 
     init(name     : Option<String>,
