@@ -1,6 +1,6 @@
 package debug
 
-let debugMessages = true
+let debugMessages = false
 
 enum MessageType{ DEBUG | ERROR | WARNING }
 append MessageType with ToString {

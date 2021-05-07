@@ -425,6 +425,44 @@ external class Hypergraph <: Atom {
     }
 
     /**
+     * Check that this hypergraph is disjoint with another
+     * i.e. none of its atoms are the same
+     * @param f The hypergraph to compare with
+     * @return Whether the hypergraphs are disjoint
+     */
+    func Disjoint(f : Hypergraph){
+        Debug("Disjoint", "Checking that '${name}' and '${f.GetName()}' are disjoint")
+        if(edges.size() != 0 && f.GetEdges().size() != 0){
+            for(e in edges){
+                for(ef in f.GetEdges()){
+                    if(e.id == ef.id){
+                        return false
+                    }
+                }
+            }
+        }
+        if(targets.size() != 0 && f.GetTargets().size() != 0){
+            for(t in targets){
+                for(tf in f.GetTargets()){
+                    if(t.id == tf.id){
+                        return false
+                    }
+                }
+            }
+        }
+        if(sources.size() != 0 && f.GetSources().size() != 0){
+            for(s in sources){
+                for(sf in f.GetSources()){
+                    if(s.id == sf.id){
+                        return false
+                    }
+                }
+            }
+        }
+        return true
+    }
+
+    /**
      * Refresh all the vertices and edges in this hypergraph, making
      * a completely new one with the same structure
      * @return The deep clone of the original hypergraph
@@ -608,15 +646,3 @@ func includes<T>(xs : ArrayList<T>, a : T) where T <: Equatable {
     return false
 }
 
-external func LabelsOptToString(ls : Option<ArrayList<String>>){
-    match(ls){
-        case $None    => "[]"
-        case Some(labels) => {
-            var str = "["
-            for(l in labels){
-                str = "${str} '${l}'"
-            }
-            "${str} ]"
-        }
-    }
-}

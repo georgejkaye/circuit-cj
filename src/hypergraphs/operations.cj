@@ -24,7 +24,7 @@ external func Seq(f : Hypergraph, g : Hypergraph, name!: String = "") : Hypergra
     }
     
     let newF = f
-    let newG = g.Clone()
+    let newG = f.Disjoint(g) ? g : g.Clone()
 
     let newEdges = ArrayList<Edge>()
     newEdges.addAll(newF.GetEdges())
@@ -114,7 +114,7 @@ external func Identity(n : Int64, name!: String = "", output!: String = "") : Hy
 external func Par(f : Hypergraph, g : Hypergraph, name!: String = "") : Hypergraph {
     Debug("Par", "Composing ${f.GetName()} and ${g.GetName()} in parallel")
     let newF = f
-    let newG = g.Clone()
+    let newG = f.Disjoint(g) ? g : g.Clone()
 
     let newEdges = ArrayList<Edge>()
     newEdges.addAll(newF.GetEdges())
