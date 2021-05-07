@@ -67,14 +67,14 @@ func OpMToZero(gen : Generator, name!: String = "", input!: Option<Hypergraph> =
 }
 
 func OpMToOne(gen : Generator, output!: String = "", elem!: Int64 = 0, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
-    let bus = GetBus(output)
+    let bus = FindBus(output)
     let wires : ArrayList<Wire> = ArrayList<Wire>([NewWire(output, elem)])
     OpMToN(gen, name: name, wires: wires, input: input)
 }
 
 func OpMToTwo(gen : Generator, output1!: String = "", elem1!: Int64 = 0, output2!: String = "", elem2!: Int64 = 0, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
-   let bus1 = GetBus(output1)
-   let bus2 = GetBus(output2)
+   let bus1 = FindBus(output1)
+   let bus2 = FindBus(output2)
    let wire1 = NewWire(bus1, elem1)
    let wire2 = NewWire(bus2, elem2)
    OpMToN(gen, name: name, wires: ArrayList<Wire>([wire1, wire2]), input: input)

@@ -397,13 +397,13 @@ external class Hypergraph <: Atom {
     }
     func GetEdge(s : Source) { 
         match(rights.get(s)){
-            case $None => throw VertexNotInGraphException("GetEdge", s)
+            case $None => throw VertexNotInGraphException("GetEdge (source)", s)
             case Some(p) => p 
         }
     }
     func GetEdge(t : Target) { 
         match(lefts.get(t)){
-            case $None => throw VertexNotInGraphException("GetEdge", t)
+            case $None => throw VertexNotInGraphException("GetEdge (target)", t)
             case Some(p) => p
         }
     }
@@ -546,7 +546,7 @@ external class Hypergraph <: Atom {
      * @return A hypergraph with only the nth output exposed
      */
     operator func [](f : Hypergraph, n : Int64){
-        //Get(f,n)
+        Get(f,n)
     }
     /**
      * Syntax sugar for creating a hypergraph with only a certain bus from a hypergraph exposed.
@@ -556,7 +556,7 @@ external class Hypergraph <: Atom {
      * @return A hypergraph with only the given bus exposed.
      */
     operator func [](f : Hypergraph, s : String){
-        //Get(f,s)
+        Get(f,s)
     }
 
 }

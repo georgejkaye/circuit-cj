@@ -2,7 +2,7 @@ import hypergraphs.*
 import examples.*
 
 func main(){
-    let add = Adder(width: 2, sum: "sum", cout: "cout")
-    WriteDotToFile(add, "dot/add.dot")
+    let acc = Accumulator(width: 2, initial: 1)
+    WriteDotToFile(acc, "dot/main.dot")
     return 0
 }

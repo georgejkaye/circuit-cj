@@ -1,11 +1,14 @@
 package hypergraphs
 
+import debug.*
+
 /** 
  * Keep track of all the buses defined
  * Avoids accidental redefinition of buses
  */
 var usedBusNames = MapBuilder<String, Bus>()
 var globalBusList = ArrayList<Bus>()
+
 
 
 /**
@@ -31,13 +34,27 @@ class Bus <: Atom {
      * Add a wire to the bundle of wires and get its position
      * @return The position of the new wire in the bundle
      */
-    func AddWire(wire : Wire, i : Int64){
-        wireMap.add(i, wire)
-        wires.add(wire)
+    func AddWire(wire : Wire){
+        Debug("AddWire", "Adding wire ${wire.i} to ${this}")
+        wireMap.add(wire.i, wire)
+        InsertWire(wire)
     }
 
     func GetWire(i : Int64){
         wireMap.toMap().get(i)
+    }
+
+    func InsertWire(wire : Wire){
+        for(i in 0..wires.size()){
+            if(wire.i < wires[i].i){
+                wires.add(i, wire)
+                return
+            }
+            if(wire.i == wires[i].i){
+                throw DuplicateWireException("InsertWire", this, wire.i)
+            }
+        }
+        wires.add(wire)
     }
 }
 append Bus with ToString, Equatable, Hashable {
@@ -79,6 +96,13 @@ func GetBusOption(string: String){
 func GetBus(string : String){
     match(GetBusOption(string)){
         case Some(b) => b
+        case $None   => throw NoSuchBusException("GetBus", string)
+    }
+}
+
+func FindBus(string : String){
+    match(GetBusOption(string)){
+        case Some(b) => b
         case $None   => NewBus(string)
     }
 }
@@ -108,11 +132,12 @@ class Wire <: Atom {
     init(bus: Bus, i : Int64){
         this.bus = bus
         this.i = i
-        bus.AddWire(this, i)
+        bus.AddWire(this)
     }
     init(){
         this.bus = NewBus()
         this.i = 0
+        bus.AddWire(this)
     }
 }
 append Wire with ToString, Equatable {

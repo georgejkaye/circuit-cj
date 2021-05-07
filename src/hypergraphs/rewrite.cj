@@ -6,6 +6,8 @@
 
 package hypergraphs
 
+import debug.*
+
 /**
  * Remove all parts of the graph that can be accessed by travelling left from a wire
  * Any dangling targets will be set to the inputs - the ordering is based on the
@@ -178,4 +180,49 @@ func Inject(f : Hypergraph, g : Hypergraph, name!: Option<String>){
     }
     // Return the newly injected hypergraph
     Hypergraph(name, newEdges, newInputs, newOutputs, newConns.toMap())
+}
+
+/**
+ * Fork some given source vertices and send the new copy to the outputs.
+ * Original outputs are stubbed.
+ * Order of the new outputs is determined by the order of the given list
+ * @param f  The hypergraph to extract the vertices from
+ * @param vs The list of source vertices to extract
+ * @return The hypergraph with the source vertices extracted
+ */
+func Extract(f : Hypergraph, vs : ArrayList<Source>) : Hypergraph {
+    Debug("Extract", "Extracting vertices ${SourceListToString(vs)} from '${f.GetName()}'")
+    let newEdges = ArrayList<Edge>(f.GetEdges())
+    let newOutputs = ArrayList<Source>()
+    let newConns = MapBuilder<Target, Source>()
+    for(s in vs){
+        let s2 = match(f.GetEdge(s)){
+            case EdgePort(e, i) => {
+                let t1 = Target()
+                let t2 = Target()
+                let fork = Edge(FORK, [s], [t1,t2])
+                newEdges.add(fork)
+                let s1 = Source()
+                let s2 = Source()
+                newConns.add(t1,s1)
+                newConns.add(t2,s2)
+                e.sources.set(i,s1)
+                s2
+            }
+            case InterfacePort(i) => {
+                s
+            }
+        }
+        newOutputs.add(s2)
+    }
+    for(t in f.GetTargets()){
+        newConns.add(t, f.GetConnR(t))
+    }
+    for(s in f.GetOutputs()){
+        if(!includes(newOutputs, s)){
+            let stub = Edge(STUB, [s], [])
+            newEdges.add(stub)
+        }
+    }
+    Hypergraph(newEdges, f.GetInputs(), newOutputs, newConns.toMap())
 }

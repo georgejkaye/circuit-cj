@@ -85,7 +85,7 @@ external func Seq(fs : List<Hypergraph>, name!: String = "") {
  * @return An identity hypergraph on n
  */
 external func Identity(n : Int64, name!: String = "", output!: String = "") : Hypergraph {
-    Debug("Identity", "Making identity on ${n}, output=${output}")
+    Debug("Identity", "Making identity on ${n}, output='${output}'")
     if(n < 0){
         throw NegativeWireException("Identity")
     }
@@ -300,20 +300,13 @@ external func Get(f : Hypergraph, ns : ArrayList<Int64>, name!: String = ""){
  */
 external func Get(f : Hypergraph, s : String, name!: String = ""){
     Debug("Get", "Getting bus ${s} from ${f.GetName()}")
-    let outputs = f.GetOutputs()
-    let ns = ArrayList<Int64>()
-    for(i in 0..outputs.size()){
-        for(wire in outputs[i].wires){
-            match(wire.bus.name){
-                case Some(text) => if(text == s) { ns.add(i) }
-                case $None      => {}
-            }
-        }
+
+    let vertices = ArrayList<Source>()
+    let b = GetBus(s)
+    for(w in b.wires){
+        vertices.add(f.GetWireVertex(w))
     }
-    if(ns.size() == 0){
-        throw PortNotFoundException("Get", f, s)
-    } 
-    Get(f, ns, name: name)
+    Extract(f, vertices)
 }
 external func Drop(f : Hypergraph, n : Int64, name!: String = ""){
     Debug("Drop", "Dropping ${n}th port from ${f.GetName()} : ${f.GetM()} -> ${f.GetN()}")
@@ -321,7 +314,6 @@ external func Drop(f : Hypergraph, n : Int64, name!: String = ""){
         throw TypeMismatchException("Drop", f, n)
     }
     let stack = Par([Identity(n), Stub(), Identity(f.GetN() - n - 1)])
-    WriteDotToFile(stack, "dot/stack")
     Seq(f, stack, name: name)
 }
 

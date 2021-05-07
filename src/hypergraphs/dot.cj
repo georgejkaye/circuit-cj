@@ -1,5 +1,6 @@
 package hypergraphs
 import io.*
+import debug.*
 
 let debugDot = false
 let tab = "  "
@@ -138,6 +139,9 @@ func DrawSubgraph(n : Int64, opt : String, text : String){
 }
 
 external func DotGraph(f : Hypergraph){
+
+    Debug("DotGraph", "Generating dot graph for '${f.GetName()}'")
+
     let declaration = "graph G {"
     let graphOptions = indent(1, graphOptions)
     let vertexNodeOptions = indent(1, "node[${vertexNodeOptions}]")
@@ -183,6 +187,7 @@ external func DotGraph(f : Hypergraph){
 }
 
 external func WriteDotToFile(f : Hypergraph, file : String){
+    Debug("WriteDotToFile", "Writing dot graph '${f.GetName()}' to file ${file}")
     let dot = DotGraph(f)
     let fs = FileStream(file, OpenMode.ForceCreate)
     if(fs.openFile()){
