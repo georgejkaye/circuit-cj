@@ -18,7 +18,7 @@ import debug.*
  * @return The composed hypergraph h = f . g
  */
 external func Seq(f : Hypergraph, g : Hypergraph, name!: String = "") : Hypergraph {
-    Debug("Seq", "Composing ${f.GetName()} and ${g.GetName()} in sequence}")
+    Debug("Seq", "Composing ${f.GetName()} and ${g.GetName()} in sequence")
     if(f.GetN() != g.GetM()){
         throw TypeMismatchException("Seq", f,g)
     }
@@ -85,7 +85,7 @@ external func Seq(fs : List<Hypergraph>, name!: String = "") {
  * @return An identity hypergraph on n
  */
 external func Identity(n : Int64, name!: String = "", output!: String = "") : Hypergraph {
-    Debug("Identity", "Making identity on ${n}, output={output)}")
+    Debug("Identity", "Making identity on ${n}, output=${output}")
     if(n < 0){
         throw NegativeWireException("Identity")
     }

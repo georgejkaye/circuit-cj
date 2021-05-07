@@ -244,11 +244,11 @@ external class Hypergraph <: Atom {
     private let busVertices  : Map<Bus, MapBuilder<Int64, Source>>
 
     init(edges    : ArrayList<Edge>, 
-         inputs   : ArrayList<Target>,
-         outputs  : ArrayList<Source>,
-         conns    : Map<Target, Source>
+          inputs   : ArrayList<Target>,
+          outputs  : ArrayList<Source>,
+          conns    : Map<Target, Source>
     ) {
-        this(None<String>, edges, inputs, outputs, conns)
+         this(None<String>, edges, inputs, outputs, conns)
     }
 
     init(name    : Option<String>,
@@ -637,3 +637,11 @@ func includes<T>(xs : ArrayList<T>, a : T) where T <: Equatable {
     return false
 }
 
+func PrintList<T>(xs : ArrayList<T>) where T <: ToString {
+    var str = "["
+    for(x in xs){
+        str = "${str} ${x}"
+    }
+    str = "${str} ]"
+    str
+}

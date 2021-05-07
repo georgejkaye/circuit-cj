@@ -16,7 +16,7 @@ OBJS="$IO_O"
 
 
 MAIN="main"
-PACKAGES=("debug" "hypergraphs" "library" "examples")
+PACKAGES=("debug" "hypergraphs" "examples")
 PKGNO=${#PACKAGES[@]}
 
 rm -rf $BUILD

@@ -492,8 +492,7 @@ external func OutLink(spec!: LinkSpec, name!:String = "", input!: Option<Hypergr
     OpMToZero(OUTLINK(spec), name: name, input: input) 
 }
 external func InLink(spec!: LinkSpec, output!: String = "", name!:String = "") { 
-    let bus = GetBus(output)
-    let wires = ArrayList<Wire>(spec.width, {i : Int64 => NewWire(bus, i)})
+    let wires = ArrayList<Wire>(spec.width, {i : Int64 => NewWire(output, i)})
     OpMToN(INLINK(spec), wires: wires, name: name) 
 }
 

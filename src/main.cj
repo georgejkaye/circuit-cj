@@ -1,16 +1,8 @@
 import hypergraphs.*
 import examples.*
-import library.*
 
 func main(){
-
-    let circ = Accumulator(4, 0)
-    WriteDotToFile(circ, "dot/main.dot")
-
-    //let a = AndGate(output: "and")
-    //let b = Identity(1)
-    //let c = Seq(a,b)
-    //WriteDotToFile(c, "dot/seq.dot")
-
+    let add = Adder(width: 2, sum: "sum", cout: "cout")
+    WriteDotToFile(add, "dot/add.dot")
     return 0
 }
