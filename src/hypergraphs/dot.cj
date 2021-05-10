@@ -2,7 +2,7 @@ package hypergraphs
 import io.*
 import debug.*
 
-let debugDot = false
+let debugDot = true
 let tab = "  "
 
 func indent(n : Int64, str : String){
@@ -36,7 +36,7 @@ let interfaceStyle = "bgcolor=\"gray\""
 let identityStyle = "bgcolor=\"gray\""
 let linkStyle = "bgcolor=\"red\""
 let gateStyle = "bgcolor=\"cyan\""
-let structuralStyle = "bgcolor=\"violet\""
+let structuralStyle = "bgcolor=\"violet\" width=\"10\""
 let delayStyle = "bgcolor=\"yellow\""
 let valueStyle = "bgcolor=\"green\""
 
@@ -90,7 +90,7 @@ func DrawEdgeNode(n : Int64, id : String, nodeStyle : String, text : String, sou
     let targetTable = targets.size() == 0 ? "" : WrapInTd(TargetListToTable(targets, "t", 5), n+3)
     let sourceNewline = sourceTable == "" ? "" : "\n"
     let targetNewline = targetTable == "" ? "" : "\n"
-    let edgetext = WrapInTd(indent(n+4, text), n+3)
+    let edgetext = WrapInTd(indent(n+4, debugDot ? "${id}: ${text}" : text), n+3)
     let subtable = WrapInTr("${sourceTable}${sourceNewline}${edgetext}${targetNewline}${targetTable}", n+2)
     let tablefooter = indent(n+1, "</table>")
     let conclusion = indent(n,">];")
@@ -125,11 +125,12 @@ func DrawVertex(t : Target, s : Source) {
 
         let wiretext = match(wire.bus.name){
             case Some(name) => "${name}[${wire.i}]"
-            case $None      => debugDot ? "${wire}" : ""
+            case $None      => ""
         }
         wires = wires == "" ? "${wiretext}" : wiretext == "" ? "${wires}" : "${wires}, ${wiretext}"
     }
-    "v${t.id}[label=\"\" xlabel=\"${wires}\"]"
+    let text = debugDot ? "${t.id}|${s.id}\n${wires}" : wires
+    "v${t.id}[label=\"\" xlabel=\"${text}\"]"
 }
 
 func DrawSubgraph(n : Int64, opt : String, text : String){

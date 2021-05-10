@@ -87,7 +87,11 @@ append Source with ToString, Equatable, Hashable {
     func toString(s : Source) {
         var wires = ""
         for (wire in s.wires){
-            wires = (wires == "" ? "${wire}" : "${wires}, ${wire}")
+            let wiretext = match(wire.bus.name){
+                case Some(str) => str
+                case $None     => ""
+            }
+            wires = (wires == "" ? "${wiretext}" : "${wires}, ${wiretext}")
         }
         return "Source s${s.id} ${wires}" 
     }
@@ -381,6 +385,25 @@ external class Hypergraph <: Atom {
     func GetBusVertices(s : String) {
         let b = GetBus(s)
         GetBusVertices(b)
+    }
+
+    func GetBusVertexList(b : Bus, vs : ArrayList<Source>){
+        for(wire in b.wires){
+            vs.add(GetWireVertex(wire))
+        }
+        vs
+    }
+    func GetBusVertexList(s : String, vs : ArrayList<Source>){
+        let b = GetBus(s)
+        GetBusVertexList(b, vs)
+    }
+    func GetBusVertexList(b : Bus){
+        let vs = ArrayList<Source>()
+        GetBusVertexList(b, vs)
+    }
+    func GetBusVertexList(s : String){
+        let vs = ArrayList<Source>()
+        GetBusVertexList(s, vs)
     }
 
     func GetConnR(t : Target) {

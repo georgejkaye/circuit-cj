@@ -195,25 +195,35 @@ func Extract(f : Hypergraph, vs : ArrayList<Source>) : Hypergraph {
     let newEdges = ArrayList<Edge>(f.GetEdges())
     let newOutputs = ArrayList<Source>()
     let newConns = MapBuilder<Target, Source>()
+    let doneMap = MapBuilder<Source, Edge>()
     for(s in vs){
-        let s2 = match(f.GetEdge(s)){
-            case EdgePort(e, i) => {
-                let t1 = Target()
-                let t2 = Target()
-                let fork = Edge(FORK, [s], [t1,t2])
-                newEdges.add(fork)
-                let s1 = Source()
-                let s2 = Source()
-                newConns.add(t1,s1)
-                newConns.add(t2,s2)
-                e.sources.set(i,s1)
+        let t1 = Target()
+        let t2 = Target()
+        let fork = Edge(FORK, [s], [t1,t2])
+        newEdges.add(fork)
+        let s1 = Source()
+        let s2 = Source()
+        newConns.add(t1,s1)
+        newConns.add(t2,s2)
+        let out = match(doneMap.toMap().get(s)){
+            case Some(e) => {
+                e.sources.set(0, s1)
                 s2
             }
-            case InterfacePort(i) => {
-                s
+            case $None => {
+                match(f.GetEdge(s)){
+                    case EdgePort(e, i) => {
+                        e.sources.set(i,s1)
+                        s2
+                    }
+                    case InterfacePort(i) => {
+                        s
+                    }
+                }
             }
         }
-        newOutputs.add(s2)
+        doneMap.add(s, fork)
+        newOutputs.add(out)
     }
     for(t in f.GetTargets()){
         newConns.add(t, f.GetConnR(t))

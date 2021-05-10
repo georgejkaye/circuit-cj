@@ -9,8 +9,6 @@ import debug.*
 var usedBusNames = MapBuilder<String, Bus>()
 var globalBusList = ArrayList<Bus>()
 
-
-
 /**
  * A bus is a bundle of wires with a name
  */

@@ -300,14 +300,20 @@ external func Get(f : Hypergraph, ns : ArrayList<Int64>, name!: String = ""){
  */
 external func Get(f : Hypergraph, s : String, name!: String = ""){
     Debug("Get", "Getting bus ${s} from ${f.GetName()}")
-
-    let vertices = ArrayList<Source>()
     let b = GetBus(s)
-    for(w in b.wires){
-        vertices.add(f.GetWireVertex(w))
+    let vertices = f.GetBusVertexList(b)
+    Extract(f, vertices)
+}
+
+external func Get(f : Hypergraph, buses : List<String>, name!: String = ""){
+    Debug("Get", "getting buses from ${f.GetName()}")
+    var vertices = ArrayList<Source>()
+    for(bus in buses){
+        vertices = f.GetBusVertexList(bus, vertices)
     }
     Extract(f, vertices)
 }
+
 external func Drop(f : Hypergraph, n : Int64, name!: String = ""){
     Debug("Drop", "Dropping ${n}th port from ${f.GetName()} : ${f.GetM()} -> ${f.GetN()}")
     if(n < 0 || n >= f.GetN()){
