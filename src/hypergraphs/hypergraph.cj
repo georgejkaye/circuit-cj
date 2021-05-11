@@ -112,9 +112,13 @@ func SourceListToString(xs : ArrayList<Source>){
         str = "${str} ${x.id}"
         var wires = ""
         for(wire in x.wires){
-            wires = wires == "" ? " (${wire}" : "${wires}, ${wire}"
+            let wirename = match(wire.bus.name){
+                case Some(name) => "${name}[${wire.i}]"
+                case $None      => ""
+            }
+            wires = wirename == "" ? wires : wires == "" ? " ${wirename}" : "${wires}, ${wirename}"
         }
-        wires = wires == "" ? "" : "${wires})"
+        wires = wires == "" ? "" : "(${wires})"
         str = "${str}${wires}"
     }
     str = "${str} ]"
@@ -198,24 +202,24 @@ enum Port {
     | InterfacePort(Int64) 
 }
 
-func UpdateBuses(wireMap : MapBuilder<Bus, MapBuilder<Int64, Source>>, busList : ArrayList<Bus>, wireList : ArrayList<Wire>, v : Source){
+func UpdateBuses(busMaps : MapBuilder<Bus, MapBuilder<Int64, Source>>, busList : ArrayList<Bus>, wireList : ArrayList<Wire>, v : Source){
         for(wire in v.wires){
             wireList.add(wire)
             let bus = wire.bus
-            match(wireMap.toMap().get(bus)){
+            match(busMaps.toMap().get(bus)){
                 case Some(ws) => {
                     let x = ws.add(wire.i, v)
                 }
                 case $None     => {
                     let mb = MapBuilder<Int64, Source>()
                     mb.add(wire.i, v)
-                    wireMap.add(bus, mb)
+                    busMaps.add(bus, mb)
                     let x = busList.add(bus)
                 }
             }
         }
 
-        (wireMap, busList, wireList)
+        (busMaps, busList, wireList)
     }
 
 /**
@@ -243,9 +247,9 @@ external class Hypergraph <: Atom {
     private let m       : Int64
     private let n       : Int64
 
-    private let buses        : ArrayList<Bus>
-    private let wires        : ArrayList<Wire>
-    private let busVertices  : Map<Bus, MapBuilder<Int64, Source>>
+    private let buses         : ArrayList<Bus>
+    private let wires         : ArrayList<Wire>
+    private let busVertexMaps : Map<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>
 
     init(edges    : ArrayList<Edge>, 
           inputs   : ArrayList<Target>,
@@ -289,12 +293,18 @@ external class Hypergraph <: Atom {
         this.sources = ArrayList<Source>()
         this.targets = ArrayList<Target>()
 
+        // We can use the right conns map to define the left conns map
+        let connslMap = MapBuilder<Source, Target>() 
+        for(v in targets){
+            connslMap.add(GetConnR(v), v)
+        }
+        this.connsl = connslMap.toMap()
+
         let leftMap = MapBuilder<Target, Port>()
         let rightMap = MapBuilder<Source, Port>()
         var busList = ArrayList<Bus>()
         var wireList = ArrayList<Wire>()
-
-        var busMap = MapBuilder<Bus, MapBuilder<Int64, Source>>()
+        var busMaps = MapBuilder<Bus, MapBuilder<Int64, Source>>()
 
         // Add inputs to the list of targets
         for(i in 0..inputs.size()){
@@ -308,7 +318,7 @@ external class Hypergraph <: Atom {
             sources.add(v)
             rightMap.add(v, InterfacePort(i))
             // Update the buses list with any output buses
-            (busMap, busList, wireList) = UpdateBuses(busMap, busList, wireList, v)
+            (busMaps, busList, wireList) = UpdateBuses(busMaps, busList, wireList, v)
         }
 
         // HACK: for some reason it segfaults if you try to loop over the empty list
@@ -320,7 +330,7 @@ external class Hypergraph <: Atom {
                     sources.add(v)
                     rightMap.add(v, EdgePort(e,i))
                     // Update the buses list with any intermediate buses
-                    (busMap, busList, wireList) = UpdateBuses(busMap, busList, wireList, v)
+                    (busMaps, busList, wireList) = UpdateBuses(busMaps, busList, wireList, v)
                     
                 }
                 // Add targets to the list of targets
@@ -332,19 +342,33 @@ external class Hypergraph <: Atom {
             }
         }
 
+        let busMapLists = MapBuilder<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>()
+        // TODO use for((bus, targetList) when convinced it works)
+        for(bus in busList){
+            match(busMaps.toMap().get(bus)){
+                case $None => throw BusNotInGraphException("Hypergraph", bus)
+                case Some(mb) => {
+                    let vertexList = ArrayList<Source>()
+                    let wires = bus.wires
+                    for(wire in wires){
+                        let v = match(mb.toMap().get(wire.i)) {
+                            case Some(s) => s
+                            case $None   => throw WireNotInGraphException("Hypergraph", wire)
+                        }
+                        vertexList.add(v)
+                    }
+                    busMapLists.add(bus, (mb, vertexList))
+                }
+            }
+            
+        }
+
         this.lefts = leftMap.toMap()
         this.rights = rightMap.toMap()
 
-        this.busVertices  = busMap.toMap()
+        this.busVertexMaps = busMapLists.toMap()
         this.buses        = busList
         this.wires        = wireList
-
-        let connslMap = MapBuilder<Source, Target>()
- 
-        for(v in targets){
-            connslMap.add(GetConnR(v), v)
-        }
-        this.connsl = connslMap.toMap()
     }
 
     func GetName() { name }
@@ -364,43 +388,82 @@ external class Hypergraph <: Atom {
     func GetWires() { wires }
     func GetBuses() { buses }
 
+    /**
+     * Get the vertex that corresponds to this wire, or throw an exception if it doesn't exist
+     * @param w The wire
+     * @return The vertex that corresponds to this wire
+     */
     func GetWireVertex(w : Wire) { 
         match(GetWireVertexOption(w)){
             case Some(v) => v
             case $None   => throw WireNotInGraphException("GetWireVertex", w)
         }
     }   
-
+    /**
+     * Get an option containing either the vertex that corresponds to this wire, or None
+     * @param w The wire
+     * @return Some(vertex) if it exists in this graph, or None otherwise
+     */
     func GetWireVertexOption(w : Wire){
-        match(busVertices.get(w.bus)){
-             case Some(ws) => ws.toMap().get(w.i)
+        match(busVertexMaps.get(w.bus)){
+             case Some((mb, vs)) => mb.toMap().get(w.i)
              case $None    => None<Source>
         }
     }
-
-    func GetBusVertices(b : Bus){
-        busVertices.get(b)
+    /**
+     * Get the index-vertex map of vertices belonging to a given bus 
+     * @param s The bus
+     * @return  The index-vertex map of vertices belonging to this bus
+     */  
+    func GetBusVertexMap(b : Bus){
+        busVertexMaps.get(b)
     }
-
-    func GetBusVertices(s : String) {
+    /**
+     * Get the index-vertex map of vertices belonging to a given bus 
+     * @param s The name of the bus
+     * @return  The index-vertex map of vertices belonging to this bus
+     */  
+    func GetBusVertexMap(s : String) {
         let b = GetBus(s)
-        GetBusVertices(b)
+        GetBusVertexMap(b)
     }
-
+    /**
+     * Get the list of vertices belonging to a given bus and append them to an existing list
+     * @param b  The bus
+     * @param vs The list of vertices to append to
+     * @return The list of vertices that belong to this bus
+     */
     func GetBusVertexList(b : Bus, vs : ArrayList<Source>){
-        for(wire in b.wires){
-            vs.add(GetWireVertex(wire))
+        match(busVertexMaps.get(b)){
+            case Some((mb, ss)) => vs.addAll(ss)
+            case $None          => throw BusNotInGraphException("GetBusVertexList", b)
         }
         vs
     }
+    /**
+     * Get the list of vertices belonging to a given bus and append them to an existing list
+     * @param s  The name of the bus
+     * @param vs The list of vertices to append to
+     * @return The list of vertices that belong to this bus
+     */
     func GetBusVertexList(s : String, vs : ArrayList<Source>){
         let b = GetBus(s)
         GetBusVertexList(b, vs)
     }
+    /**
+     * Get the list of vertices belonging to a given bus 
+     * @param b The bus
+     * @return The list of vertices that belong to this bus
+     */
     func GetBusVertexList(b : Bus){
         let vs = ArrayList<Source>()
         GetBusVertexList(b, vs)
     }
+    /**
+     * Get the list of vertices belonging to a given bus 
+     * @param s The name of the bus
+     * @return The list of vertices that belong to this bus
+     */
     func GetBusVertexList(s : String){
         let vs = ArrayList<Source>()
         GetBusVertexList(s, vs)
@@ -432,7 +495,7 @@ external class Hypergraph <: Atom {
     }
     func ContainsBus(b : String) {
         let b = GetBus(b)
-        match(busVertices.get(b)){
+        match(busVertexMaps.get(b)){
             case Some(x) => return true
             case $None   => return false
         }

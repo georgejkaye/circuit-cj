@@ -249,7 +249,6 @@ external func Trace(f : Hypergraph, x : Int64, name!: String = ""){
     newEdges.add(idEdge)
     Hypergraph(name, newEdges, newInputs, newOutputs, newF.GetConnsR())
 }
-
 /**
  * Transform a hypergraph of type m->n to one of type m->1, preserving the nth 
  * output and stubbing the rest.
@@ -302,18 +301,30 @@ external func Get(f : Hypergraph, s : String, name!: String = ""){
     Debug("Get", "Getting bus ${s} from ${f.GetName()}")
     let b = GetBus(s)
     let vertices = f.GetBusVertexList(b)
-    Extract(f, vertices)
+    Extract(f, vertices, name: name)
 }
-
+/**
+ * Transform a hypergraph to one with only the given buses exposed, stubbing the rest.
+ * @param f     The hypergraph
+ * @param buses The list of the bus names to expose
+ * @param name  The name of the resulting hypergraph
+ * @return The hypergraph with only the given bus exposed
+ */
 external func Get(f : Hypergraph, buses : List<String>, name!: String = ""){
     Debug("Get", "getting buses from ${f.GetName()}")
     var vertices = ArrayList<Source>()
     for(bus in buses){
         vertices = f.GetBusVertexList(bus, vertices)
     }
-    Extract(f, vertices)
+    Extract(f, vertices, name: name)
 }
-
+/**
+ * Drop the nth output of a hypergraph, stubbing it while preserving the others
+ * @param f     The hypergraph
+ * @param buses The index of the output to stub
+ * @param name  The name of the resulting hypergraph
+ * @return The hypergraph with only the given bus exposed
+ */
 external func Drop(f : Hypergraph, n : Int64, name!: String = ""){
     Debug("Drop", "Dropping ${n}th port from ${f.GetName()} : ${f.GetM()} -> ${f.GetN()}")
     if(n < 0 || n >= f.GetN()){

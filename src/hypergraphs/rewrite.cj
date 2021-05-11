@@ -190,21 +190,27 @@ func Inject(f : Hypergraph, g : Hypergraph, name!: Option<String>){
  * @param vs The list of source vertices to extract
  * @return The hypergraph with the source vertices extracted
  */
-func Extract(f : Hypergraph, vs : ArrayList<Source>) : Hypergraph {
+func Extract(f : Hypergraph, vs : ArrayList<Source>, name!: String = "") : Hypergraph {
     Debug("Extract", "Extracting vertices ${SourceListToString(vs)} from '${f.GetName()}'")
     let newEdges = ArrayList<Edge>(f.GetEdges())
     let newOutputs = ArrayList<Source>()
     let newConns = MapBuilder<Target, Source>()
     let doneMap = MapBuilder<Source, Edge>()
     for(s in vs){
+        // Create a new fork edge
         let t1 = Target()
         let t2 = Target()
         let fork = Edge(FORK, [s], [t1,t2])
         newEdges.add(fork)
+        // Create a source for the original edge
         let s1 = Source()
+        // Create a source for the outputs
         let s2 = Source()
+        // Join up the new sources and targets
         newConns.add(t1,s1)
         newConns.add(t2,s2)
+        // If we have already forked this wire, we need to set the sources
+        // of the new fork we created rather than those of the original edge
         let out = match(doneMap.toMap().get(s)){
             case Some(e) => {
                 e.sources.set(0, s1)
@@ -225,14 +231,129 @@ func Extract(f : Hypergraph, vs : ArrayList<Source>) : Hypergraph {
         doneMap.add(s, fork)
         newOutputs.add(out)
     }
+    // Add the remaining connections from the original hypergraph
     for(t in f.GetTargets()){
         newConns.add(t, f.GetConnR(t))
     }
+    // If an output is not included in the extracted vertices, it needs to be stubbed
     for(s in f.GetOutputs()){
         if(!includes(newOutputs, s)){
             let stub = Edge(STUB, [s], [])
             newEdges.add(stub)
         }
     }
-    Hypergraph(newEdges, f.GetInputs(), newOutputs, newConns.toMap())
+    Hypergraph(name, newEdges, f.GetInputs(), newOutputs, newConns.toMap())
+}
+
+external func ResolveLinks(f : Hypergraph, name!: String = ""){
+    let newF = f.Clone()
+    print("${newF}\n")
+    let outputs = newF.GetOutputs()
+    let edges = newF.GetEdges()
+    let inlinks = MapBuilder<LinkSpec, ArrayList<Edge>>()
+    let outlinks = MapBuilder<LinkSpec, ArrayList<Edge>>()
+    // TODO remove once convinved that for((x, y) in map) works
+    let inList = ArrayList<Edge>()
+    let outList = ArrayList<Edge>()
+    for(edge in edges){
+        match(edge.generator){
+            case INLINK(spec)  => {
+                inList.add(edge)
+                match(inlinks.toMap().get(spec)){
+                    case Some(es) => {
+                        es.add(edge)
+                        true
+                    } 
+                    case $None    => {
+                        let es = ArrayList<Edge>([edge])
+                        inlinks.add(spec, es)
+                        false
+                    }
+                }
+                true
+            }
+            case OUTLINK(spec) => {
+                outList.add(edge)
+                match(outlinks.toMap().get(spec)){
+                    case Some(es) => {
+                        es.add(edge)
+                        true
+                    }
+                    case $None    => {
+                        let es = ArrayList<Edge>([edge])
+                        outlinks.add(spec, es)
+                        false
+                    }
+                }
+                true
+            }
+            case _ => false
+        }
+    }
+    
+    let linkConns = MapBuilder<Target, Source>()
+    for((spec, outLinkEdges) in outlinks.toMap()){
+        match(inlinks.toMap().get(spec)){
+            case Some(inLinkEdges) => {
+                let outs = outLinkEdges.size()
+                let ins = inLinkEdges.size()
+                // Deal with each port of the link in turn
+                for(port in 0..spec.width){
+                    var currentSource = outLinkEdges[0].sources[port]
+                    // We need to join together multiple out links with the same spec
+                    if(outs > 1){
+                        for(j in 1..outs){
+                            let nextSource = outLinkEdges[j].sources[port]
+                            let t1 = Target()
+                            let join = Edge(JOIN, [currentSource, nextSource], [t1])
+                            edges.add(join)
+                            let s1 = Source()
+                            linkConns.add(t1,s1)
+                            currentSource = s1
+                        }
+                    }
+
+                    let idTarget : Target
+                    // We need to fork to serve multiple in links with the same spec
+                    if(ins > 1){
+                        var currentTarget = Target()
+                        idTarget = currentTarget
+                        for(j in 2..ins){
+                            let forkSource = Source()
+                            linkConns.add(currentTarget, forkSource)
+                            currentTarget = Target()
+                            let fork = Edge(FORK, [forkSource], [currentTarget, inLinkEdges[ins-j+1].targets[port]])
+                            edges.add(fork)
+                        }
+                        let forkSource = Source()
+                        linkConns.add(currentTarget, forkSource)
+                        let fork = Edge(FORK, [currentSource], [inLinkEdges[0].targets[port], inLinkEdges[1].targets[port]])
+                        edges.add(fork)
+                    } else {
+                        idTarget = inLinkEdges[0].targets[port]
+                    }
+                    // In between the links we put an identity edge to preseve closed loops
+                    let idEdge = Edge(IDENTITY,[currentSource],[idTarget])
+                    edges.add(idEdge)
+
+                }
+                edges.removeIf({e : Edge => includes(inLinkEdges, e)})
+            }
+            case $None => {
+                for(e in outLinkEdges){
+                    let stubs = ArrayList<Edge>(spec.width, {i : Int64 => Edge(STUB, [e.sources[i]], []) })
+                    edges.addAll(stubs)
+                }
+            }
+        }
+        edges.removeIf({e : Edge => includes(outLinkEdges, e)})
+    }
+    Info("ResolveLinks", "before the conns")
+    for(t in newF.GetTargets()){
+        linkConns.add(t, newF.GetConnR(t))
+    }
+
+    print("${PrintList(edges)}\n")
+
+    Hypergraph(name, edges, newF.GetInputs(), outputs, linkConns.toMap())
 }

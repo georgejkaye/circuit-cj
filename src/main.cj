@@ -5,8 +5,10 @@ import debug.*
 func main(){
     Info("Main", "Creating accumulator")
     let acc = Accumulator(width: 2, initial: 1)
-    print("${acc}")
+    Info("Main", "Resolving links")
+    let res = ResolveLinks(acc)
     Info("Main", "Drawing graph")
-    WriteDotToFile(acc, "dot/main.dot")
+    WriteDotToFile(acc, "dot/acc.dot")
+    WriteDotToFile(ResolveLinks(acc), "dot/res.dot")
     return 0
 }

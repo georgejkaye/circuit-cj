@@ -23,7 +23,7 @@ fi
 
 # draw graph
 echo "Drawing svg graph from $DOT/$EXE.dot"
-dot -Tsvg $DOT/$EXE.dot -O
+dot -Tsvg $DOT/$EXE.dot -o $DOT/$EXE.dot.svg
 CODE=$?
 if [ "$CODE" != "0" ] ; then
     echo "Error $CODE, aborting..."

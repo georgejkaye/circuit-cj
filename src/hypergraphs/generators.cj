@@ -55,8 +55,11 @@ external class LinkSpec <: Atom {
         this.width = width
     }
 }
-append LinkSpec with ToString {
+append LinkSpec with ToString, Equatable, Hashable {
     func toString(spec : LinkSpec) { "LinkSpec ${spec.id} - ${spec.name} width ${spec.width}" }
+    operator func ==(lhs : LinkSpec, rhs : LinkSpec) : Bool { lhs.id == rhs.id }
+    operator func !=(lhs : LinkSpec, rhs : LinkSpec) : Bool { lhs.id != rhs.id }
+    func hashCode(t : LinkSpec) : UInt64 { t.id }
 }
 
 /**
