@@ -2,7 +2,7 @@ package hypergraphs
 import io.*
 import debug.*
 
-let debugDot = false
+let debugDot = true
 let tab = "  "
 
 func indent(n : Int64, str : String){
@@ -99,13 +99,13 @@ func DrawEdgeNode(n : Int64, id : String, nodeStyle : String, text : String, sou
 
 func DrawEdge(n : Int64, e : Edge){
     let (style, text) = match(e.generator){
-        case VALUE(value)      => (valueStyle, "${value}")
-        case STRUCTURAL(label) => (structuralStyle, label.name)
-        case GATE(label)       => (gateStyle, label.name)
-        case DELAY(dur)        => (delayStyle, "d[${dur}]")
-        case $IDENTITY         => (identityStyle, "id")
-        case INLINK(spec)      => (linkStyle, spec.name)
-        case OUTLINK(spec)     => (linkStyle, spec.name)
+        case VALUE(value)       => (valueStyle, "${value}")
+        case STRUCTURAL(struct) => (structuralStyle, "${struct}")
+        case GATE(label)        => (gateStyle, label.name)
+        case DELAY(dur)         => (delayStyle, "d[${dur}]")
+        case $IDENTITY          => (identityStyle, "id")
+        case INLINK(spec)       => (linkStyle, spec.name)
+        case OUTLINK(spec)      => (linkStyle, spec.name)
     }
     DrawEdgeNode(n, "e${e.id}", style, text, e.sources, e.targets)
 }

@@ -20,15 +20,7 @@ func OpMToN(generator : Generator, name!: String = "", wires!: ArrayList<Wire>, 
 
     Debug("OpMToN - ${generator}", "Creating operation, wires = ${WireListToString(wires)}")
 
-    let (dom, cod) = match(generator){
-        case VALUE(val)        => (0,1)
-        case STRUCTURAL(label) => (label.dom, label.cod)
-        case GATE(label)       => (label.dom, label.cod)
-        case DELAY(dur)        => (1,1)
-        case $IDENTITY          => (1,1)
-        case INLINK(spec)      => (0, spec.width)
-        case OUTLINK(spec)     => (spec.width, 0)
-    }
+    let (dom, cod) = Signature(generator)
     match(input){
         case $None => {}
         case Some(f) => {
@@ -247,7 +239,7 @@ external func False(output!: String = "", elem!: Int64 = 0){
  * @param name=""      The name of the resulting hypergraph
  * @return A hypergraph for a fork
  */
-external func Fork(input!: Option<Hypergraph> = None<Hypergraph>, output1!: String = "", elem1!: Int64 = 0, output2!: String = "", elem2!: Int64 = 0) { 
+external func Fork(output1!: String = "", elem1!: Int64 = 0, output2!: String = "", elem2!: Int64 = 0, input!: Option<Hypergraph> = None<Hypergraph>) { 
     OpOneToTwo(FORK, output1: output1, elem1: elem1, output2: output2, elem2: elem2, name: "Fork", input: input) 
 }
 /**

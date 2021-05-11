@@ -12,7 +12,7 @@ package hypergraphs
  * ⊥ < t,f < ⊤
  */
 enum Value { BOTTOM | TRUE | FALSE | TOP }
-append Value with ToString {
+append Value with ToString, Equatable {
     func toString(v : Value) {
         match(v){
             case $BOTTOM => "bot"
@@ -21,6 +21,69 @@ append Value with ToString {
             case $TOP    => "top"
         }
     }
+    operator func ==(lhs : Value, rhs : Value){
+        match(lhs){
+            case $BOTTOM => {
+                match(rhs){
+                    case $BOTTOM => true
+                    case _ => false
+                }
+            }
+            case $TRUE => {
+                match(rhs){
+                    case $TRUE => true
+                    case _ => false
+                }
+            }
+            case $FALSE => {
+                match(rhs){
+                    case $FALSE => true
+                    case _ => false
+                }
+            }
+            case $TOP => {
+                match(rhs){
+                    case $TOP => true
+                    case _ => false
+                }
+            }
+        }
+    }
+    operator func !=(lhs : Value, rhs : Value) { !(lhs == rhs) }
+}
+
+enum Struct { ForkMorph | JoinMorph | StubMorph }
+append Struct with ToString, Equatable {
+    func toString(s : Struct) {
+        match(s){
+            case $ForkMorph => "fork"
+            case $JoinMorph => "join"
+            case $StubMorph => "stub"
+        }
+    }
+    operator func ==(lhs : Struct, rhs: Struct){
+        match(lhs){
+            case $ForkMorph => {
+                match(rhs) {
+                    case $ForkMorph => true
+                    case _ => false
+                }
+            }
+            case $JoinMorph => {
+                match(rhs) {
+                    case $JoinMorph => true
+                    case _ => false
+                }
+            }
+            case $StubMorph => {
+                match(rhs) {
+                    case $StubMorph => true
+                    case _ => false
+                }
+            }
+        }
+    }
+    operator func !=(lhs : Struct, rhs: Struct) { !(lhs == rhs) }
 }
 
 /**
@@ -39,8 +102,10 @@ class Label <: Atom {
         this.cod = cod
     }
 }
-append Label with ToString {
+append Label with ToString, Equatable {
     func toString(l : Label) { "Label ${l.id} - ${l.name} : ${l.dom} → ${l.cod}" }
+    operator func ==(lhs: Label, rhs: Label) : Bool { lhs.name == rhs.name && lhs.dom == rhs.dom && lhs.cod == rhs.cod }
+    operator func !=(lhs : Label, rhs: Label) : Bool { !(lhs == rhs) }
 }
 
 /**
@@ -67,18 +132,18 @@ append LinkSpec with ToString, Equatable, Hashable {
  */
 external enum Generator { 
     | VALUE(Value)            // A value 0 -> 1
-    | STRUCTURAL(Label)       // A structural generator 
+    | STRUCTURAL(Struct)      // A structural generator 
     | GATE(Label)             // A gate m -> 1
     | DELAY(Int64)            // A delay parameterised by a duration
     | IDENTITY                // An identity 1 -> 1
     | INLINK(LinkSpec)        // An in-link 0 -> m, where wires come into the graph
     | OUTLINK(LinkSpec)       // An out-link m -> 0, where wires come out of the graph
 }
-append Generator with ToString{
+append Generator with ToString, Equatable{
     func toString(gen : Generator){
         match(gen){
             case VALUE(value)        => "value (${value})"
-            case STRUCTURAL(label)   => "structural (${label.name})"
+            case STRUCTURAL(struct)  => "structural (${struct})"
             case GATE(label)         => "gate (${label.name})"
             case DELAY(dur)          => "delay (${dur})"
             case $IDENTITY           => "identity"
@@ -86,15 +151,92 @@ append Generator with ToString{
             case OUTLINK(spec)       => "out link (${spec.name} - ${spec.width})"
         }
     }
+    operator func ==(g1 : Generator, g2 : Generator){
+        match(g1){
+            case VALUE(v1) => {
+                match(g2){
+                    case VALUE(v2) => v1 == v2
+                    case _ => false
+                }
+            }
+            case STRUCTURAL(s1) => {
+                match(g2) {
+                    case STRUCTURAL(s2) => s1 == s2
+                    case _ => false
+                }
+            }
+            case GATE(l1) => {
+                match(g2) {
+                    case GATE(l2) => l1 == l2
+                    case _ => false
+                }
+            }
+            case DELAY(d1) => {
+                match(g2) {
+                    case DELAY(d2) => d1 == d2
+                    case _ => false
+                }
+            }
+            case $IDENTITY => {
+                match(g2) {
+                    case $IDENTITY => true
+                    case _ => false
+                }
+            }
+            case INLINK(s1) => {
+                match(g2) {
+                    case INLINK(s2) => s1 == s2
+                    case _ => false
+                }
+            }
+            case OUTLINK(s1) => {
+                match(g2) {
+                    case OUTLINK(s2) => s1 == s2
+                    case _ => false
+                }
+            }
+        }
+    }
+    operator func !=(g1 : Generator, g2 : Generator) { !(g1 == g2) }
+}
+
+func Signature(gen : Generator){
+    match(gen){
+        case VALUE(val)         => (0,1)
+        case STRUCTURAL(struct) => {
+            match(struct) {
+                case $ForkMorph => (1,2)
+                case $JoinMorph => (2,1)
+                case $StubMorph => (1,0)
+            }
+        }
+        case GATE(label)        => (label.dom, label.cod)
+        case DELAY(dur)         => (1,1)
+        case $IDENTITY          => (1,1)
+        case INLINK(spec)       => (0, spec.width)
+        case OUTLINK(spec)      => (spec.width, 0)
+    }
 }
 
 /**
  * Structural generators
  */
 
-external let FORK : Generator = STRUCTURAL(Label("fork", 1, 2))
-external let JOIN : Generator = STRUCTURAL(Label("join", 2, 1))
-external let STUB : Generator = STRUCTURAL(Label("stub", 1, 0))
+external let FORK : Generator = STRUCTURAL(ForkMorph)
+external let JOIN : Generator = STRUCTURAL(JoinMorph)
+external let STUB : Generator = STRUCTURAL(StubMorph)
+
+func IsStub(e : Edge){
+    match(e.generator){
+        case STRUCTURAL(label) => {
+            match(label){
+                case $StubMorph => true
+                case _          => false
+            }
+        }
+        case _ => false
+    }
+}
 
 /**
  * Unary gates

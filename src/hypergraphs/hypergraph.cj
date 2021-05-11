@@ -500,6 +500,18 @@ external class Hypergraph <: Atom {
             case $None   => return false
         }
     }
+    /**
+     * Follow the path from the ith target of an edge to find its successor edge
+     * @param edge The edge to traverse from
+     * @param i    The index of the target
+     * @return The port reached by following this target.
+     */
+    func NextEdge(edge : Edge, i : Int64){
+        if(i < 0 || i >= edge.targets.size()){
+            throw BadTargetsException("NextEdge", edge, i)
+        }
+        GetEdge(GetConnR(edge.targets[i]))
+    }
 
     /**
      * Check that this hypergraph is disjoint with another
@@ -659,9 +671,9 @@ append Hypergraph with ToString {
         }
         let outputString = "outputs ${SourceListToString(f.GetOutputs())}"
         var connstr = "connections "
-        for (t in f.GetTargets()) {
-            connstr = "${connstr}(${t.id} ${f.GetConnR(t).id}) "
-        }
+        //for (t in f.GetTargets()) {
+        //    connstr = "${connstr}(${t.id} ${f.GetConnR(t).id}) "
+        //}
         var leftstr = "left "
         for(t in f.GetTargets()) {
             leftstr = "${leftstr}(${t.id} => "
@@ -730,4 +742,10 @@ func PrintList<T>(xs : ArrayList<T>) where T <: ToString {
     }
     str = "${str} ]"
     str
+}
+
+func GetAll(f : Hypergraph, g : Generator){
+    let edges = ArrayList<Edge>(f.GetEdges())
+    edges.removeIf({x : Edge => x.generator == g})
+    edges
 }

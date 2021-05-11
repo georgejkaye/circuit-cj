@@ -108,7 +108,7 @@ func FullAdderAtoms(sum!: String = "", cout!: String = "", bit!: Int64 = 0) : Ar
     let edges = [fork1, fork2, fork3, xor1, and1, fork4, xor2, and2, or]
     let outputs = [s13,s16]
 
-    let conns = [(t1,s1), (t2,s2), (t3,s3), (t4,s4), (t5,s5), (t6,s6), (t7,s7), (t8,s8), (t9,s9), (t10,s10), (t11,s11), (t12,s12), (t13,s13), (t14,s14), (t15,s15), (t16,s16)]
+    let conns = [(t1,s1), (t2,s2), (t3,s3), (t4,s4), (t5,s5), (t6,s6), (t7,s7), (t8,s8), (t9,s9), (t10,s10), (t11,s11), (t12,s12), (t13,s13), (t14,s14), (t15,s15), (t16,s16)]    
     (ArrayList<Edge>(edges), ArrayList<Target>(inputs), ArrayList<Source>(outputs), ArrayList<Target * Source>(conns))
 }
 
@@ -132,8 +132,6 @@ external func FullAdder(a!: Hypergraph, b!: Hypergraph, cin!: Hypergraph, sum!: 
     Seq(Output([a,b,cin]), FullAdder(sum: sum, cout: cout, bit: bit, name: name))
 }
 
-
-
 /**
  * Adders
  */
@@ -143,12 +141,31 @@ func AdderAtoms(width!: Int64, bit!: Int64 = 0, sum!: String = "", cout!: String
     }
     if(width == 1){
         let (edges, inputs, outputs, conns) = FullAdderAtoms(sum: sum, cout: cout, bit: bit)
+
+        print("base case n=1\n")
+        for((t ,s) in conns){
+            print("${t} -> ${s}\n")
+        }
+        print("\n")
+
         (edges, ArrayList<Target>([inputs[0]]), ArrayList<Target>([inputs[1]]), inputs[2], outputs, conns)
     } else {
         let n = width - 1
         
         let (hdEdges, hdInputs, hdOutputs, hdConns) = FullAdderAtoms(sum: sum, bit: bit)
         let (tlEdges, tlInputsL, tlInputsR, tlInputsC, tlOutputs, tlConns) = AdderAtoms(width: n, sum: sum, cout: cout, bit: bit + 1)
+
+        print("inductive n=${n+1}\n")
+        print("head\n")
+        for((t ,s) in hdConns){
+            print("${t} -> ${s}\n")
+        }
+        print("\n")
+        print("tail\n")
+        for((t ,s) in tlConns){
+            print("${t} -> ${s}\n")
+        }
+        print("\n")
 
         let inputsL = ArrayList<Target>([hdInputs[0]])
         inputsL.addAll(tlInputsL)
@@ -158,8 +175,14 @@ func AdderAtoms(width!: Int64, bit!: Int64 = 0, sum!: String = "", cout!: String
         let outputs = ArrayList<Source>([hdOutputs[0]])
         outputs.addAll(tlOutputs)
 
-        hdConns.set(15, (hdConns[15][0], tlConns[2 * n][1]))
-        tlConns.removeAt(2 * n)
+        print("we need to redirect ${tlInputsC}\n")
+
+        let connL = hdConns.removeAt(15)
+        print("head provides ${connL[0]} -> ${connL[1]}\n")
+        let connR = tlConns.removeAt(2)
+        print("tail provides ${connR[0]} -> ${connR[1]}\n")
+        hdConns.add((connL[0], connR[1]))
+
 
         hdEdges.addAll(tlEdges)
         hdConns.addAll(tlConns)
@@ -190,10 +213,13 @@ external func Adder(width!: Int64, a!: Hypergraph, b!: Hypergraph, cin!: Hypergr
     Seq(Output([a,b,cin]), Adder(width: width, sum: sum, cout: cout), name: name)
 }
 
-external func Plus(width!: Int64, output!: String, name!: String = "") : Hypergraph {
+external func Plus(width!: Int64, output!: String = "", name!: String = "") : Hypergraph {
     Debug("Plus", "Making plus of width ${width}")
-    let add = Seq(Par(Identity(2*width), Zero(width: 1)), Adder(width: width, sum: output))
-    Drop(add, width, name: name)
+    let adder = Adder(width: width, sum: output)
+    WriteDotToFile(adder, "dot/adder.dot")
+    Info("Plus", "Made adder")
+    let plus = Seq(Par(Identity(2 * width), Zero(width: 1)), adder)
+    Drop(plus, width, name: name)
 }
 
 external func Plus(width!: Int64, a!: Hypergraph, b!: Hypergraph, output!: String = "", name!: String = "") : Hypergraph {

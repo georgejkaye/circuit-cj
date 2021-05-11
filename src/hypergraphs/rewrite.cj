@@ -97,6 +97,19 @@ func RemoveLeft(f : Hypergraph, s : Source){
     f.Disjoint(h) ? h : h.Clone()
 }
 
+// /**
+//  * For a list of created forks, remove those that have a stub as one argument
+//  * @param fs The list of forks
+//  * @param edges The list of all edges
+//  * @param conns The map of connections
+//  * @return The updated edges map and conns map
+//  */
+// func ReduceForkCounit(fs : ArrayList<Edge>, edges : ArrayList<Edge>, conns : MapBuilder<Target, Source>){
+//     for(fork in fs) {
+
+//     }
+// }
+
 /**
  * Inject a hypergraph g into a hypergraph f (g >> f)
  * For all inputs of g, find a corresponding wire in f and 
@@ -117,12 +130,13 @@ func RemoveLeft(f : Hypergraph, s : Source){
  * @return A clone of hypergraph f with a clone of g injected into it
  */
 func Inject(f : Hypergraph, g : Hypergraph, name!: Option<String>){
-    let f = f
-    let g = f.Disjoint(g) ? g : g.Clone()
+    let f = f.Clone()
+    let g = g.Clone()
     // We will preserve all the inputs of f, but some of the inputs of g will be injected in
     let newInputs = ArrayList<Target>(f.GetInputs())
     let newEdges = ArrayList<Edge>(f.GetEdges())
     let newConns = MapBuilder<Target,Source>()
+    let createdForks = ArrayList<Edge>()
     for(t in g.GetInputs()){
         var assigned = false
         let s = g.GetConnR(t)
@@ -138,6 +152,7 @@ func Inject(f : Hypergraph, g : Hypergraph, name!: Option<String>){
                     // Create the new fork edge with the existing source
                     let fork = Edge(FORK, [v], [t1,t2])
                     newEdges.add(fork)
+                    createdForks.add(fork)
                     // Create the source for the edge in f
                     let s1 = Source()
                     match(f.GetEdge(v)){
@@ -153,8 +168,8 @@ func Inject(f : Hypergraph, g : Hypergraph, name!: Option<String>){
                         case InterfacePort(i) => g.GetOutputs().set(i, s2)
                     }
                     newConns.add(t2,s2)
-                    true
                 }
+                true
             }
             // Dually, duplicate buses may be shared, so once we have one we can stop
             if(b) { 
@@ -247,7 +262,6 @@ func Extract(f : Hypergraph, vs : ArrayList<Source>, name!: String = "") : Hyper
 
 external func ResolveLinks(f : Hypergraph, name!: String = ""){
     let newF = f.Clone()
-    print("${newF}\n")
     let outputs = newF.GetOutputs()
     let edges = newF.GetEdges()
     let inlinks = MapBuilder<LinkSpec, ArrayList<Edge>>()
@@ -290,7 +304,7 @@ external func ResolveLinks(f : Hypergraph, name!: String = ""){
             case _ => false
         }
     }
-    
+    Info("ResolveLinks", "Found the links")
     let linkConns = MapBuilder<Target, Source>()
     for((spec, outLinkEdges) in outlinks.toMap()){
         match(inlinks.toMap().get(spec)){
@@ -327,7 +341,7 @@ external func ResolveLinks(f : Hypergraph, name!: String = ""){
                         }
                         let forkSource = Source()
                         linkConns.add(currentTarget, forkSource)
-                        let fork = Edge(FORK, [currentSource], [inLinkEdges[0].targets[port], inLinkEdges[1].targets[port]])
+                        let fork = Edge(FORK, [forkSource], [inLinkEdges[0].targets[port], inLinkEdges[1].targets[port]])
                         edges.add(fork)
                     } else {
                         idTarget = inLinkEdges[0].targets[port]
@@ -348,12 +362,26 @@ external func ResolveLinks(f : Hypergraph, name!: String = ""){
         }
         edges.removeIf({e : Edge => includes(outLinkEdges, e)})
     }
-    Info("ResolveLinks", "before the conns")
+    let deadInlinks = ArrayList<Edge>()
+    let newEdges = ArrayList<Edge>()
+    for(e in edges){
+        match(e.generator){
+            case INLINK(spec) => {
+                for(i in 0..spec.width){
+                    let bot = Edge(VALUE(BOTTOM), [], [e.targets[i]])
+                    newEdges.add(bot)
+                }
+                deadInlinks.add(e)
+            }
+            case _ => {}
+        }
+    }
+
+    edges.removeIf({e : Edge => includes(deadInlinks, e)})
+    edges.addAll(newEdges)
+
     for(t in newF.GetTargets()){
         linkConns.add(t, newF.GetConnR(t))
     }
-
-    print("${PrintList(edges)}\n")
-
     Hypergraph(name, edges, newF.GetInputs(), outputs, linkConns.toMap())
 }

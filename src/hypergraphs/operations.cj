@@ -258,13 +258,8 @@ external func Trace(f : Hypergraph, x : Int64, name!: String = ""){
  * @param name  The name of the resulting hypergraph
  * @return The hypergraph with only the nth output exposed
  */
-external func Get(f : Hypergraph, n : Int64, port! : String = "", name!: String = ""){
-    Debug("Get", "Getting ${n}th port from ${f.GetName()}")
-    if(n < 0){
-        throw TypeMismatchException("Get", f, n)
-    }
-    let stubs = Par([Erase(n),Identity(1),Erase(f.GetN() - n - 1)]) 
-    Seq(f, stubs, name: name)    
+external func Get(f : Hypergraph, n : Int64, label! : String = "", name!: String = ""){
+    Get(f, ArrayList<Int64>([n]), label: label, name: name)
 }
 /**
  * Transform a hypergraph to one with only the given outputs exposed, stubbing the rest.
@@ -273,22 +268,25 @@ external func Get(f : Hypergraph, n : Int64, port! : String = "", name!: String 
  * @param name The name of the resulting hypergraph
  * @return The hypergraph with only the given outputs exposed
  */
-external func Get(f : Hypergraph, ns : ArrayList<Int64>, name!: String = ""){
-    var stubs = Empty()
-    for(i in 0..f.GetN()){
-        var found = false
-        for(n in ns){
-            if (n == i){
-                stubs = Par(stubs, Identity(1))
-                found = true
-                break
-            }
-        }
-        if(!found){
-            stubs = Par(stubs, Stub())
+external func Get(f : Hypergraph, ns : ArrayList<Int64>, label!: String = "", name!: String = ""){
+    for(n in ns){
+        if(n < 0 || n > f.GetN()){
+            throw BadOutputException("Get", f.GetName(), f.GetN())
         }
     }
-    Seq(f, stubs, name: name)
+    let newF = f.Clone()
+    let newEdges = newF.GetEdges()
+    let newOutputs = ArrayList<Source>()
+    for(i in 0..f.GetN()){
+        let v = newF.GetOutputs()[i]
+        if(!includes(ns, i)){
+            let stub = Edge(STUB, [v], [])
+            newEdges.add(stub)
+        } else {
+            newOutputs.add(v)
+        }
+    }
+    Hypergraph(newEdges, newF.GetInputs(), newOutputs, newF.GetConnsR())
 }
 /**
  * Transform a hypergraph to one with only the given bus exposed, stubbing the rest.
@@ -330,8 +328,13 @@ external func Drop(f : Hypergraph, n : Int64, name!: String = ""){
     if(n < 0 || n >= f.GetN()){
         throw TypeMismatchException("Drop", f, n)
     }
-    let stack = Par([Identity(n), Stub(), Identity(f.GetN() - n - 1)])
-    Seq(f, stack, name: name)
+    let newF = f.Clone()
+    let newOutputs = newF.GetOutputs()
+    let v = newOutputs.removeAt(n)
+    let stub = Edge(STUB, [v], [])
+    let newEdges = newF.GetEdges()
+    newEdges.add(stub)
+    Hypergraph(newEdges, newF.GetInputs(), newOutputs, newF.GetConnsR())
 }
 
 external func TestOps(){

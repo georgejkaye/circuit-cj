@@ -65,6 +65,11 @@ class BusNotInGraphException <: Exception {
         Error(function, "Bus ${s} is not in the graph")
     }
 }
+class BadTargetsException <: Exception {
+    init(function : String, edge : Edge, i : Int64){
+        Error(function, "Attempted to access ${i}th target but ${edge} only has ${edge.targets.size()}")
+    }
+}
 
 /**
  * Type error exceptions 
@@ -91,6 +96,11 @@ class TypeMismatchException <: Exception {
 class BadValueException <: Exception {
     init(function : String, wire : String, n1 : Int64, name: String){
         Error(function, "Expected input ${wire} to be a value i.e. type 0->n but '${name}' has type ${n1}->n")
+    }
+}
+class BadOutputException <: Exception {
+    init(function : String, name : String, n : Int64){
+        Error(function, "Tried to get output ${n}, but '${name}' only has ${n}")
     }
 }
 

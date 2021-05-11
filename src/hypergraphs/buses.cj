@@ -33,7 +33,6 @@ class Bus <: Atom {
      * @return The position of the new wire in the bundle
      */
     func AddWire(wire : Wire){
-        Debug("AddWire", "Adding wire ${wire.i} to ${this}")
         wireMap.add(wire.i, wire)
         InsertWire(wire)
     }
