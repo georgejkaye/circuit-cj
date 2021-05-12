@@ -671,9 +671,9 @@ append Hypergraph with ToString {
         }
         let outputString = "outputs ${SourceListToString(f.GetOutputs())}"
         var connstr = "connections "
-        //for (t in f.GetTargets()) {
-        //    connstr = "${connstr}(${t.id} ${f.GetConnR(t).id}) "
-        //}
+        for (t in f.GetTargets()) {
+           connstr = "${connstr}(${t.id} ${f.GetConnR(t).id}) "
+        }
         var leftstr = "left "
         for(t in f.GetTargets()) {
             leftstr = "${leftstr}(${t.id} => "

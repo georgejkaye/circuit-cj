@@ -295,11 +295,9 @@ external func Get(f : Hypergraph, ns : ArrayList<Int64>, label!: String = "", na
  * @param name The name of the resulting hypergraph
  * @return The hypergraph with only the given bus exposed
  */
-external func Get(f : Hypergraph, s : String, name!: String = ""){
-    Debug("Get", "Getting bus ${s} from ${f.GetName()}")
-    let b = GetBus(s)
-    let vertices = f.GetBusVertexList(b)
-    Extract(f, vertices, name: name)
+external func Get(f : Hypergraph, bus : String, name!: String = ""){
+    Debug("Get", "Getting bus ${bus} from ${f.GetName()}")
+    Extract(f, ArrayList<String>([bus]), name: name)
 }
 /**
  * Transform a hypergraph to one with only the given buses exposed, stubbing the rest.
@@ -310,11 +308,7 @@ external func Get(f : Hypergraph, s : String, name!: String = ""){
  */
 external func Get(f : Hypergraph, buses : List<String>, name!: String = ""){
     Debug("Get", "getting buses from ${f.GetName()}")
-    var vertices = ArrayList<Source>()
-    for(bus in buses){
-        vertices = f.GetBusVertexList(bus, vertices)
-    }
-    Extract(f, vertices, name: name)
+    Extract(f, ArrayList<String>(buses), name: name)
 }
 /**
  * Drop the nth output of a hypergraph, stubbing it while preserving the others

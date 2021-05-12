@@ -553,6 +553,7 @@ external func Input(label!: String, width!: Int64 = 1){
  * @return     The combined hypergraph
  */
 external func Output(fs : ArrayList<Hypergraph>, name!: String = ""){
+    Debug("Output", "Outputting hypergraphs")
     var f = fs[0]
     var encounteredWires = ArrayList<Wire>(f.GetWires())
     for(i in 1..fs.size()){

@@ -201,16 +201,28 @@ func Inject(f : Hypergraph, g : Hypergraph, name!: Option<String>){
  * Fork some given source vertices and send the new copy to the outputs.
  * Original outputs are stubbed.
  * Order of the new outputs is determined by the order of the given list
+ * WARNING: Modifies the original hypergraph
  * @param f  The hypergraph to extract the vertices from
  * @param vs The list of source vertices to extract
  * @return The hypergraph with the source vertices extracted
  */
-func Extract(f : Hypergraph, vs : ArrayList<Source>, name!: String = "") : Hypergraph {
-    Debug("Extract", "Extracting vertices ${SourceListToString(vs)} from '${f.GetName()}'")
-    let newEdges = ArrayList<Edge>(f.GetEdges())
+func Extract(f : Hypergraph, buses : ArrayList<String>, name!: String = "") : Hypergraph {
+    Debug("Extract", "Extracting buses ${PrintList(buses)} from '${f.GetName()}'")
+    
+    // Clone the hypergraph first so we don't modify the old one my mistake
+    let newF = f.Clone()
+    print("${newF}\n")
+    // Find the vertices that correspond to the buses
+    var vs = ArrayList<Source>()
+    for(bus in buses){
+        vs = newF.GetBusVertexList(bus, vs)
+    }
+    // Set up structures to track the new atoms
+    let newEdges = ArrayList<Edge>(newF.GetEdges())
     let newOutputs = ArrayList<Source>()
     let newConns = MapBuilder<Target, Source>()
     let doneMap = MapBuilder<Source, Edge>()
+    // For each vertex, fork it and set the copy to be one of the outputs
     for(s in vs){
         // Create a new fork edge
         let t1 = Target()
@@ -232,13 +244,15 @@ func Extract(f : Hypergraph, vs : ArrayList<Source>, name!: String = "") : Hyper
                 s2
             }
             case $None => {
-                match(f.GetEdge(s)){
+                match(newF.GetEdge(s)){
                     case EdgePort(e, i) => {
                         e.sources.set(i,s1)
                         s2
                     }
                     case InterfacePort(i) => {
-                        s
+                        let stub = Edge(STUB, [s1], [])
+                        newEdges.add(stub)
+                        s2
                     }
                 }
             }
@@ -247,17 +261,12 @@ func Extract(f : Hypergraph, vs : ArrayList<Source>, name!: String = "") : Hyper
         newOutputs.add(out)
     }
     // Add the remaining connections from the original hypergraph
-    for(t in f.GetTargets()){
-        newConns.add(t, f.GetConnR(t))
+    for(t in newF.GetTargets()){
+        newConns.add(t, newF.GetConnR(t))
     }
-    // If an output is not included in the extracted vertices, it needs to be stubbed
-    for(s in f.GetOutputs()){
-        if(!includes(newOutputs, s)){
-            let stub = Edge(STUB, [s], [])
-            newEdges.add(stub)
-        }
-    }
-    Hypergraph(name, newEdges, f.GetInputs(), newOutputs, newConns.toMap())
+    let x = Hypergraph(name, newEdges, newF.GetInputs(), newOutputs, newConns.toMap())
+    print("${x}\n")
+    x
 }
 
 external func ResolveLinks(f : Hypergraph, name!: String = ""){
