@@ -554,23 +554,19 @@ external func Input(label!: String, width!: Int64 = 1){
  */
 external func Output(fs : ArrayList<Hypergraph>, name!: String = ""){
     Debug("Output", "Outputting hypergraphs")
-    var f = fs[0]
-    var encounteredWires = ArrayList<Wire>(f.GetWires())
+
+    var f = fs[0].Clone()
     for(i in 1..fs.size()){
-        var g = fs[i]
-        let visited = ArrayList<Edge>()
-        let frontier = ArrayList<Source>(g.GetOutputs())
-        while(frontier.size() != 0){
-            let v = frontier.removeAt(0)
-            for(w in v.wires){
-                if(includes(encounteredWires, w)){
-                    g = RemoveLeft(g, w)
-                } else {
-                    encounteredWires.add(w)
-                }
-            }
+        var g = fs[i].Clone()
+        WriteDotToFile(g, "dot/g.dot")
+        let intersections = FindIntersections(f, g)
+        if(intersections.size() == 0){
+            f = Par(f, g)
+        } else {
+            let (newEdges, newInputs, newOutputs, newConns) = RemoveLeft(g, intersections)
+            f = Inject(f, intersections, newEdges, newInputs, newOutputs, newConns)
+            Debug("Output", "Injected successfully")
         }
-        f = Inject(f, g, name: name)
     }
     f
 }

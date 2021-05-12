@@ -293,13 +293,6 @@ external class Hypergraph <: Atom {
         this.sources = ArrayList<Source>()
         this.targets = ArrayList<Target>()
 
-        // We can use the right conns map to define the left conns map
-        let connslMap = MapBuilder<Source, Target>() 
-        for(v in targets){
-            connslMap.add(GetConnR(v), v)
-        }
-        this.connsl = connslMap.toMap()
-
         let leftMap = MapBuilder<Target, Port>()
         let rightMap = MapBuilder<Source, Port>()
         var busList = ArrayList<Bus>()
@@ -342,8 +335,16 @@ external class Hypergraph <: Atom {
             }
         }
 
+        // We can use the right conns map to define the left conns map
+        let connslMap = MapBuilder<Source, Target>() 
+        // TODO use for((t,s) in connsr) when convinced it works
+        for(v in targets){
+            connslMap.add(GetConnR(v), v)
+        }
+        this.connsl = connslMap.toMap()
+
         let busMapLists = MapBuilder<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>()
-        // TODO use for((bus, targetList) when convinced it works)
+        // TODO use for((bus, targetList) in busMaps) when convinced it works)
         for(bus in busList){
             match(busMaps.toMap().get(bus)){
                 case $None => throw BusNotInGraphException("Hypergraph", bus)
@@ -360,7 +361,6 @@ external class Hypergraph <: Atom {
                     busMapLists.add(bus, (mb, vertexList))
                 }
             }
-            
         }
 
         this.lefts = leftMap.toMap()
@@ -500,6 +500,13 @@ external class Hypergraph <: Atom {
             case $None   => return false
         }
     }
+    /** Follow the path from a target vertex to find its successor edge 
+     * @param target The vertex to traverse from
+     * @return The port reached by following this target
+     */
+    func NextEdge(target : Target){
+        GetEdge(GetConnR(target))
+    }
     /**
      * Follow the path from the ith target of an edge to find its successor edge
      * @param edge The edge to traverse from
@@ -510,8 +517,28 @@ external class Hypergraph <: Atom {
         if(i < 0 || i >= edge.targets.size()){
             throw BadTargetsException("NextEdge", edge, i)
         }
-        GetEdge(GetConnR(edge.targets[i]))
+        NextEdge(edge.targets[i])
     }
+    /** Follow the path from a source vertex to find its predecessor edge 
+     * @param source The vertex to traverse from
+     * @return The port reached by following this target
+     */
+    func PreviousEdge(source : Source){
+        GetEdge(GetConnL(source))
+    }
+    /**
+     * Follow the path from the ith source of an edge to find its predecessor edge
+     * @param edge The edge to traverse from
+     * @param i    The index of the source
+     * @return The port reached by following this source.
+     */
+    func PreviousEdge(edge : Edge, i : Int64){
+        if(i < 0 || i >= edge.sources.size()){
+            throw BadSourcesException("NextEdge", edge, i)
+        }
+        PreviousEdge(edge.sources[i])
+    }
+
 
     /**
      * Check that this hypergraph is disjoint with another
@@ -674,23 +701,23 @@ append Hypergraph with ToString {
         for (t in f.GetTargets()) {
            connstr = "${connstr}(${t.id} ${f.GetConnR(t).id}) "
         }
-        var leftstr = "left "
-        for(t in f.GetTargets()) {
-            leftstr = "${leftstr}(${t.id} => "
-            match(f.GetEdge(t)){
-                case EdgePort(e, i) => leftstr = "${leftstr}${e.id}:${i}) "
-                case InterfacePort(i) => leftstr = "${leftstr}input:${i}) "
-            }
-        }
-        var rightstr = "right "
-        for(s in f.GetSources()) {
-            rightstr = "${rightstr}(${s.id} => "
-            match(f.GetEdge(s)){
-                case EdgePort(e, i) => rightstr = "${rightstr}${e.id}:${i}) "
-                case InterfacePort(i) => rightstr = "${rightstr}output:${i}) "
-            }
-        }
-        "${f.GetName()}\n${inputString}\n${str}${outputString}\n${connstr}\n${leftstr}\n${rightstr}"
+        //var leftstr = "left "
+        // for(t in f.GetTargets()) {
+        //     leftstr = "${leftstr}(${t.id} => "
+        //     match(f.GetEdge(t)){
+        //         case EdgePort(e, i) => leftstr = "${leftstr}${e.id}:${i}) "
+        //         case InterfacePort(i) => leftstr = "${leftstr}input:${i}) "
+        //     }
+        // }
+        //var rightstr = "right "
+        // for(s in f.GetSources()) {
+        //     rightstr = "${rightstr}(${s.id} => "
+        //     match(f.GetEdge(s)){
+        //         case EdgePort(e, i) => rightstr = "${rightstr}${e.id}:${i}) "
+        //         case InterfacePort(i) => rightstr = "${rightstr}output:${i}) "
+        //     }
+        // }
+        "${f.GetName()}\n${inputString}\n${str}${outputString}\n${connstr}"
     }
 }
 

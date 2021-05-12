@@ -8,6 +8,36 @@ package hypergraphs
 
 import debug.*
 
+func FindIntersections(f : Hypergraph, g : Hypergraph){
+    Debug("FindIntersection", "Finding intersections between ${f.GetName()} and ${g.GetName()}")
+
+    let visited = ArrayList<Edge>()
+    let frontier = ArrayList<Source>(g.GetOutputs())
+    let wires = f.GetWires()
+    let intersections = ArrayList<Source * Source * Port>()
+    while(frontier.size() != 0){
+        let v : Source = frontier.removeAt(0)
+        for(w in v.wires){
+            if(includes(wires, w)){
+                Debug("FindIntersection", "Intersection at ${w}")
+                intersections.add((f.GetWireVertex(w), v, g.GetEdge(v)))
+            } else {
+                let p = g.PreviousEdge(v)
+                match(p) {
+                    case EdgePort(e, i) => {
+                        if(!includes(visited, e)){
+                            frontier.addAll(e.sources)
+                        }       
+                    }
+                    case InterfacePort(i) => {}
+                }
+            }
+        }
+    }
+    Debug("FindIntersection", "returning ${intersections.size()} intersections")
+    intersections
+}
+
 /**
  * Remove all parts of the graph that can be accessed by travelling left from a wire
  * Any dangling targets will be set to the inputs - the ordering is based on the
@@ -17,98 +47,49 @@ import debug.*
  * @param w The wire
  * @return A clone of the hypergraph with all parts of the hypergraph left of a given source vertex removed
  */
-func RemoveLeft(f : Hypergraph, w : Wire){
-    RemoveLeft(f, f.GetWireVertex(w))
-}
+func RemoveLeft(g : Hypergraph, vs : ArrayList<Source * Source * Port>){
+    let removedEdges = ArrayList<Edge>()
+    let removedInputs = ArrayList<Target>()
+    let removedSources = ArrayList<Source>()
 
-/**
- * Remove all parts of the graph that can be accessed by travelling left from a source vertex
- * @param f The hypergraph
- * @param s The source vertex
- * @return A clone of the hypergraph with all parts of the hypergraph left of a given source vertex removed
- */
-func RemoveLeft(f : Hypergraph, s : Source){
-    let frontier = ArrayList<Source>([s])
-    let explored = ArrayList<Edge>()
-    let removedInputs = ArrayList<Int64>()
-    let removedTargets = ArrayList<Target>()
-    // Traverse the graph
-    while(frontier.size() != 0){
-        let s = frontier.removeAt(0)
-        let t = f.GetConnL(s)
-        match(f.GetEdge(t)){
-            case EdgePort(e, i) => {
-                explored.add(e)
-                frontier.addAll(e.sources)
-                removedTargets.addAll(e.targets)
-            }
-            case InterfacePort(i) => {
-                removedInputs.add(i)
-                removedTargets.add(t)
-            }
-        }
+    let edgeAction = {e : Edge => if(!includes(removedEdges, e)){ removedEdges.add(e) }}
+    let inputAction = {t : Target, i : Int64 => if(!includes(removedInputs, t)){ removedInputs.add(t) }}
+
+    for((sf, sg, p) in vs){
+        Debug("RemoveLeft", "Removing left of ${sg} in ${g.GetName()}")
+        let t = TraverseLeft(g, sg, edgeAction, inputAction)
     }
-    // Only include edges not found by the search
-    let newEdges = ArrayList<Edge>()
-    for(e in f.GetEdges()){
-        if(!includes(explored, e)){
-            newEdges.add(e)
-        }
-    }
-    // Only include vertices not found by the search
-    let oldInputs = f.GetInputs()
-    let newInputs = ArrayList<Target>()
-    for(i in 0..oldInputs.size()){
-        if(!includes(removedInputs, i)){
-            newInputs.add(oldInputs[i])
-        }
-    }
-    // If there are any dangling sources, add their targets to the inputs
+
+    let newEdges = g.GetEdges()
+    newEdges.removeIf({e : Edge => includes(removedEdges, e)})
+    let newInputs = g.GetInputs()
+    newInputs.removeIf({t : Target => includes(removedInputs, t)})
+    let newConns = ArrayList<Target * Source>()
+
+    let bottomEdges = ArrayList<Edge>()
+
     for(e in newEdges){
-        for(v in e.sources){
-            let t = f.GetConnL(v)
-            if(includes(removedTargets, t)){
-                newInputs.add(t)
+        for(s in e.sources){
+            let t = g.GetConnL(s)
+            match(g.GetEdge(t)){
+                case EdgePort(e1, i) => {
+                    if(includes(removedEdges, e1)){
+                        let bot = Edge(VALUE(BOTTOM), [], [t])
+                        bottomEdges.add(bot)
+                    }
+                }
+                case InterfacePort(i) => {}
             }
+            newConns.add((t, s))
         }
     }
-    // If there are any dangling outputs, add their targets to the inputs
-    for(v in f.GetOutputs()){
-        let t = f.GetConnL(v)
-        if(includes(removedTargets, t)){
-            newInputs.add(t)
-        }
+    newEdges.addAll(bottomEdges)
+    for(s in g.GetOutputs()){
+        let t = g.GetConnL(s)
+        newConns.add((t, s))
     }
-    // Outputs are unchanged
-    let newOutputs = ArrayList<Source>(f.GetOutputs())
-    // Build the new connections map
-    let connsMap = MapBuilder<Target, Source>()
-    for(v in newInputs){
-        connsMap.add(v, f.GetConnR(v))
-    }
-    for(e in newEdges){
-        for(v in e.targets){
-            connsMap.add(v, f.GetConnR(v))
-        }
-    }
-    // Make the new hypergraph
-    let h = Hypergraph(newEdges, newInputs, newOutputs, connsMap.toMap())
-    // Clone it in case this graph interacts with the original
-    f.Disjoint(h) ? h : h.Clone()
+    (newEdges, newInputs, g.GetOutputs(), newConns)
 }
-
-// /**
-//  * For a list of created forks, remove those that have a stub as one argument
-//  * @param fs The list of forks
-//  * @param edges The list of all edges
-//  * @param conns The map of connections
-//  * @return The updated edges map and conns map
-//  */
-// func ReduceForkCounit(fs : ArrayList<Edge>, edges : ArrayList<Edge>, conns : MapBuilder<Target, Source>){
-//     for(fork in fs) {
-
-//     }
-// }
 
 /**
  * Inject a hypergraph g into a hypergraph f (g >> f)
@@ -129,72 +110,61 @@ func RemoveLeft(f : Hypergraph, s : Source){
  * @param g The hypergraph to be injected
  * @return A clone of hypergraph f with a clone of g injected into it
  */
-func Inject(f : Hypergraph, g : Hypergraph, name!: Option<String>){
-    let f = f.Clone()
-    let g = g.Clone()
-    // We will preserve all the inputs of f, but some of the inputs of g will be injected in
-    let newInputs = ArrayList<Target>(f.GetInputs())
-    let newEdges = ArrayList<Edge>(f.GetEdges())
-    let newConns = MapBuilder<Target,Source>()
-    let createdForks = ArrayList<Edge>()
-    for(t in g.GetInputs()){
-        var assigned = false
-        let s = g.GetConnR(t)
-        for(w in s.wires){
-            // Different buses may be assigned, as long as one matches we're fine
-            let vf = f.GetWireVertexOption(w)
-            let b = match(vf){
-                case $None   => { false }
-                case Some(v) => {
-                    // Create the new targets of the fork
-                    let t1 = Target()
-                    let t2 = Target()
-                    // Create the new fork edge with the existing source
-                    let fork = Edge(FORK, [v], [t1,t2])
-                    newEdges.add(fork)
-                    createdForks.add(fork)
-                    // Create the source for the edge in f
-                    let s1 = Source()
-                    match(f.GetEdge(v)){
-                        case EdgePort(e,i) => e.sources.set(i, s1)
-                        case InterfacePort(i) => f.GetOutputs().set(i, s1)
-                    }
-                    newConns.add(t1,s1)
-                    // Create the source for the edge in g
-                    let s2 = Source()
-                    let vg = g.GetWireVertex(w)
-                    match(g.GetEdge(vg)){
-                        case EdgePort(e,i) => e.sources.set(i, s2)
-                        case InterfacePort(i) => g.GetOutputs().set(i, s2)
-                    }
-                    newConns.add(t2,s2)
-                }
-                true
-            }
-            // Dually, duplicate buses may be shared, so once we have one we can stop
-            if(b) { 
-                assigned = true
-                break 
-            }
-        }
-        if(!assigned){
-            newInputs.add(t)
-        }
-    }
-    newEdges.addAll(g.GetEdges())
+func Inject(f : Hypergraph, 
+            intersections : ArrayList<Source * Source * Port>, 
+            edgesG      : ArrayList<Edge>, 
+            inputsG     : ArrayList<Target>, 
+            outputsG    : ArrayList<Source>, 
+            connsG      : ArrayList<Target * Source>
+            ){
+    Debug("Inject", "Injecting into ${f.GetName()}")
+    
 
-    // The outputs of both graphs are preserved
-    let newOutputs = ArrayList<Source>(f.GetOutputs())
-    newOutputs.addAll(g.GetOutputs())
-    // Set up the connections
+    let connsMap = MapBuilder<Target, Source>()
+    let newEdges = f.GetEdges()
+    newEdges.addAll(edgesG)
+    let newOutputs = f.GetOutputs()
+
+    for((sf, sg, p) in intersections){
+        let tf = Target()
+        let tg = Target()
+        let fork = Edge(STRUCTURAL(ForkMorph), [sf], [tf, tg])
+        newEdges.add(fork)
+        let sf2 = Source()
+        let sg2 = Source()
+        connsMap.add(tf,sf2)
+        connsMap.add(tg,sg2)
+        match(f.GetEdge(sf)){
+            case EdgePort(e, i) => {
+                e.sources.set(i, sf2)
+            }
+            case InterfacePort(i) => {
+                newOutputs.set(i, sf2)
+            }
+        }
+        match(p){
+            case EdgePort(e, i) => {
+                e.sources.set(i, sg2)
+            }
+            case InterfacePort(i) => {
+                outputsG.set(i, sg2)
+            }
+        }
+    }
+
     for(t in f.GetTargets()){
-        newConns.add(t, f.GetConnR(t))
+        connsMap.add(t, f.GetConnR(t))
+        print("${f.GetConnR(t).id}\n")
     }
-    for(t in g.GetTargets()){
-        newConns.add(t, g.GetConnR(t))
+    for((t,s) in connsG){
+        print("${s.id}\n")
+        connsMap.add(t,s)
     }
-    // Return the newly injected hypergraph
-    Hypergraph(name, newEdges, newInputs, newOutputs, newConns.toMap())
+
+    let newInputs = f.GetInputs()
+    newOutputs.addAll(outputsG)
+
+    Hypergraph(newEdges, newInputs, newOutputs, connsMap.toMap())
 }
 
 /**
@@ -211,7 +181,6 @@ func Extract(f : Hypergraph, buses : ArrayList<String>, name!: String = "") : Hy
     
     // Clone the hypergraph first so we don't modify the old one my mistake
     let newF = f.Clone()
-    print("${newF}\n")
     // Find the vertices that correspond to the buses
     var vs = ArrayList<Source>()
     for(bus in buses){
@@ -265,7 +234,6 @@ func Extract(f : Hypergraph, buses : ArrayList<String>, name!: String = "") : Hy
         newConns.add(t, newF.GetConnR(t))
     }
     let x = Hypergraph(name, newEdges, newF.GetInputs(), newOutputs, newConns.toMap())
-    print("${x}\n")
     x
 }
 

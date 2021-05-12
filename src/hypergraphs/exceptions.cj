@@ -70,6 +70,11 @@ class BadTargetsException <: Exception {
         Error(function, "Attempted to access ${i}th target but ${edge} only has ${edge.targets.size()}")
     }
 }
+class BadSourcesException <: Exception {
+    init(function : String, edge : Edge, i : Int64){
+        Error(function, "Attempted to access ${i}th sources but ${edge} only has ${edge.sources.size()}")
+    }
+}
 
 /**
  * Type error exceptions 
