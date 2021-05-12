@@ -461,7 +461,16 @@ external func Delay(dur : Int64, n!: Int64 = 1, output!: String = "", elem!: Int
     Par(ArrayList<Hypergraph>(n, {x : Int64 => OpOneToOne(DELAY(n), output: output, elem: x, name: name, input: input)}))
 }
 
-external func Register(width!: Int64, initial!: Int64, output!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
+/**
+ * Create a register with an initial value that delays signals for a certain number of clock cycles
+ * @param width    The width of this register
+ * @param initial  The initial value contained within this register, released on the first clock cycle
+ * @param duration The duration of the delay in this register
+ * @param output   The label of the output bus
+ * @param input    The input to this register
+ * @return         The new register
+ */
+external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 0, output!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
     match(input){
         case Some(f) => {
             if(f.GetN() != width){
@@ -470,10 +479,44 @@ external func Register(width!: Int64, initial!: Int64, output!: String = "", inp
         }
         case $None => {}
     } 
-    let initialValue = SignedValueFromInt(initial, width: width)
-    let delays = Par(Delay(1), width)
-    let merge = Merge(width, output: output)
-    let reg = Seq(Par(initialValue, delays), merge)
+    if(duration < 0){
+        throw NegativeDurationException("Register", duration)
+    }
+
+    let inputs = ArrayList<Target>()
+    let outputs = ArrayList<Source>()
+    let edges = ArrayList<Edge>()
+    let conns = MapBuilder<Target, Source>()
+    // Convert the initial value into binary
+    let initialBin = DecToBin(width, initial, true)
+    // We need to join the ith bit of this number with a delay
+    for(i in 0..width){
+        // Value for the ith bit of the initial value
+        let tv = Target()
+        let value = Edge(VALUE(initialBin[i] ? TRUE : FALSE), [], [tv])
+        edges.add(value)
+        let sv = Source()
+        conns.add(tv,sv)
+        // Delay
+        let t1 = Target()
+        inputs.add(t1)
+        let s1 = Source()
+        conns.add(t1,s1)
+        let td = Target()
+        let delay = Edge(DELAY(1), [s1], [td])
+        edges.add(delay)
+        let sd = Source()
+        conns.add(td,sd)
+        // Join the value and the delay
+        let tj = Target()
+        let join = Edge(STRUCTURAL(JoinMorph), [sv, sd], [tj])
+        edges.add(join)
+        let sj = Source(NewWire(output, i))
+        conns.add(tj,sj)
+        outputs.add(sj)
+    }
+    let reg = Hypergraph(edges, inputs, outputs, conns.toMap())
+    // If we have an input, compose it to the front
     match(input){
         case Some(f) => Seq(f, reg)
         case $None   => reg
@@ -507,6 +550,7 @@ external func Input(label!: String, width!: Int64 = 1){
  * order the hypergraphs are given in
  * @param fs   The list of hypergraphs
  * @param name The name of the resulting hypergraph
+ * @return     The combined hypergraph
  */
 external func Output(fs : ArrayList<Hypergraph>, name!: String = ""){
     var f = fs[0]

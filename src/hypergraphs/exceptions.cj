@@ -137,6 +137,11 @@ class TooMuchTraceException <: Exception {
         Error(function, "Tried to trace more wires than outputs")
     }
 }
+class NegativeDurationException <: Exception {
+    init(function : String, dur : Int64){
+        Error(function, "Duration of delay must be positive but ${dur} requested")
+    }
+}
 
 /**
  * File exceptions
