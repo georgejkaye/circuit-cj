@@ -280,8 +280,6 @@ external class Hypergraph <: Atom {
             case $None      => "h${this.id}"
         }
 
-        Debug("Hypergraph", "Creating hypergraph '${this.name}'")
-
         this.edges    = edges
         this.inputs   = inputs
         this.outputs  = outputs
@@ -547,7 +545,6 @@ external class Hypergraph <: Atom {
      * @return Whether the hypergraphs are disjoint
      */
     func Disjoint(f : Hypergraph){
-        Debug("Disjoint", "Checking that '${name}' and '${f.GetName()}' are disjoint")
         if(edges.size() != 0 && f.GetEdges().size() != 0){
             for(e in edges){
                 for(ef in f.GetEdges()){
@@ -584,7 +581,6 @@ external class Hypergraph <: Atom {
      * @return The deep clone of the original hypergraph
      */
     func Clone(){
-        Debug("Clone", "Cloning hypergraph ${this.name}")
         // Make deep copies of the source vertices and make map between old and new
         let newSourceMapBuilder = MapBuilder<Source, Source>()
         for(v in sources){
@@ -775,4 +771,14 @@ func GetAll(f : Hypergraph, g : Generator){
     let edges = ArrayList<Edge>(f.GetEdges())
     edges.removeIf({x : Edge => x.generator == g})
     edges
+}
+
+func GetEndpoints(f : Hypergraph){
+    let vs = ArrayList<Source>(f.GetOutputs())
+    for(e in f.GetEdges()){
+        if(e.targets.size() == 0){
+            vs.addAll(e.sources)
+        }
+    }
+    vs
 }

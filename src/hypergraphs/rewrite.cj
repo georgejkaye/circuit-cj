@@ -8,19 +8,36 @@ package hypergraphs
 
 import debug.*
 
+/**
+ * Find intersections between f and g - i.e. wires in f that also exist in g
+ * @param f The first hypergraph
+ * @param g The second hypergraph
+ * @return A tuple of three lists representing the intersections of f and g:
+ *                    - The source vertices of f that are intersections
+ *                    - The source vertices of g that are intersections
+ *                    - The ports of g that the intersections connect to
+ */ 
 func FindIntersections(f : Hypergraph, g : Hypergraph){
     Debug("FindIntersection", "Finding intersections between ${f.GetName()} and ${g.GetName()}")
-
+    // The list of source vertice of intersections in f
+    let vfs = ArrayList<Source>()
+    // The list of source vertices of intersections in g
+    let vgs = ArrayList<Source>()
+    // The list of corresponding ports of source vertices in g
+    let ps = ArrayList<Port>()
+    // Traverse backwards from the outputs of g to find wires also in f
     let visited = ArrayList<Edge>()
-    let frontier = ArrayList<Source>(g.GetOutputs())
+    let frontier = ArrayList<Source>(GetEndpoints(g))
     let wires = f.GetWires()
-    let intersections = ArrayList<Source * Source * Port>()
     while(frontier.size() != 0){
         let v : Source = frontier.removeAt(0)
         for(w in v.wires){
+            // Check if the wire is also in f, if so add it to the lists
             if(includes(wires, w)){
                 Debug("FindIntersection", "Intersection at ${w}")
-                intersections.add((f.GetWireVertex(w), v, g.GetEdge(v)))
+                vfs.add(f.GetWireVertex(w))
+                vgs.add(v)
+                ps.add(g.GetEdge(v))
             } else {
                 let p = g.PreviousEdge(v)
                 match(p) {
@@ -34,28 +51,24 @@ func FindIntersections(f : Hypergraph, g : Hypergraph){
             }
         }
     }
-    Debug("FindIntersection", "returning ${intersections.size()} intersections")
-    intersections
+    (vfs, vgs, ps)
 }
 
 /**
- * Remove all parts of the graph that can be accessed by travelling left from a wire
- * Any dangling targets will be set to the inputs - the ordering is based on the
- * order of the edges in the list and then the order of the sources of the edges
- * This method should only be used as an intermediate step, the result is not well-defined
- * @param f The hypergraph
- * @param w The wire
+ * Remove all parts of the graph that are 'left' of a list of source vertices
+ * Any dangling targets will be capped off with bottom
+ * @param g The hypergraph
+ * @param v The list of source vertices to remove from
  * @return A clone of the hypergraph with all parts of the hypergraph left of a given source vertex removed
  */
-func RemoveLeft(g : Hypergraph, vs : ArrayList<Source * Source * Port>){
+func RemoveLeft(g : Hypergraph, vs : ArrayList<Source>){
     let removedEdges = ArrayList<Edge>()
     let removedInputs = ArrayList<Target>()
     let removedSources = ArrayList<Source>()
-
     let edgeAction = {e : Edge => if(!includes(removedEdges, e)){ removedEdges.add(e) }}
     let inputAction = {t : Target, i : Int64 => if(!includes(removedInputs, t)){ removedInputs.add(t) }}
 
-    for((sf, sg, p) in vs){
+    for(sg in vs){
         Debug("RemoveLeft", "Removing left of ${sg} in ${g.GetName()}")
         let t = TraverseLeft(g, sg, edgeAction, inputAction)
     }
@@ -70,17 +83,19 @@ func RemoveLeft(g : Hypergraph, vs : ArrayList<Source * Source * Port>){
 
     for(e in newEdges){
         for(s in e.sources){
-            let t = g.GetConnL(s)
-            match(g.GetEdge(t)){
-                case EdgePort(e1, i) => {
-                    if(includes(removedEdges, e1)){
-                        let bot = Edge(VALUE(BOTTOM), [], [t])
-                        bottomEdges.add(bot)
+            if(!includes(vs, s)){
+                let t = g.GetConnL(s)
+                match(g.GetEdge(t)){
+                    case EdgePort(e1, i) => {
+                        if(includes(removedEdges, e1)){
+                            let bot = Edge(VALUE(BOTTOM), [], [t])
+                            bottomEdges.add(bot)
+                        }
                     }
+                    case InterfacePort(i) => {}
                 }
-                case InterfacePort(i) => {}
+                newConns.add((t, s))
             }
-            newConns.add((t, s))
         }
     }
     newEdges.addAll(bottomEdges)
@@ -111,7 +126,9 @@ func RemoveLeft(g : Hypergraph, vs : ArrayList<Source * Source * Port>){
  * @return A clone of hypergraph f with a clone of g injected into it
  */
 func Inject(f : Hypergraph, 
-            intersections : ArrayList<Source * Source * Port>, 
+            sourcesF    : ArrayList<Source>,
+            sourcesG    : ArrayList<Source>,
+            portsG      : ArrayList<Port>,
             edgesG      : ArrayList<Edge>, 
             inputsG     : ArrayList<Target>, 
             outputsG    : ArrayList<Source>, 
@@ -119,51 +136,49 @@ func Inject(f : Hypergraph,
             ){
     Debug("Inject", "Injecting into ${f.GetName()}")
     
-
     let connsMap = MapBuilder<Target, Source>()
     let newEdges = f.GetEdges()
     newEdges.addAll(edgesG)
     let newOutputs = f.GetOutputs()
 
-    for((sf, sg, p) in intersections){
+    //
+    for(i in 0..sourcesF.size()){
         let tf = Target()
         let tg = Target()
-        let fork = Edge(STRUCTURAL(ForkMorph), [sf], [tf, tg])
+        let fork = Edge(STRUCTURAL(ForkMorph), [sourcesF[i]], [tf, tg])
         newEdges.add(fork)
         let sf2 = Source()
         let sg2 = Source()
         connsMap.add(tf,sf2)
         connsMap.add(tg,sg2)
-        match(f.GetEdge(sf)){
-            case EdgePort(e, i) => {
-                e.sources.set(i, sf2)
+        match(f.GetEdge(sourcesF[i])){
+            case EdgePort(e, j) => {
+                e.sources.set(j, sf2)
             }
-            case InterfacePort(i) => {
-                newOutputs.set(i, sf2)
+            case InterfacePort(j) => {
+                newOutputs.set(j, sf2)
             }
         }
-        match(p){
-            case EdgePort(e, i) => {
-                e.sources.set(i, sg2)
+        match(portsG[i]){
+            case EdgePort(e, j) => {
+                e.sources.set(j, sg2)
             }
-            case InterfacePort(i) => {
-                outputsG.set(i, sg2)
+            case InterfacePort(j) => {
+                outputsG.set(j, sg2)
             }
         }
     }
 
     for(t in f.GetTargets()){
         connsMap.add(t, f.GetConnR(t))
-        print("${f.GetConnR(t).id}\n")
     }
     for((t,s) in connsG){
-        print("${s.id}\n")
         connsMap.add(t,s)
     }
 
     let newInputs = f.GetInputs()
     newOutputs.addAll(outputsG)
-
+    
     Hypergraph(newEdges, newInputs, newOutputs, connsMap.toMap())
 }
 
@@ -233,10 +248,18 @@ func Extract(f : Hypergraph, buses : ArrayList<String>, name!: String = "") : Hy
     for(t in newF.GetTargets()){
         newConns.add(t, newF.GetConnR(t))
     }
-    let x = Hypergraph(name, newEdges, newF.GetInputs(), newOutputs, newConns.toMap())
-    x
+    Hypergraph(name, newEdges, newF.GetInputs(), newOutputs, newConns.toMap())
 }
 
+/**
+ * Resolve links in a hypergraph - join outlinks and inlinks with the same spec together
+ * If there are multiple outlinks with the same spec, these are first joined.
+ * In between the outlinks and the inlinks an identity edge is placed (this avoids closed loops)
+ * If there are multiple inlinks with the same spec, the wire is forked before connecting to them
+ * @param f    The hypergraph to resolve links in
+ * @param name The name to give the resulting hypergraph
+ * @return     The resolved hypergraph
+ */
 external func ResolveLinks(f : Hypergraph, name!: String = ""){
     let newF = f.Clone()
     let outputs = newF.GetOutputs()

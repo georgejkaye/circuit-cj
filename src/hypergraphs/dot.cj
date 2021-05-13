@@ -125,7 +125,7 @@ func DrawVertex(t : Target, s : Source) {
 
         let wiretext = match(wire.bus.name){
             case Some(name) => "${name}[${wire.i}]"
-            case $None      => ""
+            case $None      => debugDot ? "${wire.bus.id}[${wire.i}]" : ""
         }
         wires = wires == "" ? "${wiretext}" : wiretext == "" ? "${wires}" : "${wires}, ${wiretext}"
     }

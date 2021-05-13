@@ -17,7 +17,5 @@ external func Accumulator(width!: Int64, initial!: Int64 = 0){
     let reg = Register(width: width, initial: initial, input: sum, output: "reg")
     Info("Accumulator", "Making out link")
     let out_link = OutLink(spec: link_spec, input: reg)
-    let a = Output([out_link, sum])
-    print("${a}\n")
-    a
+    Output([out_link, sum])
 }

@@ -558,13 +558,12 @@ external func Output(fs : ArrayList<Hypergraph>, name!: String = ""){
     var f = fs[0].Clone()
     for(i in 1..fs.size()){
         var g = fs[i].Clone()
-        WriteDotToFile(g, "dot/g.dot")
-        let intersections = FindIntersections(f, g)
-        if(intersections.size() == 0){
+        let (vfs, vgs, ps) = FindIntersections(f, g)
+        if(vfs.size() == 0){
             f = Par(f, g)
         } else {
-            let (newEdges, newInputs, newOutputs, newConns) = RemoveLeft(g, intersections)
-            f = Inject(f, intersections, newEdges, newInputs, newOutputs, newConns)
+            let (newEdges, newInputs, newOutputs, newConns) = RemoveLeft(g, vgs)
+            f = Inject(f, vfs, vgs, ps, newEdges, newInputs, newOutputs, newConns)
             Debug("Output", "Injected successfully")
         }
     }
