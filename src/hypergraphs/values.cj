@@ -52,3 +52,7 @@ external func Zero(width!: Int64 = 1){
     }
     Par(False(), width)
 }
+
+external func UnsignedExtend(v: Hypergraph){
+    Par(v, False())
+}

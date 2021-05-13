@@ -12,7 +12,7 @@ external func Accumulator(width!: Int64, initial!: Int64 = 0){
     Info("Accumulator", "Making input bus")
     let x = Input(label: "x", width: width)
     Info("Accumulator", "Making adder operation")
-    let sum = Plus(width: width, a: prev_sum, b: x, output: "sum", name: "Plus")
+    let sum = Plus(a: prev_sum, b: x, output: "sum", name: "Plus")
     Info("Accumulator", "Making register")
     let reg = Register(width: width, initial: initial, input: sum, output: "reg")
     Info("Accumulator", "Making out link")

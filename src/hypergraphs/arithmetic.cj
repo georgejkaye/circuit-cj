@@ -197,8 +197,11 @@ external func Plus(width!: Int64, output!: String = "", name!: String = "") : Hy
     Drop(plus, width, name: name)
 }
 
-external func Plus(width!: Int64, a!: Hypergraph, b!: Hypergraph, output!: String = "", name!: String = "") : Hypergraph {
-    Debug("Plus", "Making plus of width ${width}, with inputs a='${a.GetName()}' and b='${b.GetName()}'")
-    let plus = Plus(width: width, output: output)
+external func Plus(a!: Hypergraph, b!: Hypergraph, output!: String = "", name!: String = "") : Hypergraph {
+    Debug("Plus", "Making plus with inputs a='${a.GetName()}' and b='${b.GetName()}'")
+    if(a.GetN() != b.GetN()){
+        throw BusesNotSameSizeException("Plus", a.GetN(), b.GetN())
+    }
+    let plus = Plus(width: a.GetN(), output: output)
     Seq(Output([a,b]), plus, name: name)
 }

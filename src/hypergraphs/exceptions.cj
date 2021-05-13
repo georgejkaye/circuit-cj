@@ -40,6 +40,11 @@ class DuplicateWireException <: Exception {
         Error(function, "Bus ${bus} already has wire ${i}")
     }
 }
+class BusesNotSameSizeException <: Exception {
+    init(function: String, m : Int64, n : Int64){
+        Error(function, "Buses must be the same size, but they are ${m} and ${n}")
+    }
+}
 
 /**
  * Hypergraph exceptions

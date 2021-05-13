@@ -3,23 +3,7 @@ import examples.*
 import debug.*
 
 func main(){
-    // Info("Main", "Creating accumulator")
-    // let acc = Accumulator(width: 2, initial: 0)
-    // Info("Main", "Drawing graph")
-    // WriteDotToFile(acc, "dot/acc.dot")
-    // WriteDotToFile(ResolveLinks(acc), "dot/res.dot")
-
-    let inputs = Input(width: 4, label: "input")
-    let ls = LinkSpec("link", 4)
-    let outlink = OutLink(spec: ls, input: inputs)
-    let in1 = InLink(spec: ls)
-    let in2 = InLink(spec: ls)
-    let and1 = AndGate(lhs: in1[0], rhs: in2[0])
-    let and2 = AndGate(lhs: in1[1], rhs: in2[1])
-    let and3 = AndGate(lhs: in1[2], rhs: in2[2])
-    let and4 = AndGate(lhs: in1[3], rhs: in2[3])
-    let c = Output([and1,and2,and3,and4,outlink])
-    WriteDotToFile(c, "dot/c.dot")
-
+    let runsum = running_sum_loop(first: True(), a: SignedValueFromInt(3, width:4), b0: True())
+    WriteDotToFile(runsum, "dot/runsum.dot")
     return 0
 }

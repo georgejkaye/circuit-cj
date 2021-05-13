@@ -454,11 +454,61 @@ external func XnorGate(lhs!: Hypergraph, rhs!: Hypergraph, output!: String = "",
     OpTwoToOne(XNOR, output: output, elem: elem, name: name, lhs: lhs, rhs: rhs)
 }
 
-external func Delay(dur : Int64, n!: Int64 = 1, output!: String = "", elem!: Int64 = 0, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
-    if(n < 1){
+external func Mux(width!: Int64, output!: String = "", elem!: Int64 = 0, name!: String = "", a!: Option<Hypergraph> = None<Hypergraph>, b!: Option<Hypergraph> = None<Hypergraph>, s!: Option<Hypergraph> = None<Hypergraph>){
+    var input = false
+    let x = match(a){
+        case Some(f) => {
+            if(f.GetN() != width){
+                throw BadInputException("Mux", "a", width, f.GetName(), f.GetN())
+            }
+            input = true
+            f
+        }
+        case $None   => Identity(1)
+    }
+    let y = match(b){
+        case Some(f) => {
+            if(f.GetN() != width){
+                throw BadInputException("Mux", "b", width, f.GetName(), f.GetN())
+            }
+            input = true
+            f
+        }
+        case $None   => Identity(1)
+    }
+    let z = match(s){
+        case Some(f) => {
+            if(f.GetN() != 1){
+                throw BadInputException("Mux", "s", width, f.GetName(), f.GetN())
+            }
+            input = true
+            f
+        }
+        case $None   => Identity(1)
+    }
+
+    let inputs = input ? Some<Hypergraph>(Output([x,y,z])) : None<Hypergraph>
+    let bus = FindBus(output)
+    let wires = ArrayList<Wire>()
+    var currentElem = elem
+    for(i in 0..width){
+        let wire = NewWire(bus, currentElem)
+        wires.add(wire)
+        currentElem++
+    }
+    OpMToN(MUX(width), name: name, input: inputs, wires: wires)
+}
+
+
+external func Delay(dur!: Int64 = 1, width!: Int64 = 1, output!: String = "", elem!: Int64 = 0, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
+    if(width < 1){
         throw NegativeWireException("Delay")
     }
-    Par(ArrayList<Hypergraph>(n, {x : Int64 => OpOneToOne(DELAY(n), output: output, elem: x, name: name, input: input)}))
+    let ds = Par(ArrayList<Hypergraph>(width, {x : Int64 => OpOneToOne(DELAY(dur), output: output, elem: x, name: name)}))
+    match(input) {
+        case Some(f) => Seq(f, ds)
+        case $None   => ds
+    }
 }
 
 /**

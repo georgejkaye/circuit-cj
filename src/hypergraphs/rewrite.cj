@@ -141,16 +141,17 @@ func Inject(f : Hypergraph,
     let newOutputs = f.GetOutputs()
     let removedEdges = ArrayList<Edge>()
     let removedSources = ArrayList<Source>()
-    //
+
+    // Inject each of the vertices we have recovered
     for(i in 0..sourcesF.size()){
+        // If the injected graph in G is just a stub, we can ignore it
         match(PortToGenerator(portsG[i], STRUCTURAL(StubMorph))){
             case Some(e) => {
-                print("stub found ${e}\n")
                 removedEdges.add(e)
-                //removedConns.add(outputsG[i])
                 false
             } 
             case $None => {
+                // If the injection point in f leads to a stub, then we can just replace it with the injected graph
                 match(PortToGenerator(f.GetEdge(sourcesF[i]), STRUCTURAL(StubMorph))){
                     case Some(e) => {
                         removedEdges.add(e)
@@ -159,12 +160,13 @@ func Inject(f : Hypergraph,
                                 eg.sources.set(j, sourcesF[i])
                             }
                             case InterfacePort(j) => {
-                                newOutputs.set(j, sourcesF[i])
+                                outputsG.set(j, sourcesF[i])
                             }
                         }
                         false
                     }
                     case $None => {
+                        // Make a new fork
                         let tf = Target()
                         let tg = Target()
                         let fork = Edge(STRUCTURAL(ForkMorph), [sourcesF[i]], [tf, tg])
@@ -173,6 +175,7 @@ func Inject(f : Hypergraph,
                         let sg2 = Source()
                         connsMap.add(tf,sf2)
                         connsMap.add(tg,sg2)
+                        // Set the sources/outputs of f to point to the new fork
                         match(f.GetEdge(sourcesF[i])){
                             case EdgePort(e, j) => {
                                 e.sources.set(j, sf2)
@@ -181,6 +184,7 @@ func Inject(f : Hypergraph,
                                 newOutputs.set(j, sf2)
                             }
                         }
+                        // Set the sources/targets of g to point to the new fork
                         match(portsG[i]){
                             case EdgePort(e, j) => {
                                 e.sources.set(j, sg2)
@@ -214,7 +218,6 @@ func Inject(f : Hypergraph,
             newEdges.add(e)
         }
     }
-
     let newInputs = f.GetInputs()
     newOutputs.addAll(outputsG)
     

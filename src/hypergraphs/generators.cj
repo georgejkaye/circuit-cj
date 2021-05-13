@@ -256,6 +256,23 @@ external let NOR  : Generator = GATE(Label("NOR", 2, 1))
 external let XOR  : Generator = GATE(Label("XOR", 2, 1))
 external let XNOR : Generator = GATE(Label("XNOR", 2, 1))
 
+/**
+ * Ternary gates
+ */
+
+external func MUX(width: Int64) : Generator { 
+    if(width < 0) {
+        throw NegativeWireException("MUX")
+    }
+    GATE(Label("mux", 2 * width + 1, width))
+}
+
+/**
+ * Check if a port is connected to a given generator 
+ * @param p   The port
+ * @param gen The generator to check for
+ * @return The edge if it is the correct generator, or None otherwise.
+ */
 func PortToGenerator(p : Port, gen : Generator){
     match(p){
         case EdgePort(e, i) => {
