@@ -324,11 +324,30 @@ external func Drop(f : Hypergraph, n : Int64, name!: String = ""){
     }
     let newF = f.Clone()
     let newOutputs = newF.GetOutputs()
-    let v = newOutputs.removeAt(n)
-    let stub = Edge(STUB, [v], [])
     let newEdges = newF.GetEdges()
-    newEdges.add(stub)
-    Hypergraph(newEdges, newF.GetInputs(), newOutputs, newF.GetConnsR())
+    let s = newF.GetOutputs()[n]
+    let removedTargets = ArrayList<Target>()
+    let newConns = MapBuilder<Target, Source>()
+    match(PortToGenerator(newF.PreviousEdge(s), FORK)){
+        case Some((ef,i)) => {
+            let tf = newF.GetConnL(ef.sources[0])
+            let sf = newF.GetConnR(ef.targets[i == 0 ? 1 : 0])
+            newEdges.removeIf({e : Edge => e == ef})
+            newConns.add(tf, sf)
+            removedTargets.add(newF.GetConnL(s))
+        }
+        case $None   => {
+            let stub = Edge(STUB, [s], [])
+            newOutputs.removeIf({so : Source => so == s})
+            newEdges.add(stub)
+        }
+    }
+    for(t in newF.GetTargets()){
+        if(!includes(removedTargets, t)){
+            newConns.add(t, newF.GetConnR(t))
+        }
+    }
+    Hypergraph(newEdges, newF.GetInputs(), newOutputs, newConns.toMap())
 }
 
 external func TestOps(){

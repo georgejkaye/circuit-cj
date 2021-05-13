@@ -277,13 +277,13 @@ func PortToGenerator(p : Port, gen : Generator){
     match(p){
         case EdgePort(e, i) => {
             if(e.generator == gen){
-                Some<Edge>(e)
+                Some<Edge * Int64>((e, i))
             } else {
-                None<Edge>
+                None<Edge * Int64>
             }
         }
         case InterfacePort(i) => {
-            None<Edge>
+            None<Edge * Int64>
         }
     }
 }

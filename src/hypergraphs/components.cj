@@ -559,7 +559,7 @@ external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 0, out
         conns.add(td,sd)
         // Join the value and the delay
         let tj = Target()
-        let join = Edge(STRUCTURAL(JoinMorph), [sv, sd], [tj])
+        let join = Edge(JOIN, [sv, sd], [tj])
         edges.add(join)
         let sj = Source(NewWire(output, i))
         conns.add(tj,sj)

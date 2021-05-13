@@ -145,15 +145,15 @@ func Inject(f : Hypergraph,
     // Inject each of the vertices we have recovered
     for(i in 0..sourcesF.size()){
         // If the injected graph in G is just a stub, we can ignore it
-        match(PortToGenerator(portsG[i], STRUCTURAL(StubMorph))){
-            case Some(e) => {
+        match(PortToGenerator(portsG[i], STUB)){
+            case Some((e,j)) => {
                 removedEdges.add(e)
                 false
             } 
             case $None => {
                 // If the injection point in f leads to a stub, then we can just replace it with the injected graph
-                match(PortToGenerator(f.GetEdge(sourcesF[i]), STRUCTURAL(StubMorph))){
-                    case Some(e) => {
+                match(PortToGenerator(f.GetEdge(sourcesF[i]), STUB)){
+                    case Some((e,k)) => {
                         removedEdges.add(e)
                         match(portsG[i]){
                             case EdgePort(eg, j) => {
@@ -169,7 +169,7 @@ func Inject(f : Hypergraph,
                         // Make a new fork
                         let tf = Target()
                         let tg = Target()
-                        let fork = Edge(STRUCTURAL(ForkMorph), [sourcesF[i]], [tf, tg])
+                        let fork = Edge(FORK, [sourcesF[i]], [tf, tg])
                         newEdges.add(fork)
                         let sf2 = Source()
                         let sg2 = Source()
