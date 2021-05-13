@@ -255,3 +255,18 @@ external let NAND : Generator = GATE(Label("NAND", 2, 1))
 external let NOR  : Generator = GATE(Label("NOR", 2, 1))
 external let XOR  : Generator = GATE(Label("XOR", 2, 1))
 external let XNOR : Generator = GATE(Label("XNOR", 2, 1))
+
+func PortToGenerator(p : Port, gen : Generator){
+    match(p){
+        case EdgePort(e, i) => {
+            if(e.generator == gen){
+                Some<Edge>(e)
+            } else {
+                None<Edge>
+            }
+        }
+        case InterfacePort(i) => {
+            None<Edge>
+        }
+    }
+}

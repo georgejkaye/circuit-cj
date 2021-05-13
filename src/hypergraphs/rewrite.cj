@@ -137,43 +137,82 @@ func Inject(f : Hypergraph,
     Debug("Inject", "Injecting into ${f.GetName()}")
     
     let connsMap = MapBuilder<Target, Source>()
-    let newEdges = f.GetEdges()
-    newEdges.addAll(edgesG)
+    let newEdges = ArrayList<Edge>()
     let newOutputs = f.GetOutputs()
-
+    let removedEdges = ArrayList<Edge>()
+    let removedSources = ArrayList<Source>()
     //
     for(i in 0..sourcesF.size()){
-        let tf = Target()
-        let tg = Target()
-        let fork = Edge(STRUCTURAL(ForkMorph), [sourcesF[i]], [tf, tg])
-        newEdges.add(fork)
-        let sf2 = Source()
-        let sg2 = Source()
-        connsMap.add(tf,sf2)
-        connsMap.add(tg,sg2)
-        match(f.GetEdge(sourcesF[i])){
-            case EdgePort(e, j) => {
-                e.sources.set(j, sf2)
-            }
-            case InterfacePort(j) => {
-                newOutputs.set(j, sf2)
+        match(PortToGenerator(portsG[i], STRUCTURAL(StubMorph))){
+            case Some(e) => {
+                print("stub found ${e}\n")
+                removedEdges.add(e)
+                //removedConns.add(outputsG[i])
+                false
+            } 
+            case $None => {
+                match(PortToGenerator(f.GetEdge(sourcesF[i]), STRUCTURAL(StubMorph))){
+                    case Some(e) => {
+                        removedEdges.add(e)
+                        match(portsG[i]){
+                            case EdgePort(eg, j) => {
+                                eg.sources.set(j, sourcesF[i])
+                            }
+                            case InterfacePort(j) => {
+                                newOutputs.set(j, sourcesF[i])
+                            }
+                        }
+                        false
+                    }
+                    case $None => {
+                        let tf = Target()
+                        let tg = Target()
+                        let fork = Edge(STRUCTURAL(ForkMorph), [sourcesF[i]], [tf, tg])
+                        newEdges.add(fork)
+                        let sf2 = Source()
+                        let sg2 = Source()
+                        connsMap.add(tf,sf2)
+                        connsMap.add(tg,sg2)
+                        match(f.GetEdge(sourcesF[i])){
+                            case EdgePort(e, j) => {
+                                e.sources.set(j, sf2)
+                            }
+                            case InterfacePort(j) => {
+                                newOutputs.set(j, sf2)
+                            }
+                        }
+                        match(portsG[i]){
+                            case EdgePort(e, j) => {
+                                e.sources.set(j, sg2)
+                            }
+                            case InterfacePort(j) => {
+                                outputsG.set(j, sg2)
+                            }
+                        }
+                        true
+                    }
             }
         }
-        match(portsG[i]){
-            case EdgePort(e, j) => {
-                e.sources.set(j, sg2)
-            }
-            case InterfacePort(j) => {
-                outputsG.set(j, sg2)
-            }
-        }
+    }
     }
 
     for(t in f.GetTargets()){
         connsMap.add(t, f.GetConnR(t))
     }
     for((t,s) in connsG){
-        connsMap.add(t,s)
+        if(!includes(removedSources, s)){
+            connsMap.add(t,s)
+        }
+    }
+    for(e in f.GetEdges()){
+        if(!includes(removedEdges, e)){
+            newEdges.add(e)
+        }
+    }
+    for(e in edgesG){
+        if(!includes(removedEdges, e)){
+            newEdges.add(e)
+        }
     }
 
     let newInputs = f.GetInputs()
