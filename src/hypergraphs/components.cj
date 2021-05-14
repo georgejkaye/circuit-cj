@@ -47,7 +47,7 @@ func OpMToN(generator : Generator, name!: String = "", wires!: ArrayList<Wire>, 
     for (i in 0..cod) {
         conns.add(targets.get(i), outputs.get(i))
     }
-    let f = Hypergraph(name, ArrayList<Edge>([op]), inputs, outputs, conns.toMap())
+    let f = Hypergraph(name, ArrayList<Edge>([op]), inputs, outputs, conns)
     match(input){
         case Some(g) => Seq(g, f)
         case $None   => f
@@ -565,7 +565,7 @@ external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 0, out
         conns.add(tj,sj)
         outputs.add(sj)
     }
-    let reg = Hypergraph(edges, inputs, outputs, conns.toMap())
+    let reg = Hypergraph(edges, inputs, outputs, conns)
     // If we have an input, compose it to the front
     match(input){
         case Some(f) => Seq(f, reg)

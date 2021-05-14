@@ -12,7 +12,7 @@ func PairListToMap<K,V>(ps : ArrayList<K * V>) where K <: Hashable, K <: Equatab
     for((k, v) in ps){
         mb.add(k,v)
     }
-    mb.toMap()
+    mb
 }
 
 func HalfAdderAtoms(sum!: String = "", carry!: String = "", bit!: Int64 = 0) {
@@ -50,7 +50,7 @@ func HalfAdderAtoms(sum!: String = "", carry!: String = "", bit!: Int64 = 0) {
     conns.add(t7,s7)
     conns.add(t8,s8)
 
-    (ArrayList<Edge>(edges), ArrayList<Target>(inputs), ArrayList<Source>(outputs), conns.toMap())
+    (ArrayList<Edge>(edges), ArrayList<Target>(inputs), ArrayList<Source>(outputs), conns)
 }
 
 external func HalfAdder(sum!: String = "", carry!: String = "", bit!: Int64 = 0, name!: String = "") : Hypergraph {

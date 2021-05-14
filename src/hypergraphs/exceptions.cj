@@ -18,6 +18,20 @@ class InaccessibleCodeException <: Exception {
     }
 }
 
+/**
+ * Bit exceptions
+ */
+
+class NotEnoughBitsException <: Exception {
+    init(function : String){
+        Error(function, "Must be at least one bit")
+    }
+}
+class NegativeNumberException <: Exception {
+    init(function : String, number : Int64){
+        Error(function, "Expected a positive number but ${number} is positive")
+    }
+}
 
 /**
  * Bus exceptions 
@@ -165,11 +179,5 @@ class CouldNotOpenFileException <: Exception {
 class BadInputException <: Exception {
     init(function : String, wire : String, n1 : Int64, name: String, n2 : Int64){
         Error(function, "Expected input '${wire}' to be of type n->${n1} but '${name}' has type n->${n2}")
-    }
-}
-
-class NotEnoughBitsException <: Exception {
-    init(function : String){
-        Error(function, "Must be at least one bit")
     }
 }

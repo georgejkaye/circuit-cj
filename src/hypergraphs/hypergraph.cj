@@ -223,10 +223,23 @@ func UpdateBuses(busMaps : MapBuilder<Bus, MapBuilder<Int64, Source>>, busList :
     }
 
 class HypBuilder {
-    var edges = ArrayList<Edge>()
-    var inputs = ArrayList<Target>()
-    var outputs = ArrayList<Source>()
-    var conns = MapBuilder<Target, Source>()
+    var edges   : ArrayList<Edge>
+    var inputs  : ArrayList<Target>
+    var outputs : ArrayList<Source>
+    var conns   : MapBuilder<Target, Source>
+    init(){
+        edges = ArrayList<Edge>()
+        inputs = ArrayList<Target>()
+        outputs = ArrayList<Source>()
+        conns = MapBuilder<Target, Source>() 
+    }
+    init(f : Hypergraph){
+        let newF = f.Clone()
+        edges = newF.GetEdges()
+        inputs = newF.GetInputs()
+        outputs = newF.GetOutputs()
+        conns = newF.GetConnsR()
+    }
     func ToGraph() {
         Hypergraph(edges, inputs, outputs, conns)
     } 
@@ -242,7 +255,7 @@ external class Hypergraph <: Atom {
     private let edges   : ArrayList<Edge>
     private let inputs  : ArrayList<Target>
     private let outputs : ArrayList<Source>
-    private let connsr  : Map<Target, Source>
+    private let connsr  : MapBuilder<Target, Source>
     private let connsl  : Map<Source, Target> 
 
     // TODO should be sets but I don't know how to make them dynamically
@@ -264,7 +277,7 @@ external class Hypergraph <: Atom {
     init(edges    : ArrayList<Edge>, 
           inputs   : ArrayList<Target>,
           outputs  : ArrayList<Source>,
-          conns    : Map<Target, Source>
+          conns    : MapBuilder<Target, Source>
     ) {
          this(None<String>, edges, inputs, outputs, conns)
     }
@@ -273,7 +286,7 @@ external class Hypergraph <: Atom {
          edges   : List<Edge>, 
          inputs  : List<Target>, 
          outputs : List<Source>, 
-         conns   : Map<Target,Source>
+         conns   : MapBuilder<Target,Source>
     ){
         this(name, ArrayList<Edge>(edges), ArrayList<Target>(inputs), ArrayList<Source>(outputs), conns)
     }
@@ -282,7 +295,7 @@ external class Hypergraph <: Atom {
          edges    : ArrayList<Edge>, 
          inputs   : ArrayList<Target>,
          outputs  : ArrayList<Source>,
-         conns    : Map<Target, Source>
+         conns    : MapBuilder<Target, Source>
     ){
 
         this.name = match(name){
@@ -478,7 +491,7 @@ external class Hypergraph <: Atom {
     }
 
     func GetConnR(t : Target) {
-        match(connsr.get(t)){
+        match(connsr.toMap().get(t)){
             case $None => throw VertexNotInGraphException("GetConnR", t)
             case Some(s) => s
         }
@@ -653,7 +666,7 @@ external class Hypergraph <: Atom {
             newOutputs.add(v2)
         }
         // Use the vertex maps to get the new connections
-        let newConnsBuilder = MapBuilder<Target, Source>()
+        let newConns = MapBuilder<Target, Source>()
         for(v in targets){
             let newT = match(newTargetMap.get(v)){
                     case Some(v2) => v2
@@ -663,9 +676,8 @@ external class Hypergraph <: Atom {
                     case Some(v2) => v2
                     case $None     => throw VertexNotInGraphException("Clone", GetConnR(v))
             }
-            newConnsBuilder.add(newT, newS)
+            newConns.add(newT, newS)
         }
-        let newConns = newConnsBuilder.toMap()
         Hypergraph(newEdges, newInputs, newOutputs, newConns)
     }
 

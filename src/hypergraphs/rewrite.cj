@@ -272,7 +272,7 @@ func Inject(f : Hypergraph,
     let newInputs = f.GetInputs()
     newOutputs.addAll(outputsG)
     
-    Hypergraph(newEdges, newInputs, newOutputs, connsMap.toMap())
+    Hypergraph(newEdges, newInputs, newOutputs, connsMap)
 }
 
 /**
@@ -341,7 +341,7 @@ func Extract(f : Hypergraph, buses : ArrayList<String>, name!: String = "") : Hy
     for(t in newF.GetTargets()){
         newConns.add(t, newF.GetConnR(t))
     }
-    Hypergraph(name, newEdges, newF.GetInputs(), newOutputs, newConns.toMap())
+    Hypergraph(name, newEdges, newF.GetInputs(), newOutputs, newConns)
 }
 
 /**
@@ -476,5 +476,5 @@ external func ResolveLinks(f : Hypergraph, name!: String = ""){
     for(t in newF.GetTargets()){
         linkConns.add(t, newF.GetConnR(t))
     }
-    Hypergraph(name, edges, newF.GetInputs(), outputs, linkConns.toMap())
+    Hypergraph(name, edges, newF.GetInputs(), outputs, linkConns)
 }

@@ -50,7 +50,7 @@ external func Seq(f : Hypergraph, g : Hypergraph, name!: String = "") : Hypergra
     let newInputs = newF.GetInputs()
     let newOutputs = newG.GetOutputs() 
 
-    Hypergraph(name, newEdges, newInputs, newOutputs, newConns.toMap())
+    Hypergraph(name, newEdges, newInputs, newOutputs, newConns)
 }
 
 /**
@@ -100,7 +100,7 @@ external func Identity(n : Int64, name!: String = "", output!: String = "") : Hy
         newOutputs.add(s)
         conns.add(t,s)
     }
-    Hypergraph(name, ArrayList<Edge>(), newInputs, newOutputs, conns.toMap())
+    Hypergraph(name, ArrayList<Edge>(), newInputs, newOutputs, conns)
 }
 
 /**
@@ -135,7 +135,7 @@ external func Par(f : Hypergraph, g : Hypergraph, name!: String = "") : Hypergra
     for(v in newG.GetTargets()){
         newConns.add(v, newG.GetConnR(v))
     }
-    Hypergraph(name, newEdges, newInputs, newOutputs, newConns.toMap())
+    Hypergraph(name, newEdges, newInputs, newOutputs, newConns)
 }
 /**
  * Compose in parallel a list of hypergraphs from left to right 
@@ -210,7 +210,7 @@ external func Swap(m : Int64, n : Int64, name!: String = "") : Hypergraph {
     for(i in 0..n){
         conns.add(newInputs.get(m + i), newOutputs.get(i))
     }
-    Hypergraph(name, [], newInputs, newOutputs, conns.toMap())
+    Hypergraph(name, [], newInputs, newOutputs, conns)
 }
 
 /**
@@ -347,7 +347,7 @@ external func Drop(f : Hypergraph, n : Int64, name!: String = ""){
             newConns.add(t, newF.GetConnR(t))
         }
     }
-    Hypergraph(newEdges, newF.GetInputs(), newOutputs, newConns.toMap())
+    Hypergraph(newEdges, newF.GetInputs(), newOutputs, newConns)
 }
 
 external func TestOps(){
