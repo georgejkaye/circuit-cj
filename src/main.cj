@@ -15,11 +15,14 @@ func main(){
     // let output = Output([g,h])
     // WriteDotToFile(output, "dot/output.dot")
 
-    let a = UnsignedValueFromInt(24, width: 8)
-    let msbs = Msbs(8)
-    let lsb = Lsb(7)
-    let c = Seq([a, msbs, lsb])
-    WriteDotToFile(c, "dot/c.dot")
+    //let a = UnsignedValueFromInt(24, width: 8)
+    //let msbs = Msbs(8)
+    //let lsb = Lsb(7)
+    //let c = Seq([a, msbs, lsb])
+
+    
+    let acc = Accumulator(width: 8, initial: 1)
+    WriteDotToFile(acc, "dot/acc.dot")
 
     return 0
 }

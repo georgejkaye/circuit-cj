@@ -16,7 +16,7 @@ func DecToBin(w : Int64, x : Int64, signed: Bool){
         throw NotEnoughBitsException("DecToBin")
     }
     if(!signed && x < 0){
-        throw NegativeNumberException("DecToBin")
+        throw NegativeNumberException("DecToBin", x)
     }
     // If the number is signed, we add 2^width to it
     var num = signed ? x < 0 ? x + (2 ** w) : x : x

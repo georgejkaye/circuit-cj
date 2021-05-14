@@ -572,13 +572,55 @@ external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 0, out
         case $None   => reg
     }
 }
-
-external func OutLink(spec!: LinkSpec, name!:String = "", input!: Option<Hypergraph> = None<Hypergraph>) { 
-    OpMToZero(OUTLINK(spec), name: name, input: input) 
+/**
+ * Create an out link for a given link spec
+ * @param spec The link spec for this link
+ * @param name The name to give this circuit
+ * @return The out link
+ */
+external func OutLink(spec!: LinkSpec, name!:String = "") { 
+    OpMToZero(OUTLINK(spec), name: name) 
 }
+/**
+ * Create an in link for a given link spec
+ * @param spec The link spec for this link
+ * @param name The name to give this circuit
+ * @return The in link
+ */
 external func InLink(spec!: LinkSpec, output!: String = "", name!:String = "") { 
     let wires = ArrayList<Wire>(spec.width, {i : Int64 => NewWire(output, i)})
     OpMToN(INLINK(spec), wires: wires, name: name) 
+}
+/**
+ * Create a iteration: a construct that feeds its outputs back to some in link while also outputting them
+ * @param spec The link spec for the loop
+ * @param name The name to give this circuit
+ * @return The iteration
+ */
+external func Feedback(spec!: LinkSpec, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
+    let hb = HypBuilder()
+    let linkSources = ArrayList<Source>()
+    for(i in 0..spec.width){
+        let t1 = Target()
+        hb.inputs.add(t1)
+        let s1 = Source()
+        hb.conns.add(t1, s1)
+        let tfl = Target()
+        let tfr = Target()
+        hb.edges.add(Edge(FORK, [s1], [tfl,tfr]))
+        let sfl = Source()
+        hb.conns.add(tfl,sfl)
+        linkSources.add(sfl)
+        let sfr = Source()
+        hb.conns.add(tfr,sfr)
+        hb.outputs.add(sfr)
+    }
+    hb.edges.add(Edge(OUTLINK(spec), linkSources))
+    let res = hb.ToGraph()
+    match(input){
+        case Some(f) => Seq(f, res)
+        case $None   => res
+    }
 }
 
 /**

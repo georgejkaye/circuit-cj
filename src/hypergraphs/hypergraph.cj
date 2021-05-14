@@ -169,6 +169,12 @@ external open class Edge <: Atom {
     init(generator : Generator, sources : List<Source>, targets: List<Target>){
         this(generator, ArrayList<Source>(sources), ArrayList<Target>(targets))
     }
+    init(generator : Generator, sources : ArrayList<Source>){
+        this(generator, sources, ArrayList<Target>())
+    }
+    init(generator : Generator, targets : ArrayList<Target>){
+        this(generator, ArrayList<Source>(), targets)
+    }
 }
 append Edge with ToString, Equatable, Hashable {
     func toString(e : Edge) { 
