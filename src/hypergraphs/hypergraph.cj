@@ -71,7 +71,7 @@ external class Source <: Vertex {
     init() { this.wires = ArrayList<Wire>([Wire()])}
     init(wire: Wire) { this.wires = ArrayList<Wire>([wire]) }
     init(wires: ArrayList<Wire>) { this.wires = wires }
-    
+
     /** 
      * Add a wire to this vertex
      * @param wire The wire to add 
@@ -221,6 +221,16 @@ func UpdateBuses(busMaps : MapBuilder<Bus, MapBuilder<Int64, Source>>, busList :
 
         (busMaps, busList, wireList)
     }
+
+class HypBuilder {
+    var edges = ArrayList<Edge>()
+    var inputs = ArrayList<Target>()
+    var outputs = ArrayList<Source>()
+    var conns = MapBuilder<Target, Source>()
+    func ToGraph() {
+        Hypergraph(edges, inputs, outputs, conns)
+    } 
+}
 
 /**
  * Hypergraph
