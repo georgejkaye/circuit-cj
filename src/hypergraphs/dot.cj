@@ -2,7 +2,7 @@ package hypergraphs
 import io.*
 import debug.*
 
-let debugDot = false
+let debugDot = true
 let tab = "  "
 
 func indent(n : Int64, str : String){

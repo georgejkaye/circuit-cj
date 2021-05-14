@@ -599,21 +599,24 @@ external func Input(label!: String, width!: Int64 = 1){
  * shared in the resulting hypergraph. The order of the outputs is determined by the 
  * order the hypergraphs are given in
  * @param fs   The list of hypergraphs
- * @param name The name of the resulting hypergraph
+ * @param name The name of the resulting hypergra
  * @return     The combined hypergraph
  */
 external func Output(fs : ArrayList<Hypergraph>, name!: String = ""){
     Debug("Output", "Outputting hypergraphs")
 
     var f = fs[0].Clone()
+    WriteDotToFile(f, "dot/f0.dot")
     for(i in 1..fs.size()){
         var g = fs[i].Clone()
+        WriteDotToFile(g, "dot/g${i}.dot")
         let (vfs, vgs, ps) = FindIntersections(f, g)
         if(vfs.size() == 0){
             f = Par(f, g)
         } else {
             let (newEdges, newInputs, newOutputs, newConns) = RemoveLeft(g, vgs)
             f = Inject(f, vfs, vgs, ps, newEdges, newInputs, newOutputs, newConns)
+            WriteDotToFile(f, "dot/f${i}.dot")
             Debug("Output", "Injected successfully")
         }
     }

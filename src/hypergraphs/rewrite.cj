@@ -31,24 +31,33 @@ func FindIntersections(f : Hypergraph, g : Hypergraph){
     let wires = f.GetWires()
     while(frontier.size() != 0){
         let v : Source = frontier.removeAt(0)
+        var found = false
         for(w in v.wires){
             // Check if the wire is also in f, if so add it to the lists
             if(includes(wires, w)){
                 Debug("FindIntersection", "Intersection at ${w}")
+                // Add the corresponding vertex for f for this wire
                 vfs.add(f.GetWireVertex(w))
+                // Add the corresponding vertex for g for this wire
                 vgs.add(v)
+                // Add the port in g for this wire
                 ps.add(g.GetEdge(v))
-            } else {
-                let p = g.PreviousEdge(v)
-                match(p) {
-                    case EdgePort(e, i) => {
-                        if(!includes(visited, e)){
-                            frontier.addAll(e.sources)
-                        }       
-                    }
-                    case InterfacePort(i) => {}
-                }
+                // We don't need to check for any more wires in this vertex now
+                found = true
+                break
             }
+        }
+        
+        if(!found){
+            let p = g.PreviousEdge(v)
+                    match(p) {
+                        case EdgePort(e, i) => {
+                            if(!includes(visited, e)){
+                                frontier.addAll(e.sources)
+                            }       
+                        }
+                        case InterfacePort(i) => {}
+                    }
         }
     }
     (vfs, vgs, ps)
@@ -144,60 +153,102 @@ func Inject(f : Hypergraph,
 
     // Inject each of the vertices we have recovered
     for(i in 0..sourcesF.size()){
-        // If the injected graph in G is just a stub, we can ignore it
-        match(PortToGenerator(portsG[i], STUB)){
-            case Some((e,j)) => {
-                removedEdges.add(e)
-                false
-            } 
-            case $None => {
-                // If the injection point in f leads to a stub, then we can just replace it with the injected graph
-                match(PortToGenerator(f.GetEdge(sourcesF[i]), STUB)){
-                    case Some((e,k)) => {
+        var fork = true
+
+        // If the intersection point leads to a non-output endpoint of the graph, we need to be clever
+        // If it's a stub, we can just drop it as there is no benefit to forking to a stub
+        // If it's an outlink, we need to check if the other intersection point leads to the same link
+        // Therefore we need to keep track of it
+        let outlinkF = match(PortToEndpoint(f.GetEdge(sourcesF[i]))){
+            case Some((e, j)) => {
+                match(e.generator){
+                    // If we find a stub, then we don't need to copy it
+                    case STRUCTURAL(struct) => {
                         removedEdges.add(e)
                         match(portsG[i]){
-                            case EdgePort(eg, j) => {
-                                eg.sources.set(j, sourcesF[i])
+                            case EdgePort(eg, k) => {
+                                eg.sources.set(k, sourcesF[i])
                             }
-                            case InterfacePort(j) => {
-                                outputsG.set(j, sourcesF[i])
+                            case InterfacePort(k) => {
+                                outputsG.set(k, sourcesF[i])
                             }
                         }
-                        false
+                        fork = false
+                        None<LinkSpec>
                     }
-                    case $None => {
-                        // Make a new fork
-                        let tf = Target()
-                        let tg = Target()
-                        let fork = Edge(FORK, [sourcesF[i]], [tf, tg])
-                        newEdges.add(fork)
-                        let sf2 = Source()
-                        let sg2 = Source()
-                        connsMap.add(tf,sf2)
-                        connsMap.add(tg,sg2)
-                        // Set the sources/outputs of f to point to the new fork
-                        match(f.GetEdge(sourcesF[i])){
-                            case EdgePort(e, j) => {
-                                e.sources.set(j, sf2)
-                            }
-                            case InterfacePort(j) => {
-                                newOutputs.set(j, sf2)
-                            }
-                        }
-                        // Set the sources/targets of g to point to the new fork
-                        match(portsG[i]){
-                            case EdgePort(e, j) => {
-                                e.sources.set(j, sg2)
-                            }
-                            case InterfacePort(j) => {
-                                outputsG.set(j, sg2)
-                            }
-                        }
-                        true
+                    case OUTLINK(specf) => {
+                        Some(specf)
                     }
+                    case _ => {
+                        None<LinkSpec>
+                    }
+                }
+            }
+            case $None => {
+                None<LinkSpec>
             }
         }
-    }
+        // If we've already decided to not fork then we immediately just take the content of g
+        if(fork) {
+            // Ditto for the outlink of g
+            match(PortToEndpoint(portsG[i])){
+                case Some((e, j)) => {
+                    match(e.generator){
+                        // Once again we can ignore stubs
+                        // This is a lot easier for g, as it is not the 'base' graph
+                        // We can just make a node to delete the stub edge
+                        case STRUCTURAL(struct) => {
+                                removedEdges.add(e)
+                                fork = false    
+                            }
+                        // If this and f also lead to an outlink, we can check them to see if they're the same
+                        // If so, there's no point in copying 
+                        case OUTLINK(specg) => {
+                            match(outlinkF){
+                                case Some(specf) => {
+                                    removedEdges.add(e)
+                                    fork = false
+                                }
+                                case $None => {}
+                            }   
+                        }
+                        case _ => {}
+                    }
+                }
+                case $None => {}
+            }
+        }
+        // If we are still satified that a fork is truly required, go for it
+        if(fork){
+            // Make a new fork
+            let tf = Target()
+            let tg = Target()
+            let fork = Edge(FORK, [sourcesF[i]], [tf, tg])
+            newEdges.add(fork)
+            let sf2 = Source()
+            let sg2 = Source()
+            connsMap.add(tf,sf2)
+            connsMap.add(tg,sg2)
+            // Set the sources/outputs of f to point to the new fork
+            match(f.GetEdge(sourcesF[i])){
+                case EdgePort(e, j) => {
+                    e.sources.set(j, sf2)
+                }
+                case InterfacePort(j) => {
+                    newOutputs.set(j, sf2)
+                }
+            }
+            // Set the sources/targets of g to point to the new fork
+            match(portsG[i]){
+                case EdgePort(e, j) => {
+                    e.sources.set(j, sg2)
+                }
+                case InterfacePort(j) => {
+                    outputsG.set(j, sg2)
+                }
+            }
+            true
+        }
     }
 
     for(t in f.GetTargets()){

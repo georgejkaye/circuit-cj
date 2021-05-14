@@ -218,6 +218,13 @@ func Signature(gen : Generator){
     }
 }
 
+func Dom(gen : Generator){
+    Signature(gen)[0]
+}
+func Cod(gen : Generator){
+    Signature(gen)[1]
+}
+
 /**
  * Structural generators
  */
@@ -277,6 +284,21 @@ func PortToGenerator(p : Port, gen : Generator){
     match(p){
         case EdgePort(e, i) => {
             if(e.generator == gen){
+                Some<Edge * Int64>((e, i))
+            } else {
+                None<Edge * Int64>
+            }
+        }
+        case InterfacePort(i) => {
+            None<Edge * Int64>
+        }
+    }
+}
+
+func PortToEndpoint(p : Port){
+    match(p) {
+        case EdgePort(e, i) => {
+            if(Cod(e.generator) == 0){
                 Some<Edge * Int64>((e, i))
             } else {
                 None<Edge * Int64>

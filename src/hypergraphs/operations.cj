@@ -23,8 +23,8 @@ external func Seq(f : Hypergraph, g : Hypergraph, name!: String = "") : Hypergra
         throw TypeMismatchException("Seq", f,g)
     }
     
-    let newF = f
-    let newG = f.Disjoint(g) ? g : g.Clone()
+    let newF = f.Clone()
+    let newG = g.Clone()
 
     let newEdges = ArrayList<Edge>()
     newEdges.addAll(newF.GetEdges())
@@ -113,8 +113,8 @@ external func Identity(n : Int64, name!: String = "", output!: String = "") : Hy
  */
 external func Par(f : Hypergraph, g : Hypergraph, name!: String = "") : Hypergraph {
     Debug("Par", "Composing ${f.GetName()} and ${g.GetName()} in parallel")
-    let newF = f
-    let newG = f.Disjoint(g) ? g : g.Clone()
+    let newF = f.Clone()
+    let newG = g.Clone()
 
     let newEdges = ArrayList<Edge>()
     newEdges.addAll(newF.GetEdges())
@@ -232,7 +232,7 @@ external func Trace(f : Hypergraph, x : Int64, name!: String = ""){
         throw TooMuchTraceException("Trace")
     }
 
-    let newF = f
+    let newF = f.Clone()
     let newInputs = newF.GetInputs()
     let newOutputs = newF.GetOutputs()
 
