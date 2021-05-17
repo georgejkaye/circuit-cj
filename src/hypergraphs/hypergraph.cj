@@ -246,9 +246,62 @@ class HypBuilder {
         outputs = newF.GetOutputs()
         conns = newF.GetConnsR()
     }
+    init(dom : Int64, cod : Int64, wires : ArrayList<Wire>){
+        if(dom < 0){
+            throw NegativeInputsException("HypBuilder", dom)
+        }
+        if(cod < 0){
+            throw NegativeOutputsException("HypBuilder", cod)
+        }
+        if(wires.size() != cod){
+            throw BadOutputLabelsException("HypBuilder", wires.size(), cod)
+        }
+        edges = ArrayList<Edge>()
+        inputs = ArrayList<Target>(dom, {x : Int64 => Target()})
+        outputs = ArrayList<Source>(cod, {x : Int64 => Source(wires.get(x))})
+        conns = MapBuilder<Target,Source>()
+    }
+    init(dom : Int64, cod : Int64, output : String, elem : Int64){
+        this(dom, cod, ArrayList<Wire>(cod, {x : Int64 => NewWire(output, elem + x)}))
+    }
     func ToGraph() {
         Hypergraph(edges, inputs, outputs, conns)
     } 
+}
+
+func CreateEdge(hb : HypBuilder, gen : Generator) : Edge {
+    let sources = ArrayList<Source>(Dom(gen), {x : Int64 => Source() })
+    let targets = ArrayList<Target>(Cod(gen), {x : Int64 => Target() })
+    let edge = Edge(gen, sources, targets)
+    hb.edges.add(edge)
+    edge
+}
+
+func CreateEdge(hb : HypBuilder, gen : Generator, incomingConns : ArrayList<Target>) : Edge {
+    if(incomingConns.size() != Dom(gen)){
+        throw BadDomainException("CreateEdge", incomingConns.size(), Dom(gen))
+    }
+    let edge = CreateEdge(hb, gen)
+    for(i in 0..Dom(gen)){
+        hb.conns.add(incomingConns[i], edge.sources[i])
+    }
+    edge
+}
+func CreateEdge(hb : HypBuilder, gen : Generator, incomingConns : List<Target>) : Edge {
+    CreateEdge(hb, gen, ArrayList<Target>(incomingConns))
+}
+func CreateEdge(hb : HypBuilder, gen : Generator, incomingConns : ArrayList<Target>, outgoingConns : ArrayList<Source>) : Edge {
+    if(outgoingConns.size() != Cod(gen)){
+        throw BadCodomainException("CreateEdge", outgoingConns.size(), Cod(gen))
+    }
+    let edge = CreateEdge(hb, gen, incomingConns)
+    for(i in 0..Cod(gen)){
+        hb.conns.add(edge.targets[i], outgoingConns[i])
+    }
+    edge
+}
+func CreateEdge(hb : HypBuilder, gen : Generator, incomingConns : List<Target>, outgoingConns : List<Source>) : Edge {
+    CreateEdge(hb, gen, ArrayList<Target>(incomingConns), ArrayList<Source>(outgoingConns))
 }
 
 /**

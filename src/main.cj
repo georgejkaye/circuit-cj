@@ -21,8 +21,11 @@ func main(){
     //let c = Seq([a, msbs, lsb])
 
     
-    let acc = Accumulator(width: 8, initial: 1)
-    WriteDotToFile(acc, "dot/acc.dot")
+    //let acc = Accumulator(width: 8, initial: 1)
+    //WriteDotToFile(acc, "dot/acc.dot")
+
+    let a = Mux(width: 4, output: "mux")
+    WriteDotToFile(a, "dot/mux.dot")
 
     return 0
 }

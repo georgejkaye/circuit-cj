@@ -266,13 +266,8 @@ external let XNOR : Generator = GATE(Label("XNOR", 2, 1))
 /**
  * Ternary gates
  */
-
-external func MUX(width: Int64) : Generator { 
-    if(width < 0) {
-        throw NegativeWireException("MUX")
-    }
-    GATE(Label("mux", 2 * width + 1, width))
-}
+ 
+external let MUX : Generator = GATE(Label("mux", 3, 1))
 
 /**
  * Check if a port is connected to a given generator 

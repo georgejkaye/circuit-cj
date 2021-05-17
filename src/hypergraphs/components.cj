@@ -33,24 +33,21 @@ func OpMToN(generator : Generator, name!: String = "", wires!: ArrayList<Wire>, 
         throw BadOutputLabelsException("OpMToN - ${generator}", wires.size(), cod)
     }
 
-    let inputs = ArrayList<Target>(dom, {x => Target()})
+    let hb = HypBuilder(dom, cod, wires)
     let sources = ArrayList<Source>(dom, {x => Source()})
     let targets = ArrayList<Target>(cod, {x => Target()})
-    let outputs = ArrayList<Source>(cod, {x => Source(wires.get(x))})
-
     let op = Edge(generator, sources, targets)
 
-    let conns = MapBuilder<Target, Source>()
     for (i in 0..dom) {
-        conns.add(inputs.get(i), sources.get(i))
+        hb.conns.add(hb.inputs.get(i), sources.get(i))
     }
     for (i in 0..cod) {
-        conns.add(targets.get(i), outputs.get(i))
+        hb.conns.add(targets.get(i), hb.outputs.get(i))
     }
-    let f = Hypergraph(name, ArrayList<Edge>([op]), inputs, outputs, conns)
+    let res = hb.ToGraph()
     match(input){
-        case Some(g) => Seq(g, f)
-        case $None   => f
+        case Some(f) => Seq(f, res)
+        case $None   => res
     }
 }
 
@@ -454,51 +451,54 @@ external func XnorGate(lhs!: Hypergraph, rhs!: Hypergraph, output!: String = "",
     OpTwoToOne(XNOR, output: output, elem: elem, name: name, lhs: lhs, rhs: rhs)
 }
 
-external func Mux(width!: Int64, output!: String = "", elem!: Int64 = 0, name!: String = "", a!: Option<Hypergraph> = None<Hypergraph>, b!: Option<Hypergraph> = None<Hypergraph>, s!: Option<Hypergraph> = None<Hypergraph>){
-    var input = false
-    let x = match(a){
+external func Mux(width!: Int64, output!: String = "", elem!: Int64 = 0, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
+    let muxInputs = 2 * width + 1
+    match(input){
         case Some(f) => {
-            if(f.GetN() != width){
-                throw BadInputException("Mux", "a", width, f.GetName(), f.GetN())
+            if(f.GetN() != 2 * width + 1){
+                throw BadInputException("Mux", "input", muxInputs, f.GetName(), f.GetN())
             }
-            input = true
-            f
         }
-        case $None   => Identity(1)
+        case $None => {}
     }
-    let y = match(b){
-        case Some(f) => {
-            if(f.GetN() != width){
-                throw BadInputException("Mux", "b", width, f.GetName(), f.GetN())
-            }
-            input = true
-            f
+    let wires = ArrayList<Wire>()
+    let hb = HypBuilder(muxInputs, width, output, elem)
+    var currentC = hb.inputs[muxInputs - 1]
+    if(width > 1){
+        for(i in 0..width-1){
+            // Go from bottom to top
+            let j = width - i - 1
+            // Create a fork to split the control signal
+            let fork = CreateEdge(hb, FORK, [currentC])
+            // Create the mux edge
+            let mux = CreateEdge(hb, MUX, [hb.inputs[j], hb.inputs[j + width], fork.targets[1]], [hb.outputs[j]])
+            // Assign the control wire for the next iteration
+            currentC = fork.targets[0]
         }
-        case $None   => Identity(1)
+    }
+    // Create the final mux edge
+    let mux = CreateEdge(hb, MUX, [hb.inputs[0], hb.inputs[width], currentC], [hb.outputs[0]])
+    hb.ToGraph()
+}
+
+external func Mux(width!: Int64, output!: String = "", elem!: Int64 = 0, name!: String = "", a!: Hypergraph, b!: Hypergraph, s!: Option<Hypergraph> = None<Hypergraph>){
+    if(a.GetN() != width){
+        throw BadInputException("Mux", "a", width, a.GetName(), a.GetN())
+    }
+    if(b.GetN() != width){
+        throw BadInputException("Mux", "b", width, b.GetName(), b.GetN())
     }
     let z = match(s){
         case Some(f) => {
             if(f.GetN() != 1){
                 throw BadInputException("Mux", "s", width, f.GetName(), f.GetN())
             }
-            input = true
             f
         }
         case $None   => Identity(1)
     }
-
-    let inputs = input ? Some<Hypergraph>(Output([x,y,z])) : None<Hypergraph>
-    let bus = FindBus(output)
-    let wires = ArrayList<Wire>()
-    var currentElem = elem
-    for(i in 0..width){
-        let wire = NewWire(bus, currentElem)
-        wires.add(wire)
-        currentElem++
-    }
-    OpMToN(MUX(width), name: name, input: inputs, wires: wires)
+    Mux(width: width, output: output, elem: elem, name: name, input: Output([a,b,z]))
 }
-
 
 external func Delay(dur!: Int64 = 1, width!: Int64 = 1, output!: String = "", elem!: Int64 = 0, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
     if(width < 1){
@@ -532,11 +532,7 @@ external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 0, out
     if(duration < 0){
         throw NegativeDurationException("Register", duration)
     }
-
-    let inputs = ArrayList<Target>()
-    let outputs = ArrayList<Source>()
-    let edges = ArrayList<Edge>()
-    let conns = MapBuilder<Target, Source>()
+    let hb = HypBuilder()
     // Convert the initial value into binary
     let initialBin = DecToBin(width, initial, true)
     // We need to join the ith bit of this number with a delay
@@ -544,28 +540,28 @@ external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 0, out
         // Value for the ith bit of the initial value
         let tv = Target()
         let value = Edge(VALUE(initialBin[i] ? TRUE : FALSE), [], [tv])
-        edges.add(value)
+        hb.edges.add(value)
         let sv = Source()
-        conns.add(tv,sv)
+        hb.conns.add(tv,sv)
         // Delay
         let t1 = Target()
-        inputs.add(t1)
+        hb.inputs.add(t1)
         let s1 = Source()
-        conns.add(t1,s1)
+        hb.conns.add(t1,s1)
         let td = Target()
         let delay = Edge(DELAY(1), [s1], [td])
-        edges.add(delay)
+        hb.edges.add(delay)
         let sd = Source()
-        conns.add(td,sd)
+        hb.conns.add(td,sd)
         // Join the value and the delay
         let tj = Target()
         let join = Edge(JOIN, [sv, sd], [tj])
-        edges.add(join)
+        hb.edges.add(join)
         let sj = Source(NewWire(output, i))
-        conns.add(tj,sj)
-        outputs.add(sj)
+        hb.conns.add(tj,sj)
+        hb.outputs.add(sj)
     }
-    let reg = Hypergraph(edges, inputs, outputs, conns)
+    let reg = hb.ToGraph()
     // If we have an input, compose it to the front
     match(input){
         case Some(f) => Seq(f, reg)

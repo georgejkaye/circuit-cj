@@ -94,6 +94,16 @@ class BadSourcesException <: Exception {
         Error(function, "Attempted to access ${i}th sources but ${edge} only has ${edge.sources.size()}")
     }
 }
+class NegativeInputsException <: Exception {
+    init(function : String, n : Int64) {
+        Error(function, "Number of inputs cannot be negative, but ${n} requested")
+    }
+}
+class NegativeOutputsException <: Exception {
+    init(function : String, n : Int64) {
+        Error(function, "Number of outputs cannot be negative, but ${n} requested")
+    }
+}
 
 /**
  * Type error exceptions 
@@ -134,7 +144,7 @@ class BadOutputException <: Exception {
 
 class BadOutputLabelsException <: Exception {
     init(function : String, m : Int64, n : Int64){
-        Error(function, "Length of ports list (${m}) does not match the outputs(${n})")
+        Error(function, "Length of labels list (${m}) does not match the outputs(${n})")
     }
 }
 class PortNotFoundException <: Exception {

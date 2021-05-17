@@ -153,6 +153,7 @@ func NewWire(bus : Bus, i : Int64) : Wire {
     if(i < 0){
         throw NegativeWireException("NewWire")
     }
+    print("new wire for ${bus} at ${i}\n")
     match(bus.GetWire(i)){
         case Some(w) => throw DuplicateWireException("NewWire", bus, i)
         case $None   => Wire(bus, i)
