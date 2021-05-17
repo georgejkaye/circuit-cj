@@ -7,14 +7,13 @@ package hypergraphs
 
 import debug.*
 
-func PairListToMap<K,V>(ps : ArrayList<K * V>) where K <: Hashable, K <: Equatable {
-    let mb = MapBuilder<K,V>()
-    for((k, v) in ps){
-        mb.add(k,v)
-    }
-    mb
-}
-
+/**
+ * Create a HypBuilder for a half adder
+ * @param sum   The name of the sum port
+ * @param carry The name of the carry port
+ * @param bit   The bit this half adder is working on
+ * @return The hyp builder for this half adder
+ */
 func CreateHalfAdder(sum!: String = "", carry!: String = "", bit!: Int64 = 0) : HypBuilder {
     if(bit < 0){
         throw NegativeWireException("HalfAdder")
@@ -30,13 +29,29 @@ func CreateHalfAdder(sum!: String = "", carry!: String = "", bit!: Int64 = 0) : 
     // Return the builder
     hb
 }
-
+/**
+ * Create a fresh half adder 
+ * @param sum   The name of the sum port
+ * @param carry The name of the carry port
+ * @param bit   The bit this half adder is working on
+ * @param name  The name of the new circuit
+ * @return The fresh half adder
+ */
 external func HalfAdder(sum!: String = "", carry!: String = "", bit!: Int64 = 0, name!: String = "") : Hypergraph {
     Debug("HalfAdder", "Making half adder; outputs sum='${sum}', carry='${carry}'")
     let hb = CreateHalfAdder(sum: sum, carry: carry, bit: bit)
     hb.ToGraph()
 }
-
+/**
+ * Create a fresh half adder and compose it to some existing circuits
+ * @param a     The hypergraph to connect to the a port (outputs = 1)
+ * @param b     The hypergraph to connect to the b port (outputs = 1)
+ * @param sum   The name of the sum port
+ * @param carry The name of the carry port
+ * @param bit   The bit this half adder is working on
+ * @param name  The name of the new circuit
+ * @return The fresh half adder
+ */
 external func HalfAdder(a!: Hypergraph, b!: Hypergraph, sum!: String = "", carry!: String = "", bit!: Int64 = 0, name!: String = "") : Hypergraph {
     Debug("HalfAdder", "Making half adder; inputs a='${a.GetName()}' and b='${b.GetName()}'; outputs sum='${sum}', carry='${carry}'")
     if(a.GetN() != 1){
@@ -47,7 +62,13 @@ external func HalfAdder(a!: Hypergraph, b!: Hypergraph, sum!: String = "", carry
     }
     Seq(Output([a,b]), HalfAdder(sum: sum, carry: carry, bit: bit), name: name)
 }
-
+/**
+ * Create a HypBuilder for a full adder
+ * @param sum   The name of the sum port
+ * @param cout  The name of the carry port
+ * @param bit   The bit this full adder is working on
+ * @return The hyp builder for this full adder
+ */
 func CreateFullAdder(sum!: String = "", cout!: String = "", bit!: Int64 = 0) : HypBuilder {
     if(bit < 0){
         throw NotEnoughBitsException("FullAdder")
@@ -69,13 +90,30 @@ func CreateFullAdder(sum!: String = "", cout!: String = "", bit!: Int64 = 0) : H
     // Return the builder
     hb
 }
-
-external func FullAdder(name!: String = "", sum!: String = "", cout!: String = "", bit!: Int64 = 0){
+/**
+ * Create a fresh full adder 
+ * @param sum   The name of the sum port
+ * @param cout  The name of the carry port
+ * @param bit   The bit this full adder is working on 
+ * @param name  The name of the new circuit
+ * @return The fresh full adder
+ */
+external func FullAdder(sum!: String = "", cout!: String = "", bit!: Int64 = 0, name!: String = ""){
     Debug("FullAdder", "Making full adder; outputs sum='${sum}', cout='${cout}'")
     let hb = CreateFullAdder(sum: sum, cout: cout, bit: bit)
     hb.ToGraph()
 }
-
+/**
+ * Create a fresh half adder and compose it to some existing circuits
+ * @param a     The hypergraph to connect to the a port (outputs = 1)
+ * @param b     The hypergraph to connect to the b port (outputs = 1)
+ * @param cin   The hypergraph to connect to the cin port (outputs = 1)
+ * @param sum   The name of the sum port
+ * @param carry The name of the carry port
+ * @param bit   The bit this half adder is working on
+ * @param name  The name of the new circuit
+ * @return The fresh half adder
+ */
 external func FullAdder(a!: Hypergraph, b!: Hypergraph, cin!: Hypergraph, sum!: String = "", cout!: String = "", bit!: Int64 = 0, name!: String = "") : Hypergraph {
     Debug("FullAdder", "Making full adder; inputs a='${a.GetName()}', b='${b.GetName()} and cin='${cin.GetName()}; outputs sum='${sum}', cout='${cout}'")
     if(a.GetN() != 1){
@@ -89,9 +127,13 @@ external func FullAdder(a!: Hypergraph, b!: Hypergraph, cin!: Hypergraph, sum!: 
     }
     Seq(Output([a,b,cin]), FullAdder(sum: sum, cout: cout, bit: bit, name: name))
 }
-
 /**
- * Adders
+ * Create a HypBuilder for an adder of arbitrary width
+ * @param width The width of this adder
+ * @param bit   The initial bit of the output
+ * @param sum   The name of the sum bus
+ * @param cout  The name of the cout port
+ * @return The hyp builder for the appropriate adder 
  */
 func CreateAdder(width!: Int64, bit!: Int64 = 0, sum!: String = "", cout!: String = "") : HypBuilder {
     if(width < 1 || bit < 0){
@@ -121,12 +163,11 @@ func CreateAdder(width!: Int64, bit!: Int64 = 0, sum!: String = "", cout!: Strin
             completeAdder.inputs.add(tailAdder.inputs[n+i])
         }
         completeAdder.inputs.add(headAdder.inputs[2])
-        // Put the outputs in too: sum from the head and sum+carry from the tail
+        // Put the outputs in too: sum from the head and everything from the tail
         completeAdder.outputs.add(headAdder.outputs[0])
         for(out in tailAdder.outputs){
             completeAdder.outputs.add(out)
         }
-
         // Need to hook up the carry of the head to the relevant port of the tail
         let carryOut = headAdder.GetConnL(headAdder.outputs[1])
         let carryIn = tailAdder.GetConnR(tailAdder.inputs[n * 2])
@@ -144,15 +185,31 @@ func CreateAdder(width!: Int64, bit!: Int64 = 0, sum!: String = "", cout!: Strin
         completeAdder
     }
 }
-
-external func Adder(width!: Int64, sum!: String = "", cout!: String = "") {
+/**
+ * Create a fresh adder of arbitrary width
+ * @param width The width of the adder
+ * @param sum   The name of the sum bus
+ * @param cout  The name of the cout port
+ * @param name  The name of the fresh adder
+ * @return The fresh adder
+ */
+external func Adder(width!: Int64, sum!: String = "", cout!: String = "", name!: String = "") {
     Debug("Adder", "Making n-bit adder of width ${width}, sum='${sum}', cout='${cout}'")
     let adderBuilder = CreateAdder(width: width, bit: 0, sum: sum, cout: cout)
-    let x = adderBuilder.ToGraph()
-    print("${x}\n")
-    x
+    adderBuilder.ToGraph(name)
 }
-
+/**
+ * Create a fresh n-bit adder and compose it to some existing circuits
+ * @param width The width of the adder
+ * @param a     The hypergraph to connect to the a port (outputs = width)
+ * @param b     The hypergraph to connect to the b port (outputs = width)
+ * @param cin   The hypergraph to connect to the cin port (outputs = 1)
+ * @param sum   The name of the sum bus
+ * @param cout  The name of the carry port
+ * @param bit   The bit this half adder is working on
+ * @param name  The name of the new circuit
+ * @return The fresh half adder
+ */
 external func Adder(width!: Int64, a!: Hypergraph, b!: Hypergraph, cin!: Hypergraph = Zero(width: 1), sum!: String = "", cout!: String = "", name!: String = "") : Hypergraph {
     Debug("Adder", "Making n-bit adder of width ${width} with inputs a='${a.GetName()}', b='${b.GetName()}', cin='${cin.GetName()}'")
     if(a.GetN() != width){
@@ -166,15 +223,30 @@ external func Adder(width!: Int64, a!: Hypergraph, b!: Hypergraph, cin!: Hypergr
     }
     Seq(Output([a,b,cin]), Adder(width: width, sum: sum, cout: cout), name: name)
 }
-
+/**
+ * Create a fresh plus circuit of arbitrary width
+ * A plus is just an adder that initialises the first carry in to zero discards the final carry out
+ * @param width The width of the inputs
+ * @param output The name of the output bus
+ * @param name The name of the new circuit
+ * @return The new plus circuit
+ */
 external func Plus(width!: Int64, output!: String = "", name!: String = "") : Hypergraph {
     Debug("Plus", "Making plus of width ${width}")
     let adder = Adder(width: width, sum: output)
-    print("adder\n")
     let plus = Seq(Par(Identity(2 * width), Zero(width: 1)), adder)
     Drop(plus, width, name: name)
 }
-
+/**
+ * Create a fresh plus circuit of arbitrary width and compose it to some existing circuits
+ * The width is determined by the inputs, which must be the same length
+ * A plus is just an adder that initialises the first carry in to zero discards the final carry out
+ * @param a The lhs argument to the plus
+ * @param b The rhs argument to the plus
+ * @param output The name of the output bus
+ * @param name The name of the new circuit
+ * @return The new plus circuit
+ */
 external func Plus(a!: Hypergraph, b!: Hypergraph, output!: String = "", name!: String = "") : Hypergraph {
     Debug("Plus", "Making plus with inputs a='${a.GetName()}' and b='${b.GetName()}'")
     if(a.GetN() != b.GetN()){

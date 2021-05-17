@@ -291,8 +291,6 @@ external class Hypergraph <: Atom {
         this.outputs  = outputs
         this.connsr    = conns
 
-        print("Making hypergraph\n")
-
         this.m = inputs.size()
         this.n = outputs.size()
 

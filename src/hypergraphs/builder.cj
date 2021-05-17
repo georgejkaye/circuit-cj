@@ -1,3 +1,6 @@
+/**
+ * This file contains the HypBuilder class to make hypergraph construction simpler and cleaner
+ */
 package hypergraphs
 
 class HypBuilder {
@@ -43,26 +46,62 @@ class HypBuilder {
     init(dom : Int64, cod : Int64, output : String, elem : Int64){
         this(dom, cod, ArrayList<Wire>(cod, {x : Int64 => NewWire(output, elem + x)}))
     }
+    func GetConns(){ connsr }
+    /**
+     * Get the graph that this builder defines
+     * @return The hypergraph
+     */
     func ToGraph() {
         Hypergraph(edges, inputs, outputs, connsr)
     } 
+    /**
+     * Get the graph that this builder defines and give it a name
+     * @param name The name of this hypergraph
+     * @return The hypergraph
+     */
+    func ToGraph(name : String){
+        Hypergraph(name, edges, inputs, outputs, connsr)
+    }
+    /**
+     * Add a connection from target to source to the builder
+     * Also updates the source to target map
+     * @param t The target vertex
+     * @param s The source vertex
+     */
     func AddConn(t : Target, s : Source){
         connsr.add(t, s)
         connsl.add(s, t)
     }
+    /**
+     * Get the corresponding target for a source
+     * Throws VertexNotInGraphException if no match (badly formed hypergraph)
+     * @param s The source
+     * @return The corresponding target
+     */
     func GetConnL(s : Source){
         match(connsl.toMap().get(s)){
             case Some(t) => t
             case $None => throw VertexNotInGraphException("GetConnL", s)
         }
     }
+    /**
+     * Get the corresponding source for a target
+     * Throws VertexNotInGraphException if no match (badly formed hypergraph)
+     * @param s The target
+     * @return The corresponding source
+     */
     func GetConnR(t : Target){
         match(connsr.toMap().get(t)){
             case Some(s) => s
             case $None => throw VertexNotInGraphException("GetConnR", t)
         }
     }
-    func GetConns(){ connsr }
+    /**
+     * Create an edge and necessary infrastructure for a given generator 
+     * Modifies the builder state
+     * @param gen The generator
+     * @return The newly made edge
+     */ 
     func CreateEdge(gen : Generator) : Edge {
         let sources = ArrayList<Source>(Dom(gen), {x : Int64 => Source() })
         let targets = ArrayList<Target>(Cod(gen), {x : Int64 => Target() })
@@ -70,6 +109,14 @@ class HypBuilder {
         edges.add(edge)
         edge
     }
+    /**
+     * Create an edge and necessary infrastructure for a given generator, and connect it to some existing targets
+     * Modifies the builder state
+     * Throws BadDomainException if the length of the list of targets is not the same as the domain 
+     * @param gen           The generator
+     * @param incomingConns The list of targets to connect to the new edge on the left
+     * @return The newly made edge
+     */
     func CreateEdge(gen : Generator, incomingConns : ArrayList<Target>) : Edge {
         if(incomingConns.size() != Dom(gen)){
             throw BadDomainException("CreateEdge", incomingConns.size(), Dom(gen))
@@ -80,9 +127,28 @@ class HypBuilder {
         }
         edge
     }
+    /**
+     * Create an edge and necessary infrastructure for a given generator, and connect it to some existing targets
+     * Modifies the builder state
+     * Throws BadDomainException if the length of the list of targets is not the same as the domain 
+     * @param gen           The generator
+     * @param incomingConns The list of targets to connect to the new edge on the left
+     * @return The newly made edge
+     */
     func CreateEdge(gen : Generator, incomingConns : List<Target>) : Edge {
         CreateEdge(gen, ArrayList<Target>(incomingConns))
     }
+    /**
+     * Create an edge and necessary infrastructure for a given generator, and connect it to some existing targets on the left
+     * and some existing sources on the right
+     * Modifies the builder state
+     * Throws BadDomainException if the length of the list of targets is not the same as the domain 
+     * Throws BadCodomainException if the length of the list of sources is not the same as the codomain
+     * @param gen           The generator
+     * @param incomingConns The list of targets to connect to the new edge on the left
+     * @param outgoingConns The list of sources to connect to the new edge on the right
+     * @return The newly made edge
+     */
     func CreateEdge(gen : Generator, incomingConns : ArrayList<Target>, outgoingConns : ArrayList<Source>) : Edge {
         if(outgoingConns.size() != Cod(gen)){
             throw BadCodomainException("CreateEdge", outgoingConns.size(), Cod(gen))
@@ -93,6 +159,17 @@ class HypBuilder {
         }
         edge
     }
+    /**
+     * Create an edge and necessary infrastructure for a given generator, and connect it to some existing targets on the left
+     * and some existing sources on the right
+     * Modifies the builder state
+     * Throws BadDomainException if the length of the list of targets is not the same as the domain 
+     * Throws BadCodomainException if the length of the list of sources is not the same as the codomain
+     * @param gen           The generator
+     * @param incomingConns The list of targets to connect to the new edge on the left
+     * @param outgoingConns The list of sources to connect to the new edge on the right
+     * @return The newly made edge
+     */
     func CreateEdge(gen : Generator, incomingConns : List<Target>, outgoingConns : List<Source>) : Edge {
         CreateEdge(gen, ArrayList<Target>(incomingConns), ArrayList<Source>(outgoingConns))
     }
