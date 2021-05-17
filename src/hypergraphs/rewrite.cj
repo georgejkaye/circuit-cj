@@ -50,14 +50,14 @@ func FindIntersections(f : Hypergraph, g : Hypergraph){
         
         if(!found){
             let p = g.PreviousEdge(v)
-                    match(p) {
-                        case EdgePort(e, i) => {
-                            if(!includes(visited, e)){
-                                frontier.addAll(e.sources)
-                            }       
-                        }
-                        case InterfacePort(i) => {}
-                    }
+            match(p) {
+                case EdgePort(e, i) => {
+                    if(!includes(visited, e)){
+                        frontier.addAll(e.sources)
+                    }       
+                }
+                case InterfacePort(i) => {}
+            }
         }
     }
     (vfs, vgs, ps)

@@ -9,7 +9,9 @@ func partial_product(a!: Hypergraph, b0!: Hypergraph){
 func running_sum(first!: Hypergraph, sum!: Hypergraph, a!: Hypergraph, b0!: Hypergraph){
     let lhs = Mux(width: sum.GetN(), s: first, a: Zero(width: a.GetN()), b: sum)
     let rhs = partial_product(a: a, b0: b0)
-    Plus(a: UnsignedExtend(lhs), b: UnsignedExtend(rhs))
+    let a = UnsignedExtend(lhs)
+    let b = UnsignedExtend(rhs)
+    Plus(a: a, b: b)
 }
 
 func running_sum_loop(first!: Hypergraph, a!: Hypergraph, b0!: Hypergraph){
@@ -34,7 +36,6 @@ external func serial_multiplier_bit(width!: Int64){
     let sum_bit = running_sum_loop(first: first, a: a, b0: b0)
     let bit = Get(sum_bit, 0)
     let sum = Drop(sum_bit, 0)
-    WriteDotToFile(bit, "dot/bit.dot")
     let computed_bits_v = computed_bits(width: width, bit: bit)
     computed_bits_v
 }

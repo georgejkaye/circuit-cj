@@ -50,11 +50,19 @@ func ValueStack(vs : ArrayList<Value>, label!: String = ""){
         let t = Target()
         let s = Source(NewWire(bus))
         hb.edges.add(Edge(VALUE(v), [], [t]))
-        hb.conns.add(t,s)
+        hb.AddConn(t,s)
         hb.outputs.add(s)
     }
     hb.ToGraph()
 }
+
+func ValueStack(v : Value, n : Int64, label!: String = ""){
+    if(n < 1){
+        throw NegativeWireException("ValueStack")
+    }
+    ValueStack(ArrayList<Value>(n, {x : Int64 => v}), label: label)
+}
+
 /**
  * Create a tensor of values from an int
  * This tensor is ordered with the lsb at the top
@@ -98,12 +106,9 @@ external func UnsignedValueFromInt(x : Int64, width!: Int64, label!: String = ""
  * @param width The width of the stack
  * @return The w-width stack of false values
  */
-external func Zero(width!: Int64 = 1){
+external func Zero(width!: Int64 = 1, label!: String = ""){
     Debug("Zero", "Creating zero value of width ${width}")
-    if(width < 1){
-        throw NotEnoughBitsException("Zero")
-    }
-    Par(False(), width)
+    ValueStack(FALSE, width, label: label)
 }
 /**
  * Extend an unsigned value by one, by adding an extra False in front of it
@@ -112,10 +117,8 @@ external func Zero(width!: Int64 = 1){
  */
 external func UnsignedExtend(v: Hypergraph){
     let hb = HypBuilder(v)
-    let t = Target()
     let s = Source()
-    hb.edges.add(Edge(VALUE(FALSE), [], [t]))
-    hb.conns.add(t,s)
     hb.outputs.add(s)
+    hb.CreateEdge(VALUE(FALSE), [], [s]) 
     hb.ToGraph()
 }

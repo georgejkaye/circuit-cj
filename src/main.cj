@@ -3,8 +3,14 @@ import examples.*
 import debug.*
 
 func main(){
-    // let runsum = serial_multiplier_bit(width: 4)
-    // WriteDotToFile(runsum, "dot/runsum.dot")
+    let a = SignedValueFromInt(5, width: 8)
+    let b = SignedValueFromInt(8, width: 8)
+
+    let plus = Plus(a: a, b: b)
+    WriteDotToFile(plus, "dot/plus.dot")
+
+    let runsum = serial_multiplier_bit(width: 4)
+    WriteDotToFile(runsum, "dot/runsum.dot")
 
     // let f = Fork()
     // let s = Stub()
@@ -21,11 +27,8 @@ func main(){
     //let c = Seq([a, msbs, lsb])
 
     
-    //let acc = Accumulator(width: 8, initial: 1)
-    //WriteDotToFile(acc, "dot/acc.dot")
-
-    let a = Mux(width: 4, output: "mux")
-    WriteDotToFile(a, "dot/mux.dot")
+    let acc = Accumulator(width: 8, initial: 1)
+    WriteDotToFile(acc, "dot/acc.dot")
 
     return 0
 }

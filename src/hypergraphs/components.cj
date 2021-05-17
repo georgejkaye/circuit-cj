@@ -34,16 +34,7 @@ func OpMToN(generator : Generator, name!: String = "", wires!: ArrayList<Wire>, 
     }
 
     let hb = HypBuilder(dom, cod, wires)
-    let sources = ArrayList<Source>(dom, {x => Source()})
-    let targets = ArrayList<Target>(cod, {x => Target()})
-    let op = Edge(generator, sources, targets)
-
-    for (i in 0..dom) {
-        hb.conns.add(hb.inputs.get(i), sources.get(i))
-    }
-    for (i in 0..cod) {
-        hb.conns.add(targets.get(i), hb.outputs.get(i))
-    }
+    let op = hb.CreateEdge(generator, hb.inputs, hb.outputs)
     let res = hb.ToGraph()
     match(input){
         case Some(f) => Seq(f, res)
@@ -469,16 +460,20 @@ external func Mux(width!: Int64, output!: String = "", elem!: Int64 = 0, name!: 
             // Go from bottom to top
             let j = width - i - 1
             // Create a fork to split the control signal
-            let fork = CreateEdge(hb, FORK, [currentC])
+            let fork = hb.CreateEdge(FORK, [currentC])
             // Create the mux edge
-            let mux = CreateEdge(hb, MUX, [hb.inputs[j], hb.inputs[j + width], fork.targets[1]], [hb.outputs[j]])
+            let mux = hb.CreateEdge(MUX, [hb.inputs[j], hb.inputs[j + width], fork.targets[1]], [hb.outputs[j]])
             // Assign the control wire for the next iteration
             currentC = fork.targets[0]
         }
     }
     // Create the final mux edge
-    let mux = CreateEdge(hb, MUX, [hb.inputs[0], hb.inputs[width], currentC], [hb.outputs[0]])
-    hb.ToGraph()
+    let mux = hb.CreateEdge(MUX, [hb.inputs[0], hb.inputs[width], currentC], [hb.outputs[0]])
+    let res = hb.ToGraph()
+    match(input){
+        case Some(f) => Seq(f, res)
+        case $None   => res
+    }
 }
 
 external func Mux(width!: Int64, output!: String = "", elem!: Int64 = 0, name!: String = "", a!: Hypergraph, b!: Hypergraph, s!: Option<Hypergraph> = None<Hypergraph>){
@@ -504,10 +499,16 @@ external func Delay(dur!: Int64 = 1, width!: Int64 = 1, output!: String = "", el
     if(width < 1){
         throw NegativeWireException("Delay")
     }
-    let ds = Par(ArrayList<Hypergraph>(width, {x : Int64 => OpOneToOne(DELAY(dur), output: output, elem: x, name: name)}))
+    let hb = HypBuilder(width, width, output, elem)
+    for(i in 0..width){
+        hb.CreateEdge(DELAY(dur), [hb.inputs[i]], [hb.outputs[i]])
+    }
+    let res = hb.ToGraph()
     match(input) {
-        case Some(f) => Seq(f, ds)
-        case $None   => ds
+        case Some(f) => {
+            Seq(f, res)
+        }
+        case $None   => res
     }
 }
 
@@ -521,8 +522,9 @@ external func Delay(dur!: Int64 = 1, width!: Int64 = 1, output!: String = "", el
  * @return         The new register
  */
 external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 0, output!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
+    Debug("Register", "Making regist of width ${width} with initial value ${initial} and duration ${duration}")
     match(input){
-        case Some(f) => {
+    case Some(f) => {
             if(f.GetN() != width){
                   throw BadInputException("Register", "input", width, f.GetName(), f.GetN())
             }
@@ -532,34 +534,17 @@ external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 0, out
     if(duration < 0){
         throw NegativeDurationException("Register", duration)
     }
-    let hb = HypBuilder()
+    let hb = HypBuilder(width, width, output, 0)
     // Convert the initial value into binary
     let initialBin = DecToBin(width, initial, true)
     // We need to join the ith bit of this number with a delay
     for(i in 0..width){
         // Value for the ith bit of the initial value
-        let tv = Target()
-        let value = Edge(VALUE(initialBin[i] ? TRUE : FALSE), [], [tv])
-        hb.edges.add(value)
-        let sv = Source()
-        hb.conns.add(tv,sv)
+        let value = hb.CreateEdge(VALUE(initialBin[i] ? TRUE : FALSE))
         // Delay
-        let t1 = Target()
-        hb.inputs.add(t1)
-        let s1 = Source()
-        hb.conns.add(t1,s1)
-        let td = Target()
-        let delay = Edge(DELAY(1), [s1], [td])
-        hb.edges.add(delay)
-        let sd = Source()
-        hb.conns.add(td,sd)
+        let delay = hb.CreateEdge(DELAY(duration), [hb.inputs[i]])
         // Join the value and the delay
-        let tj = Target()
-        let join = Edge(JOIN, [sv, sd], [tj])
-        hb.edges.add(join)
-        let sj = Source(NewWire(output, i))
-        hb.conns.add(tj,sj)
-        hb.outputs.add(sj)
+        let join = hb.CreateEdge(JOIN, [value.targets[0], delay.targets[0]], [hb.outputs[i]])
     }
     let reg = hb.ToGraph()
     // If we have an input, compose it to the front
@@ -584,6 +569,7 @@ external func OutLink(spec!: LinkSpec, name!:String = "") {
  * @return The in link
  */
 external func InLink(spec!: LinkSpec, output!: String = "", name!:String = "") { 
+    Debug("InLink", "Creating in link for spec ${spec.name}")
     let wires = ArrayList<Wire>(spec.width, {i : Int64 => NewWire(output, i)})
     OpMToN(INLINK(spec), wires: wires, name: name) 
 }
@@ -600,15 +586,15 @@ external func Feedback(spec!: LinkSpec, name!: String = "", input!: Option<Hyper
         let t1 = Target()
         hb.inputs.add(t1)
         let s1 = Source()
-        hb.conns.add(t1, s1)
+        hb.AddConn(t1, s1)
         let tfl = Target()
         let tfr = Target()
         hb.edges.add(Edge(FORK, [s1], [tfl,tfr]))
         let sfl = Source()
-        hb.conns.add(tfl,sfl)
+        hb.AddConn(tfl,sfl)
         linkSources.add(sfl)
         let sfr = Source()
-        hb.conns.add(tfr,sfr)
+        hb.AddConn(tfr,sfr)
         hb.outputs.add(sfr)
     }
     hb.edges.add(Edge(OUTLINK(spec), linkSources))
@@ -642,20 +628,15 @@ external func Input(label!: String, width!: Int64 = 1){
  */
 external func Output(fs : ArrayList<Hypergraph>, name!: String = ""){
     Debug("Output", "Outputting hypergraphs")
-
     var f = fs[0].Clone()
-    WriteDotToFile(f, "dot/f0.dot")
     for(i in 1..fs.size()){
         var g = fs[i].Clone()
-        WriteDotToFile(g, "dot/g${i}.dot")
         let (vfs, vgs, ps) = FindIntersections(f, g)
         if(vfs.size() == 0){
             f = Par(f, g)
         } else {
             let (newEdges, newInputs, newOutputs, newConns) = RemoveLeft(g, vgs)
             f = Inject(f, vfs, vgs, ps, newEdges, newInputs, newOutputs, newConns)
-            WriteDotToFile(f, "dot/f${i}.dot")
-            Debug("Output", "Injected successfully")
         }
     }
     f
@@ -732,7 +713,7 @@ func ForEachBit(w : Int64, f : (Int64, HypBuilder, Source) -> Unit, output!: Str
         let t = Target()
         let s = Source(NewWire(bus))
         hb.inputs.add(t)
-        hb.conns.add(t, s)
+        hb.AddConn(t, s)
         f(i, hb, s)
     }
     hb.ToGraph()

@@ -228,82 +228,6 @@ func UpdateBuses(busMaps : MapBuilder<Bus, MapBuilder<Int64, Source>>, busList :
         (busMaps, busList, wireList)
     }
 
-class HypBuilder {
-    var edges   : ArrayList<Edge>
-    var inputs  : ArrayList<Target>
-    var outputs : ArrayList<Source>
-    var conns   : MapBuilder<Target, Source>
-    init(){
-        edges = ArrayList<Edge>()
-        inputs = ArrayList<Target>()
-        outputs = ArrayList<Source>()
-        conns = MapBuilder<Target, Source>() 
-    }
-    init(f : Hypergraph){
-        let newF = f.Clone()
-        edges = newF.GetEdges()
-        inputs = newF.GetInputs()
-        outputs = newF.GetOutputs()
-        conns = newF.GetConnsR()
-    }
-    init(dom : Int64, cod : Int64, wires : ArrayList<Wire>){
-        if(dom < 0){
-            throw NegativeInputsException("HypBuilder", dom)
-        }
-        if(cod < 0){
-            throw NegativeOutputsException("HypBuilder", cod)
-        }
-        if(wires.size() != cod){
-            throw BadOutputLabelsException("HypBuilder", wires.size(), cod)
-        }
-        edges = ArrayList<Edge>()
-        inputs = ArrayList<Target>(dom, {x : Int64 => Target()})
-        outputs = ArrayList<Source>(cod, {x : Int64 => Source(wires.get(x))})
-        conns = MapBuilder<Target,Source>()
-    }
-    init(dom : Int64, cod : Int64, output : String, elem : Int64){
-        this(dom, cod, ArrayList<Wire>(cod, {x : Int64 => NewWire(output, elem + x)}))
-    }
-    func ToGraph() {
-        Hypergraph(edges, inputs, outputs, conns)
-    } 
-}
-
-func CreateEdge(hb : HypBuilder, gen : Generator) : Edge {
-    let sources = ArrayList<Source>(Dom(gen), {x : Int64 => Source() })
-    let targets = ArrayList<Target>(Cod(gen), {x : Int64 => Target() })
-    let edge = Edge(gen, sources, targets)
-    hb.edges.add(edge)
-    edge
-}
-
-func CreateEdge(hb : HypBuilder, gen : Generator, incomingConns : ArrayList<Target>) : Edge {
-    if(incomingConns.size() != Dom(gen)){
-        throw BadDomainException("CreateEdge", incomingConns.size(), Dom(gen))
-    }
-    let edge = CreateEdge(hb, gen)
-    for(i in 0..Dom(gen)){
-        hb.conns.add(incomingConns[i], edge.sources[i])
-    }
-    edge
-}
-func CreateEdge(hb : HypBuilder, gen : Generator, incomingConns : List<Target>) : Edge {
-    CreateEdge(hb, gen, ArrayList<Target>(incomingConns))
-}
-func CreateEdge(hb : HypBuilder, gen : Generator, incomingConns : ArrayList<Target>, outgoingConns : ArrayList<Source>) : Edge {
-    if(outgoingConns.size() != Cod(gen)){
-        throw BadCodomainException("CreateEdge", outgoingConns.size(), Cod(gen))
-    }
-    let edge = CreateEdge(hb, gen, incomingConns)
-    for(i in 0..Cod(gen)){
-        hb.conns.add(edge.targets[i], outgoingConns[i])
-    }
-    edge
-}
-func CreateEdge(hb : HypBuilder, gen : Generator, incomingConns : List<Target>, outgoingConns : List<Source>) : Edge {
-    CreateEdge(hb, gen, ArrayList<Target>(incomingConns), ArrayList<Source>(outgoingConns))
-}
-
 /**
  * Hypergraph
  */
@@ -315,7 +239,7 @@ external class Hypergraph <: Atom {
     private let inputs  : ArrayList<Target>
     private let outputs : ArrayList<Source>
     private let connsr  : MapBuilder<Target, Source>
-    private let connsl  : Map<Source, Target> 
+    private let connsl  : MapBuilder<Source, Target> 
 
     // TODO should be sets but I don't know how to make them dynamically
     private let sources : ArrayList<Source>
@@ -367,6 +291,8 @@ external class Hypergraph <: Atom {
         this.outputs  = outputs
         this.connsr    = conns
 
+        print("Making hypergraph\n")
+
         this.m = inputs.size()
         this.n = outputs.size()
 
@@ -414,15 +340,12 @@ external class Hypergraph <: Atom {
                 }
             }
         }
-
         // We can use the right conns map to define the left conns map
-        let connslMap = MapBuilder<Source, Target>() 
+        this.connsl = MapBuilder<Source, Target>() 
         // TODO use for((t,s) in connsr) when convinced it works
         for(v in targets){
-            connslMap.add(GetConnR(v), v)
+            connsl.add(GetConnR(v), v)
         }
-        this.connsl = connslMap.toMap()
-
         let busMapLists = MapBuilder<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>()
         // TODO use for((bus, targetList) in busMaps) when convinced it works)
         for(bus in busList){
@@ -556,7 +479,7 @@ external class Hypergraph <: Atom {
         }
     }
     func GetConnL(s : Source) {
-        match(connsl.get(s)){
+        match(connsl.toMap().get(s)){
             case $None => throw VertexNotInGraphException("GetConnL", s)
             case Some(t) => t
         }
@@ -778,22 +701,6 @@ append Hypergraph with ToString {
         for (t in f.GetTargets()) {
            connstr = "${connstr}(${t.id} ${f.GetConnR(t).id}) "
         }
-        //var leftstr = "left "
-        // for(t in f.GetTargets()) {
-        //     leftstr = "${leftstr}(${t.id} => "
-        //     match(f.GetEdge(t)){
-        //         case EdgePort(e, i) => leftstr = "${leftstr}${e.id}:${i}) "
-        //         case InterfacePort(i) => leftstr = "${leftstr}input:${i}) "
-        //     }
-        // }
-        //var rightstr = "right "
-        // for(s in f.GetSources()) {
-        //     rightstr = "${rightstr}(${s.id} => "
-        //     match(f.GetEdge(s)){
-        //         case EdgePort(e, i) => rightstr = "${rightstr}${e.id}:${i}) "
-        //         case InterfacePort(i) => rightstr = "${rightstr}output:${i}) "
-        //     }
-        // }
         "${f.GetName()}\n${inputString}\n${str}${outputString}\n${connstr}"
     }
 }
