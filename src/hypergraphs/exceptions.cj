@@ -14,7 +14,7 @@ import debug.*
 
 class InaccessibleCodeException <: Exception {
     init(function : String){
-        Error(function, "This code should not be accessible")
+        ErrorMsg(function, "This code should not be accessible")
     }
 }
 
@@ -24,12 +24,12 @@ class InaccessibleCodeException <: Exception {
 
 class NotEnoughBitsException <: Exception {
     init(function : String){
-        Error(function, "Must be at least one bit")
+        ErrorMsg(function, "Must be at least one bit")
     }
 }
 class NegativeNumberException <: Exception {
     init(function : String, number : Int64){
-        Error(function, "Expected a positive number but ${number} is positive")
+        ErrorMsg(function, "Expected a positive number but ${number} is positive")
     }
 }
 
@@ -39,24 +39,24 @@ class NegativeNumberException <: Exception {
 
 class NoSuchBusException <: Exception {
     init(function : String, name : String){
-        Error(function, "Bus ${name} does not exist")
+        ErrorMsg(function, "Bus ${name} does not exist")
     }
 }
 
 class DuplicateBusException <: Exception {
     init(function : String, name : String){
-        Error(function, "Bus ${name} already exists")
+        ErrorMsg(function, "Bus ${name} already exists")
     }
 }
 
 class DuplicateWireException <: Exception {
     init(function : String, bus : Bus, i : Int64){
-        Error(function, "Bus ${bus} already has wire ${i}")
+        ErrorMsg(function, "Bus ${bus} already has wire ${i}")
     }
 }
 class BusesNotSameSizeException <: Exception {
     init(function: String, m : Int64, n : Int64){
-        Error(function, "Buses must be the same size, but they are ${m} and ${n}")
+        ErrorMsg(function, "Buses must be the same size, but they are ${m} and ${n}")
     }
 }
 
@@ -64,44 +64,50 @@ class BusesNotSameSizeException <: Exception {
  * Hypergraph exceptions
  */
 
+class BadHypergraphException <: Exception {
+    init(function : String){
+        ErrorMsg(function, "Trying to perform on operation on a non-complete hypergraph")
+    }
+}
+
 class VertexNotInGraphException <: Exception {
     init(function : String, v : Vertex){
-        Error(function, "Vertex ${v.id} is not in the graph")
+        ErrorMsg(function, "Vertex ${v.id} is not in the graph")
     }
 }
 
 class WireNotInGraphException <: Exception {
     init(function : String, w : Wire){
-        Error(function, "Wire ${w} is not in the graph")
+        ErrorMsg(function, "Wire ${w} is not in the graph")
     }
 }
 
 class BusNotInGraphException <: Exception {
     init(function : String, b : Bus){
-        Error(function, "Bus ${b} is not in the graph")
+        ErrorMsg(function, "Bus ${b} is not in the graph")
     }
     init(function : String, s : String){
-        Error(function, "Bus ${s} is not in the graph")
+        ErrorMsg(function, "Bus ${s} is not in the graph")
     }
 }
 class BadTargetsException <: Exception {
     init(function : String, edge : Edge, i : Int64){
-        Error(function, "Attempted to access ${i}th target but ${edge} only has ${edge.targets.size()}")
+        ErrorMsg(function, "Attempted to access ${i}th target but ${edge} only has ${edge.targets.size()}")
     }
 }
 class BadSourcesException <: Exception {
     init(function : String, edge : Edge, i : Int64){
-        Error(function, "Attempted to access ${i}th sources but ${edge} only has ${edge.sources.size()}")
+        ErrorMsg(function, "Attempted to access ${i}th sources but ${edge} only has ${edge.sources.size()}")
     }
 }
 class NegativeInputsException <: Exception {
     init(function : String, n : Int64) {
-        Error(function, "Number of inputs cannot be negative, but ${n} requested")
+        ErrorMsg(function, "Number of inputs cannot be negative, but ${n} requested")
     }
 }
 class NegativeOutputsException <: Exception {
     init(function : String, n : Int64) {
-        Error(function, "Number of outputs cannot be negative, but ${n} requested")
+        ErrorMsg(function, "Number of outputs cannot be negative, but ${n} requested")
     }
 }
 
@@ -111,30 +117,30 @@ class NegativeOutputsException <: Exception {
 
 class BadDomainException <: Exception {
     init(function : String, m : Int64, dom : Int64){
-        Error(function, "Number of inputs (${m}) does not match the domain of the label (${dom})")
+        ErrorMsg(function, "Number of inputs (${m}) does not match the domain of the label (${dom})")
     }
 }
 class BadCodomainException <: Exception {
     init(function : String, n : Int64, cod : Int64){
-        Error(function, "Number of outputs (${n}) does not match the codomain of the label (${cod})")
+        ErrorMsg(function, "Number of outputs (${n}) does not match the codomain of the label (${cod})")
     }
 }
 class TypeMismatchException <: Exception {
     init(function : String, f : Hypergraph, g : Hypergraph){
-        Error(function, "Outputs of '${f.GetName()}' (${f.GetN()}) do not match inputs of '${g.GetName()}' (${g.GetM()})")
+        ErrorMsg(function, "Outputs of '${f.GetName()}' (${f.GetN()}) do not match inputs of '${g.GetName()}' (${g.GetM()})")
     }
     init(function : String, f : Hypergraph, n : Int64) {
-        Error(function, "Outputs of '${f.GetName()}' (${f.GetN()}) do not match required inputs (${n})")
+        ErrorMsg(function, "Outputs of '${f.GetName()}' (${f.GetN()}) do not match required inputs (${n})")
     }
 }
 class BadValueException <: Exception {
     init(function : String, wire : String, n1 : Int64, name: String){
-        Error(function, "Expected input ${wire} to be a value i.e. type 0->n but '${name}' has type ${n1}->n")
+        ErrorMsg(function, "Expected input ${wire} to be a value i.e. type 0->n but '${name}' has type ${n1}->n")
     }
 }
 class BadOutputException <: Exception {
-    init(function : String, name : String, n : Int64){
-        Error(function, "Tried to get output ${n}, but '${name}' only has ${n}")
+    init(function : String, des : Int64, act : Int64 ){
+        ErrorMsg(function, "Tried to get output ${des}, but there are only ${act}")
     }
 }
 
@@ -144,12 +150,12 @@ class BadOutputException <: Exception {
 
 class BadOutputLabelsException <: Exception {
     init(function : String, m : Int64, n : Int64){
-        Error(function, "Length of labels list (${m}) does not match the outputs(${n})")
+        ErrorMsg(function, "Length of labels list (${m}) does not match the outputs(${n})")
     }
 }
 class PortNotFoundException <: Exception {
     init(function : String, f : Hypergraph, s : String){
-        Error(function, "Hypergraph '${f.GetName()}' does not have a port named '${s}'")
+        ErrorMsg(function, "Hypergraph '${f.GetName()}' does not have a port named '${s}'")
     }
 }
 
@@ -158,22 +164,22 @@ class PortNotFoundException <: Exception {
  */
 class NegativeWireException <: Exception {
     init(function : String){
-        Error(function, "Number of wires cannot be negative")
+        ErrorMsg(function, "Number of wires cannot be negative")
     }
 }
 class NegativeTraceException <: Exception {
     init(function : String){
-        Error(function, "Cannot trace negative number of wires")
+        ErrorMsg(function, "Cannot trace negative number of wires")
     }
 }
 class TooMuchTraceException <: Exception {
     init(function : String){
-        Error(function, "Tried to trace more wires than outputs")
+        ErrorMsg(function, "Tried to trace more wires than outputs")
     }
 }
 class NegativeDurationException <: Exception {
     init(function : String, dur : Int64){
-        Error(function, "Duration of delay must be positive but ${dur} requested")
+        ErrorMsg(function, "Duration of delay must be positive but ${dur} requested")
     }
 }
 
@@ -182,12 +188,12 @@ class NegativeDurationException <: Exception {
  */
 class CouldNotOpenFileException <: Exception {
     init(function : String, file : String){
-        Error(function, "Could not open file ${file}")
+        ErrorMsg(function, "Could not open file ${file}")
     }
 }
 
 class BadInputException <: Exception {
     init(function : String, wire : String, n1 : Int64, name: String, n2 : Int64){
-        Error(function, "Expected input '${wire}' to be of type n->${n1} but '${name}' has type n->${n2}")
+        ErrorMsg(function, "Expected input '${wire}' to be of type n->${n1} but '${name}' has type n->${n2}")
     }
 }

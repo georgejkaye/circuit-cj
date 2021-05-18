@@ -55,7 +55,9 @@ func AtomListToString(xs : ArrayList<Atom>){
 /**
  * Base vertex class 
  */
-open class Vertex <: Atom {}
+open class Vertex <: Atom {
+    var port : Option<Port> = None<Port>
+}
 append Vertex with ToString {
     func toString(v : Vertex) : String { "Vertex v${v.id}" }
 }
@@ -67,7 +69,7 @@ append Vertex with ToString {
 external class Source <: Vertex {
     /** The wires that the vertex represents */
     let wires : ArrayList<Wire>
-
+    var conn : Option<Target> = None<Target>
     init() { this.wires = ArrayList<Wire>([Wire()])}
     init(wire: Wire) { this.wires = ArrayList<Wire>([wire]) }
     init(wires: ArrayList<Wire>) { this.wires = wires }
@@ -91,7 +93,7 @@ append Source with ToString, Equatable, Hashable {
                 case Some(str) => str
                 case $None     => ""
             }
-            wires = (wires == "" ? "${wiretext}" : "${wires}, ${wiretext}")
+            wires = if(wires == "") { "${wiretext}" } else { "${wires}, ${wiretext}" }
         }
         return "Source s${s.id} ${wires}" 
     }
@@ -116,9 +118,9 @@ func SourceListToString(xs : ArrayList<Source>){
                 case Some(name) => "${name}[${wire.i}]"
                 case $None      => ""
             }
-            wires = wirename == "" ? wires : wires == "" ? " ${wirename}" : "${wires}, ${wirename}"
+            wires = if(wirename == "") { wires } else if(wires == "") { " ${wirename}" } else { "${wires}, ${wirename}" }
         }
-        wires = wires == "" ? "" : "(${wires})"
+        wires = if(wires == "") { "" } else { "(${wires})" }
         str = "${str}${wires}"
     }
     str = "${str} ]"
@@ -130,7 +132,9 @@ func SourceListToString(xs : ArrayList<Source>){
  * Target vertices are inwards facing ports: they are the targets of edges.
  * Target vertices currently don't have anything particularly special about them
  */
-external class Target <: Vertex {}
+external class Target <: Vertex {
+    var conn : Option<Source> = None<Source>
+}
 append Target with ToString, Equatable, Hashable {
     func toString(t : Target) { "Target t${t.id}" }
     operator func ==(lhs : Target, rhs : Target) : Bool { lhs.id == rhs.id }
@@ -165,6 +169,12 @@ external open class Edge <: Atom {
         this.generator = generator
         this.sources = sources
         this.targets = targets
+        for(i in 0..sources.size()){
+            sources[i].port = Some<Port>(EdgePort(this, i))
+        }
+        for(i in 0..targets.size()){
+            targets[i].port = Some<Port>(EdgePort(this, i))
+        }
     }
     init(generator : Generator, sources : List<Source>, targets: List<Target>){
         this(generator, ArrayList<Source>(sources), ArrayList<Target>(targets))
@@ -282,7 +292,7 @@ external class Hypergraph <: Atom {
     ){
 
         this.name = match(name){
-            case Some(text) => text == "" ? "h${this.id}" : text
+            case Some(text) => if (text == "") { "h${this.id}" } else { text }
             case $None      => "h${this.id}"
         }
 
@@ -290,6 +300,13 @@ external class Hypergraph <: Atom {
         this.inputs   = inputs
         this.outputs  = outputs
         this.connsr    = conns
+
+        for(i in 0..inputs.size()){
+            inputs[i].port = Some<Port>(InterfacePort(i))
+        }
+        for(i in 0..outputs.size()){
+            outputs[i].port = Some<Port>(InterfacePort(i))
+        }
 
         this.m = inputs.size()
         this.n = outputs.size()
@@ -656,6 +673,8 @@ external class Hypergraph <: Atom {
                     case Some(v2) => v2
                     case $None     => throw VertexNotInGraphException("Clone", GetConnR(v))
             }
+            newT.conn = Some<Source>(newS)
+            newS.conn = Some<Target>(newT)
             newConns.add(newT, newS)
         }
         Hypergraph(newEdges, newInputs, newOutputs, newConns)

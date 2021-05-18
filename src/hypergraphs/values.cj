@@ -1,3 +1,9 @@
+/**
+ * values.cj
+ *
+ * This file contains functions to construct values (circuits of form 0->n)
+ */
+
 package hypergraphs
 
 import debug.*
@@ -19,7 +25,7 @@ func DecToBin(w : Int64, x : Int64, signed: Bool){
         throw NegativeNumberException("DecToBin", x)
     }
     // If the number is signed, we add 2^width to it
-    var num = signed ? x < 0 ? x + (2 ** w) : x : x
+    var num = if (signed && x < 0) { x + (2 ** w) } else { x }
     // Set up the list
     let bin = ArrayList<Bool>(w, {x : Int64 => false})
     // Divide by two w times, setting the remainder to the ith bit of the list
@@ -76,7 +82,7 @@ func ValueStack(v : Value, n : Int64, label!: String = ""){
  */
 func ValueFromInt(x : Int64, width!: Int64, signed!: Bool, label!: String = "", name!: String = ""){
     let bin = DecToBin(width, x, signed)
-    let values = map(bin, {b : Bool => b ? TRUE : FALSE})
+    let values = map(bin, {b : Bool => if(b) { TRUE } else { FALSE } })
     ValueStack(values)
 }
 /**

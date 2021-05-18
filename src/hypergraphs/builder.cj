@@ -1,6 +1,9 @@
 /**
- * This file contains the HypBuilder class to make hypergraph construction simpler and cleaner
+ * builder.cj
+ * 
+ *This file contains the HypBuilder class to make hypergraph construction simpler and cleaner
  */
+
 package hypergraphs
 
 class HypBuilder {
@@ -68,9 +71,11 @@ class HypBuilder {
      * @param t The target vertex
      * @param s The source vertex
      */
-    func AddConn(t : Target, s : Source){
+    func AddConn(t : Target, s : Source) : Unit {
         connsr.add(t, s)
         connsl.add(s, t)
+        s.conn = Some<Target>(t)
+        t.conn = Some<Source>(s)
     }
     /**
      * Get the corresponding target for a source
@@ -94,6 +99,29 @@ class HypBuilder {
         match(connsr.toMap().get(t)){
             case Some(s) => s
             case $None => throw VertexNotInGraphException("GetConnR", t)
+        }
+    }
+    /**
+     * Perform an action for each connection in this builder
+     * This is because I don't trust the for((t,s) in conns) appraoch
+     * Sometimes it seems to miss pairs out
+     * TODO: use the for((t,s) in conns) approach when it is sound
+     * @param f The function to perform for each target-source pair in the conns map
+     */
+    func ForEachConn(f : (Target, Source) -> Unit){
+        for(t in inputs){
+            match(connsr.toMap().get(t)){
+                case Some(s) => { f(t, s) }
+                case $None   => {}
+            }
+        }
+        for(e in edges){
+            for(t in e.targets){
+                match(connsr.toMap().get(t)){
+                    case Some(s) => { f(t, s) }
+                    case $None   => {}
+                }
+            }  
         }
     }
     /**
@@ -172,5 +200,87 @@ class HypBuilder {
      */
     func CreateEdge(gen : Generator, incomingConns : List<Target>, outgoingConns : List<Source>) : Edge {
         CreateEdge(gen, ArrayList<Target>(incomingConns), ArrayList<Source>(outgoingConns))
+    }
+    /**
+     * Remove an edge from the graph, along with its sources and targets and any references in the connections map
+     * @param edge The edge to remove
+     */
+    func RemoveEdge(edge : Edge){
+        edges.removeIf({e : Edge => e == edge})
+        let newConnsr = MapBuilder<Target, Source>()
+        let newConnsl = MapBuilder<Source, Target>()
+        let f : (Target, Source) -> Unit = { t : Target, s : Source =>
+            if(!includes(edge.sources, s) && !includes(edge.targets, t)){
+                newConnsr.add(t, s)
+                newConnsl.add(s, t)
+            }
+        }
+        // We need to refresh the connections to remove references to this edge
+        ForEachConn(f)
+        connsr = newConnsr
+        connsl = newConnsl
+    }
+    /**
+     * Remove an output from the graph
+     * @param i The index of the output to remove
+     */
+    func RemoveConcat(i : Int64){
+        if(i < 0 || i >= outputs.size()){
+            throw BadOutputException("RemoveOutput", i, outputs.size())
+        }
+        let sout = outputs.removeAt(i)
+        let newConnsr = MapBuilder<Target, Source>()
+        let newConnsl = MapBuilder<Source, Target>()
+        let f : (Target, Source) -> Unit = { t : Target , s : Source => 
+            if(s != sout){
+                newConnsr.add(t,s)
+            }
+        }
+        ForEachConn(f)
+        connsr = newConnsr
+        connsl = newConnsl
+    }
+    /**
+     * Connect an edge to one of the outputs
+     * @param outs  The indices of the outputs to connect to the new edge
+     * @param gen   The generator of the new edge
+     * @return The new edge
+     */
+    func ConnectOutputs(outs : ArrayList<Int64>, gen : Generator) : Edge {
+        if(Dom(gen) != outs.size()){
+            throw BadDomainException("ConnectOutputs", outs.size(), Dom(gen))
+        }
+
+        let chosenOutputs = ArrayList<Source>(outs.size(), {i : Int64 => 
+            let j = outs[i]
+            if(j < 0 || j >= outputs.size()){
+                throw BadOutputException("ConnectOutputs", i, outputs.size())
+            }
+            outputs[j]
+        })
+        outputs.removeIf({s : Source => includes(chosenOutputs, s)})
+        let edge = Edge(gen, chosenOutputs, ArrayList<Target>(Cod(gen), {x : Int64 => Target()}))
+        edges.add(edge)
+        edge
+    }
+}
+
+append HypBuilder with ToString {
+    func toString(hb : HypBuilder){
+        let inputString = "inputs ${TargetListToString(hb.inputs)}"
+        var edgeString = ""
+        for(e in hb.edges){
+            let id = "${e.id}"
+            let gen = "${e.generator}"
+            let sourceString = SourceListToString(e.sources)
+            let targetString = TargetListToString(e.targets)
+            edgeString = "${edgeString}${id} (${gen}) ${sourceString} ${targetString}\n"
+        }
+        let outputString = "outputs ${SourceListToString(hb.outputs)}"
+        var connsString = "connections ${hb.GetConns().toMap().size()} "
+        for((t,s) in hb.GetConns().toMap()){
+            connsString = "${connsString}(${t.id} ${s.id}) "
+        }
+        "${inputString}\n${edgeString}${outputString}\n${connsString}"
     }
 }

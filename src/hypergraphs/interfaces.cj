@@ -1,0 +1,55 @@
+/**
+ * sequential.cj
+ *
+ * This file contains functions to define the input and output interfaces to circuits
+ */
+
+package hypergraphs
+
+import debug.*
+
+/**
+ * Create an input to the graph with associated handles
+ * @param out The name of the bus
+ * @param width The width of the bus
+ * @return The input circuit
+ */
+external func Input(label!: String, width!: Int64 = 1){
+    if(width < 1){
+        throw NegativeWireException("Input")
+    }
+    Identity(width, output: label)
+}
+/**
+ * Combine a list of hypergraphs into a single hypergraph, ensuring that any shared wires are
+ * shared in the resulting hypergraph. The order of the outputs is determined by the 
+ * order the hypergraphs are given in
+ * @param fs   The list of hypergraphs
+ * @param name The name of the resulting hypergra
+ * @return     The combined hypergraph
+ */
+external func Concat(fs : ArrayList<Hypergraph>, name!: String = ""){
+    Debug("Output", "Outputting hypergraphs")
+    var f = fs[0].Clone()
+    for(i in 1..fs.size()){
+        var g = fs[i].Clone()
+        let (vfs, vgs, ps) = FindIntersections(f, g)
+        if(vfs.size() == 0){
+            f = Par(f, g)
+        } else {
+            let (newEdges, newInputs, newOutputs, newConns) = RemoveLeft(g, vgs)
+            f = Inject(f, vfs, vgs, ps, newEdges, newInputs, newOutputs, newConns)
+        }
+    }
+    f
+}
+/**
+ * Combine a list of hypergraphs into a single hypergraph, ensuring that any shared wires are
+ * shared in the resulting hypergraph. The order of the outputs is determined by the 
+ * order the hypergraphs are given in
+ * @param fs   The list of hypergraphs
+ * @param name The name of the resulting hypergraph
+ */
+external func Concat(fs : List<Hypergraph>, name!: String = ""){
+    Concat(ArrayList<Hypergraph>(fs), name: name)
+}

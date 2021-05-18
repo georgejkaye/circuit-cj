@@ -1,8 +1,15 @@
+/**
+ * dot.cj
+ *
+ * This file contains functions to generate dot graphs from hypergraphs
+ */
+
 package hypergraphs
+
 import io.*
 import debug.*
 
-let debugDot = true
+let debugDot = false
 let tab = "  "
 
 func indent(n : Int64, str : String){
@@ -53,7 +60,7 @@ func TargetListToTable(vs : ArrayList<Target>, id : String, n : Int64){
     var rows = ""
     for (i in 0..vs.size()) {
         let row = indent(n+1, "<tr><td height=\"${portHeight}\" width=\"${portWidth}\" port = \"${id}${i}\"></td></tr>")
-        rows = rows == "" ? "${row}" : "${rows}\n${row}"
+        rows = if (rows == "") { "${row}" } else { "${rows}\n${row}" }
     }
     let footer = indent(n,"</table>")
     "${header}\n${rows}\n${footer}"
@@ -63,7 +70,7 @@ func SourceListToTable(vs : ArrayList<Source>, id : String, n : Int64){
     var rows = ""
     for (i in 0..vs.size()) {
         let row = indent(n+1, "<tr><td height=\"${portHeight}\" width=\"${portWidth}\" port = \"${id}${i}\"></td></tr>")
-        rows = rows == "" ? "${row}" : "${rows}\n${row}"
+        rows = if (rows == "") { "${row}" } else { "${rows}\n${row}" }
     }
     let footer = indent(n,"</table>")
     "${header}\n${rows}\n${footer}"
@@ -86,11 +93,11 @@ func WrapInTd(str : String, n : Int64) {
 func DrawEdgeNode(n : Int64, id : String, nodeStyle : String, text : String, sources : ArrayList<Source>, targets : ArrayList<Target>){
     let declaration = indent(n, "${id} [label=<")
     let tableheader = indent(n+1,"<table ${nodeStyle} ${tableStyle}>")
-    let sourceTable = sources.size() == 0 ? "" : WrapInTd(SourceListToTable(sources, "s", 5), n+3)
-    let targetTable = targets.size() == 0 ? "" : WrapInTd(TargetListToTable(targets, "t", 5), n+3)
-    let sourceNewline = sourceTable == "" ? "" : "\n"
-    let targetNewline = targetTable == "" ? "" : "\n"
-    let edgetext = WrapInTd(indent(n+4, debugDot ? "${id}: ${text}" : text), n+3)
+    let sourceTable = if(sources.size() == 0) { "" } else { WrapInTd(SourceListToTable(sources, "s", 5), n+3) }
+    let targetTable = if(targets.size() == 0) { "" } else { WrapInTd(TargetListToTable(targets, "t", 5), n+3) }
+    let sourceNewline = if(sourceTable == "") { "" } else { "\n" }
+    let targetNewline = if(targetTable == "") { "" } else { "\n" }
+    let edgetext = WrapInTd(indent(n+4, if(debugDot) { "${id}: ${text}" } else { text }), n+3)
     let subtable = WrapInTr("${sourceTable}${sourceNewline}${edgetext}${targetNewline}${targetTable}", n+2)
     let tablefooter = indent(n+1, "</table>")
     let conclusion = indent(n,">];")
@@ -114,7 +121,7 @@ func DrawTargetVertices(vs : ArrayList<Target>){
     var vertices = ""
     for (v in vs){
         let vertex = indent(1, "v${v.id}")
-        vertices = vertices == "" ? vertex : "${vertices}\n${vertex}"
+        vertices = if(vertices == "") { vertex } else { "${vertices}\n${vertex}" }
     }
     vertices
 }
@@ -125,11 +132,11 @@ func DrawVertex(t : Target, s : Source) {
 
         let wiretext = match(wire.bus.name){
             case Some(name) => "${name}[${wire.i}]"
-            case $None      => debugDot ? "${wire.bus.id}[${wire.i}]" : ""
+            case $None      => if(debugDot) { "${wire.bus.id}[${wire.i}]" } else { "" }
         }
-        wires = wires == "" ? "${wiretext}" : wiretext == "" ? "${wires}" : "${wires}, ${wiretext}"
+        wires = if(wires == "") { "${wiretext}" } else if(wiretext == "") { "${wires}" } else { "${wires}, ${wiretext}" }
     }
-    let text = debugDot ? "${t.id}|${s.id}\n${wires}" : wires
+    let text = if(debugDot) { "${t.id}|${s.id}\n${wires}" } else { wires }
     "v${t.id}[label=\"\" xlabel=\"${text}\"]"
 }
 
@@ -156,7 +163,7 @@ external func DotGraph(f : Hypergraph){
     for (t in f.GetTargets()) {
         let s = f.GetConnR(t)
         let vertex = indent(1, DrawVertex(t, s))
-        vertices = vertices == "" ? vertex : "${vertices}\n${vertex}"
+        vertices = if(vertices == "") { vertex } else { "${vertices}\n${vertex}" }
 
         let left = match(f.GetEdge(t)){
             case EdgePort(e,n)     => "e${e.id}:t${n}"
@@ -170,7 +177,7 @@ external func DotGraph(f : Hypergraph){
         let connl = indent(1, "${left}:e -- v${t.id}:w")
         let connr = indent(1, "v${t.id}:e -- ${right}:w")
         let conn = "${connl}\n${connr}"
-        conns = conns == "" ? conn : "${conns}\n${conn}" 
+        conns = if(conns == "") { conn } else { "${conns}\n${conn}" }
     }
 
     let input = DrawEdgeNode(2, "ei", interfaceStyle, "inputs", ArrayList<Source>(), f.GetInputs())

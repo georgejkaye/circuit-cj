@@ -34,8 +34,9 @@ external func serial_multiplier_bit(width!: Int64){
     let a = Input(width: width, label: "a")
     let b0 = Input(width: 1, label: "b0")
     let sum_bit = running_sum_loop(first: first, a: a, b0: b0)
-    let bit = Get(sum_bit, 0)
-    let sum = Drop(sum_bit, 0)
+    let bit = Lsb(sum_bit)
+    let sum = Msbs(sum_bit)
+    WriteDotToFile(sum, "dot/summ.dot")
     let computed_bits_v = computed_bits(width: width, bit: bit)
-    computed_bits_v
+    Concat([sum, computed_bits_v])
 }

@@ -24,7 +24,7 @@ external func Debug(fnc: String, msg : String){
     }
 }
 
-external func Error(fnc : String, msg : String){
+external func ErrorMsg(fnc : String, msg : String){
     PrintMessage(ERROR, fnc, msg)
 }
 

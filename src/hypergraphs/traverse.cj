@@ -1,3 +1,9 @@
+/**
+ * traverse.cj
+ *
+ * This file contains functions to traverse hypergraphs
+ */
+
 package hypergraphs
 
 func TraverseLeft(f : Hypergraph, s : Source, edgeAction : (Edge) -> Unit, inputAction : (Target, Int64) -> Unit){

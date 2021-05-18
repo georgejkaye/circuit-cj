@@ -1,10 +1,11 @@
 /**
+ * arithmetic.cj
+ *
  * This file contains constant circuits that can be defined directly as hypergraphs
  * This is more efficient (although less elegant) than defining them by combining other constructs
  */
 
 package hypergraphs
-
 import debug.*
 
 /**
@@ -60,7 +61,7 @@ external func HalfAdder(a!: Hypergraph, b!: Hypergraph, sum!: String = "", carry
     if(b.GetN() != 1){
         throw BadInputException("HalfAdder", "b", 1, b.GetName(), b.GetN())
     }
-    Seq(Output([a,b]), HalfAdder(sum: sum, carry: carry, bit: bit), name: name)
+    Seq(Concat([a,b]), HalfAdder(sum: sum, carry: carry, bit: bit), name: name)
 }
 /**
  * Create a HypBuilder for a full adder
@@ -125,7 +126,7 @@ external func FullAdder(a!: Hypergraph, b!: Hypergraph, cin!: Hypergraph, sum!: 
     if(cin.GetN() != 1){
         throw BadInputException("FullAdder", "cin", 1, cin.GetName(), cin.GetN())
     }
-    Seq(Output([a,b,cin]), FullAdder(sum: sum, cout: cout, bit: bit, name: name))
+    Seq(Concat([a,b,cin]), FullAdder(sum: sum, cout: cout, bit: bit, name: name))
 }
 /**
  * Create a HypBuilder for an adder of arbitrary width
@@ -173,13 +174,24 @@ func CreateAdder(width!: Int64, bit!: Int64 = 0, sum!: String = "", cout!: Strin
         let carryIn = tailAdder.GetConnR(tailAdder.inputs[n * 2])
         completeAdder.AddConn(carryOut, carryIn)
         // Add in the rest of the connections
-        for((t, s) in headAdder.GetConns().toMap()){
-            if(t != carryOut){
-                completeAdder.AddConn(t, s)
+        // TODO should be doable with (t,s) in conns, but not convinced it works
+        for(t in headAdder.inputs){
+            completeAdder.AddConn(t, headAdder.GetConnR(t))
+        }
+        for(e in headAdder.edges){
+            for(t in e.targets){
+                if(t != carryOut){
+                    completeAdder.AddConn(t, headAdder.GetConnR(t))
+                }
             }
         }
-        for((t, s) in tailAdder.GetConns().toMap()){
-            completeAdder.AddConn(t,s)
+        for(t in tailAdder.inputs){
+            completeAdder.AddConn(t, tailAdder.GetConnR(t))
+        }
+        for(e in tailAdder.edges){
+            for(t in e.targets){
+                completeAdder.AddConn(t, tailAdder.GetConnR(t))
+            }
         }
         // Return the complete builder
         completeAdder
@@ -216,12 +228,12 @@ external func Adder(width!: Int64, a!: Hypergraph, b!: Hypergraph, cin!: Hypergr
         throw BadInputException("Adder", "a", width, a.GetName(), a.GetN())
     }
     if(b.GetN() != width){
-                throw BadInputException("Adder", "b", width, b.GetName(), b.GetN())
+        throw BadInputException("Adder", "b", width, b.GetName(), b.GetN())
     }
     if(cin.GetN() != 1){
         throw BadInputException("Adder", "cin", 1, cin.GetName(), cin.GetN())
     }
-    Seq(Output([a,b,cin]), Adder(width: width, sum: sum, cout: cout), name: name)
+    Seq(Concat([a,b,cin]), Adder(width: width, sum: sum, cout: cout), name: name)
 }
 /**
  * Create a fresh plus circuit of arbitrary width
@@ -253,5 +265,5 @@ external func Plus(a!: Hypergraph, b!: Hypergraph, output!: String = "", name!: 
         throw BusesNotSameSizeException("Plus", a.GetN(), b.GetN())
     }
     let plus = Plus(width: a.GetN(), output: output)
-    Seq(Output([a,b]), plus, name: name)
+    Seq(Concat([a,b]), plus, name: name)
 }

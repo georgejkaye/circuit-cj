@@ -35,7 +35,6 @@ func FindIntersections(f : Hypergraph, g : Hypergraph){
         for(w in v.wires){
             // Check if the wire is also in f, if so add it to the lists
             if(includes(wires, w)){
-                Debug("FindIntersection", "Intersection at ${w}")
                 // Add the corresponding vertex for f for this wire
                 vfs.add(f.GetWireVertex(w))
                 // Add the corresponding vertex for g for this wire
@@ -78,7 +77,6 @@ func RemoveLeft(g : Hypergraph, vs : ArrayList<Source>){
     let inputAction = {t : Target, i : Int64 => if(!includes(removedInputs, t)){ removedInputs.add(t) }}
 
     for(sg in vs){
-        Debug("RemoveLeft", "Removing left of ${sg} in ${g.GetName()}")
         let t = TraverseLeft(g, sg, edgeAction, inputAction)
     }
 

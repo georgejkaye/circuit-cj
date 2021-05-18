@@ -271,7 +271,7 @@ external func Get(f : Hypergraph, n : Int64, label! : String = "", name!: String
 external func Get(f : Hypergraph, ns : ArrayList<Int64>, label!: String = "", name!: String = ""){
     for(n in ns){
         if(n < 0 || n > f.GetN()){
-            throw BadOutputException("Get", f.GetName(), f.GetN())
+            throw BadOutputException("Get", n, f.GetN())
         }
     }
     let newF = f.Clone()
@@ -322,45 +322,11 @@ external func Drop(f : Hypergraph, n : Int64, name!: String = ""){
     if(n < 0 || n >= f.GetN()){
         throw TypeMismatchException("Drop", f, n)
     }
-    let newF = f.Clone()
-    let newOutputs = newF.GetOutputs()
-    let newEdges = newF.GetEdges()
-    let s = newF.GetOutputs()[n]
-    let removedTargets = ArrayList<Target>()
-    let newConns = MapBuilder<Target, Source>()
-    match(PortToGenerator(newF.PreviousEdge(s), FORK)){
-        case Some((ef,i)) => {
-            let tf = newF.GetConnL(ef.sources[0])
-            let sf = newF.GetConnR(ef.targets[i == 0 ? 1 : 0])
-            newEdges.removeIf({e : Edge => e == ef})
-            newConns.add(tf, sf)
-            removedTargets.add(newF.GetConnL(s))
-        }
-        case $None   => {
-            let stub = Edge(STUB, [s], [])
-            newOutputs.removeIf({so : Source => so == s})
-            newEdges.add(stub)
-        }
-    }
-    for(t in newF.GetTargets()){
-        if(!includes(removedTargets, t)){
-            newConns.add(t, newF.GetConnR(t))
-        }
-    }
-    Hypergraph(newEdges, newF.GetInputs(), newOutputs, newConns)
-}
-
-external func TestOps(){
-    //let and = AndGate(port: "and")
-    //let and2 = Par(and, and)  
-    //let not = NotGate(port: "not")
-
-    //let not = NotGate(output: "not")
-
-    //let fork = Fork()  
-    //let g = Seq(NotGate(), Seq(Fork(), and))
-
-    //let trace = Trace(Seq(AndGate(), Fork()), 4)
-
-    //print(DotGraph(Seq(and, not)))
+    // Initialise a builder with a clone of f
+    let hb = HypBuilder(f)
+    // Get the output to drop
+    let s = hb.outputs[n]
+    // Connect this output to a stub
+    hb.ConnectOutputs(ArrayList<Int64>([n]), STUB)
+    hb.ToGraph()
 }
