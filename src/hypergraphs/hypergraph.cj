@@ -52,6 +52,25 @@ func AddSource(s : Source, p : Port,
     }
 }
 
+func UpdateBusVertexList(wireList : ArrayList<Bus>, busMaps : MapBuilder<Bus, MapBuilder<Int64, Source>>, busVertexMaps : MapBuilder<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>){
+    for((bus, mb) in busMaps){
+        let vertexList = ArrayList<Source>()
+        let wires = bus.wires
+        for(wire in wires){
+            match(mb.toMap().get(wire.i)){
+                // Not all wires from a given bus may be in a graph
+                case $None   => {}
+                case Some(s) => vertexList.add(s)
+            }
+        }
+        busVertexMaps.add(bus, (mb, vertexList))
+    }
+}
+
+/**
+ * A hypergraph structure is a collection of edges, inputs, outputs and connections
+ * This structure may not necessarily be a well-formed hypergraph
+ */
 open class HypergraphStructure <: Atom {
     protected var edges    : ArrayList<Edge>
     protected var inputs   : ArrayList<Target>
@@ -67,6 +86,7 @@ open class HypergraphStructure <: Atom {
     protected var lefts    : MapBuilder<Target, Port>
     protected var rights   : MapBuilder<Source, Port>
 
+    protected var busMaps        : MapBuilder<Bus, MapBuilder<Int64, Source>>
     protected var busVertexMaps  : MapBuilder<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>
     protected var busList        : ArrayList<Bus>
     protected var wireList       : ArrayList<Wire> 
@@ -92,9 +112,10 @@ open class HypergraphStructure <: Atom {
 
         this.busList = ArrayList<Bus>()
         this.wireList = ArrayList<Wire>()
+        this.busMaps = MapBuilder<Bus, MapBuilder<Int64, Source>>()
         this.busVertexMaps = MapBuilder<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>()
 
-        var busMaps = MapBuilder<Bus, MapBuilder<Int64, Source>>()
+        //var busMaps = MapBuilder<Bus, MapBuilder<Int64, Source>>()
 
         // Add all the inputs to the targets
         for(i in 0..inputs.size()){
@@ -114,32 +135,16 @@ open class HypergraphStructure <: Atom {
             AddSource(outputs[i], InterfacePort(i), sources, rights, busMaps, busList, wireList)
         }
         // With all the buses in place, create lists containing the wires of each bus
-        for(bus in busList){
-            match(busMaps.toMap().get(bus)){
-                // This shouldn't happen
-                case $None    => throw InaccessibleCodeException("Hypergrapha")
-                case Some(mb) => {
-                    let vertexList = ArrayList<Source>()
-                    let wires = bus.wires
-                    for(wire in wires){
-                        let v = match(mb.toMap().get(wire.i)){
-                            // This shouldn't happen
-                            case $None   => throw InaccessibleCodeException("Hypergraphb")
-                            case Some(s) => s
-                        }
-                        vertexList.add(v)
-                    }
-                    busVertexMaps.add(bus, (mb, vertexList))
-                }
-            }
-        }
+        UpdateBusVertexList(busList, busMaps, busVertexMaps)
     }
     
     func GetM() { m }
     func GetN() { n }
     func GetEdges(){ edges }
-    func GetInputs() {inputs }
+    func GetInputs() { inputs }
+    func GetInput(i : Int64) { inputs[i] }
     func GetOutputs() { outputs }
+    func GetOutput(i : Int64) { outputs[i] }
     func GetConnsR(){ connsr }
     func GetSources(){ sources }
     func GetTargets(){ targets }
@@ -310,17 +315,21 @@ open class HypergraphStructure <: Atom {
         GetEdge(GetConnL(source))
     }
     /**
-        * Follow the path from the ith source of an edge to find its predecessor edge
-        * @param edge The edge to traverse from
-        * @param i    The index of the source
-        * @return The port reached by following this source.
-        */
+     * Follow the path from the ith source of an edge to find its predecessor edge
+     * @param edge The edge to traverse from
+     * @param i    The index of the source
+     * @return The port reached by following this source.
+     */
     func PreviousEdge(edge : Edge, i : Int64){
         if(i < 0 || i >= edge.sources.size()){
             throw BadSourcesException("NextEdge", edge, i)
         }
         PreviousEdge(edge.sources[i])
     }
+    /**
+     * Is this hypergraph structure a well formed hypergraph?
+     * @return The wellformedness status of this hypergraph
+     */
     func IsWellFormed(){
         let encounteredTargets = ArrayList<Target>()
         for(t in targets){
@@ -408,16 +417,23 @@ append HypergraphStructure with ToString {
     }
 }
 
+/** 
+ * An enum to represent if a hypergraph structure is well formed or if there is a problem with it
+ */
 enum WellformednessStatus {
-    | Okay
-    | TargetNotConnected(Target)
-    | SourceNotConnected(Source)
-    | TargetNotAssociated(Target)
-    | SourceNotAssociated(Source)
-    | DuplicateTarget(Target)
-    | DuplicateSource(Source)
+    | Okay                              // Well formed hypergraph
+    | TargetNotConnected(Target)        // This target does not connect to a source vertex
+    | SourceNotConnected(Source)        // This source does not connect to a target vertex
+    | TargetNotAssociated(Target)       // This target is not associated with an edge
+    | SourceNotAssociated(Source)       // This source is not associated with an edge
+    | DuplicateTarget(Target)           // This target is associated with multiple edges
+    | DuplicateSource(Source)           // This source is associated with multiple edges
 }
 
+/**
+ * Hypergraph definition
+ * All objects of this class *must* be well-formed
+ */
 external class Hypergraph <: HypergraphStructure {
     private let name : String
    
@@ -453,7 +469,7 @@ external class Hypergraph <: HypergraphStructure {
     }
     /**
      * Get the name of this hypergraph
-     * @returns the name
+     * @return the name
      */
     func GetName() { name }
     /**
@@ -488,10 +504,24 @@ external class Hypergraph <: HypergraphStructure {
         HypBuilder(newEdges, newInputs, newOutputs, newConns)
     }
 }
+/**
+ * Clone a source vertex
+ * @param s1         the source vertex to clone
+ * @param cr         the cloner to use
+ * @param newSources the list to add the new source to
+ */
 func CloneSource(s1 : Source, cr : Cloner, newSources : ArrayList<Source>){
     let s2 = cr.GetNewSource(s1)
     newSources.add(s2)
 }
+/**
+ * Clone a target vertex
+ * @param t1         the target vertex to clone
+ * @param cr         the cloner to use
+ * @param newTargets the list to add the new target to
+ * @param connsr     the old connections map
+ * @param newConns   the new connections map
+ */
 func CloneTarget(t1 : Target, cr : Cloner, newTargets : ArrayList<Target>, connsr : MapBuilder<Target, Source>, newConns : MapBuilder<Target, Source>){
     let t2 = cr.GetNewTarget(t1)
     newTargets.add(t2)
@@ -524,6 +554,9 @@ append Hypergraph with ToString {
     }
 }
 
+/**
+ * Cloner class: used to keep track of the correspondence between original and cloned atoms
+ */
 class Cloner {
     let original : Hypergraph
     let sourceMap : MapBuilder<Source, Source> = MapBuilder<Source, Source>()
@@ -537,12 +570,22 @@ class Cloner {
             targetMap.add(t, Target())
         }
     }
+    /**
+     * Get the cloned source that corresponds to an original source
+     * @param s The original source
+     * @return The cloned source
+     */
     func GetNewSource(s : Source){
         match(sourceMap.toMap().get(s)){
             case $None => throw VertexNotInGraphException("GetNewSource", s)
             case Some(s1) => s1
         }
     }
+    /**
+     * Get the cloned target that corresponds to an original target
+     * @param s The original target
+     * @return The cloned target
+     */
     func GetNewTarget(t : Target){
         match(targetMap.toMap().get(t)){
             case $None => throw VertexNotInGraphException("GetNewTarget", t)

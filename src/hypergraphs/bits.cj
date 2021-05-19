@@ -20,14 +20,13 @@ func GetBit(w : Int64, n : Int64){
     }
     let f = {i : Int64, hb : HypBuilder, s : Source => 
         if(i == n) {
-            hb.GetOutputs().add(s)
+            hb.AddOutput(s)
         } else {
             hb.GetEdges().add(Edge(STUB, [s], []))
         }
     }
     ForEachBit(w, f)
 }
-
 /**
  * Make a construct that drops a given bit from its inputs
  * @param w The number of inputs to the construct
@@ -42,12 +41,11 @@ func DropBit(w : Int64, n : Int64){
         if(i == n){
             hb.GetEdges().add(Edge(STUB, [s], []))
         } else {
-            hb.GetOutputs().add(s)
+            hb.AddOutput(s)
         }
     }
     ForEachBit(w, f)
 }
-
 /**
  * Make a construct with a bespoke action performed for each input bit
  * @param w      The number of inputs to the construct
@@ -64,7 +62,7 @@ func ForEachBit(w : Int64, f : (Int64, HypBuilder, Source) -> Unit, output!: Str
     for(i in 0..w){
         let t = Target()
         let s = Source(NewWire(bus))
-        hb.GetInputs().add(t)
+        hb.AddInput(t)
         hb.AddConn(t, s)
         f(i, hb, s)
     }

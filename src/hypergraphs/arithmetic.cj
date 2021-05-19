@@ -4,7 +4,6 @@
  * This file contains constant circuits that can be defined directly as hypergraphs
  * This is more efficient (although less elegant) than defining them by combining other constructs
  */
-
 package hypergraphs
 import debug.*
 
@@ -22,11 +21,11 @@ func CreateHalfAdder(sum!: String = "", carry!: String = "", bit!: Int64 = 0) : 
     // Create a builder
     let hb = HypBuilder(2, 2, [NewWire(sum, bit), NewWire(carry, bit)])
     // Fork the inputs
-    let fork1 = hb.CreateEdge(FORK, [hb.GetInputs()[0]])
-    let fork2 = hb.CreateEdge(FORK, [hb.GetInputs()[1]])
+    let fork1 = hb.CreateEdge(FORK, [hb.GetInput(0)])
+    let fork2 = hb.CreateEdge(FORK, [hb.GetInput(1)])
     // Compute sum and carry
-    let xor = hb.CreateEdge(XOR, [fork1.targets[0], fork2.targets[0]], [hb.GetOutputs()[0]])
-    let and = hb.CreateEdge(AND, [fork1.targets[1], fork2.targets[1]], [hb.GetOutputs()[1]])
+    let xor = hb.CreateEdge(XOR, [fork1.targets[0], fork2.targets[0]], [hb.GetOutput(0)])
+    let and = hb.CreateEdge(AND, [fork1.targets[1], fork2.targets[1]], [hb.GetOutput(1)])
     // Return the builder
     hb
 }
@@ -77,17 +76,17 @@ func CreateFullAdder(sum!: String = "", cout!: String = "", bit!: Int64 = 0) : H
     // Create a builder
     let hb = HypBuilder(3, 2, [NewWire(sum, bit), NewWire(cout, 0)])
     // Fork all the inputs
-    let fork1 = hb.CreateEdge(FORK, [hb.GetInputs()[0]])
-    let fork2 = hb.CreateEdge(FORK, [hb.GetInputs()[1]])
-    let fork3 = hb.CreateEdge(FORK, [hb.GetInputs()[2]])
+    let fork1 = hb.CreateEdge(FORK, [hb.GetInput(0)])
+    let fork2 = hb.CreateEdge(FORK, [hb.GetInput(1)])
+    let fork3 = hb.CreateEdge(FORK, [hb.GetInput(2)])
     // The half adder bit
     let xor1 = hb.CreateEdge(XOR, [fork1.targets[0], fork2.targets[0]])
     let and1 = hb.CreateEdge(AND, [fork1.targets[1], fork2.targets[1]])
     // Bring in the carry
     let fork4 = hb.CreateEdge(FORK, [xor1.targets[0]])
-    let xor2 = hb.CreateEdge(XOR, [fork4.targets[0], fork3.targets[0]], [hb.GetOutputs()[0]])
+    let xor2 = hb.CreateEdge(XOR, [fork4.targets[0], fork3.targets[0]], [hb.GetOutput(0)])
     let and2 = hb.CreateEdge(AND, [fork3.targets[1], fork4.targets[1]])
-    let or1 = hb.CreateEdge(OR, [and2.targets[0], and1.targets[0]], [hb.GetOutputs()[1]])
+    let or1 = hb.CreateEdge(OR, [and2.targets[0], and1.targets[0]], [hb.GetOutput(1)])
     // Return the builder
     hb
 }
@@ -155,23 +154,23 @@ func CreateAdder(width!: Int64, bit!: Int64 = 0, sum!: String = "", cout!: Strin
         completeAdder.GetEdges().addAll(tailAdder.GetEdges())
         // Put the inputs from the head and the tail in the right order
         // head[0] tail[0..n] head[1] tail[n..n*2] head[2]
-        completeAdder.GetInputs().add(headAdder.GetInputs()[0])
+        completeAdder.AddInput(headAdder.GetInput(0))
         for(i in 0..n){
-            completeAdder.GetInputs().add(tailAdder.GetInputs()[i])
+            completeAdder.AddInput(tailAdder.GetInputs()[i])
         }
-        completeAdder.GetInputs().add(headAdder.GetInputs()[1])
+        completeAdder.AddInput(headAdder.GetInput(1))
         for(i in 0..n){
-            completeAdder.GetInputs().add(tailAdder.GetInputs()[n+i])
+            completeAdder.AddInput(tailAdder.GetInputs()[n+i])
         }
-        completeAdder.GetInputs().add(headAdder.GetInputs()[2])
+        completeAdder.AddInput(headAdder.GetInput(2))
         // Put the outputs in too: sum from the head and everything from the tail
-        completeAdder.GetOutputs().add(headAdder.GetOutputs()[0])
+        completeAdder.AddOutput(headAdder.GetOutput(0))
         for(out in tailAdder.GetOutputs()){
-            completeAdder.GetOutputs().add(out)
+            completeAdder.AddOutput(out)
         }
         // Need to hook up the carry of the head to the relevant port of the tail
-        let carryOut = headAdder.GetConnL(headAdder.GetOutputs()[1])
-        let carryIn = tailAdder.GetConnR(tailAdder.GetInputs()[n * 2])
+        let carryOut = headAdder.GetConnL(headAdder.GetOutput(1))
+        let carryIn = tailAdder.GetConnR(tailAdder.GetInput(n * 2))
         completeAdder.AddConn(carryOut, carryIn)
         // Add in the rest of the connections
         // TODO should be doable with (t,s) in conns, but not convinced it works

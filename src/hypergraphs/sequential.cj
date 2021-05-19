@@ -8,7 +8,17 @@ package hypergraphs
 
 import debug.*
 
-external func Delay(dur!: Int64 = 1, width!: Int64 = 1, output!: String = "", elem!: Int64 = 0, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
+/**
+ * Create a delay construct containing a number of delay morphisms 
+ * @param dur The duration of the delays
+ * @param width The number of delays to make
+ * @param output The name of the output bus
+ * @param elem The element to begin counting the bus from
+ * @param name The name to assign this delay construct
+ * @param input The input to this delay construct (m->width)
+ * @return The new delay construct, composed with the input if provided
+ */
+external func Delay(dur!: Int64 = 1, width!: Int64 = 1, output!: String = "", elem!: Int64 = 0, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph { 
     if(width < 1){
         throw NegativeWireException("Delay")
     }
@@ -16,7 +26,7 @@ external func Delay(dur!: Int64 = 1, width!: Int64 = 1, output!: String = "", el
     for(i in 0..width){
         hb.CreateEdge(DELAY(dur), [hb.GetInputs()[i]], [hb.GetOutputs()[i]])
     }
-    let res = hb.ToGraph()
+    let res = hb.ToGraph(name)
     match(input) {
         case Some(f) => {
             Seq(f, res)
@@ -30,10 +40,11 @@ external func Delay(dur!: Int64 = 1, width!: Int64 = 1, output!: String = "", el
  * @param initial  The initial value contained within this register, released on the first clock cycle
  * @param duration The duration of the delay in this register
  * @param output   The label of the output bus
+ * @param name     The name to assign this register
  * @param input    The input to this register
  * @return         The new register
  */
-external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 0, output!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
+external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 0, output!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
     Debug("Register", "Making regist of width ${width} with initial value ${initial} and duration ${duration}")
     match(input){
     case Some(f) => {
@@ -58,7 +69,7 @@ external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 0, out
         // Join the value and the delay
         let join = hb.CreateEdge(JOIN, [value.targets[0], delay.targets[0]], [hb.GetOutputs()[i]])
     }
-    let reg = hb.ToGraph()
+    let reg = hb.ToGraph(name)
     // If we have an input, compose it to the front
     match(input){
         case Some(f) => Seq(f, reg)
@@ -71,7 +82,7 @@ external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 0, out
  * @param name The name to give this circuit
  * @return The out link
  */
-external func OutLink(spec!: LinkSpec, name!:String = "") { 
+external func OutLink(spec!: LinkSpec, name!: String = "") : Hypergraph { 
     OpMToZero(OUTLINK(spec), name: name) 
 }
 /**
@@ -80,36 +91,24 @@ external func OutLink(spec!: LinkSpec, name!:String = "") {
  * @param name The name to give this circuit
  * @return The in link
  */
-external func InLink(spec!: LinkSpec, output!: String = "", name!:String = "") { 
+external func InLink(spec!: LinkSpec, output!: String = "", name!:String = "") : Hypergraph { 
     Debug("InLink", "Creating in link for spec ${spec.name}")
     let wires = ArrayList<Wire>(spec.width, {i : Int64 => NewWire(output, i)})
     OpMToN(INLINK(spec), wires: wires, name: name) 
 }
 /**
  * Create a iteration: a construct that feeds its outputs back to some in link while also outputting them
- * @param spec The link spec for the loop
- * @param name The name to give this circuit
+ * @param spec   The link spec for the loop
+ * @param output The name to assign the output bus
+ * @param name   The name to give this circuit
  * @return The iteration
  */
-external func Feedback(spec!: LinkSpec, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
-    let hb = HypBuilder()
-    let linkSources = ArrayList<Source>()
+external func Feedback(spec!: LinkSpec, output!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
+    let hb = HypBuilder(spec.width, spec.width, output)
+    let link = hb.CreateEdge(OUTLINK(spec))
     for(i in 0..spec.width){
-        let t1 = Target()
-        hb.GetInputs().add(t1)
-        let s1 = Source()
-        hb.AddConn(t1, s1)
-        let tfl = Target()
-        let tfr = Target()
-        hb.GetEdges().add(Edge(FORK, [s1], [tfl,tfr]))
-        let sfl = Source()
-        hb.AddConn(tfl,sfl)
-        linkSources.add(sfl)
-        let sfr = Source()
-        hb.AddConn(tfr,sfr)
-        hb.GetOutputs().add(sfr)
+        let fork = hb.CreateEdge(FORK, [hb.GetInputs()[i]], [link.sources[i], hb.GetOutputs()[i]])
     }
-    hb.GetEdges().add(Edge(OUTLINK(spec), linkSources))
     let res = hb.ToGraph()
     match(input){
         case Some(f) => Seq(f, res)

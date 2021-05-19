@@ -1,3 +1,8 @@
+/**
+ * debug.cj
+ *
+ * This file contains functions that can be used to print debug information to the console
+ */
 package debug
 
 let debugMessages = true

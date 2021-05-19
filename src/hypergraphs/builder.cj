@@ -1,13 +1,18 @@
 /**
  * builder.cj
  * 
- *This file contains the HypBuilder class to make hypergraph construction simpler and cleaner
+ * This file contains the HypBuilder class to make hypergraph construction simpler and cleaner
  */
 
 package hypergraphs
 
 import debug.*
 
+/**
+ * A hyp builder is a hypergraph structure with associated functions for adding edges etc in a well-formed way
+ * When creating hypergraphs, a hyp builder should be used rather than defining atoms explicitly
+ * This makes the code more elegant and reduces the likelihood of introducing malformities
+ */
 class HypBuilder <: HypergraphStructure {
     init(){
         super(
@@ -25,16 +30,13 @@ class HypBuilder <: HypergraphStructure {
     ){
         super(edges, inputs, outputs, conns)
     }
+    /**
+     * Create a hyp builder with a certain number of inputs and outputs, with output wires assigned
+     * @param dom   The number of inputs
+     * @param cod   The number of outputs
+     * @param wires The list of wires to assign to the outputs
+     */
     init(dom : Int64, cod : Int64, wires : ArrayList<Wire>){
-        // if(dom < 0){
-        //     throw NegativeInputsException("HypBuilder", dom)
-        // }
-        // if(cod < 0){
-        //     throw NegativeOutputsException("HypBuilder", cod)
-        // }
-        // if(wires.size() != cod){
-        //     throw BadOutputLabelsException("HypBuilder", wires.size(), cod)
-        // }
         super(
             ArrayList<Edge>(),
             ArrayList<Target>(dom, {x : Int64 => Target()}),
@@ -42,12 +44,30 @@ class HypBuilder <: HypergraphStructure {
             MapBuilder<Target,Source>()
         )
     }
+    /**
+     * Create a hyp builder with a certain number of inputs and outputs, with output wires assigned
+     * @param dom   The number of inputs
+     * @param cod   The number of outputs
+     * @param wires The list of wires to assign to the outputs
+     */
     init(dom : Int64, cod : Int64, wires : List<Wire>){
         this(dom, cod, ArrayList<Wire>(wires))
     }
+    /**
+     * Create a hyp builder with a certain number of inputs and outputs, with output wires assigned
+     * @param dom    The number of inputs
+     * @param cod    The number of outputs
+     * @param output The name to assign to the output bus
+     * @param elem   The index to start counting the bus wires from
+     */
     init(dom : Int64, cod : Int64, output : String, elem : Int64){
         this(dom, cod, ArrayList<Wire>(cod, {x : Int64 => NewWire(output, elem + x)}))
     }
+    /**
+     * Create a hyp builder with a certain number of inputs and outputs, with output wires assigned
+     * @param dom    The number of inputs
+     * @param cod    The number of outputs
+     */
     init(dom : Int64, cod : Int64, output : String){
         this(dom, cod, ArrayList<Wire>(cod, {x : Int64 => NewWire(string: output)}))
     }
@@ -77,20 +97,33 @@ class HypBuilder <: HypergraphStructure {
         connsl.add(s, t)
     }
     /**
-     * Add an edge to the builder 
+     * Add an edge to the builder, adding it to the necessary maps
+     * @param e the edge
      */
     func AddEdge(e : Edge) {
+        busVertexMaps = MapBuilder<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>()
         edges.add(e)
         for(i in 0..e.sources.size()){
-            let s = e.sources[i]
-            sources.add(s)
-            rights.add(s, EdgePort(e, i))
+            AddSource(e.sources[i], EdgePort(e, i), sources, rights, busMaps, busList, wireList)
         }
         for(i in 0..e.targets.size()){
-            let t = e.targets[i]
-            targets.add(t)
-            lefts.add(t, EdgePort(e, i))
+            AddTarget(e.targets[i], EdgePort(e, i), targets, lefts, connsr, connsl)
         }
+        UpdateBusVertexList(busList, busMaps, busVertexMaps)
+    }
+    /**
+     * Set a target to be the next input
+     * @param t the target to set as the next input
+     */
+    func AddInput(t : Target){
+        inputs.add(t)
+    }
+    /**
+     * Set a source to be the next output
+     * @param s the source to set as the next output
+     */
+    func AddOutput(s : Source){
+        outputs.add(s)
     }
     /**
      * Perform an action for each connection in this builder
@@ -117,7 +150,6 @@ class HypBuilder <: HypergraphStructure {
     }
     /**
      * Create an edge and necessary infrastructure for a given generator 
-     * Modifies the builder state
      * @param gen The generator
      * @return The newly made edge
      */ 
@@ -128,6 +160,12 @@ class HypBuilder <: HypergraphStructure {
         AddEdge(edge)
         edge
     }
+    /**
+     * Create an edge and assign it to some already existing sources, creating the other necessary infrastructure
+     * @param gen     The generator
+     * @param sources The sources that will be assigned to this new edge
+     * @return The newly made edge
+     */
     func CreateEdge(gen : Generator, sources : ArrayList<Source>) : Edge {
         if(sources.size() != Dom(gen)){
             throw BadDomainException("CreateEdge", sources.size(), Dom(gen))
@@ -244,7 +282,7 @@ class HypBuilder <: HypergraphStructure {
      */
     func RemoveOutputs(outs : ArrayList<Source>){
         for(v in outs){
-            match(position(outputs, v)){
+            match(index(outputs, v)){
                 case Some(i) => RemoveOutput(i)  
                 case $None   => throw BadOutputException("RemoveOutputs", v)
             }
@@ -272,6 +310,7 @@ class HypBuilder <: HypergraphStructure {
         // Remove these vertices from the outputs
         RemoveOutputs(chosenOutputs)
         let edge = CreateEdge(gen, chosenOutputs)
+        // Connect the new edge to the outputs if necessary
         ConnectEdgeToOutputs(edge)
         edge
     }

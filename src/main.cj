@@ -1,19 +1,24 @@
 import hypergraphs.*
 import examples.*
 import debug.*
+import settings.*
 
 func main(){
-    let a = SignedValueFromInt(1, width: 3)
-    let b = SignedValueFromInt(2, width: 3)
-    let v = Msbs(a)
-    WriteDotToFile(v, "dot/msbs.dot")
+    // let a = SignedValueFromInt(1, width: 3)
+    // let b = SignedValueFromInt(2, width: 3)
+    // let v = Msbs(a)
+    // WriteDotToFile(v, "dot/msbs.dot")
 
+    SetDotFolder("dot")
+
+    let acc = Accumulator(width: 4, initial: 3)
+    WriteDotToFile(acc, "acc")
 
     // let plus = Plus(a: a, b: b)
     // WriteDotToFile(plus, "dot/plus.dot")
 
-    let runsum = serial_multiplier_bit(width: 4)
-    WriteDotToFile(runsum, "dot/runsum.dot")
+    // let runsum = serial_multiplier_bit(width: 4)
+    // WriteDotToFile(runsum, "dot/runsum.dot")
 
     // // let f = Fork()
     // // let s = Stub()

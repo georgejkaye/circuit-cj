@@ -14,7 +14,7 @@ import debug.*
  * @param width The width of the bus
  * @return The input circuit
  */
-external func Input(label!: String, width!: Int64 = 1){
+external func Input(label!: String = "", width!: Int64 = 1){
     if(width < 1){
         throw NegativeWireException("Input")
     }

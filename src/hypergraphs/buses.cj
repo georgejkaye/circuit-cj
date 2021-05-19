@@ -3,7 +3,6 @@
  *
  * This file contains definitions of wires and buses that can be assigned to sources
  */
-
 package hypergraphs
 
 import debug.*
@@ -14,7 +13,6 @@ import debug.*
  */
 var usedBusNames = MapBuilder<String, Bus>()
 var globalBusList = ArrayList<Bus>()
-
 /**
  * A bus is a bundle of wires with a name
  */
@@ -42,7 +40,11 @@ class Bus <: Atom {
         wireMap.add(wire.i, wire)
         InsertWire(wire)
     }
-
+    /**
+     * Get a given wire from this bus
+     * Returns None if this wire does not exist
+     * @param i The index of the wire to get
+     */
     func GetWire(i : Int64){
         wireMap.toMap().get(i)
     }
@@ -87,7 +89,11 @@ append Bus with ToString, Equatable, Hashable {
         }
      }
 }
-
+/**
+ * Get the existing bus that corresponds to a given string
+ * @param string the name of the bus
+ * @return The corresponding bus, or None if it doesn't exist
+ */ 
 func GetBusOption(string: String){
     if(string == ""){
         None<Bus>
@@ -95,25 +101,42 @@ func GetBusOption(string: String){
         usedBusNames.toMap().get(string)
     }
 }
-
+/**
+ * Get the existing bus that corresponds to a given string
+ * Throws an exception if the bus doesn't exist
+ * @param string the name of the bus
+ * @return The corresponding bus
+ */ 
 func GetBus(string : String){
     match(GetBusOption(string)){
         case Some(b) => b
         case $None   => throw NoSuchBusException("GetBus", string)
     }
 }
-
+/**
+ * Find a bus with a a given name, and creates it if it doesn't exist
+ * @param string the name of the bus
+ * @return The corresponding bus, which may be fresh if it didn't exist previously
+ */ 
 func FindBus(string : String){
     match(GetBusOption(string)){
         case Some(b) => b
         case $None   => NewBus(string)
     }
 }
-
+/**
+ * Create a new bus
+ * @return The new bus
+ */
 func NewBus() : Bus {
     NewBus("")
 }
-
+/**
+ * Create a new bus with a given name
+ * Throws an exception if this bus already exists
+ * @param string the name of the bus
+ * @return The new bus
+ */
 func NewBus(string: String) : Bus {
     if(string == ""){
         return Bus()
@@ -124,7 +147,6 @@ func NewBus(string: String) : Bus {
     }
     bus
 }
-
 /**
  * A wire corresponds to one vertex in the graph
  * It has a parent bus and the position it occupies in that bus
@@ -154,7 +176,13 @@ append Wire with ToString, Equatable {
     operator func ==(lhs : Wire, rhs : Wire) : Bool { lhs.bus == rhs.bus && lhs.i == rhs.i }
     operator func !=(lhs : Wire, rhs : Wire) : Bool { lhs.id != rhs.id || lhs.i != rhs.i }
 }
-
+/**
+ * Create a new wire at a given index of a bus
+ * Throws an exception if this wire already exists
+ * @param bus The bus to add the wire to
+ * @param i   The index to add the wire to
+ * @return The new wire
+ */
 func NewWire(bus : Bus, i : Int64) : Wire {
     if(i < 0){
         throw NegativeWireException("NewWire")
@@ -164,7 +192,14 @@ func NewWire(bus : Bus, i : Int64) : Wire {
         case $None   => Wire(bus, i)
     }
 }
-
+/**
+ * Create a new wire at a given index of a bus with a name
+ * If the bus does not exist, creates it first
+ * Throws an exception if this wire already exists
+ * @param string The name of the bus to add the wire to
+ * @param i      The index to add the wire to
+ * @return The new wire
+ */
 func NewWire(string : String, i : Int64) : Wire {
     let b = GetBusOption(string)
     match(b) {
@@ -172,7 +207,12 @@ func NewWire(string : String, i : Int64) : Wire {
         case $None     => NewWire(Bus(string), i)
     }
 }
-
+/**
+ * Create a new wire at the next available index of a bus
+ * Throws an exception if this wire already exists
+ * @param bus The bus to add the wire to
+ * @return The new wire
+ */
 func NewWire(bus : Bus){
     for(i in 0..bus.wires.size()){
         match(bus.GetWire(i)){
@@ -182,7 +222,13 @@ func NewWire(bus : Bus){
     }
     return NewWire(bus, bus.wires.size())
 }
-
+/**
+ * Create a new wire at the next available index of a bus with a name
+ * If the bus does not exist, creates it first
+ * Throws an exception if this wire already exists
+ * @param string The name of the bus to add the wire to
+ * @return The new wire
+ */
 func NewWire(string!: String = "") : Wire {
     let b = GetBusOption(string)
     match(b) {
@@ -190,12 +236,11 @@ func NewWire(string!: String = "") : Wire {
         case $None     => NewWire(Bus(), 0)
     }
 }
-
+/**
+ * Pretty print a list of wires
+ * @param ws The list of wires
+ * @return The pretty printed list of wires
+ */
 func WireListToString(ws : ArrayList<Wire>){
-    var str = "["
-    for(w in ws){
-        str = "${str} ${w}"
-    }
-    str = "${str} ]"
-    str
+    PrintList(ws)
 }
