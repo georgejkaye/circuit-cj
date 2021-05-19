@@ -30,9 +30,9 @@ external func Input(label!: String, width!: Int64 = 1){
  */
 external func Concat(fs : ArrayList<Hypergraph>, name!: String = ""){
     Debug("Output", "Outputting hypergraphs")
-    var f = fs[0].Clone()
+    var f = fs[0].Clone().ToGraph()
     for(i in 1..fs.size()){
-        var g = fs[i].Clone()
+        var g = fs[i].Clone().ToGraph()
         let (vfs, vgs, ps) = FindIntersections(f, g)
         if(vfs.size() == 0){
             f = Par(f, g)

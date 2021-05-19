@@ -55,9 +55,9 @@ func ValueStack(vs : ArrayList<Value>, label!: String = ""){
     for(v in vs){
         let t = Target()
         let s = Source(NewWire(bus))
-        hb.edges.add(Edge(VALUE(v), [], [t]))
+        hb.GetEdges().add(Edge(VALUE(v), [], [t]))
         hb.AddConn(t,s)
-        hb.outputs.add(s)
+        hb.GetOutputs().add(s)
     }
     hb.ToGraph()
 }
@@ -122,9 +122,9 @@ external func Zero(width!: Int64 = 1, label!: String = ""){
  * @return The extended unsigned value
  */
 external func UnsignedExtend(v: Hypergraph){
-    let hb = HypBuilder(v)
+    let hb = v.Clone()
     let s = Source()
-    hb.outputs.add(s)
+    hb.GetOutputs().add(s)
     hb.CreateEdge(VALUE(FALSE), [], [s]) 
     hb.ToGraph()
 }

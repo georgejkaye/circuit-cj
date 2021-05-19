@@ -65,14 +65,23 @@ class BusesNotSameSizeException <: Exception {
  */
 
 class BadHypergraphException <: Exception {
-    init(function : String){
-        ErrorMsg(function, "Trying to perform on operation on a non-complete hypergraph")
+    init(function : String, h : HypergraphStructure, s : Source){
+        ErrorMsg(function, "Trying to create a malformed hypergraph: source ${s} does not have a left connection\n${h}")
+    }
+    init(function : String, h : HypergraphStructure, t : Target){
+        ErrorMsg(function, "Trying to create a malformed hypergraph: target ${t} does not have a right connection\n${h}")
     }
 }
 
 class VertexNotInGraphException <: Exception {
     init(function : String, v : Vertex){
         ErrorMsg(function, "Vertex ${v.id} is not in the graph")
+    }
+}
+
+class MissingConnectionException <: Exception {
+    init(function : String, v : Vertex) {
+        ErrorMsg(function, "No connection found for vertex ${v.id}")
     }
 }
 

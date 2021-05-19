@@ -317,15 +317,16 @@ external func Get(f : Hypergraph, buses : List<String>, name!: String = ""){
  * @param name  The name of the resulting hypergraph
  * @return The hypergraph with only the given bus exposed
  */
-external func Drop(f : Hypergraph, n : Int64, name!: String = ""){
+external func Drop(f : Hypergraph, n : Int64,
+ name!: String = ""){
     Debug("Drop", "Dropping ${n}th port from ${f.GetName()} : ${f.GetM()} -> ${f.GetN()}")
     if(n < 0 || n >= f.GetN()){
         throw TypeMismatchException("Drop", f, n)
     }
     // Initialise a builder with a clone of f
-    let hb = HypBuilder(f)
+    let hb = f.Clone()
     // Get the output to drop
-    let s = hb.outputs[n]
+    let s = hb.GetOutputs()[n]
     // Connect this output to a stub
     hb.ConnectOutputs(ArrayList<Int64>([n]), STUB)
     hb.ToGraph()

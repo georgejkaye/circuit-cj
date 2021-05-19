@@ -6,42 +6,41 @@
 
 package hypergraphs
 
-class HypBuilder {
-    var edges   : ArrayList<Edge>
-    var inputs  : ArrayList<Target>
-    var outputs : ArrayList<Source>
-    private var connsr : MapBuilder<Target, Source>
-    private var connsl : MapBuilder<Source, Target>
+import debug.*
+
+class HypBuilder <: HypergraphStructure {
     init(){
-        edges = ArrayList<Edge>()
-        inputs = ArrayList<Target>()
-        outputs = ArrayList<Source>()
-        connsr = MapBuilder<Target, Source>() 
-        connsl = MapBuilder<Source, Target>() 
+        super(
+            ArrayList<Edge>(),
+            ArrayList<Target>(),
+            ArrayList<Source>(),
+            MapBuilder<Target, Source>()
+        )
     }
-    init(f : Hypergraph){
-        let newF = f.Clone()
-        edges = newF.GetEdges()
-        inputs = newF.GetInputs()
-        outputs = newF.GetOutputs()
-        connsr = newF.GetConnsR()
-        connsl = newF.GetConnsL()
+    init(
+        edges : ArrayList<Edge>,
+        inputs : ArrayList<Target>,
+        outputs : ArrayList<Source>,
+        conns   : MapBuilder<Target, Source>
+    ){
+        super(edges, inputs, outputs, conns)
     }
     init(dom : Int64, cod : Int64, wires : ArrayList<Wire>){
-        if(dom < 0){
-            throw NegativeInputsException("HypBuilder", dom)
-        }
-        if(cod < 0){
-            throw NegativeOutputsException("HypBuilder", cod)
-        }
-        if(wires.size() != cod){
-            throw BadOutputLabelsException("HypBuilder", wires.size(), cod)
-        }
-        edges = ArrayList<Edge>()
-        inputs = ArrayList<Target>(dom, {x : Int64 => Target()})
-        outputs = ArrayList<Source>(cod, {x : Int64 => Source(wires.get(x))})
-        connsr = MapBuilder<Target,Source>()
-        connsl = MapBuilder<Source,Target>()
+        // if(dom < 0){
+        //     throw NegativeInputsException("HypBuilder", dom)
+        // }
+        // if(cod < 0){
+        //     throw NegativeOutputsException("HypBuilder", cod)
+        // }
+        // if(wires.size() != cod){
+        //     throw BadOutputLabelsException("HypBuilder", wires.size(), cod)
+        // }
+        super(
+            ArrayList<Edge>(),
+            ArrayList<Target>(dom, {x : Int64 => Target()}),
+            ArrayList<Source>(cod, {x : Int64 => Source(wires.get(x))}),
+            MapBuilder<Target,Source>()
+        )
     }
     init(dom : Int64, cod : Int64, wires : List<Wire>){
         this(dom, cod, ArrayList<Wire>(wires))
@@ -49,7 +48,6 @@ class HypBuilder {
     init(dom : Int64, cod : Int64, output : String, elem : Int64){
         this(dom, cod, ArrayList<Wire>(cod, {x : Int64 => NewWire(output, elem + x)}))
     }
-    func GetConns(){ connsr }
     /**
      * Get the graph that this builder defines
      * @return The hypergraph
@@ -74,31 +72,21 @@ class HypBuilder {
     func AddConn(t : Target, s : Source) : Unit {
         connsr.add(t, s)
         connsl.add(s, t)
-        s.conn = Some<Target>(t)
-        t.conn = Some<Source>(s)
     }
     /**
-     * Get the corresponding target for a source
-     * Throws VertexNotInGraphException if no match (badly formed hypergraph)
-     * @param s The source
-     * @return The corresponding target
+     * Add an edge to the builder 
      */
-    func GetConnL(s : Source){
-        match(connsl.toMap().get(s)){
-            case Some(t) => t
-            case $None => throw VertexNotInGraphException("GetConnL", s)
+    func AddEdge(e : Edge) {
+        edges.add(e)
+        for(i in 0..e.sources.size()){
+            let s = e.sources[i]
+            sources.add(s)
+            rights.add(s, EdgePort(e, i))
         }
-    }
-    /**
-     * Get the corresponding source for a target
-     * Throws VertexNotInGraphException if no match (badly formed hypergraph)
-     * @param s The target
-     * @return The corresponding source
-     */
-    func GetConnR(t : Target){
-        match(connsr.toMap().get(t)){
-            case Some(s) => s
-            case $None => throw VertexNotInGraphException("GetConnR", t)
+        for(i in 0..e.targets.size()){
+            let t = e.targets[i]
+            targets.add(t)
+            lefts.add(t, EdgePort(e, i))
         }
     }
     /**
@@ -134,7 +122,7 @@ class HypBuilder {
         let sources = ArrayList<Source>(Dom(gen), {x : Int64 => Source() })
         let targets = ArrayList<Target>(Cod(gen), {x : Int64 => Target() })
         let edge = Edge(gen, sources, targets)
-        edges.add(edge)
+        AddEdge(edge)
         edge
     }
     /**
@@ -207,24 +195,32 @@ class HypBuilder {
      */
     func RemoveEdge(edge : Edge){
         edges.removeIf({e : Edge => e == edge})
+        sources.removeIf({s : Source => includes(edge.sources, s)})
+        targets.removeIf({t : Target => includes(edge.targets, t)})
         let newConnsr = MapBuilder<Target, Source>()
         let newConnsl = MapBuilder<Source, Target>()
+        let newLefts = MapBuilder<Target, Port>()
+        let newRights = MapBuilder<Source, Port>()
         let f : (Target, Source) -> Unit = { t : Target, s : Source =>
             if(!includes(edge.sources, s) && !includes(edge.targets, t)){
                 newConnsr.add(t, s)
                 newConnsl.add(s, t)
+                newLefts.add(t, GetEdge(t))
+                newRights.add(s, GetEdge(s)) 
             }
         }
         // We need to refresh the connections to remove references to this edge
         ForEachConn(f)
         connsr = newConnsr
         connsl = newConnsl
+        lefts = newLefts
+        rights = newRights
     }
     /**
      * Remove an output from the graph
      * @param i The index of the output to remove
      */
-    func RemoveConcat(i : Int64){
+    func RemoveOutput(i : Int64){
         if(i < 0 || i >= outputs.size()){
             throw BadOutputException("RemoveOutput", i, outputs.size())
         }
@@ -240,6 +236,11 @@ class HypBuilder {
         connsr = newConnsr
         connsl = newConnsl
     }
+    func RemoveOutputs(outs : ArrayList<Source>){
+        for(v in outs){
+              RemoveOutput(position(outputs, v))  
+        }
+    }
     /**
      * Connect an edge to one of the outputs
      * @param outs  The indices of the outputs to connect to the new edge
@@ -247,10 +248,11 @@ class HypBuilder {
      * @return The new edge
      */
     func ConnectOutputs(outs : ArrayList<Int64>, gen : Generator) : Edge {
+        Debug("ConnectOutputs", "Connecting outputs ${PrintList(outs)} to generator ${gen}")
         if(Dom(gen) != outs.size()){
             throw BadDomainException("ConnectOutputs", outs.size(), Dom(gen))
         }
-
+        // Grab the outputs that correspond to the indices provided 
         let chosenOutputs = ArrayList<Source>(outs.size(), {i : Int64 => 
             let j = outs[i]
             if(j < 0 || j >= outputs.size()){
@@ -258,27 +260,28 @@ class HypBuilder {
             }
             outputs[j]
         })
-        outputs.removeIf({s : Source => includes(chosenOutputs, s)})
+        // Remove these vertices from the outputs
+        RemoveOutputs(chosenOutputs)
         let edge = Edge(gen, chosenOutputs, ArrayList<Target>(Cod(gen), {x : Int64 => Target()}))
-        edges.add(edge)
+        AddEdge(edge)
         edge
     }
 }
 
 append HypBuilder with ToString {
     func toString(hb : HypBuilder){
-        let inputString = "inputs ${TargetListToString(hb.inputs)}"
+        let inputString = "inputs ${TargetListToString(hb.GetInputs())}"
         var edgeString = ""
-        for(e in hb.edges){
+        for(e in hb.GetEdges()){
             let id = "${e.id}"
             let gen = "${e.generator}"
             let sourceString = SourceListToString(e.sources)
             let targetString = TargetListToString(e.targets)
             edgeString = "${edgeString}${id} (${gen}) ${sourceString} ${targetString}\n"
         }
-        let outputString = "outputs ${SourceListToString(hb.outputs)}"
-        var connsString = "connections ${hb.GetConns().toMap().size()} "
-        for((t,s) in hb.GetConns().toMap()){
+        let outputString = "outputs ${SourceListToString(hb.GetOutputs())}"
+        var connsString = "connections ${hb.GetConnsR().toMap().size()} "
+        for((t,s) in hb.GetConnsR().toMap()){
             connsString = "${connsString}(${t.id} ${s.id}) "
         }
         "${inputString}\n${edgeString}${outputString}\n${connsString}"

@@ -14,7 +14,7 @@ external func Delay(dur!: Int64 = 1, width!: Int64 = 1, output!: String = "", el
     }
     let hb = HypBuilder(width, width, output, elem)
     for(i in 0..width){
-        hb.CreateEdge(DELAY(dur), [hb.inputs[i]], [hb.outputs[i]])
+        hb.CreateEdge(DELAY(dur), [hb.GetInputs()[i]], [hb.GetOutputs()[i]])
     }
     let res = hb.ToGraph()
     match(input) {
@@ -54,9 +54,9 @@ external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 0, out
         // Value for the ith bit of the initial value
         let value = hb.CreateEdge(VALUE(if(initialBin[i]) { TRUE } else { FALSE }))
         // Delay
-        let delay = hb.CreateEdge(DELAY(duration), [hb.inputs[i]])
+        let delay = hb.CreateEdge(DELAY(duration), [hb.GetInputs()[i]])
         // Join the value and the delay
-        let join = hb.CreateEdge(JOIN, [value.targets[0], delay.targets[0]], [hb.outputs[i]])
+        let join = hb.CreateEdge(JOIN, [value.targets[0], delay.targets[0]], [hb.GetOutputs()[i]])
     }
     let reg = hb.ToGraph()
     // If we have an input, compose it to the front
@@ -96,20 +96,20 @@ external func Feedback(spec!: LinkSpec, name!: String = "", input!: Option<Hyper
     let linkSources = ArrayList<Source>()
     for(i in 0..spec.width){
         let t1 = Target()
-        hb.inputs.add(t1)
+        hb.GetInputs().add(t1)
         let s1 = Source()
         hb.AddConn(t1, s1)
         let tfl = Target()
         let tfr = Target()
-        hb.edges.add(Edge(FORK, [s1], [tfl,tfr]))
+        hb.GetEdges().add(Edge(FORK, [s1], [tfl,tfr]))
         let sfl = Source()
         hb.AddConn(tfl,sfl)
         linkSources.add(sfl)
         let sfr = Source()
         hb.AddConn(tfr,sfr)
-        hb.outputs.add(sfr)
+        hb.GetOutputs().add(sfr)
     }
-    hb.edges.add(Edge(OUTLINK(spec), linkSources))
+    hb.GetEdges().add(Edge(OUTLINK(spec), linkSources))
     let res = hb.ToGraph()
     match(input){
         case Some(f) => Seq(f, res)

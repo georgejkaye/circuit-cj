@@ -34,7 +34,7 @@ func OpMToN(generator : Generator, name!: String = "", wires!: ArrayList<Wire>, 
     }
 
     let hb = HypBuilder(dom, cod, wires)
-    let op = hb.CreateEdge(generator, hb.inputs, hb.outputs)
+    let op = hb.CreateEdge(generator, hb.GetInputs(), hb.GetOutputs())
     let res = hb.ToGraph()
     match(input){
         case Some(f) => Seq(f, res)
@@ -454,7 +454,7 @@ external func Mux(width!: Int64, output!: String = "", elem!: Int64 = 0, name!: 
     }
     let wires = ArrayList<Wire>()
     let hb = HypBuilder(muxInputs, width, output, elem)
-    var currentC = hb.inputs[muxInputs - 1]
+    var currentC = hb.GetInputs()[muxInputs - 1]
     if(width > 1){
         for(i in 0..width-1){
             // Go from bottom to top
@@ -462,13 +462,13 @@ external func Mux(width!: Int64, output!: String = "", elem!: Int64 = 0, name!: 
             // Create a fork to split the control signal
             let fork = hb.CreateEdge(FORK, [currentC])
             // Create the mux edge
-            let mux = hb.CreateEdge(MUX, [hb.inputs[j], hb.inputs[j + width], fork.targets[1]], [hb.outputs[j]])
+            let mux = hb.CreateEdge(MUX, [hb.GetInputs()[j], hb.GetInputs()[j + width], fork.targets[1]], [hb.GetOutputs()[j]])
             // Assign the control wire for the next iteration
             currentC = fork.targets[0]
         }
     }
     // Create the final mux edge
-    let mux = hb.CreateEdge(MUX, [hb.inputs[0], hb.inputs[width], currentC], [hb.outputs[0]])
+    let mux = hb.CreateEdge(MUX, [hb.GetInputs()[0], hb.GetInputs()[width], currentC], [hb.GetOutputs()[0]])
     let res = hb.ToGraph()
     match(input){
         case Some(f) => Seq(f, res)
