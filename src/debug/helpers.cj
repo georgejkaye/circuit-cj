@@ -37,8 +37,8 @@ external func PrintList<T>(xs : ArrayList<T>) where T <: ToString {
 external func position<T>(xs : ArrayList<T>, a : T) where T <: Equatable {
     for(i in 0..xs.size()){
         if(xs[i] == a){
-            return i 
+            return Some<Int64>(i)
         }
     }
-    return -1
+    return None<Int64>
 }

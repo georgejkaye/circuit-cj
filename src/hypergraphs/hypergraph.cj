@@ -50,8 +50,6 @@ func AddSource(s : Source, p : Port,
             }
         }
     }
-
-    (sources, rights, busMaps, busList, wireList)
 }
 
 open class HypergraphStructure <: Atom {
@@ -100,33 +98,33 @@ open class HypergraphStructure <: Atom {
 
         // Add all the inputs to the targets
         for(i in 0..inputs.size()){
-            (targets, lefts, connsl) = AddTarget(inputs[i], InterfacePort(i), targets, lefts, connsr, connsl)
+            AddTarget(inputs[i], InterfacePort(i), targets, lefts, connsr, connsl)
         }
         // Add all the sources and targets of edges
         for(e in edges){
             for(i in 0..e.sources.size()){
-                (sources, rights, busMaps, busList, wireList) = AddSource(e.sources[i], EdgePort(e, i), sources, rights, busMaps, busList, wireList)
+                AddSource(e.sources[i], EdgePort(e, i), sources, rights, busMaps, busList, wireList)
             }
             for(i in 0..e.targets.size()){
-                (targets, lefts, connsl) = AddTarget(e.targets[i], EdgePort(e, i), targets, lefts, connsr, connsl)
+                AddTarget(e.targets[i], EdgePort(e, i), targets, lefts, connsr, connsl)
             }
         }
         // Add all the outputs to the sources
         for(i in 0..outputs.size()){
-            (sources, rights, busMaps, busList, wireList) = AddSource(outputs[i], InterfacePort(i), sources, rights, busMaps, busList, wireList)
+            AddSource(outputs[i], InterfacePort(i), sources, rights, busMaps, busList, wireList)
         }
         // With all the buses in place, create lists containing the wires of each bus
         for(bus in busList){
             match(busMaps.toMap().get(bus)){
                 // This shouldn't happen
-                case $None    => throw InaccessibleCodeException("Hypergraph")
+                case $None    => throw InaccessibleCodeException("Hypergrapha")
                 case Some(mb) => {
                     let vertexList = ArrayList<Source>()
                     let wires = bus.wires
                     for(wire in wires){
                         let v = match(mb.toMap().get(wire.i)){
                             // This shouldn't happen
-                            case $None   => throw InaccessibleCodeException("Hypergraph")
+                            case $None   => throw InaccessibleCodeException("Hypergraphb")
                             case Some(s) => s
                         }
                         vertexList.add(v)
@@ -166,24 +164,30 @@ open class HypergraphStructure <: Atom {
     func GetConnR(t : Target) {
        match(connsr.toMap().get(t)){
            case Some(s) => s
-           case $None   => throw MissingConnectionException("GetConnR", t)
+           case $None   => throw MissingConnectionException("GetConnR", this, t)
        }
     }
     func GetConnL(s : Source) {
-        match(connsl.toMap().get(s)){
+    match(connsl.toMap().get(s)){
            case Some(t) => t
-           case $None   => throw MissingConnectionException("GetConnL", s)
+           case $None   => throw MissingConnectionException("GetConnL", this, s)
        }
     }
+    func GetEdgeOpt(s : Source){
+        rights.toMap().get(s)
+    }
+    func GetEdgeOpt(t : Target){
+        lefts.toMap().get(t)
+    }
     func GetEdge(s : Source) { 
-        match(rights.get(s)){
-            case $None => throw VertexNotInGraphException("GetEdge (source)", s)
+        match(GetEdgeOpt(s)){
+            case $None => throw NoAssociatedEdgeException("GetEdge (source)", this, s)
             case Some(p) => p 
         }
     }
     func GetEdge(t : Target) { 
-        match(lefts.get(t)){
-            case $None => throw VertexNotInGraphException("GetEdge (target)", t)
+        match(GetEdgeOpt(t)){
+            case $None => throw NoAssociatedEdgeException("GetEdge (target)", this, t)
             case Some(p) => p
         }
     }
@@ -204,7 +208,7 @@ open class HypergraphStructure <: Atom {
      * @return Some(vertex) if it exists in this graph, or None otherwise
      */
     func GetWireVertexOption(w : Wire){
-        match(busVertexMaps.get(w.bus)){
+        match(busVertexMaps.toMap().get(w.bus)){
              case Some((mb, vs)) => mb.toMap().get(w.i)
              case $None    => None<Source>
         }
@@ -318,16 +322,34 @@ open class HypergraphStructure <: Atom {
         PreviousEdge(edge.sources[i])
     }
     func IsWellFormed(){
+        let encounteredTargets = ArrayList<Target>()
         for(t in targets){
+            if(includes(encounteredTargets, t)){
+                return DuplicateTarget(t)
+            }
+            encounteredTargets.add(t)
             match(GetConnROpt(t)){
                 case Some(s) => {}
                 case $None   => return TargetNotConnected(t)
             }
+            match(GetEdgeOpt(t)){
+                case Some(p) => {}
+                case $None   => return TargetNotAssociated(t)
+            }
         }
+        let encounteredSources = ArrayList<Source>()
         for(s in sources){
+            if(includes(encounteredSources, s)){
+                return DuplicateSource(s)
+            }
+            encounteredSources.add(s)
             match(GetConnLOpt(s)){
                 case Some(t) => {}
                 case $None   => return SourceNotConnected(s)
+            }
+            match(GetEdgeOpt(s)){
+                case Some(p) => {}
+                case $None   => return SourceNotAssociated(s)
             }
         }
         return Okay
@@ -341,26 +363,48 @@ append HypergraphStructure with ToString {
         for(e in f.GetEdges()){
             let edgeSources = PrintList(e.sources, {s : Source => "${s.id}"})
             let edgeTargets = PrintList(e.targets, {t : Target => "${t.id}"})
-            edgeString = "${edgeString}e${e.id} - ${e.generator}\n  sources ${edgeSources}\n  targets ${edgeTargets}\n"
+            edgeString = "${edgeString}e${e.id} - ${e.generator} ${edgeSources} ${edgeTargets}\n"
         }
         let outputString = PrintList(f.GetOutputs(), {s : Source => "${s.id}"})
         var connsRString = ""
+        var leftString = ""
         for(t in f.GetTargets()){
             let s = match(f.GetConnROpt(t)){
                 case Some(s) => "${s.id}"
                 case $None    => "?"
             }
             connsRString = "${connsRString}(${t.id} ${s}) "
+            let ps = match(f.GetEdgeOpt(t)){
+                case Some(p) => {
+                    match(p){
+                        case EdgePort(e, i)   => "${e.id}[t${i}]"
+                        case InterfacePort(i) => "in[${i}]"
+                    }
+                }
+                case $None => "?"
+            }
+            leftString = "${leftString}(${t.id} ${ps}) "
         }
         var connsLString = ""
+        var rightString = ""
         for(s in f.GetSources()){
             let t = match(f.GetConnLOpt(s)){
                 case Some(t) => "${t.id}"
                 case $None    => "?"
             }
             connsLString = "${connsLString}(${s.id} ${t}) "
+            let ps = match(f.GetEdgeOpt(s)){
+                case Some(p) => {
+                    match(p){
+                        case EdgePort(e, i)   => "${e.id}[s${i}]"
+                        case InterfacePort(i) => "out[${i}]"
+                    }
+                }
+                case $None => "?"
+            }
+            rightString = "${rightString}(${s.id} ${ps})"
         }
-        "====\ninputs ${inputString}\n${edgeString}outputs ${outputString}\nconnsr ${connsRString}\nconnsl ${connsLString}\n===="
+        "====\ninputs ${inputString}\n${edgeString}outputs ${outputString}\nconnsr ${connsRString}\nconnsl ${connsLString}\nlefts ${leftString}\nrights ${rightString}\n===="
     }
 }
 
@@ -368,6 +412,10 @@ enum WellformednessStatus {
     | Okay
     | TargetNotConnected(Target)
     | SourceNotConnected(Source)
+    | TargetNotAssociated(Target)
+    | SourceNotAssociated(Source)
+    | DuplicateTarget(Target)
+    | DuplicateSource(Source)
 }
 
 external class Hypergraph <: HypergraphStructure {
@@ -399,9 +447,8 @@ external class Hypergraph <: HypergraphStructure {
         super(edges, inputs, outputs, conns)
         this.name = if(name == ""){ "h${this.id}" } else { name }
         match(IsWellFormed()){
-            case TargetNotConnected(t) => throw BadHypergraphException("Hypergraph", this, t)
-            case SourceNotConnected(s) => throw BadHypergraphException("Hypergraph", this, s)
             case $Okay => {}
+            case wf    => throw BadHypergraphException(this, wf)
         }
     }
     /**
@@ -415,47 +462,46 @@ external class Hypergraph <: HypergraphStructure {
      */
     func Clone() {
 
-        let cr = Cloner(sources, targets)
+        let cr = Cloner(this)
         let newEdges = ArrayList<Edge>()
         var newInputs = ArrayList<Target>()
         var newOutputs = ArrayList<Source>()
         var newConns = MapBuilder<Target, Source>()
 
         for(t1 in inputs){
-            (targets, newConns) = CloneTarget(t1, cr, newInputs, connsr, newConns)
+            CloneTarget(t1, cr, newInputs, connsr, newConns)
         }
         for(e in edges){
-            var sources = ArrayList<Source>()
-            var targets = ArrayList<Target>()
+            var newSources = ArrayList<Source>()
+            var newTargets = ArrayList<Target>()
             for(s1 in e.sources){
-                sources = CloneSource(s1, cr, sources)
+                CloneSource(s1, cr, newSources)
             }
             for(t1 in e.targets){
-                (targets, newConns) = CloneTarget(t1, cr, targets, connsr, newConns)
+                CloneTarget(t1, cr, newTargets, connsr, newConns)
             }
+            newEdges.add(Edge(e.generator, newSources, newTargets))
         }
         for(s1 in outputs){
-            sources = CloneSource(s1, cr, newOutputs)
+            CloneSource(s1, cr, newOutputs)
         }
         HypBuilder(newEdges, newInputs, newOutputs, newConns)
     }
 }
-func CloneSource(s1 : Source, cr : Cloner, sources : ArrayList<Source>){
+func CloneSource(s1 : Source, cr : Cloner, newSources : ArrayList<Source>){
     let s2 = cr.GetNewSource(s1)
-    sources.add(s2)
-    sources
+    newSources.add(s2)
 }
-func CloneTarget(t1 : Target, cr : Cloner, targets : ArrayList<Target>, connsr : MapBuilder<Target, Source>, newConns : MapBuilder<Target, Source>){
+func CloneTarget(t1 : Target, cr : Cloner, newTargets : ArrayList<Target>, connsr : MapBuilder<Target, Source>, newConns : MapBuilder<Target, Source>){
     let t2 = cr.GetNewTarget(t1)
-    targets.add(t2)
+    newTargets.add(t2)
     // Update the conns map while we're here
     let s1 = match(connsr.toMap().get(t1)){
         case Some(s2) => s2
-        case $None    => throw VertexNotInGraphException("CloneTarget", t1)
+        case $None    => throw MissingConnectionException("CloneTarget", cr.original, t1)
     }
     let s2 = cr.GetNewSource(s1)
     newConns.add(t2, s2)
-    (targets, newConns)
 }
 
 append Hypergraph with ToString {
@@ -479,13 +525,15 @@ append Hypergraph with ToString {
 }
 
 class Cloner {
+    let original : Hypergraph
     let sourceMap : MapBuilder<Source, Source> = MapBuilder<Source, Source>()
     let targetMap : MapBuilder<Target, Target> = MapBuilder<Target, Target>()
-    init(sources : ArrayList<Source>, targets : ArrayList<Target>){
-        for(s in sources){
+    init(original : Hypergraph){
+        this.original = original
+        for(s in original.GetSources()){
             sourceMap.add(s, Source(ArrayList<Wire>(s.wires)))    
         }
-        for(t in targets){
+        for(t in original.GetTargets()){
             targetMap.add(t, Target())
         }
     }

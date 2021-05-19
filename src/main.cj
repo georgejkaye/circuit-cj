@@ -5,9 +5,7 @@ import debug.*
 func main(){
     let a = SignedValueFromInt(1, width: 3)
     let b = SignedValueFromInt(2, width: 3)
-
     let v = Msbs(a)
-    print("${v}\n")
     WriteDotToFile(v, "dot/msbs.dot")
 
 

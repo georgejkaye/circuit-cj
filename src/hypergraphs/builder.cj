@@ -48,6 +48,9 @@ class HypBuilder <: HypergraphStructure {
     init(dom : Int64, cod : Int64, output : String, elem : Int64){
         this(dom, cod, ArrayList<Wire>(cod, {x : Int64 => NewWire(output, elem + x)}))
     }
+    init(dom : Int64, cod : Int64, output : String){
+        this(dom, cod, ArrayList<Wire>(cod, {x : Int64 => NewWire(string: output)}))
+    }
     /**
      * Get the graph that this builder defines
      * @return The hypergraph
@@ -120,6 +123,15 @@ class HypBuilder <: HypergraphStructure {
      */ 
     func CreateEdge(gen : Generator) : Edge {
         let sources = ArrayList<Source>(Dom(gen), {x : Int64 => Source() })
+        let targets = ArrayList<Target>(Cod(gen), {x : Int64 => Target() })
+        let edge = Edge(gen, sources, targets)
+        AddEdge(edge)
+        edge
+    }
+    func CreateEdge(gen : Generator, sources : ArrayList<Source>) : Edge {
+        if(sources.size() != Dom(gen)){
+            throw BadDomainException("CreateEdge", sources.size(), Dom(gen))
+        }
         let targets = ArrayList<Target>(Cod(gen), {x : Int64 => Target() })
         let edge = Edge(gen, sources, targets)
         AddEdge(edge)
@@ -224,21 +236,18 @@ class HypBuilder <: HypergraphStructure {
         if(i < 0 || i >= outputs.size()){
             throw BadOutputException("RemoveOutput", i, outputs.size())
         }
-        let sout = outputs.removeAt(i)
-        let newConnsr = MapBuilder<Target, Source>()
-        let newConnsl = MapBuilder<Source, Target>()
-        let f : (Target, Source) -> Unit = { t : Target , s : Source => 
-            if(s != sout){
-                newConnsr.add(t,s)
-            }
-        }
-        ForEachConn(f)
-        connsr = newConnsr
-        connsl = newConnsl
+        outputs.removeAt(i)
     }
+    /**
+     * Remove a list of vertices from the outputs of the graph
+     * @param outs The list of vertices to remove
+     */
     func RemoveOutputs(outs : ArrayList<Source>){
         for(v in outs){
-              RemoveOutput(position(outputs, v))  
+            match(position(outputs, v)){
+                case Some(i) => RemoveOutput(i)  
+                case $None   => throw BadOutputException("RemoveOutputs", v)
+            }
         }
     }
     /**
@@ -262,28 +271,19 @@ class HypBuilder <: HypergraphStructure {
         })
         // Remove these vertices from the outputs
         RemoveOutputs(chosenOutputs)
-        let edge = Edge(gen, chosenOutputs, ArrayList<Target>(Cod(gen), {x : Int64 => Target()}))
-        AddEdge(edge)
+        let edge = CreateEdge(gen, chosenOutputs)
+        ConnectEdgeToOutputs(edge)
         edge
     }
-}
-
-append HypBuilder with ToString {
-    func toString(hb : HypBuilder){
-        let inputString = "inputs ${TargetListToString(hb.GetInputs())}"
-        var edgeString = ""
-        for(e in hb.GetEdges()){
-            let id = "${e.id}"
-            let gen = "${e.generator}"
-            let sourceString = SourceListToString(e.sources)
-            let targetString = TargetListToString(e.targets)
-            edgeString = "${edgeString}${id} (${gen}) ${sourceString} ${targetString}\n"
+    /**
+     * Connect all the targets of an edge to the outputs of the graph
+     * @param edge The edge to connect
+     */
+    func ConnectEdgeToOutputs(edge : Edge){
+        for(t in edge.targets){
+            let s = Source()
+            AddConn(t,s)
+            outputs.add(s)
         }
-        let outputString = "outputs ${SourceListToString(hb.GetOutputs())}"
-        var connsString = "connections ${hb.GetConnsR().toMap().size()} "
-        for((t,s) in hb.GetConnsR().toMap()){
-            connsString = "${connsString}(${t.id} ${s.id}) "
-        }
-        "${inputString}\n${edgeString}${outputString}\n${connsString}"
     }
 }

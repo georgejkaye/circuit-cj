@@ -49,15 +49,10 @@ func DecToBin(w : Int64, x : Int64, signed: Bool){
  * @return The tensor stack graph
  */
 func ValueStack(vs : ArrayList<Value>, label!: String = ""){
-    let bus = NewBus(label)
-    let hb = HypBuilder()
+    let hb = HypBuilder(0, vs.size(), label)
     // For each value, create an edge for it and set it to point to the outputs
-    for(v in vs){
-        let t = Target()
-        let s = Source(NewWire(bus))
-        hb.GetEdges().add(Edge(VALUE(v), [], [t]))
-        hb.AddConn(t,s)
-        hb.GetOutputs().add(s)
+    for(i in 0..vs.size()){
+        hb.CreateEdge(VALUE(vs[i]), [], [hb.GetOutputs()[i]])
     }
     hb.ToGraph()
 }

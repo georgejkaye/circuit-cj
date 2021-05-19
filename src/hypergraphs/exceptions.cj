@@ -65,11 +65,38 @@ class BusesNotSameSizeException <: Exception {
  */
 
 class BadHypergraphException <: Exception {
+    init(h : HypergraphStructure, wf : WellformednessStatus){
+        match(wf){
+            case TargetNotConnected(t)  => throw MissingConnectionException("Wellformedness", h, t)
+            case SourceNotConnected(s)  => throw MissingConnectionException("Wellformedness", h, s)
+            case TargetNotAssociated(t) => throw NoAssociatedEdgeException("Wellformedness", h, t)
+            case SourceNotAssociated(s) => throw NoAssociatedEdgeException("Wellformedness", h, s)
+            case DuplicateTarget(t)     => throw DuplicateVertexException("Wellformedness", h, t)
+            case DuplicateSource(s)     => throw DuplicateVertexException("Wellformedness", h, s)
+            case _ => throw InaccessibleCodeException("Wellformedness")
+        }
+    }
+}
+
+class NoAssociatedEdgeException <: Exception {
     init(function : String, h : HypergraphStructure, s : Source){
-        ErrorMsg(function, "Trying to create a malformed hypergraph: source ${s} does not have a left connection\n${h}")
+        ErrorMsg(function, "The source ${s.id} does not have an associated edge\n${h}")
     }
     init(function : String, h : HypergraphStructure, t : Target){
-        ErrorMsg(function, "Trying to create a malformed hypergraph: target ${t} does not have a right connection\n${h}")
+        ErrorMsg(function, "The target ${t.id} does not have an associated edge\n${h}")
+    }
+}
+class MissingConnectionException <: Exception {
+    init(function : String, h : HypergraphStructure, v : Vertex) {
+        ErrorMsg(function, "No connection found for vertex ${v.id}\n${h}")
+    }
+}
+class DuplicateVertexException <: Exception {
+    init(function : String, h : HypergraphStructure, t : Target) {
+        ErrorMsg(function, "The target ${t.id} is the target of multiple edges\n${h}")
+    }
+    init(function : String, h : HypergraphStructure, s : Source) {
+        ErrorMsg(function, "The source ${s.id} is the source of multiple edges\n${h}")
     }
 }
 
@@ -78,19 +105,11 @@ class VertexNotInGraphException <: Exception {
         ErrorMsg(function, "Vertex ${v.id} is not in the graph")
     }
 }
-
-class MissingConnectionException <: Exception {
-    init(function : String, v : Vertex) {
-        ErrorMsg(function, "No connection found for vertex ${v.id}")
-    }
-}
-
 class WireNotInGraphException <: Exception {
     init(function : String, w : Wire){
         ErrorMsg(function, "Wire ${w} is not in the graph")
     }
 }
-
 class BusNotInGraphException <: Exception {
     init(function : String, b : Bus){
         ErrorMsg(function, "Bus ${b} is not in the graph")
@@ -150,6 +169,9 @@ class BadValueException <: Exception {
 class BadOutputException <: Exception {
     init(function : String, des : Int64, act : Int64 ){
         ErrorMsg(function, "Tried to get output ${des}, but there are only ${act}")
+    }
+    init(function : String, v : Source){
+        ErrorMsg(function, "Tried to get output ${v}, but it is not an output")
     }
 }
 
