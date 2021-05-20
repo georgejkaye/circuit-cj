@@ -326,7 +326,7 @@ class HypBuilder <: HypergraphStructure {
         // TODO for i in outs causes unknown error here
         for(i in 0..outs.size()){
             match(index(outputs, outs[i])){
-                case Some(j) => RemoveOutput(j)  
+                case Some(j) => RemoveOutput(j)
                 case $None   => throw BadOutputException("RemoveOutputs", outs[i])
             }
         }
@@ -335,7 +335,7 @@ class HypBuilder <: HypergraphStructure {
     * Remove all outputs from the graph
     */
     func RemoveOutputs(){
-        RemoveOutputs(outputs)
+        RemoveOutputs(ArrayList<Source>(outputs))
     }
     /**
      * Remove an input from the graph
@@ -365,7 +365,7 @@ class HypBuilder <: HypergraphStructure {
      * Remove all inputs from the graph
      */
     func RemoveInputs(){
-        RemoveInputs(inputs)
+        RemoveInputs(ArrayList<Target>(inputs))
     }
     /**
      * Set an output to be the source of a new edge

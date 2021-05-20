@@ -34,12 +34,13 @@ func Seq(f : HypBuilder, g : HypBuilder, name!: String = "") : Hypergraph {
     if(f.GetN() != g.GetM()){
         throw TypeMismatchException("Seq", f, g)
     }
+    let points = f.GetN()
     let fouts = map(f.GetOutputs(), {s : Source => f.GetConnL(s)})
     f.RemoveOutputs()
     let gins = map(g.GetInputs(), {t : Target => g.GetConnR(t)})
     g.RemoveInputs()
     f.AddNewGraph(g)
-    for(i in 0..f.GetN()){
+    for(i in 0..points){
         f.AddConn(fouts[i], gins[i])
     }
     f.ToGraph()
@@ -115,26 +116,8 @@ external func Par(f : Hypergraph, g : Hypergraph, name!: String = "") {
  * @return The composed hypergraph h = f * g
  */
 func Par(f : HypBuilder, g : HypBuilder, name!: String = "") : Hypergraph {
-    let newEdges = ArrayList<Edge>()
-    newEdges.addAll(f.GetEdges())
-    newEdges.addAll(g.GetEdges())
-
-    let newInputs = ArrayList<Target>()
-    newInputs.addAll(f.GetInputs())
-    newInputs.addAll(g.GetInputs())
-
-    let newOutputs = ArrayList<Source>()
-    newOutputs.addAll(f.GetOutputs())
-    newOutputs.addAll(g.GetOutputs())
-
-    let newConns = MapBuilder<Target,Source>()
-    for(v in f.GetTargets()){
-        newConns.add(v, f.GetConnR(v))
-    }
-    for(v in g.GetTargets()){
-        newConns.add(v, g.GetConnR(v))
-    }
-    Hypergraph(name, newEdges, newInputs, newOutputs, newConns)
+    f.AddNewGraph(g)
+    f.ToGraph()
 }
 /**
  * Compose in parallel a list of hypergraphs from left to right 

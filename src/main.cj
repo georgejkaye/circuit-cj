@@ -19,7 +19,7 @@ func main(){
     WriteDotToFile(and, "and")
     let not : Hypergraph = NotGate()
     WriteDotToFile(not, "not")
-    let circ = and * not * not
+    let circ = (AndGate() * NotGate() * NotGate()) + ((NotGate() + NotGate()) * AndGate()) //((NotGate() + NotGate()) * AndGate())
     WriteDotToFile(circ, "circ")
 
     // let plus = Plus(a: a, b: b)

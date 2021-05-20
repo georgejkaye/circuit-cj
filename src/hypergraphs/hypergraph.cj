@@ -77,9 +77,6 @@ open class HypergraphStructure <: Atom {
     protected var outputs  : ArrayList<Source>
     protected var connsr   : MapBuilder<Target, Source>
     protected var connsl   : MapBuilder<Source, Target>
- 
-    protected var m        : Int64
-    protected var n        : Int64
 
     protected var sources  : ArrayList<Source>
     protected var targets  : ArrayList<Target>
@@ -101,9 +98,6 @@ open class HypergraphStructure <: Atom {
         this.outputs = outputs
         this.connsr = conns
         this.connsl = MapBuilder<Source, Target>()
-
-        this.m = inputs.size()
-        this.n = outputs.size()
 
         this.sources = ArrayList<Source>()
         this.targets = ArrayList<Target>()
@@ -138,8 +132,8 @@ open class HypergraphStructure <: Atom {
         UpdateBusVertexList(busList, busMaps, busVertexMaps)
     }
     
-    func GetM() { m }
-    func GetN() { n }
+    func GetM() { inputs.size() }
+    func GetN() { outputs.size() }
     func GetEdges(){ edges }
     func GetInputs() { inputs }
     func GetInput(i : Int64) { inputs[i] }
@@ -520,7 +514,7 @@ external class Hypergraph <: HypergraphStructure {
      * @return The result of the parallel composition
      */
     operator func +(f : Hypergraph, g : Hypergraph) : Hypergraph {
-        Debug("Seq", "Composing ${f.GetName()} and ${g.GetName()} in parallel")
+        Debug("Par", "Composing ${f.GetName()} and ${g.GetName()} in parallel")
         Par(f.Clone(), g.Clone())
     }
     /**
