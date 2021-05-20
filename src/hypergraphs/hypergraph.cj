@@ -150,6 +150,8 @@ open class HypergraphStructure <: Atom {
     func GetTargets(){ targets }
     func GetWires(){ wireList }
     
+    open func GetName(){ "hs${id}" }
+
     /**
      * Get the corresponding target for a source, or None if connection not present
      * @param s The source
@@ -411,7 +413,7 @@ append HypergraphStructure with ToString {
                 }
                 case $None => "?"
             }
-            rightString = "${rightString}(${s.id} ${ps})"
+            rightString = "${rightString}(${s.id} ${ps}) "
         }
         "====\ninputs ${inputString}\n${edgeString}outputs ${outputString}\nconnsr ${connsRString}\nconnsl ${connsLString}\nlefts ${leftString}\nrights ${rightString}\n===="
     }
@@ -471,13 +473,12 @@ external class Hypergraph <: HypergraphStructure {
      * Get the name of this hypergraph
      * @return the name
      */
-    func GetName() { name }
+    override func GetName() { name }
     /**
      * Create a deep clone of this hypergraph for future manipulation
      * @return A HypBuilder with deep copies of all elements in this hypergraph
      */
     func Clone() {
-
         let cr = Cloner(this)
         let newEdges = ArrayList<Edge>()
         var newInputs = ArrayList<Target>()
@@ -503,37 +504,42 @@ external class Hypergraph <: HypergraphStructure {
         }
         HypBuilder(newEdges, newInputs, newOutputs, newConns)
     }
-}
-/**
- * Clone a source vertex
- * @param s1         the source vertex to clone
- * @param cr         the cloner to use
- * @param newSources the list to add the new source to
- */
-func CloneSource(s1 : Source, cr : Cloner, newSources : ArrayList<Source>){
-    let s2 = cr.GetNewSource(s1)
-    newSources.add(s2)
-}
-/**
- * Clone a target vertex
- * @param t1         the target vertex to clone
- * @param cr         the cloner to use
- * @param newTargets the list to add the new target to
- * @param connsr     the old connections map
- * @param newConns   the new connections map
- */
-func CloneTarget(t1 : Target, cr : Cloner, newTargets : ArrayList<Target>, connsr : MapBuilder<Target, Source>, newConns : MapBuilder<Target, Source>){
-    let t2 = cr.GetNewTarget(t1)
-    newTargets.add(t2)
-    // Update the conns map while we're here
-    let s1 = match(connsr.toMap().get(t1)){
-        case Some(s2) => s2
-        case $None    => throw MissingConnectionException("CloneTarget", cr.original, t1)
+    /**
+    * Syntax sugar for sequential composition
+    * @param g The rhs of the sequential composition
+    * @return The result of the sequential composition
+    */
+    operator func *(f : Hypergraph, g : Hypergraph) : Hypergraph {
+        Debug("Seq", "Composing ${f.GetName()} and ${g.GetName()} in sequence")
+        Seq(f.Clone(), g.Clone())
     }
-    let s2 = cr.GetNewSource(s1)
-    newConns.add(t2, s2)
-}
 
+    /**
+     * Syntax sugar for parallel composition
+     * @param g The rhs of the parallel composition
+     * @return The result of the parallel composition
+     */
+    operator func +(f : Hypergraph, g : Hypergraph) : Hypergraph {
+        Debug("Seq", "Composing ${f.GetName()} and ${g.GetName()} in parallel")
+        Par(f.Clone(), g.Clone())
+    }
+    /**
+     * Syntax sugar for getting the nth output of a hypergraph
+     * @param n The index of the output to preserve
+     * @return The hypergraph with all outputs except the nth stubbed off
+     */
+    operator func [](f : Hypergraph, n : Int64){
+        Get(f.Clone(), n)
+    }  
+    /**
+     * Syntax sugar for getting a given bus from a hypergraph
+     * @param bus The bus to extract
+     * @return The hypergraph with the given bus extracted
+     */
+    operator func [](f : Hypergraph, bus : String){
+        Get(f.Clone(), bus)
+    }
+}
 append Hypergraph with ToString {
     func toString(f : Hypergraph) : String {
         var str = ""
@@ -553,7 +559,6 @@ append Hypergraph with ToString {
         "${f.GetName()}\n${inputString}\n${str}${outputString}\n${connstr}"
     }
 }
-
 /**
  * Cloner class: used to keep track of the correspondence between original and cloned atoms
  */
@@ -592,4 +597,33 @@ class Cloner {
             case Some(t1) => t1
         }
     }
+}
+/**
+ * Clone a source vertex
+ * @param s1         the source vertex to clone
+ * @param cr         the cloner to use
+ * @param newSources the list to add the new source to
+ */
+func CloneSource(s1 : Source, cr : Cloner, newSources : ArrayList<Source>){
+    let s2 = cr.GetNewSource(s1)
+    newSources.add(s2)
+}
+/**
+ * Clone a target vertex
+ * @param t1         the target vertex to clone
+ * @param cr         the cloner to use
+ * @param newTargets the list to add the new target to
+ * @param connsr     the old connections map
+ * @param newConns   the new connections map
+ */
+func CloneTarget(t1 : Target, cr : Cloner, newTargets : ArrayList<Target>, connsr : MapBuilder<Target, Source>, newConns : MapBuilder<Target, Source>){
+    let t2 = cr.GetNewTarget(t1)
+    newTargets.add(t2)
+    // Update the conns map while we're here
+    let s1 = match(connsr.toMap().get(t1)){
+        case Some(s2) => s2
+        case $None    => throw MissingConnectionException("CloneTarget", cr.original, t1)
+    }
+    let s2 = cr.GetNewSource(s1)
+    newConns.add(t2, s2)
 }

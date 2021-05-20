@@ -49,7 +49,7 @@ external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 0, out
     match(input){
     case Some(f) => {
             if(f.GetN() != width){
-                  throw BadInputException("Register", "input", width, f.GetName(), f.GetN())
+                  throw BadInputGraphException("Register", "input", width, f.GetName(), f.GetN())
             }
         }
         case $None => {}

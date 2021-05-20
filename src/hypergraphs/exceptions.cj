@@ -61,7 +61,7 @@ class BusesNotSameSizeException <: Exception {
 }
 
 /**
- * Hypergraph exceptions
+ * HypergraphStructure exceptions
  */
 
 class BadHypergraphException <: Exception {
@@ -154,10 +154,10 @@ class BadCodomainException <: Exception {
     }
 }
 class TypeMismatchException <: Exception {
-    init(function : String, f : Hypergraph, g : Hypergraph){
+    init(function : String, f : HypergraphStructure, g : HypergraphStructure){
         ErrorMsg(function, "Outputs of '${f.GetName()}' (${f.GetN()}) do not match inputs of '${g.GetName()}' (${g.GetM()})")
     }
-    init(function : String, f : Hypergraph, n : Int64) {
+    init(function : String, f : HypergraphStructure, n : Int64) {
         ErrorMsg(function, "Outputs of '${f.GetName()}' (${f.GetN()}) do not match required inputs (${n})")
     }
 }
@@ -174,6 +174,14 @@ class BadOutputException <: Exception {
         ErrorMsg(function, "Tried to get output ${v}, but it is not an output")
     }
 }
+class BadInputException <: Exception {
+    init(function : String, des : Int64, act : Int64 ){
+        ErrorMsg(function, "Tried to get input ${des}, but there are only ${act}")
+    }
+    init(function : String, v : Target){
+        ErrorMsg(function, "Tried to get input ${v}, but it is not an input")
+    }
+}
 
 /**
  * Port exceptions
@@ -185,8 +193,8 @@ class BadOutputLabelsException <: Exception {
     }
 }
 class PortNotFoundException <: Exception {
-    init(function : String, f : Hypergraph, s : String){
-        ErrorMsg(function, "Hypergraph '${f.GetName()}' does not have a port named '${s}'")
+    init(function : String, f : HypergraphStructure, s : String){
+        ErrorMsg(function, "HypergraphStructure '${f.GetName()}' does not have a port named '${s}'")
     }
 }
 
@@ -223,7 +231,7 @@ class CouldNotOpenFileException <: Exception {
     }
 }
 
-class BadInputException <: Exception {
+class BadInputGraphException <: Exception {
     init(function : String, wire : String, n1 : Int64, name: String, n2 : Int64){
         ErrorMsg(function, "Expected input '${wire}' to be of type n->${n1} but '${name}' has type n->${n2}")
     }

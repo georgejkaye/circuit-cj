@@ -282,18 +282,16 @@ func Inject(f : Hypergraph,
  * @param vs The list of source vertices to extract
  * @return The hypergraph with the source vertices extracted
  */
-func Extract(f : Hypergraph, buses : ArrayList<String>, name!: String = "") : Hypergraph {
+func Extract(f : HypBuilder, buses : ArrayList<String>, name!: String = "") : Hypergraph {
     Debug("Extract", "Extracting buses ${PrintList(buses)} from '${f.GetName()}'")
     
-    // Clone the hypergraph first so we don't modify the old one my mistake
-    let newF = f.Clone()
     // Find the vertices that correspond to the buses
     var vs = ArrayList<Source>()
     for(bus in buses){
-        vs = newF.GetBusVertexList(bus, vs)
+        vs = f.GetBusVertexList(bus, vs)
     }
     // Set up structures to track the new atoms
-    let newEdges = ArrayList<Edge>(newF.GetEdges())
+    let newEdges = ArrayList<Edge>(f.GetEdges())
     let newOutputs = ArrayList<Source>()
     let newConns = MapBuilder<Target, Source>()
     let doneMap = MapBuilder<Source, Edge>()
@@ -319,7 +317,7 @@ func Extract(f : Hypergraph, buses : ArrayList<String>, name!: String = "") : Hy
                 s2
             }
             case $None => {
-                match(newF.GetEdge(s)){
+                match(f.GetEdge(s)){
                     case EdgePort(e, i) => {
                         e.sources.set(i,s1)
                         s2
@@ -336,10 +334,10 @@ func Extract(f : Hypergraph, buses : ArrayList<String>, name!: String = "") : Hy
         newOutputs.add(out)
     }
     // Add the remaining connections from the original hypergraph
-    for(t in newF.GetTargets()){
-        newConns.add(t, newF.GetConnR(t))
+    for(t in f.GetTargets()){
+        newConns.add(t, f.GetConnR(t))
     }
-    Hypergraph(name, newEdges, newF.GetInputs(), newOutputs, newConns)
+    Hypergraph(name, newEdges, f.GetInputs(), newOutputs, newConns)
 }
 
 /**

@@ -17,40 +17,32 @@ import debug.*
  * @param name="" The name of the resulting hypergraph
  * @return The composed hypergraph h = f . g
  */
-external func Seq(f : Hypergraph, g : Hypergraph, name!: String = "") : Hypergraph {
+external func Seq(f : Hypergraph, g : Hypergraph, name!: String = "") {
     Debug("Seq", "Composing ${f.GetName()} and ${g.GetName()} in sequence")
+    Seq(f.Clone(), g.Clone(), name: name)
+}
+/**
+ * Sequentially compose hypergraphs f : m -> n and g : n -> p, creating h : m -> p
+ * Throws TypeMismatchException if outputs of f != inputs of g
+ * Clones f and g before composing
+ * @param f       The lhs of the composition
+ * @param g       The rhs of the composition
+ * @param name="" The name of the resulting hypergraph
+ * @return The composed hypergraph h = f . g
+ */
+func Seq(f : HypBuilder, g : HypBuilder, name!: String = "") : Hypergraph {
     if(f.GetN() != g.GetM()){
-        throw TypeMismatchException("Seq", f,g)
+        throw TypeMismatchException("Seq", f, g)
     }
-    
-    let newF = f.Clone()
-    let newG = g.Clone()
-
-    let newEdges = ArrayList<Edge>()
-    newEdges.addAll(newF.GetEdges())
-    newEdges.addAll(newG.GetEdges())
-
-    let newConns = MapBuilder<Target,Source>()
-    for(t in newF.GetTargets()){
-        let s = newF.GetConnR(t)
-        let s2 = match(newF.GetEdge(newF.GetConnR(t))){
-            case EdgePort(e, n) => s
-            case InterfacePort(n) => {
-                let newv = newG.GetConnR(newG.GetInputs().get(n))
-                newv.AddWires(s.wires)
-                newv
-            }
-        }
-        newConns.add(t,s2)
+    let fouts = map(f.GetOutputs(), {s : Source => f.GetConnL(s)})
+    f.RemoveOutputs()
+    let gins = map(g.GetInputs(), {t : Target => g.GetConnR(t)})
+    g.RemoveInputs()
+    f.AddNewGraph(g)
+    for(i in 0..f.GetN()){
+        f.AddConn(fouts[i], gins[i])
     }
-    for(t in newG.GetTargets()){
-        newConns.add(t,newG.GetConnR(t))
-    }
-
-    let newInputs = newF.GetInputs()
-    let newOutputs = newG.GetOutputs() 
-
-    Hypergraph(name, newEdges, newInputs, newOutputs, newConns)
+    f.ToGraph()
 }
 
 /**
@@ -102,7 +94,6 @@ external func Identity(n : Int64, name!: String = "", output!: String = "") : Hy
     }
     Hypergraph(name, ArrayList<Edge>(), newInputs, newOutputs, conns)
 }
-
 /**
  * Compose in parallel hypergraphs f : m -> n and g : p -> q, creating h : m + p -> n + q
  * Clones f and g before composing
@@ -111,29 +102,37 @@ external func Identity(n : Int64, name!: String = "", output!: String = "") : Hy
  * @param name="" The name of the resulting hypergraph
  * @return The composed hypergraph h = f * g
  */
-external func Par(f : Hypergraph, g : Hypergraph, name!: String = "") : Hypergraph {
+external func Par(f : Hypergraph, g : Hypergraph, name!: String = "") {
     Debug("Par", "Composing ${f.GetName()} and ${g.GetName()} in parallel")
-    let newF = f.Clone()
-    let newG = g.Clone()
-
+    Seq(f.Clone(), g.Clone(), name: name)
+}
+/**
+ * Compose in parallel hypergraphs f : m -> n and g : p -> q, creating h : m + p -> n + q
+ * Clones f and g before composing
+ * @param f       The lhs of the composition
+ * @param g       The rhs of the composition
+ * @param name="" The name of the resulting hypergraph
+ * @return The composed hypergraph h = f * g
+ */
+func Par(f : HypBuilder, g : HypBuilder, name!: String = "") : Hypergraph {
     let newEdges = ArrayList<Edge>()
-    newEdges.addAll(newF.GetEdges())
-    newEdges.addAll(newG.GetEdges())
+    newEdges.addAll(f.GetEdges())
+    newEdges.addAll(g.GetEdges())
 
     let newInputs = ArrayList<Target>()
-    newInputs.addAll(newF.GetInputs())
-    newInputs.addAll(newG.GetInputs())
+    newInputs.addAll(f.GetInputs())
+    newInputs.addAll(g.GetInputs())
 
     let newOutputs = ArrayList<Source>()
-    newOutputs.addAll(newF.GetOutputs())
-    newOutputs.addAll(newG.GetOutputs())
+    newOutputs.addAll(f.GetOutputs())
+    newOutputs.addAll(g.GetOutputs())
 
     let newConns = MapBuilder<Target,Source>()
-    for(v in newF.GetTargets()){
-        newConns.add(v, newF.GetConnR(v))
+    for(v in f.GetTargets()){
+        newConns.add(v, f.GetConnR(v))
     }
-    for(v in newG.GetTargets()){
-        newConns.add(v, newG.GetConnR(v))
+    for(v in g.GetTargets()){
+        newConns.add(v, g.GetConnR(v))
     }
     Hypergraph(name, newEdges, newInputs, newOutputs, newConns)
 }
@@ -185,7 +184,6 @@ external func Par(f : Hypergraph, n : Int64, name!: String = "") : Hypergraph {
 external func Empty(name!: String = "") : Hypergraph { 
     Identity(0, name: name) 
 }
-
 /**
  * A swap hypergraph on m and n, that swaps over the first m inputs with the last n inputs
  * @param m The first argument of the swap
@@ -212,7 +210,6 @@ external func Swap(m : Int64, n : Int64, name!: String = "") : Hypergraph {
     }
     Hypergraph(name, [], newInputs, newOutputs, conns)
 }
-
 /**
  * Trace a hypergraph f : x + m -> x + n to create Tr^x(f) : m -> n
  * Creates a copy of f
@@ -232,22 +229,20 @@ external func Trace(f : Hypergraph, x : Int64, name!: String = ""){
         throw TooMuchTraceException("Trace")
     }
 
-    let newF = f.Clone()
-    let newInputs = newF.GetInputs()
-    let newOutputs = newF.GetOutputs()
-
-    let idSources = ArrayList<Source>()
-    let idTargets = ArrayList<Target>()
-
-    for(i in 0..x){
-        idSources.add(newOutputs.removeAt(0))
-        idTargets.add(newInputs.removeAt(0))
-    }
-
-    let idEdge = Edge(IDENTITY, idSources, idTargets)
-    let newEdges = newF.GetEdges()
-    newEdges.add(idEdge)
-    Hypergraph(name, newEdges, newInputs, newOutputs, newF.GetConnsR())
+    let hb = f.Clone()
+    let spec = LinkSpec(4)
+    let outlink = hb.ConnectOutputsToEdge(ArrayList<Int64>(x, {i : Int64 => i}), OUTLINK(spec))
+    let inlink = hb.ConnectInputsToEdge(ArrayList<Int64>(x, {i : Int64 => i}), INLINK(spec)) 
+    hb.ToGraph()
+}
+/**
+ * Shorthand for tracing hypergraphs (reflects the Tr^x(f) notation used on paper)
+ * @param x The number of wires to trace
+ * @param f The hypergraph to trace
+ * @return The traced hypergraph
+ */
+external func Tr(x : Int64, f : Hypergraph){
+    Trace(f, x)
 }
 /**
  * Transform a hypergraph of type m->n to one of type m->1, preserving the nth 
@@ -259,8 +254,12 @@ external func Trace(f : Hypergraph, x : Int64, name!: String = ""){
  * @return The hypergraph with only the nth output exposed
  */
 external func Get(f : Hypergraph, n : Int64, label! : String = "", name!: String = ""){
+    Get(f.Clone(), ArrayList<Int64>([n]), label: label, name: name)
+}
+func Get(f : HypBuilder, n : Int64, label! : String = "", name!: String = ""){
     Get(f, ArrayList<Int64>([n]), label: label, name: name)
 }
+
 /**
  * Transform a hypergraph to one with only the given outputs exposed, stubbing the rest.
  * @param f  The hypergraph
@@ -269,34 +268,31 @@ external func Get(f : Hypergraph, n : Int64, label! : String = "", name!: String
  * @return The hypergraph with only the given outputs exposed
  */
 external func Get(f : Hypergraph, ns : ArrayList<Int64>, label!: String = "", name!: String = ""){
+    Get(f.Clone(), ns, label: label, name: name)
+}
+func Get(f : HypBuilder, ns : ArrayList<Int64>, label!: String = "", name!: String = ""){
     for(n in ns){
         if(n < 0 || n > f.GetN()){
             throw BadOutputException("Get", n, f.GetN())
         }
     }
-    let newF = f.Clone()
-    let newEdges = newF.GetEdges()
-    let newOutputs = ArrayList<Source>()
-    for(i in 0..f.GetN()){
-        let v = newF.GetOutputs()[i]
-        if(!includes(ns, i)){
-            let stub = Edge(STUB, [v], [])
-            newEdges.add(stub)
-        } else {
-            newOutputs.add(v)
-        }
-    }
-    Hypergraph(newEdges, newF.GetInputs(), newOutputs, newF.GetConnsR())
+    let drops = ArrayList<Int64>(ns)
+    drops.removeIf({x : Int64 => includes(ns, x)})
+    f.ConnectOutputsToEdge(drops, STUB)
+    f.ToGraph()
 }
 /**
  * Transform a hypergraph to one with only the given bus exposed, stubbing the rest.
- * @param f  The hypergraph
- * @param s The name of the bus to expose
+ * @param f    The hypergraph
+ * @param s    The name of the bus to expose
  * @param name The name of the resulting hypergraph
  * @return The hypergraph with only the given bus exposed
  */
 external func Get(f : Hypergraph, bus : String, name!: String = ""){
     Debug("Get", "Getting bus ${bus} from ${f.GetName()}")
+    Get(f.Clone(), bus, name: name)
+}
+func Get(f : HypBuilder, bus : String, name!: String = ""){
     Extract(f, ArrayList<String>([bus]), name: name)
 }
 /**
@@ -308,6 +304,9 @@ external func Get(f : Hypergraph, bus : String, name!: String = ""){
  */
 external func Get(f : Hypergraph, buses : List<String>, name!: String = ""){
     Debug("Get", "getting buses from ${f.GetName()}")
+    Extract(f.Clone(), ArrayList<String>(buses), name: name)
+}
+func Get(f : HypBuilder, buses : List<String>, name!: String = ""){
     Extract(f, ArrayList<String>(buses), name: name)
 }
 /**
@@ -328,6 +327,6 @@ external func Drop(f : Hypergraph, n : Int64,
     // Get the output to drop
     let s = hb.GetOutputs()[n]
     // Connect this output to a stub
-    hb.ConnectOutputs(ArrayList<Int64>([n]), STUB)
+    hb.ConnectOutputsToEdge(ArrayList<Int64>([n]), STUB)
     hb.ToGraph()
 }

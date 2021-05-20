@@ -112,6 +112,24 @@ class HypBuilder <: HypergraphStructure {
         UpdateBusVertexList(busList, busMaps, busVertexMaps)
     }
     /**
+     * Add all the parts of another graph to this builder
+     * @param f The new graph
+     */
+    func AddNewGraph(f : HypergraphStructure){
+        for(e in f.GetEdges()){
+            AddEdge(e)
+        }
+        for(t in f.GetTargets()){
+            AddConn(t, f.GetConnR(t))
+        }
+        for(t in f.GetInputs()){
+            AddInput(t)
+        }
+        for(t in f.GetOutputs()){
+            AddOutput(t)
+        }
+    }
+    /**
      * Set a target to be the next input
      * @param t the target to set as the next input
      */
@@ -166,12 +184,27 @@ class HypBuilder <: HypergraphStructure {
      * @param sources The sources that will be assigned to this new edge
      * @return The newly made edge
      */
-    func CreateEdge(gen : Generator, sources : ArrayList<Source>) : Edge {
-        if(sources.size() != Dom(gen)){
-            throw BadDomainException("CreateEdge", sources.size(), Dom(gen))
+    func CreateEdgeFromExisting(gen : Generator, existingSources : ArrayList<Source>) : Edge {
+        if(existingSources.size() != Dom(gen)){
+            throw BadDomainException("CreateEdgeFromExisting", existingSources.size(), Dom(gen))
         }
         let targets = ArrayList<Target>(Cod(gen), {x : Int64 => Target() })
-        let edge = Edge(gen, sources, targets)
+        let edge = Edge(gen, existingSources, targets)
+        AddEdge(edge)
+        edge
+    }
+    /**
+     * Create an edge and assign it to some already existing targets, creating the other necessary infrastructure
+     * @param gen     The generator
+     * @param sources The sources that will be assigned to this new edge
+     * @return The newly made edge
+     */
+    func CreateEdgeFromExisting(gen : Generator, existingTargets : ArrayList<Target>) : Edge {
+        if(existingTargets.size() != Cod(gen)){
+            throw BadDomainException("CreateEdgeFromExisting", existingTargets.size(), Dom(gen))
+        }
+        let sources = ArrayList<Source>(Dom(gen), {x : Int64 => Source() })
+        let edge = Edge(gen, sources, existingTargets)
         AddEdge(edge)
         edge
     }
@@ -240,24 +273,24 @@ class HypBuilder <: HypergraphStructure {
         CreateEdge(gen, ArrayList<Target>(incomingConns), ArrayList<Source>(outgoingConns))
     }
     /**
-     * Remove an edge from the graph, along with its sources and targets and any references in the connections map
-     * @param edge The edge to remove
+     * Purge some vertices from the graph, removing them from the connections and other lists
+     * @param targets the targets to remove
+     * @param sources the sources to remove
      */
-    func RemoveEdge(edge : Edge){
-        edges.removeIf({e : Edge => e == edge})
-        sources.removeIf({s : Source => includes(edge.sources, s)})
-        targets.removeIf({t : Target => includes(edge.targets, t)})
+    func RemoveVertices(removedSources : ArrayList<Source>, removedTargets : ArrayList<Target>){
+        sources.removeIf({s : Source => includes(removedSources, s)})
+        targets.removeIf({t : Target => includes(removedTargets, t)})
         let newConnsr = MapBuilder<Target, Source>()
         let newConnsl = MapBuilder<Source, Target>()
         let newLefts = MapBuilder<Target, Port>()
         let newRights = MapBuilder<Source, Port>()
         let f : (Target, Source) -> Unit = { t : Target, s : Source =>
-            if(!includes(edge.sources, s) && !includes(edge.targets, t)){
-                newConnsr.add(t, s)
-                newConnsl.add(s, t)
-                newLefts.add(t, GetEdge(t))
-                newRights.add(s, GetEdge(s)) 
-            }
+                    if(!includes(removedSources, s) && !includes(removedTargets, t)){
+                        newConnsr.add(t, s)
+                        newConnsl.add(s, t)
+                        newLefts.add(t, GetEdge(t))
+                        newRights.add(s, GetEdge(s)) 
+                    }
         }
         // We need to refresh the connections to remove references to this edge
         ForEachConn(f)
@@ -267,6 +300,14 @@ class HypBuilder <: HypergraphStructure {
         rights = newRights
     }
     /**
+     * Remove an edge from the graph, along with its sources and targets and any references in the connections map
+     * @param edge The edge to remove
+     */
+    func RemoveEdge(edge : Edge){
+        edges.removeIf({e : Edge => e == edge})
+        RemoveVertices(edge.sources, edge.targets)
+    }
+    /**
      * Remove an output from the graph
      * @param i The index of the output to remove
      */
@@ -274,44 +315,123 @@ class HypBuilder <: HypergraphStructure {
         if(i < 0 || i >= outputs.size()){
             throw BadOutputException("RemoveOutput", i, outputs.size())
         }
-        outputs.removeAt(i)
+        let s = outputs.removeAt(i)
+        RemoveVertices(ArrayList<Source>([s]), ArrayList<Target>())
     }
     /**
      * Remove a list of vertices from the outputs of the graph
      * @param outs The list of vertices to remove
      */
     func RemoveOutputs(outs : ArrayList<Source>){
-        for(v in outs){
-            match(index(outputs, v)){
-                case Some(i) => RemoveOutput(i)  
-                case $None   => throw BadOutputException("RemoveOutputs", v)
+        // TODO for i in outs causes unknown error here
+        for(i in 0..outs.size()){
+            match(index(outputs, outs[i])){
+                case Some(j) => RemoveOutput(j)  
+                case $None   => throw BadOutputException("RemoveOutputs", outs[i])
             }
         }
     }
     /**
-     * Connect an edge to one of the outputs
+    * Remove all outputs from the graph
+    */
+    func RemoveOutputs(){
+        RemoveOutputs(outputs)
+    }
+    /**
+     * Remove an input from the graph
+     * @param i The index of the input to remove
+     */
+    func RemoveInput(i : Int64){
+        if(i < 0 || i >= inputs.size()){
+            throw BadInputException("RemoveInput", i, inputs.size())
+        }
+        let t = inputs.removeAt(i)
+        RemoveVertices(ArrayList<Source>(), ArrayList<Target>([t]))
+    }
+    /**
+     * Remove a list of vertices from the inputs of the graph
+     * @param ins The list of vertices to remove
+     */
+    func RemoveInputs(ins : ArrayList<Target>){
+        // TODO for i in outs causes unknown error here
+        for(i in 0..ins.size()){
+            match(index(inputs, ins[i])){
+                case Some(j) => RemoveInput(j)  
+                case $None   => throw BadInputException("RemoveInputs", ins[i])
+            }
+        }
+    }
+    /**
+     * Remove all inputs from the graph
+     */
+    func RemoveInputs(){
+        RemoveInputs(inputs)
+    }
+    /**
+     * Set an output to be the source of a new edge
+     * @param outs  The index of the output to connect to the new edge
+     * @param gen   The generator of the new edge
+     * @return The new edge
+     */
+    func ConnectOutputToEdge(out : Int64, gen : Generator) : Edge {
+        ConnectOutputsToEdge(ArrayList<Int64>([out]), gen)
+    }
+    /**
+     * Set some outputs to be the sources of a new edge
      * @param outs  The indices of the outputs to connect to the new edge
      * @param gen   The generator of the new edge
      * @return The new edge
      */
-    func ConnectOutputs(outs : ArrayList<Int64>, gen : Generator) : Edge {
-        Debug("ConnectOutputs", "Connecting outputs ${PrintList(outs)} to generator ${gen}")
+    func ConnectOutputsToEdge(outs : ArrayList<Int64>, gen : Generator) : Edge {
+        Debug("ConnectOutputsToEdge", "Connecting outputs ${PrintList(outs)} to generator ${gen}")
         if(Dom(gen) != outs.size()){
-            throw BadDomainException("ConnectOutputs", outs.size(), Dom(gen))
+            throw BadDomainException("ConnectOutputsToEdge", outs.size(), Dom(gen))
         }
         // Grab the outputs that correspond to the indices provided 
         let chosenOutputs = ArrayList<Source>(outs.size(), {i : Int64 => 
             let j = outs[i]
             if(j < 0 || j >= outputs.size()){
-                throw BadOutputException("ConnectOutputs", i, outputs.size())
+                throw BadOutputException("ConnectOutputsToEdge", i, outputs.size())
             }
             outputs[j]
         })
         // Remove these vertices from the outputs
         RemoveOutputs(chosenOutputs)
-        let edge = CreateEdge(gen, chosenOutputs)
+        let edge = CreateEdgeFromExisting(gen, chosenOutputs)
         // Connect the new edge to the outputs if necessary
         ConnectEdgeToOutputs(edge)
+        edge
+    }
+    /**
+     * Set an input to be the target of a new edge
+     * @param outs  The index of the input to connect to the new edge
+     * @param gen   The generator of the new edge
+     * @return The new edge
+     */
+    func ConnectInputToEdge(ins : Int64, gen : Generator){
+        ConnectInputsToEdge(ArrayList<Int64>([ins]), gen)
+    }
+    /**
+     * Set some inputs to be the targets of a new edge
+     * @param ins The indices of the inputs to connect to the new edge
+     * @param gen The generator of the new edge
+     * @return The new edge
+     */
+    func ConnectInputsToEdge(ins : ArrayList<Int64>, gen : Generator){
+        Debug("ConnectInputsToEdge", "Connecting inputs ${PrintList(ins)} to generator ${gen}")
+        if(Cod(gen) != ins.size()){
+            throw BadCodomainException("ConnectInputsToEdge", ins.size(), Cod(gen))
+        }
+        let chosenInputs = ArrayList<Target>(ins.size(), {i : Int64 => 
+            let j = ins[i]
+            if(j < 0 || j >= inputs.size()){
+                throw BadInputException("ConnectInputsToEdge", i, inputs.size())
+            }
+            inputs[j]
+        })
+        RemoveInputs(chosenInputs)
+        let edge = CreateEdgeFromExisting(gen, chosenInputs)
+        ConnectEdgeToInputs(edge)
         edge
     }
     /**
@@ -322,7 +442,18 @@ class HypBuilder <: HypergraphStructure {
         for(t in edge.targets){
             let s = Source()
             AddConn(t,s)
-            outputs.add(s)
+            AddOutput(s)
+        }
+    }
+    /**
+     * Connect all the sources of an edge to the inputs of the graph
+     * @param edge The edge to connect
+     */
+    func ConnectEdgeToInputs(edge : Edge){
+        for(s in edge.sources){
+            let t = Target()
+            AddConn(t,s)
+            AddInput(t)
         }
     }
 }

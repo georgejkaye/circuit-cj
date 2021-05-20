@@ -25,7 +25,7 @@ func OpMToN(generator : Generator, name!: String = "", wires!: ArrayList<Wire>, 
         case $None => {}
         case Some(f) => {
             if(f.GetN() != dom){
-                throw BadInputException("OpMToN - ${generator}", "input", dom, f.GetName(), f.GetN())
+                throw BadInputGraphException("OpMToN - ${generator}", "input", dom, f.GetName(), f.GetN())
             }
         }
     }
@@ -292,7 +292,7 @@ external func Copy(n : Int64, name!: String = "", output1!: String = "", output2
     match(input){
         case Some(f) => {
             if(f.GetN() != 2 * n){
-                    throw BadInputException("Copy", "input", n, f.GetName(), f.GetN())
+                    throw BadInputGraphException("Copy", "input", n, f.GetName(), f.GetN())
             }
         }
         case $None   => {}
@@ -358,7 +358,7 @@ external func Merge(n : Int64, name!: String = "", output!: String = "", input!:
     match(input){
         case Some(f) => {
             if(f.GetN() != 2 * n){
-                    throw BadInputException("Merge", "input", 2 * n, f.GetName(), f.GetN())
+                    throw BadInputGraphException("Merge", "input", 2 * n, f.GetName(), f.GetN())
             }
         }
         case $None   => {}
@@ -447,7 +447,7 @@ external func Mux(width!: Int64, output!: String = "", elem!: Int64 = 0, name!: 
     match(input){
         case Some(f) => {
             if(f.GetN() != 2 * width + 1){
-                throw BadInputException("Mux", "input", muxInputs, f.GetName(), f.GetN())
+                throw BadInputGraphException("Mux", "input", muxInputs, f.GetName(), f.GetN())
             }
         }
         case $None => {}
@@ -478,15 +478,15 @@ external func Mux(width!: Int64, output!: String = "", elem!: Int64 = 0, name!: 
 
 external func Mux(width!: Int64, output!: String = "", elem!: Int64 = 0, name!: String = "", a!: Hypergraph, b!: Hypergraph, s!: Option<Hypergraph> = None<Hypergraph>){
     if(a.GetN() != width){
-        throw BadInputException("Mux", "a", width, a.GetName(), a.GetN())
+        throw BadInputGraphException("Mux", "a", width, a.GetName(), a.GetN())
     }
     if(b.GetN() != width){
-        throw BadInputException("Mux", "b", width, b.GetName(), b.GetN())
+        throw BadInputGraphException("Mux", "b", width, b.GetName(), b.GetN())
     }
     let z = match(s){
         case Some(f) => {
             if(f.GetN() != 1){
-                throw BadInputException("Mux", "s", width, f.GetName(), f.GetN())
+                throw BadInputGraphException("Mux", "s", width, f.GetName(), f.GetN())
             }
             f
         }

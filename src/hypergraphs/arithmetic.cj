@@ -55,10 +55,10 @@ external func HalfAdder(sum!: String = "", carry!: String = "", bit!: Int64 = 0,
 external func HalfAdder(a!: Hypergraph, b!: Hypergraph, sum!: String = "", carry!: String = "", bit!: Int64 = 0, name!: String = "") : Hypergraph {
     Debug("HalfAdder", "Making half adder; inputs a='${a.GetName()}' and b='${b.GetName()}'; outputs sum='${sum}', carry='${carry}'")
     if(a.GetN() != 1){
-        throw BadInputException("HalfAdder", "a", 1, a.GetName(), a.GetN())
+        throw BadInputGraphException("HalfAdder", "a", 1, a.GetName(), a.GetN())
     }
     if(b.GetN() != 1){
-        throw BadInputException("HalfAdder", "b", 1, b.GetName(), b.GetN())
+        throw BadInputGraphException("HalfAdder", "b", 1, b.GetName(), b.GetN())
     }
     Seq(Concat([a,b]), HalfAdder(sum: sum, carry: carry, bit: bit), name: name)
 }
@@ -117,13 +117,13 @@ external func FullAdder(sum!: String = "", cout!: String = "", bit!: Int64 = 0, 
 external func FullAdder(a!: Hypergraph, b!: Hypergraph, cin!: Hypergraph, sum!: String = "", cout!: String = "", bit!: Int64 = 0, name!: String = "") : Hypergraph {
     Debug("FullAdder", "Making full adder; inputs a='${a.GetName()}', b='${b.GetName()} and cin='${cin.GetName()}; outputs sum='${sum}', cout='${cout}'")
     if(a.GetN() != 1){
-        throw BadInputException("FullAdder", "a", 1, a.GetName(), a.GetN())
+        throw BadInputGraphException("FullAdder", "a", 1, a.GetName(), a.GetN())
     }
     if(b.GetN() != 1){
-        throw BadInputException("FullAdder", "b", 1, b.GetName(), b.GetN())
+        throw BadInputGraphException("FullAdder", "b", 1, b.GetName(), b.GetN())
     }
     if(cin.GetN() != 1){
-        throw BadInputException("FullAdder", "cin", 1, cin.GetName(), cin.GetN())
+        throw BadInputGraphException("FullAdder", "cin", 1, cin.GetName(), cin.GetN())
     }
     Seq(Concat([a,b,cin]), FullAdder(sum: sum, cout: cout, bit: bit, name: name))
 }
@@ -224,13 +224,13 @@ external func Adder(width!: Int64, sum!: String = "", cout!: String = "", name!:
 external func Adder(width!: Int64, a!: Hypergraph, b!: Hypergraph, cin!: Hypergraph = Zero(width: 1), sum!: String = "", cout!: String = "", name!: String = "") : Hypergraph {
     Debug("Adder", "Making n-bit adder of width ${width} with inputs a='${a.GetName()}', b='${b.GetName()}', cin='${cin.GetName()}'")
     if(a.GetN() != width){
-        throw BadInputException("Adder", "a", width, a.GetName(), a.GetN())
+        throw BadInputGraphException("Adder", "a", width, a.GetName(), a.GetN())
     }
     if(b.GetN() != width){
-        throw BadInputException("Adder", "b", width, b.GetName(), b.GetN())
+        throw BadInputGraphException("Adder", "b", width, b.GetName(), b.GetN())
     }
     if(cin.GetN() != 1){
-        throw BadInputException("Adder", "cin", 1, cin.GetName(), cin.GetN())
+        throw BadInputGraphException("Adder", "cin", 1, cin.GetName(), cin.GetN())
     }
     Seq(Concat([a,b,cin]), Adder(width: width, sum: sum, cout: cout), name: name)
 }

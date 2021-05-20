@@ -11,8 +11,16 @@ func main(){
 
     SetDotFolder("dot")
 
-    let acc = Accumulator(width: 4, initial: 3)
-    WriteDotToFile(acc, "acc")
+    //let acc = Accumulator(width: 4, initial: 3)
+    //let bit = 
+    //WriteDotToFile(bit, "acc")
+
+    let and : Hypergraph = AndGate()
+    WriteDotToFile(and, "and")
+    let not : Hypergraph = NotGate()
+    WriteDotToFile(not, "not")
+    let circ = and * not * not
+    WriteDotToFile(circ, "circ")
 
     // let plus = Plus(a: a, b: b)
     // WriteDotToFile(plus, "dot/plus.dot")

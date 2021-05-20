@@ -119,6 +119,10 @@ external class LinkSpec <: Atom {
         this.name = name
         this.width = width
     }
+    init(width : Int64) {
+        this.name = "ls${this.id}"
+        this.width = width
+    }
 }
 append LinkSpec with ToString, Equatable, Hashable {
     func toString(spec : LinkSpec) { "LinkSpec ${spec.id} - ${spec.name} width ${spec.width}" }
