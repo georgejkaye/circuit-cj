@@ -150,8 +150,8 @@ func CreateAdder(width!: Int64, bit!: Int64 = 0, sum!: String = "", cout!: Strin
         // Create the complete adder builder
         let completeAdder = HypBuilder()
         // Add all the edges from the head and the tail
-        completeAdder.GetEdges().addAll(headAdder.GetEdges())
-        completeAdder.GetEdges().addAll(tailAdder.GetEdges())
+        completeAdder.AddEdges(headAdder.GetEdges())
+        completeAdder.AddEdges(tailAdder.GetEdges())
         // Put the inputs from the head and the tail in the right order
         // head[0] tail[0..n] head[1] tail[n..n*2] head[2]
         completeAdder.AddInput(headAdder.GetInput(0))
@@ -169,29 +169,9 @@ func CreateAdder(width!: Int64, bit!: Int64 = 0, sum!: String = "", cout!: Strin
             completeAdder.AddOutput(out)
         }
         // Need to hook up the carry of the head to the relevant port of the tail
-        let carryOut = headAdder.GetConnL(headAdder.GetOutput(1))
-        let carryIn = tailAdder.GetConnR(tailAdder.GetInput(n * 2))
-        completeAdder.AddConn(carryOut, carryIn)
-        // Add in the rest of the connections
-        // TODO should be doable with (t,s) in conns, but not convinced it works
-        for(t in headAdder.GetInputs()){
-            completeAdder.AddConn(t, headAdder.GetConnR(t))
-        }
-        for(e in headAdder.GetEdges()){
-            for(t in e.targets){
-                if(t != carryOut){
-                    completeAdder.AddConn(t, headAdder.GetConnR(t))
-                }
-            }
-        }
-        for(t in tailAdder.GetInputs()){
-            completeAdder.AddConn(t, tailAdder.GetConnR(t))
-        }
-        for(e in tailAdder.GetEdges()){
-            for(t in e.targets){
-                completeAdder.AddConn(t, tailAdder.GetConnR(t))
-            }
-        }
+        let carryOut = headAdder.GetOutput(1).GetConn()
+        let carryIn = tailAdder.GetInput(n * 2).GetConn()
+        carryOut.SetConn(carryIn)
         // Return the complete builder
         completeAdder
     }
@@ -245,7 +225,8 @@ external func Adder(width!: Int64, a!: Hypergraph, b!: Hypergraph, cin!: Hypergr
 external func Plus(width!: Int64, output!: String = "", name!: String = "") : Hypergraph {
     Debug("Plus", "Making plus of width ${width}")
     let adder = Adder(width: width, sum: output)
-    let plus = Seq(Par(Identity(2 * width), Zero(width: 1)), adder)
+    let inputs = Par(Identity(2 * width), Zero(width: 1))
+    let plus = Seq(inputs, adder)
     Drop(plus, width, name: name)
 }
 /**

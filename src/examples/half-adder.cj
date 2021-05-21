@@ -9,7 +9,7 @@ external func HalfAdderFunctional(){
     let carry = AndGate(lhs: a, rhs: b, output: "carry")
     let sum = XorGate(lhs: a, rhs: b, output: "sum")
     // We need to return both the carry and the sum
-    Concat([carry, sum], name: "half adder - functional style")
+    Concat([sum, carry], name: "half adder - functional style")
 }
 
 external func HalfAdderCombinator(){

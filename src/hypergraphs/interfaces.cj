@@ -29,19 +29,22 @@ external func Input(label!: String = "", width!: Int64 = 1){
  * @return     The combined hypergraph
  */
 external func Concat(fs : ArrayList<Hypergraph>, name!: String = ""){
-    Debug("Output", "Outputting hypergraphs")
-    var f = fs[0].Clone().ToGraph()
+    Debug("Concat", "Concatting hypergraphs")
+    var f = fs[0].Clone()
     for(i in 1..fs.size()){
-        var g = fs[i].Clone().ToGraph()
-        let (vfs, vgs, ps) = FindIntersections(f, g)
-        if(vfs.size() == 0){
-            f = Par(f, g)
+        var g = fs[i].Clone()
+        let (intersectionsF, intersectionsG)  = FindIntersections(f, g)
+        if(intersectionsF.size() == 0){
+            f.AddNewGraph(g)
         } else {
-            let (newEdges, newInputs, newOutputs, newConns) = RemoveLeft(g, vgs)
-            f = Inject(f, vfs, vgs, ps, newEdges, newInputs, newOutputs, newConns)
+            g = RemoveLeft(g, intersectionsG)
+            f = Inject(f, intersectionsF, g, intersectionsG)
         }
     }
-    f
+    print("about to c o n v e r t \n")
+    print("${f}\n")
+    let re = f.ToGraph()
+    re
 }
 /**
  * Combine a list of hypergraphs into a single hypergraph, ensuring that any shared wires are

@@ -11,7 +11,7 @@ import debug.*
 import settings.*
 
 /* Whether to display debug information on the graph */
-let debugDot = false
+let debugDot = true
 /* The tab string */
 let tab = "  "
 
@@ -223,15 +223,15 @@ external func DotGraph(f : Hypergraph){
     var vertices = ""
     var conns = ""
     for (t in f.GetTargets()) {
-        let s = f.GetConnR(t)
+        let s = t.GetConn()
         let vertex = indent(1, DrawVertex(t, s))
         vertices = if(vertices == "") { vertex } else { "${vertices}\n${vertex}" }
 
-        let left = match(f.GetEdge(t)){
+        let left = match(t.GetPort()){
             case EdgePort(e,n)     => "e${e.id}:t${n}"
             case InterfacePort(n)  => "ei:t${n}"
         }
-        let right = match(f.GetEdge(s)){
+        let right = match(s.GetPort()){
             case EdgePort(e,n)     => "e${e.id}:s${n}"
             case InterfacePort(n)  => "eo:s${n}"
         }

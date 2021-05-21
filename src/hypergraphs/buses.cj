@@ -233,7 +233,7 @@ func NewWire(string!: String = "") : Wire {
     let b = GetBusOption(string)
     match(b) {
         case Some(bus) => NewWire(bus)
-        case $None     => NewWire(Bus(), 0)
+        case $None     => NewWire(Bus(string), 0)
     }
 }
 /**

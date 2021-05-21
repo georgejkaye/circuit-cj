@@ -67,12 +67,13 @@ class BusesNotSameSizeException <: Exception {
 class BadHypergraphException <: Exception {
     init(h : HypergraphStructure, wf : WellformednessStatus){
         match(wf){
-            case TargetNotConnected(t)  => throw MissingConnectionException("Wellformedness", h, t)
-            case SourceNotConnected(s)  => throw MissingConnectionException("Wellformedness", h, s)
-            case TargetNotAssociated(t) => throw NoAssociatedEdgeException("Wellformedness", h, t)
-            case SourceNotAssociated(s) => throw NoAssociatedEdgeException("Wellformedness", h, s)
-            case DuplicateTarget(t)     => throw DuplicateVertexException("Wellformedness", h, t)
-            case DuplicateSource(s)     => throw DuplicateVertexException("Wellformedness", h, s)
+            case TargetNotConnected(t)       => throw MissingConnectionException("Wellformedness", h, t)
+            case SourceNotConnected(s)       => throw MissingConnectionException("Wellformedness", h, s)
+            case TargetNotAssociated(t)      => throw NoAssociatedEdgeException("Wellformedness", h, t)
+            case SourceNotAssociated(s)      => throw NoAssociatedEdgeException("Wellformedness", h, s)
+            case DuplicateTarget(t)          => throw DuplicateVertexException("Wellformedness", h, t)
+            case DuplicateSource(s)          => throw DuplicateVertexException("Wellformedness", h, s)
+            case ConnectionNotInGraph(v1,v2) => throw BadConnectionException("Wellformedness", h, v1, v2)
             case _ => throw InaccessibleCodeException("Wellformedness")
         }
     }
@@ -85,10 +86,21 @@ class NoAssociatedEdgeException <: Exception {
     init(function : String, h : HypergraphStructure, t : Target){
         ErrorMsg(function, "The target ${t.id} does not have an associated edge\n${h}")
     }
+    init(function : String, v : Vertex){
+        ErrorMsg(function, "The vertex ${v.id} does not have an associated edge")
+    }
 }
 class MissingConnectionException <: Exception {
     init(function : String, h : HypergraphStructure, v : Vertex) {
         ErrorMsg(function, "No connection found for vertex ${v.id}\n${h}")
+    }
+    init(function : String, v : Vertex) {
+        ErrorMsg(function, "No connection found for vertex ${v.id}")
+    }
+}
+class BadConnectionException <: Exception {
+    init(function : String, h : HypergraphStructure, v1 : Vertex, v2 : Vertex){
+        ErrorMsg(function, "Connection of vertex ${v1.id} (${v2.id}) is not in the graph\n${h}")
     }
 }
 class DuplicateVertexException <: Exception {

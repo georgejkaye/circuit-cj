@@ -13,7 +13,7 @@ import debug.*
  * @param f The hypergraph
  * @return The list of sources that are either outputs or sources to edges with no targets
  */
-func GetEndpoints(f : Hypergraph){
+func GetEndpoints(f : HypergraphStructure){
     let vs = ArrayList<Source>(f.GetOutputs())
     for(e in f.GetEdges()){
         if(e.targets.size() == 0){
@@ -23,7 +23,7 @@ func GetEndpoints(f : Hypergraph){
     vs
 }
 
-func TraverseLeft(f : Hypergraph, s : Source, edgeAction : (Edge) -> Unit, inputAction : (Target, Int64) -> Unit){
+func TraverseLeft(f : HypergraphStructure, s : Source, edgeAction : (Edge) -> Unit, inputAction : (Target, Int64) -> Unit){
 
     let frontier = ArrayList<Source>([s])
     let visitedSources = ArrayList<Source>()
@@ -34,9 +34,9 @@ func TraverseLeft(f : Hypergraph, s : Source, edgeAction : (Edge) -> Unit, input
     while(frontier.size() != 0){
         let s = frontier.removeAt(0)
         visitedSources.add(s)
-        let t = f.GetConnL(s)
+        let t = s.GetConn()
         visitedTargets.add(t)
-        match(f.GetEdge(t)){
+        match(t.GetPort()){
             case EdgePort(e, i) => {
                 if(!includes(visitedEdges, e)){
                     visitedEdges.add(e)

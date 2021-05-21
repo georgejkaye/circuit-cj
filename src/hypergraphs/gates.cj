@@ -267,16 +267,42 @@ external func Stub(input!: Option<Hypergraph> = None<Hypergraph>){
  * @param n The number of wires to copy
  * @return The copy hypergraph
  */
-func CreateCopy(n : Int64, output1!: String = "", output2!: String = "") : Hypergraph {
+func CreateCopy(n : Int64, output1!: String = "", output2!: String = "") : HypBuilder {
     if(n < 0){
         throw NegativeWireException("CreateCopy")
     }
     if(n == 0){
-        Empty()
+        HypBuilder()
     } else {
-        let c1 = Par(CreateCopy(n-1, output1: output1, output2: output2), Fork(output1: output1, elem1: n-1, output2: output2, elem2: n-1))
-        let c2 = Par([Identity(n-1), Swap(n-1,1), Identity(1)])
-        Seq(c1,c2, name: "Copy ${n}")
+        // Create the 'head' of this copy, which is just a fork
+        // This is actually at the bottom of the stack to make numbering the outputs easier
+        let headCopy = HypBuilder(1, 2, [NewWire(output1, n), NewWire(output2, n-1)])
+        headCopy.CreateEdge(FORK, [headCopy.GetInput(0)], [headCopy.GetOutput(0), headCopy.GetOutput(1)])
+        // Create the 'tail' of this copy, which is Copy(n-1)
+        let tailCopy = CreateCopy(n-1, output1: output1, output2: output2) 
+        // Stick the head and the tail together
+        let completeCopy = HypBuilder()
+        // The tail inputs are on top
+        completeCopy.AddInputs(tailCopy.GetInputs())
+        // Then add the head input
+        completeCopy.AddInput(headCopy.GetInput(0))
+        // Add the first half of the tail outputs
+        for(i in 0..n-1){
+            completeCopy.AddOutput(tailCopy.GetOutput(i))
+        }
+        // Add the first head output
+        completeCopy.AddOutput(headCopy.GetOutput(0))
+        // Add the second half of the tail outputs
+        for(i in 0..n-1){
+            completeCopy.AddOutput(tailCopy.GetOutput(n - 1 + i))
+        }
+        // Add the second head output
+        completeCopy.AddOutput(headCopy.GetOutput(1))
+        // Add the edges from both head and tail
+        completeCopy.AddEdges(tailCopy.GetEdges())
+        completeCopy.AddEdges(headCopy.GetEdges())
+        // Return the completed builder
+        completeCopy
     }
 }
 /**
@@ -297,7 +323,9 @@ external func Copy(n : Int64, name!: String = "", output1!: String = "", output2
         }
         case $None   => {}
     }
-    let copy = CreateCopy(n, output1: output1, output2: output2)
+    NewBus(output1)
+    NewBus(output2)
+    let copy = CreateCopy(n, output1: output1, output2: output2).ToGraph()
     match(input){
         case Some(f) => Seq(f, copy, name: name)
         case $None   => copy
@@ -443,6 +471,7 @@ external func XnorGate(lhs!: Hypergraph, rhs!: Hypergraph, output!: String = "",
 }
 
 external func Mux(width!: Int64, output!: String = "", elem!: Int64 = 0, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
+    Debug("Mux", "Creating mux of width ${width}")
     let muxInputs = 2 * width + 1
     match(input){
         case Some(f) => {
@@ -492,6 +521,8 @@ external func Mux(width!: Int64, output!: String = "", elem!: Int64 = 0, name!: 
         }
         case $None   => Identity(1)
     }
-    Mux(width: width, output: output, elem: elem, name: name, input: Concat([a,b,z]))
+    let f = Concat([a,b,z])
+    WriteDotToFile(f, "f")
+    Mux(width: width, output: output, elem: elem, name: name, input: f)
 }
 

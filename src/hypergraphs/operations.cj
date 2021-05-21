@@ -34,13 +34,14 @@ func Seq(f : HypBuilder, g : HypBuilder, name!: String = "") : Hypergraph {
     if(f.GetN() != g.GetM()){
         throw TypeMismatchException("Seq", f, g)
     }
-    let points = f.GetN()
-    let fouts = map(f.GetOutputs(), {s : Source => f.GetConnL(s)})
+    let fouts = map(f.GetOutputs(), {s : Source => s.GetConn()})
+    let wires = map(f.GetOutputs(), {s : Source => s.wires})
     f.RemoveOutputs()
-    let gins = map(g.GetInputs(), {t : Target => g.GetConnR(t)})
+    let gins = map(g.GetInputs(), {t : Target => t.GetConn()})
     g.RemoveInputs()
     f.AddNewGraph(g)
-    for(i in 0..points){
+    for(i in 0..fouts.size()){
+        gins[i].AddWires(wires[i])
         f.AddConn(fouts[i], gins[i])
     }
     f.ToGraph()
@@ -69,7 +70,6 @@ external func Seq(fs : ArrayList<Hypergraph>, name!: String = "") : Hypergraph {
 external func Seq(fs : List<Hypergraph>, name!: String = "") {
     Seq(ArrayList<Hypergraph>(fs), name: name)
 }
-
 /**
  * Create an identity on n, the unit of sequential composition
  * @param n     The number of identity wires
@@ -82,18 +82,11 @@ external func Identity(n : Int64, name!: String = "", output!: String = "") : Hy
     if(n < 0){
         throw NegativeWireException("Identity")
     }
-    let bus = NewBus(output)
-    let newInputs = ArrayList<Target>()
-    let newOutputs = ArrayList<Source>()
-    let conns = MapBuilder<Target,Source>()
+    let hb = HypBuilder(n, n, output)
     for(i in 0..n){
-        let t = Target()
-        let s = Source(NewWire(bus, i))
-        newInputs.add(t)
-        newOutputs.add(s)
-        conns.add(t,s)
+        hb.AddConn(hb.GetInput(i), hb.GetOutput(i))
     }
-    Hypergraph(name, ArrayList<Edge>(), newInputs, newOutputs, conns)
+    hb.ToGraph(name)
 }
 /**
  * Compose in parallel hypergraphs f : m -> n and g : p -> q, creating h : m + p -> n + q
@@ -105,7 +98,7 @@ external func Identity(n : Int64, name!: String = "", output!: String = "") : Hy
  */
 external func Par(f : Hypergraph, g : Hypergraph, name!: String = "") {
     Debug("Par", "Composing ${f.GetName()} and ${g.GetName()} in parallel")
-    Seq(f.Clone(), g.Clone(), name: name)
+    Par(f.Clone(), g.Clone(), name: name)
 }
 /**
  * Compose in parallel hypergraphs f : m -> n and g : p -> q, creating h : m + p -> n + q
@@ -117,7 +110,7 @@ external func Par(f : Hypergraph, g : Hypergraph, name!: String = "") {
  */
 func Par(f : HypBuilder, g : HypBuilder, name!: String = "") : Hypergraph {
     f.AddNewGraph(g)
-    f.ToGraph()
+    f.ToGraph(name)
 }
 /**
  * Compose in parallel a list of hypergraphs from left to right 
@@ -132,11 +125,11 @@ external func Par(fs : ArrayList<Hypergraph>, name!: String = "") : Hypergraph {
     if(fs.size() == 1){
         return fs[0]
     }
-    var res = fs[0]
-    for(i in 1..fs.size() - 1){
-        res = Par(res, fs[i])
+    var res = fs[0].Clone()
+    for(i in 1..fs.size()){
+        res.AddNewGraph(fs[i].Clone())
     }
-    Par(res, fs[fs.size()-1], name: name)
+    res.ToGraph(name)    
 }
 /**
  * Compose in parallel a list of hypergraphs from left to right 
@@ -178,20 +171,16 @@ external func Swap(m : Int64, n : Int64, name!: String = "") : Hypergraph {
     if(m < 0 || n < 0){
         throw NegativeWireException("Swap")
     }
-    let newInputs = ArrayList<Target>()
-    let newOutputs = ArrayList<Source>()
-    for(i in 0..m+n){
-        newInputs.add(Target())
-        newOutputs.add(Source())
-    }
-    let conns = MapBuilder<Target,Source>()
+    let hb = HypBuilder(m + n, m + n)
     for(i in 0..m){
-        conns.add(newInputs.get(i), newOutputs.get(n+i))
+        let t = hb.GetInput(i)
+        t.SetConn(hb.GetOutput(n + i))
     }
     for(i in 0..n){
-        conns.add(newInputs.get(m + i), newOutputs.get(i))
+        let t = hb.GetInput(m + i)
+        t.SetConn(hb.GetOutput(i))
     }
-    Hypergraph(name, [], newInputs, newOutputs, conns)
+    hb.ToGraph(name)
 }
 /**
  * Trace a hypergraph f : x + m -> x + n to create Tr^x(f) : m -> n
@@ -299,8 +288,7 @@ func Get(f : HypBuilder, buses : List<String>, name!: String = ""){
  * @param name  The name of the resulting hypergraph
  * @return The hypergraph with only the given bus exposed
  */
-external func Drop(f : Hypergraph, n : Int64,
- name!: String = ""){
+external func Drop(f : Hypergraph, n : Int64, name!: String = ""){
     Debug("Drop", "Dropping ${n}th port from ${f.GetName()} : ${f.GetM()} -> ${f.GetN()}")
     if(n < 0 || n >= f.GetN()){
         throw TypeMismatchException("Drop", f, n)

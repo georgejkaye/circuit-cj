@@ -45,7 +45,33 @@ func AtomListToString(xs : ArrayList<Atom>){
 /**
  * Base vertex class 
  */
-open class Vertex <: Atom {}
+open class Vertex <: Atom {
+    private var port : Option<Port> = None<Port>
+    func SetPort(p : Port){
+        this.port = Some<Port>(p)
+    }
+    func SetPort(e : Edge, i : Int64){
+        this.port = Some<Port>(EdgePort(e, i))
+    }
+    func SetPort(i : Int64){
+        this.port = Some<Port>(InterfacePort(i))
+    }
+    func RemovePort(){
+        this.port = None<Port>
+    }
+    func GetPort(){
+        match(port){
+            case Some(p) => p
+            case $None   => throw NoAssociatedEdgeException("GetPort", this)
+        }
+    }
+    func HasPort(){
+        match(port){
+            case Some(p) => true
+            case $None   => false
+        }
+    }
+}
 append Vertex with ToString {
     func toString(v : Vertex) : String { "Vertex v${v.id}" }
 }
@@ -54,12 +80,49 @@ append Vertex with ToString {
  * Sources have names so that we can reference them later and connect them to new edges
  */
 external class Source <: Vertex {
+    private var conn : Option<Target> 
     /** The wires that the vertex represents */
     let wires : ArrayList<Wire>
-    init() { this.wires = ArrayList<Wire>([Wire()])}
-    init(wire: Wire) { this.wires = ArrayList<Wire>([wire]) }
-    init(wires: ArrayList<Wire>) { this.wires = wires }
-
+    init() { 
+        this.conn = None<Target>
+        this.wires = ArrayList<Wire>([Wire()])
+    }
+    init(wire: Wire) { 
+        this.conn = None<Target>
+        this.wires = ArrayList<Wire>([wire]) 
+    }
+    init(wires: ArrayList<Wire>) { 
+        this.conn = None<Target>
+        this.wires = wires 
+    }
+    func RemoveConn() {
+        if(HasConn()){
+            let t = GetConn()
+            this.conn = None<Target>
+            t.RemoveConn()
+        }
+    }
+    func SetConn(t : Target) {
+        if(HasConn()){
+            GetConn().RemoveConn()
+        }
+        this.conn = Some<Target>(t)
+        if(!t.HasConn() || t.HasConn() && t.GetConn() != this){
+            t.SetConn(this)
+        }
+    }
+    func GetConn(){
+        match(conn){
+            case Some(t) => t
+            case $None   => throw MissingConnectionException("GetConn", this)
+        }
+    }
+    func HasConn(){
+        match(conn){
+            case Some(t) => true
+            case $None   => false
+        }
+    }
     /** 
      * Add a wire to this vertex
      * @param wire The wire to add 
@@ -112,7 +175,40 @@ func SourceListToString(xs : ArrayList<Source>){
  * Target vertices are inwards facing ports: they are the targets of edges.
  * Target vertices currently don't have anything particularly special about them
  */
-external class Target <: Vertex {}
+external class Target <: Vertex {
+    private var conn : Option<Source>
+    init() {
+        this.conn = None<Source>
+    }
+    func RemoveConn() {
+        if(HasConn()){
+            let s = GetConn()
+            this.conn = None<Source>
+            s.RemoveConn()
+        }
+    }
+    func SetConn(s : Source) {
+        if(HasConn()){
+            GetConn().RemoveConn()
+        }
+        this.conn = Some<Source>(s)
+        if(!s.HasConn() || s.HasConn() && s.GetConn() != this){
+            s.SetConn(this)
+        }
+    }
+    func GetConn(){
+        match(conn){
+            case Some(s) => s
+            case $None   => throw MissingConnectionException("GetConn", this)
+        }
+    }
+    func HasConn(){
+        match(conn){
+            case Some(s) => true
+            case $None   => false
+        }
+    }
+}
 append Target with ToString, Equatable, Hashable {
     func toString(t : Target) { "Target t${t.id}" }
     operator func ==(lhs : Target, rhs : Target) : Bool { lhs.id == rhs.id }
@@ -135,10 +231,22 @@ external open class Edge <: Atom {
     let generator : Generator
     let sources : ArrayList<Source>
     let targets : ArrayList<Target>
-    init(generator : Generator, sources : ArrayList<Source>, targets : ArrayList<Target>){
-        this.generator = generator
+    init(gen : Generator, sources : ArrayList<Source>, targets : ArrayList<Target>){
+        this.generator = gen
+        if(sources.size() != Dom(gen)){
+            throw BadDomainException("Edge", sources.size(), Dom(gen))
+        }
+        if(targets.size() != Cod(gen)){
+            throw BadCodomainException("Edge", targets.size(), Cod(gen))
+        }
         this.sources = sources
         this.targets = targets
+        for(i in 0..Dom(gen)){
+            sources[i].SetPort(EdgePort(this, i))
+        }
+        for(i in 0..Cod(gen)){
+            targets[i].SetPort(EdgePort(this, i))
+        }
     }
     init(generator : Generator, sources : List<Source>, targets: List<Target>){
         this(generator, ArrayList<Source>(sources), ArrayList<Target>(targets))

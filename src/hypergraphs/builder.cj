@@ -18,17 +18,15 @@ class HypBuilder <: HypergraphStructure {
         super(
             ArrayList<Edge>(),
             ArrayList<Target>(),
-            ArrayList<Source>(),
-            MapBuilder<Target, Source>()
+            ArrayList<Source>()
         )
     }
     init(
         edges : ArrayList<Edge>,
         inputs : ArrayList<Target>,
-        outputs : ArrayList<Source>,
-        conns   : MapBuilder<Target, Source>
+        outputs : ArrayList<Source>
     ){
-        super(edges, inputs, outputs, conns)
+        super(edges, inputs, outputs)
     }
     /**
      * Create a hyp builder with a certain number of inputs and outputs, with output wires assigned
@@ -40,8 +38,7 @@ class HypBuilder <: HypergraphStructure {
         super(
             ArrayList<Edge>(),
             ArrayList<Target>(dom, {x : Int64 => Target()}),
-            ArrayList<Source>(cod, {x : Int64 => Source(wires.get(x))}),
-            MapBuilder<Target,Source>()
+            ArrayList<Source>(cod, {x : Int64 => Source(wires.get(x))})
         )
     }
     /**
@@ -67,16 +64,25 @@ class HypBuilder <: HypergraphStructure {
      * Create a hyp builder with a certain number of inputs and outputs, with output wires assigned
      * @param dom    The number of inputs
      * @param cod    The number of outputs
+     * @param output The name to assign the output bus
      */
     init(dom : Int64, cod : Int64, output : String){
         this(dom, cod, ArrayList<Wire>(cod, {x : Int64 => NewWire(string: output)}))
+    }
+    /**
+     * Create a hyp builder with a certain number of inputs and outputs, with no given output wire name
+     * @param dom    The number of inputs
+     * @param cod    The number of outputs
+     */
+    init(dom : Int64, cod : Int64){
+        this(dom, cod, "")
     }
     /**
      * Get the graph that this builder defines
      * @return The hypergraph
      */
     func ToGraph() {
-        Hypergraph(edges, inputs, outputs, connsr)
+        Hypergraph(edges, inputs, outputs)
     } 
     /**
      * Get the graph that this builder defines and give it a name
@@ -84,7 +90,7 @@ class HypBuilder <: HypergraphStructure {
      * @return The hypergraph
      */
     func ToGraph(name : String){
-        Hypergraph(name, edges, inputs, outputs, connsr)
+        Hypergraph(name, edges, inputs, outputs)
     }
     /**
      * Add a connection from target to source to the builder
@@ -93,8 +99,27 @@ class HypBuilder <: HypergraphStructure {
      * @param s The source vertex
      */
     func AddConn(t : Target, s : Source) : Unit {
-        connsr.add(t, s)
-        connsl.add(s, t)
+        t.SetConn(s)
+    }
+    /**
+     * Add a new source vertex
+     * @param s The new source vertex
+     */
+    func AddNewSource(s : Source){
+        AddSource(s, sources, busMaps, busList, wireList)
+    }
+    /**
+     * Add a new target vertex
+     * @param t The new target vertex
+     */
+    func AddNewTarget(t : Target){
+        AddTarget(t, targets)
+    }
+    /**
+     * Update the bus lists, maps, and vertex maps
+     */
+    func UpdateBuses(){
+        UpdateBusVertexList(busList, busMaps, busVertexMaps)
     }
     /**
      * Add an edge to the builder, adding it to the necessary maps
@@ -104,12 +129,21 @@ class HypBuilder <: HypergraphStructure {
         busVertexMaps = MapBuilder<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>()
         edges.add(e)
         for(i in 0..e.sources.size()){
-            AddSource(e.sources[i], EdgePort(e, i), sources, rights, busMaps, busList, wireList)
+            AddNewSource(e.sources[i])
         }
         for(i in 0..e.targets.size()){
-            AddTarget(e.targets[i], EdgePort(e, i), targets, lefts, connsr, connsl)
+            AddNewTarget(e.targets[i])
         }
-        UpdateBusVertexList(busList, busMaps, busVertexMaps)
+        UpdateBuses()
+    }
+    /**
+     * Add a list of edges to the builder, adding things to the necessary maps
+     * @param es the list of edges
+     */
+    func AddEdges(es : ArrayList<Edge>){
+        for(e in es){
+            AddEdge(e)
+        }
     }
     /**
      * Add all the parts of another graph to this builder
@@ -119,9 +153,6 @@ class HypBuilder <: HypergraphStructure {
         for(e in f.GetEdges()){
             AddEdge(e)
         }
-        for(t in f.GetTargets()){
-            AddConn(t, f.GetConnR(t))
-        }
         for(t in f.GetInputs()){
             AddInput(t)
         }
@@ -129,42 +160,115 @@ class HypBuilder <: HypergraphStructure {
             AddOutput(t)
         }
     }
+    /** 
+     * Create a new source vertex, assign it to a port, and connect it to an existing target
+     * @param p The port to assign the source to
+     * @param t The target to connect this source to
+     */
+    func NewSource(p : Port, t : Target){
+        let s = Source()
+        AddNewSource(s)
+        match(p){
+            case EdgePort(e, i) => SetSource(e, i, s)
+            case InterfacePort(i) => SetOutput(i, s)
+        }
+        AddConn(t, s)
+    }
+    /** 
+     * Create a new target vertex, assign it to a port, and connect it to an existing source
+     * @param p The port to assign the source to
+     * @param t The target to connect this source to
+     */
+    func NewSource(p : Port, s : Source){
+        let t = Target()
+        AddNewTarget(t)
+        match(p){
+            case EdgePort(e, i) => SetTarget(e, i, t)
+            case InterfacePort(i) => SetInput(i, t)
+        }
+        AddConn(t, s)
+    }
     /**
      * Set a target to be the next input
      * @param t the target to set as the next input
      */
     func AddInput(t : Target){
+        t.SetPort(inputs.size())
         inputs.add(t)
+    }
+    /**
+     * Set an input to be a different vertex
+     * @param i The index of the input to replace
+     * @param t The new input
+     */
+    func SetInput(i : Int64, t : Target){
+        inputs.set(i, t)
+        t.SetPort(i)
+    }
+    /**
+     * Add a list of outputs to this builder
+     * @param ts the list of targets
+     */
+    func AddInputs(ts : ArrayList<Target>){
+        for(t in ts){
+            AddInput(t)
+        }
     }
     /**
      * Set a source to be the next output
      * @param s the source to set as the next output
      */
     func AddOutput(s : Source){
+        s.SetPort(outputs.size())
         outputs.add(s)
     }
     /**
-     * Perform an action for each connection in this builder
-     * This is because I don't trust the for((t,s) in conns) appraoch
-     * Sometimes it seems to miss pairs out
-     * TODO: use the for((t,s) in conns) approach when it is sound
-     * @param f The function to perform for each target-source pair in the conns map
+     * Add a list of outputs to this builder
+     * @param ss the list of sources
      */
-    func ForEachConn(f : (Target, Source) -> Unit){
-        for(t in inputs){
-            match(connsr.toMap().get(t)){
-                case Some(s) => { f(t, s) }
-                case $None   => {}
-            }
+    func AddOutputs(ss : ArrayList<Source>){
+        for(s in ss){
+            AddOutput(s)
         }
-        for(e in edges){
-            for(t in e.targets){
-                match(connsr.toMap().get(t)){
-                    case Some(s) => { f(t, s) }
-                    case $None   => {}
-                }
-            }  
-        }
+    }
+    /** 
+     * Create a new output and return it
+     * @return the new outputs
+     */
+    func NewOutput(){
+        let s = Source()
+        s.SetPort(InterfacePort(outputs.size()))
+        outputs.add(s)
+        s
+    }
+    /**
+     * Set an output to be a different vertex
+     * @param i The index of the output to replace
+     * @param s The new output
+     */
+    func SetOutput(i : Int64, s : Source){
+        outputs.set(i, s)
+        s.SetPort(InterfacePort(i))
+    }
+    /**
+     * Set a source of an edge to be a different vertex
+     * @param edge The edge
+     * @param i    The index of the source to replace
+     * @param s    The new source
+     */
+    func SetSource(edge : Edge, i : Int64, s : Source){
+        edge.sources.set(i, s)
+        s.SetPort(edge, i)
+    }
+    /**
+     * Set a target of an edge to be a different vertex
+     * @param edge The edge
+     * @param i    The index of the target to replace
+     * @param s    The new target
+     */
+    func SetTarget(edge : Edge, i : Int64, t : Target){
+        edge.targets.set(i, t)
+        t.SetPort(edge, i)
     }
     /**
      * Create an edge and necessary infrastructure for a given generator 
@@ -194,9 +298,18 @@ class HypBuilder <: HypergraphStructure {
         edge
     }
     /**
-     * Create an edge and assign it to some already existing targets, creating the other necessary infrastructure
+     * Create an edge and assign it to some already existing sources, creating the other necessary infrastructure
      * @param gen     The generator
      * @param sources The sources that will be assigned to this new edge
+     * @return The newly made edge
+     */
+    func CreateEdgeFromExisting(gen : Generator, existingSources : List<Source>) : Edge {
+        CreateEdgeFromExisting(gen, ArrayList<Source>(existingSources))
+    }
+    /**
+     * Create an edge and assign it to some already existing targets, creating the other necessary infrastructure
+     * @param gen     The generator
+     * @param targets The targets that will be assigned to this new edge
      * @return The newly made edge
      */
     func CreateEdgeFromExisting(gen : Generator, existingTargets : ArrayList<Target>) : Edge {
@@ -207,6 +320,15 @@ class HypBuilder <: HypergraphStructure {
         let edge = Edge(gen, sources, existingTargets)
         AddEdge(edge)
         edge
+    }
+    /**
+     * Create an edge and assign it to some already existing targets, creating the other necessary infrastructure
+     * @param gen     The generator
+     * @param targets The targets that will be assigned to this new edge
+     * @return The newly made edge
+     */
+    func CreateEdgeFromExisting(gen : Generator, existingTargets : List<Target>) : Edge {
+        CreateEdgeFromExisting(gen, ArrayList<Target>(existingTargets))
     }
     /**
      * Create an edge and necessary infrastructure for a given generator, and connect it to some existing targets
@@ -273,31 +395,22 @@ class HypBuilder <: HypergraphStructure {
         CreateEdge(gen, ArrayList<Target>(incomingConns), ArrayList<Source>(outgoingConns))
     }
     /**
-     * Purge some vertices from the graph, removing them from the connections and other lists
+     * Detach some vertices from the edges or interface they are connected to
+     * This doesn't delete their connections, as we may still want to reassign them later
      * @param targets the targets to remove
      * @param sources the sources to remove
      */
-    func RemoveVertices(removedSources : ArrayList<Source>, removedTargets : ArrayList<Target>){
+    func DetachVertices(removedSources : ArrayList<Source>, removedTargets : ArrayList<Target>){
         sources.removeIf({s : Source => includes(removedSources, s)})
         targets.removeIf({t : Target => includes(removedTargets, t)})
-        let newConnsr = MapBuilder<Target, Source>()
-        let newConnsl = MapBuilder<Source, Target>()
-        let newLefts = MapBuilder<Target, Port>()
-        let newRights = MapBuilder<Source, Port>()
-        let f : (Target, Source) -> Unit = { t : Target, s : Source =>
-                    if(!includes(removedSources, s) && !includes(removedTargets, t)){
-                        newConnsr.add(t, s)
-                        newConnsl.add(s, t)
-                        newLefts.add(t, GetEdge(t))
-                        newRights.add(s, GetEdge(s)) 
-                    }
+        inputs.removeIf({t : Target => includes(removedTargets, t)})
+        outputs.removeIf({s : Source => includes(removedSources, s)})
+        for(s in removedSources){
+            s.RemovePort()
         }
-        // We need to refresh the connections to remove references to this edge
-        ForEachConn(f)
-        connsr = newConnsr
-        connsl = newConnsl
-        lefts = newLefts
-        rights = newRights
+        for(t in removedTargets){
+            t.RemovePort()
+        }
     }
     /**
      * Remove an edge from the graph, along with its sources and targets and any references in the connections map
@@ -305,7 +418,16 @@ class HypBuilder <: HypergraphStructure {
      */
     func RemoveEdge(edge : Edge){
         edges.removeIf({e : Edge => e == edge})
-        RemoveVertices(edge.sources, edge.targets)
+        DetachVertices(edge.sources, edge.targets)
+    }
+    /** 
+     * Remove a list of edges from the graph
+     * @param es the list of edges
+     */
+    func RemoveEdges(es : ArrayList<Edge>){
+        for(e in es){
+            RemoveEdge(e)
+        }
     }
     /**
      * Remove an output from the graph
@@ -315,8 +437,7 @@ class HypBuilder <: HypergraphStructure {
         if(i < 0 || i >= outputs.size()){
             throw BadOutputException("RemoveOutput", i, outputs.size())
         }
-        let s = outputs.removeAt(i)
-        RemoveVertices(ArrayList<Source>([s]), ArrayList<Target>())
+        DetachVertices(ArrayList<Source>([outputs[i]]), ArrayList<Target>())
     }
     /**
      * Remove a list of vertices from the outputs of the graph
@@ -345,8 +466,7 @@ class HypBuilder <: HypergraphStructure {
         if(i < 0 || i >= inputs.size()){
             throw BadInputException("RemoveInput", i, inputs.size())
         }
-        let t = inputs.removeAt(i)
-        RemoveVertices(ArrayList<Source>(), ArrayList<Target>([t]))
+        DetachVertices(ArrayList<Source>(), ArrayList<Target>([inputs[i]]))
     }
     /**
      * Remove a list of vertices from the inputs of the graph
@@ -435,14 +555,25 @@ class HypBuilder <: HypergraphStructure {
         edge
     }
     /**
+     * Connect a given target from an edge to the outputs
+     * @param edge The edge to connect to the outputs
+     * @param i    The index of the target to connect
+     */
+    func ConnectEdgeToOutputs(edge : Edge, i : Int64){
+        if(i < 0 || i >= Cod(edge.generator)){
+            throw BadCodomainException("ConnectEdgeToOutputs", i, Cod(edge.generator))
+        }
+        let s = Source()
+        AddConn(edge.targets[i], s)
+        AddOutput(s)
+    }
+    /**
      * Connect all the targets of an edge to the outputs of the graph
      * @param edge The edge to connect
      */
     func ConnectEdgeToOutputs(edge : Edge){
-        for(t in edge.targets){
-            let s = Source()
-            AddConn(t,s)
-            AddOutput(s)
+        for(i in 0..Cod(edge.generator)){
+            ConnectEdgeToOutputs(edge, i)
         }
     }
     /**

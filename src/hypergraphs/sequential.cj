@@ -19,6 +19,7 @@ import debug.*
  * @return The new delay construct, composed with the input if provided
  */
 external func Delay(dur!: Int64 = 1, width!: Int64 = 1, output!: String = "", elem!: Int64 = 0, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph { 
+    Debug("Delay", "Creating delay of duration ${dur} and width ${width}")
     if(width < 1){
         throw NegativeWireException("Delay")
     }
