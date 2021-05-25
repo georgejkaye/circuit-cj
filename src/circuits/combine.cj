@@ -1,7 +1,7 @@
 /**
- * rewrite.cj
+ * combine.cj
  *
- * This file contains methods for rewriting hypergraphs.
+ * This file contains methods for combining hypergraphs.
  */
 
 package circuits

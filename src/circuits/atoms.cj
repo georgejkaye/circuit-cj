@@ -310,7 +310,7 @@ enum Port {
 
 append Port with ToString {
     func toString(p : Port){
-        match(p){
+    match(p){
             case EdgePort(e, i)   => "Edge port ${e.id}[${i}]"
             case InterfacePort(i) => "Interface port ${i}"
         }

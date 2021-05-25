@@ -9,6 +9,18 @@ package circuits
 import debug.*
 
 /**
+ * Create a new spec to be used for links
+ * @param width The width of this spec
+ * @param name The name to associate with this spec
+ * @return The new link spec
+ */
+external func NewSpec(width!: Int64, name!: String){
+    if(width < 1){
+        throw NegativeWireException("NewSpec")
+    }
+    LinkSpec(name, width)
+}
+/**
  * Create a delay construct containing a number of delay morphisms 
  * @param dur The duration of the delays
  * @param width The number of delays to make

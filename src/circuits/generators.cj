@@ -123,7 +123,7 @@ append Label with Equatable {
  * A link spec contains information about a link
  * It has an id, a name, and a width 
  */
-external class LinkSpec <: Atom {
+class LinkSpec <: Atom {
     let name : String
     let width : Int64
     init(name : String, width : Int64) {
@@ -150,7 +150,7 @@ append LinkSpec with Equatable, Hashable {
 /**
  * Enum for the different types of generators
  */
-external enum Generator { 
+enum Generator { 
     | VALUE(Value)            // A value 0 -> 1
     | STRUCTURAL(Struct)      // A structural generator 
     | GATE(Label)             // A gate m -> 1
@@ -332,9 +332,9 @@ func IsOutlink(gen : Generator){
  * Structural generators
  */
 
-external let FORK : Generator = STRUCTURAL(ForkMorph)
-external let JOIN : Generator = STRUCTURAL(JoinMorph)
-external let STUB : Generator = STRUCTURAL(StubMorph)
+let FORK : Generator = STRUCTURAL(ForkMorph)
+let JOIN : Generator = STRUCTURAL(JoinMorph)
+let STUB : Generator = STRUCTURAL(StubMorph)
 
 func IsStub(e : Edge){
     match(e.generator){
@@ -352,22 +352,22 @@ func IsStub(e : Edge){
  * Unary gates
  */
 
-external let BUF : Generator = GATE(Label("BUF", 1, 1))
-external let NOT : Generator = GATE(Label("NOT", 1, 1))
+let BUF : Generator = GATE(Label("BUF", 1, 1))
+let NOT : Generator = GATE(Label("NOT", 1, 1))
 
 /**
  * Binary gates
  */
 
-external let AND  : Generator = GATE(Label("AND", 2, 1))
-external let OR   : Generator = GATE(Label("OR", 2, 1))
-external let NAND : Generator = GATE(Label("NAND", 2, 1))
-external let NOR  : Generator = GATE(Label("NOR", 2, 1))
-external let XOR  : Generator = GATE(Label("XOR", 2, 1))
-external let XNOR : Generator = GATE(Label("XNOR", 2, 1))
+let AND  : Generator = GATE(Label("AND", 2, 1))
+let OR   : Generator = GATE(Label("OR", 2, 1))
+let NAND : Generator = GATE(Label("NAND", 2, 1))
+let NOR  : Generator = GATE(Label("NOR", 2, 1))
+let XOR  : Generator = GATE(Label("XOR", 2, 1))
+let XNOR : Generator = GATE(Label("XNOR", 2, 1))
 
 /**
  * Ternary gates
  */
  
-external let MUX : Generator = GATE(Label("mux", 3, 1))
+let MUX : Generator = GATE(Label("mux", 3, 1))

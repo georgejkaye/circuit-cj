@@ -9,11 +9,3 @@ This repo contains a library for designing hardware in Cangjie. In particular, w
 
 For more documentation see [http://10.206.153.145:8090/display/PL/A+Hardware+Description+Language+for+Cangjie](http://10.206.153.145:8090/display/PL/A+Hardware+Description+Language+for+Cangjie).
 
-## Plan
-
-There are four main components to the hardware design language
-
-
-
-
-
