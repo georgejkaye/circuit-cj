@@ -4,7 +4,7 @@
  * This file contains exceptions
  */
 
-package hypergraphs
+package circuits
 
 import debug.*
 
@@ -248,5 +248,11 @@ class CouldNotOpenFileException <: Exception {
 class BadInputGraphException <: Exception {
     init(function : String, wire : String, n1 : Int64, name: String, n2 : Int64){
         ErrorMsg(function, "Expected input '${wire}' to be of type n->${n1} but '${name}' has type n->${n2}")
+    }
+}
+
+class NonLinkEdgeException <: Exception {
+    init(function : String, e : Edge){
+        ErrorMsg(function, "Tried to use edge ${e.id} as a link, but it is not one")
     }
 }

@@ -1,5 +1,5 @@
 package examples
-import hypergraphs.*
+import circuits.*
 
 external func HalfAdderFunctional(){
     // First we declare our inputs so we have handles on them

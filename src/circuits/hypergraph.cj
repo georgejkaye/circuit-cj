@@ -5,15 +5,27 @@
  * There is no requirement for these to be well-formed
  */
 
-package hypergraphs
+package circuits
 
 import debug.*
 
+/**
+ * Peform the necessary actions to add a target to the graph
+ * @param t       The target to add
+ * @param targets The list of targets
+ */
 func AddTarget(t : Target, targets : ArrayList<Target>){
     // Add to the targets list
     targets.add(t)
 }
-
+/**
+ * Peform the necessary actions to add a source to the graph
+ * @param s        The source to add
+ * @param sources  The list of sources
+ * @param busMaps  The map of buses to maps of wire indices to sources
+ * @param busList  The list of buses
+ * @param wireList The list of wires
+ */
 func AddSource(s : Source, sources : ArrayList<Source>, busMaps : MapBuilder<Bus, MapBuilder<Int64, Source>>, busList : ArrayList<Bus>, wireList : ArrayList<Wire>){
     // Add to the sources list
     sources.add(s)
@@ -36,7 +48,12 @@ func AddSource(s : Source, sources : ArrayList<Source>, busMaps : MapBuilder<Bus
         }
     }
 }
-
+/**
+ * Update the bus vertex list, making sure that any new bus vertices are in the appropriate lists
+ * @param busList The list of buses
+ * @param busMaps The map of buses to maps of wire indices to sourecs
+ * @param busVertexMaps The map of buses to the pair of the appropriate bus map and wire list
+ */
 func UpdateBusVertexList(busList : ArrayList<Bus>, busMaps : MapBuilder<Bus, MapBuilder<Int64, Source>>, busVertexMaps : MapBuilder<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>){
     for(bus in busList){
         match(busMaps.toMap().get(bus)){
@@ -116,6 +133,26 @@ open class HypergraphStructure <: Atom {
     func GetM() { inputs.size() }
     func GetN() { outputs.size() }
     func GetEdges(){ edges }
+    func GetEdgesWithProperty(p : (Edge) -> Bool){
+        let satisfyingEdges = ArrayList<Edge>(edges)
+        satisfyingEdges.removeIf({e : Edge => !p(e)})
+        satisfyingEdges
+    }
+    func GetEdgesWithGenerator(gen : Generator){
+        GetEdgesWithProperty({e : Edge => e.generator == gen})
+    }
+    func GetAllOutLinks(){
+        GetEdgesWithProperty({e : Edge => match(e.generator){
+            case OUTLINK(spec) => true
+            case _             => false
+        }})
+    }
+    func GetAllInLinks(){
+        GetEdgesWithProperty({e : Edge => match(e.generator){
+            case INLINK(spec) => true
+            case _             => false
+        }})
+    }
     func GetInputs() { inputs }
     func GetInput(i : Int64) { inputs[i] }
     func GetInputs(ins : ArrayList<Int64>){
@@ -416,13 +453,79 @@ external class Hypergraph <: HypergraphStructure {
         hb
     }
     /**
+     * Resolve the links in this hypergraph
+     * If there are multiple out links with the same spec, joins them all together
+     * Then connects the resulting wire with an identity edge, to prevent self-cycles
+     * If there are multiple in links with the same spec, forks the resulting wire and joins it up
+     * @return The hypergraph with its links resolved
+     */
+    func ResolveLinks(){
+        ResolveLinks(this.Clone())
+    }
+    /**
+     * Get this hypergraph with just the nth output exposed
+     * @param n The index of the output to expose
+     * @return The hypergraph with the given output exposed
+     */
+    func Get(n : Int64){
+        Get(this, n)
+    }
+    /**
+     * Get this hypergraph with just a list of outputs exposed
+     * @param ns The list of indices of outputs to expose
+     * @return The hypergraph with the given outputs exposed
+     */
+    func Get(ns : List<Int64>){
+        Get(this, ArrayList<Int64>(ns))
+    }
+    /**
+     * Get this hypergraph with just the bus exposed
+     * @param bus The name of the bus to expose
+     * @return The hypergraph with the given bus exposed
+     */
+    func Get(bus : String){
+        Get(this, bus)
+    }
+    /**
+     * Get this hypergraph with the nth output stubbed
+     * @param n The index of the output to stub
+     * @return The hypergraph with the given output stubbed
+     */
+    func Drop(n : Int64){
+        Drop(this, n)
+    }
+    /**
+     * Seqentially compose this hypergraph with another
+     * @param g The hypergraph to compose with this one
+     * @return The result of the sequential composition
+     */
+    func Seq(g : Hypergraph){
+        Seq(this, g)
+    }
+    /**
+     * Compose this hypergraph with another in parallel
+     * @param g The hypergraph to compose with this one
+     * @return The result of the parallel composition
+     */
+    func Par(g : Hypergraph){
+        Par(this, g)
+    }
+    /** 
+     * Trace this hypergraph with n wires
+     * @param n The number of wires to trace
+     * @return The hypergraph traced with n wires
+     */
+    func Tr(n : Int64){
+        Trace(this, n)
+    }
+    /**
     * Syntax sugar for sequential composition
+    * @param f The lhs of the sequential composition
     * @param g The rhs of the sequential composition
     * @return The result of the sequential composition
     */
     operator func *(f : Hypergraph, g : Hypergraph) : Hypergraph {
-        Debug("Seq", "Composing ${f.GetName()} and ${g.GetName()} in sequence")
-        Seq(f.Clone(), g.Clone())
+        SeqBuilder(f.Clone(), g.Clone())
     }
 
     /**
@@ -431,8 +534,7 @@ external class Hypergraph <: HypergraphStructure {
      * @return The result of the parallel composition
      */
     operator func +(f : Hypergraph, g : Hypergraph) : Hypergraph {
-        Debug("Par", "Composing ${f.GetName()} and ${g.GetName()} in parallel")
-        Par(f.Clone(), g.Clone())
+        ParBuilder(f.Clone(), g.Clone())
     }
     /**
      * Syntax sugar for getting the nth output of a hypergraph
@@ -440,7 +542,7 @@ external class Hypergraph <: HypergraphStructure {
      * @return The hypergraph with all outputs except the nth stubbed off
      */
     operator func [](f : Hypergraph, n : Int64){
-        Get(f.Clone(), n)
+        GetBuilder(f.Clone(), n)
     }  
     /**
      * Syntax sugar for getting a given bus from a hypergraph
@@ -448,7 +550,7 @@ external class Hypergraph <: HypergraphStructure {
      * @return The hypergraph with the given bus extracted
      */
     operator func [](f : Hypergraph, bus : String){
-        Get(f.Clone(), bus)
+        GetBuilder(f.Clone(), bus)
     }
     override func toString() : String {
         var str = ""
@@ -530,3 +632,8 @@ func CloneTarget(cr : Cloner, t : Target){
     newT.SetConn(cr.GetNewSource(oldConn))
     newT
 }
+/**
+ * Alias for circuits
+ * TODO find out why this doesn't compile
+ */
+// type Circuit = Hypergraph

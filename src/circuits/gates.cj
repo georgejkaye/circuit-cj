@@ -4,7 +4,7 @@
  * This file contains gates that can be used in a circuit
  */
 
-package hypergraphs
+package circuits
 
 import debug.*
 
@@ -522,7 +522,6 @@ external func Mux(width!: Int64, output!: String = "", elem!: Int64 = 0, name!: 
         case $None   => Identity(1)
     }
     let f = Concat([a,b,z])
-    WriteDotToFile(f, "f")
     Mux(width: width, output: output, elem: elem, name: name, input: f)
 }
 

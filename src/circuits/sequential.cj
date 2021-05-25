@@ -4,7 +4,7 @@
  * This file contains components to construct sequential circuits with delays and feedback
  */
 
-package hypergraphs
+package circuits
 
 import debug.*
 

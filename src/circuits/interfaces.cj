@@ -4,7 +4,7 @@
  * This file contains functions to define the input and output interfaces to circuits
  */
 
-package hypergraphs
+package circuits
 
 import debug.*
 
@@ -31,9 +31,7 @@ external func Input(label!: String = "", width!: Int64 = 1){
 external func Concat(fs : ArrayList<Hypergraph>, name!: String = ""){
     Debug("Concat", "Concatting hypergraphs")
     var f = fs[0].Clone()
-    WriteDotToFile(fs[0], "f2")
     for(i in 1..fs.size()){
-        WriteDotToFile(fs[i], "g")
         var g = fs[i].Clone()
         let intersections = FindIntersections(f, g)
         if(intersections.size() == 0){

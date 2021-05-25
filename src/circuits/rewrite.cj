@@ -4,7 +4,7 @@
  * This file contains methods for rewriting hypergraphs.
  */
 
-package hypergraphs
+package circuits
 
 import debug.*
 
@@ -158,6 +158,8 @@ func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * S
             danglingTargets.add(intersectionG.GetConn())
         }
     }
+    // Functions to use when traversing the graph to find the dangling elements
+    // Track any dangling edges
     let edgeAction = { e : Edge, t : Target =>
             if(!(includes(removedEdges, e))){
                 removedEdges.add(e)
@@ -166,16 +168,21 @@ func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * S
                 false
             }
     }
+    // Track any dangling inputs
     let inputAction = { t : Target , i : Int64 => 
         removedInputs.add(t)
     }
+    // Find all the bits of g that have been left dangling
     for(t in danglingTargets){
         TraverseLeft(t, edgeAction, inputAction)
     }
+    // Remove any dangling edges
     for(edge in removedEdges){
         f.RemoveEdge(edge)
     }
+    // Remove any dangling inputs
     f.RemoveInputs(removedInputs)
+    // We're done!
     f
 }
 
@@ -183,7 +190,6 @@ func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * S
  * Fork some given source vertices and send the new copy to the outputs.
  * Original outputs are stubbed.
  * Order of the new outputs is determined by the order of the given list
- * WARNING: Modifies the original hypergraph
  * @param f  The hypergraph to extract the vertices from
  * @param vs The list of source vertices to extract
  * @return The hypergraph with the source vertices extracted
@@ -217,7 +223,7 @@ func Extract(f : HypBuilder, buses : ArrayList<String>, name!: String = "") : Hy
     f.ToGraph(name)
 }
 /**
- * Resolve links in a hypergraph - join outlinks and inlinks with the same spec together
+ * Resolve links in a hyp builder - join outlinks and inlinks with the same spec together
  * If there are multiple outlinks with the same spec, these are first joined.
  * In between the outlinks and the inlinks an identity edge is placed (this avoids closed loops)
  * If there are multiple inlinks with the same spec, the wire is forked before connecting to them
@@ -225,19 +231,15 @@ func Extract(f : HypBuilder, buses : ArrayList<String>, name!: String = "") : Hy
  * @param name The name to give the resulting hypergraph
  * @return     The resolved hypergraph
  */
-external func ResolveLinks(f : Hypergraph, name!: String = ""){
-    let newF = f.Clone()
-    let outputs = newF.GetOutputs()
-    let edges = newF.GetEdges()
+func ResolveLinks(f : HypBuilder, name!: String = ""){
+    Debug("ResolveLinks", "Resolving links in ${f.GetName()}")
     let inlinks = MapBuilder<LinkSpec, ArrayList<Edge>>()
     let outlinks = MapBuilder<LinkSpec, ArrayList<Edge>>()
-    // TODO remove once convinved that for((x, y) in map) works
-    let inList = ArrayList<Edge>()
-    let outList = ArrayList<Edge>()
-    for(edge in edges){
+    // Define the maps of link specs to edges
+    // TODO this can definitely become a method in hypergraph
+    for(edge in f.GetEdges()){
         match(edge.generator){
             case INLINK(spec)  => {
-                inList.add(edge)
                 match(inlinks.toMap().get(spec)){
                     case Some(es) => {
                         es.add(edge)
@@ -252,7 +254,6 @@ external func ResolveLinks(f : Hypergraph, name!: String = ""){
                 true
             }
             case OUTLINK(spec) => {
-                outList.add(edge)
                 match(outlinks.toMap().get(spec)){
                     case Some(es) => {
                         es.add(edge)
@@ -269,10 +270,10 @@ external func ResolveLinks(f : Hypergraph, name!: String = ""){
             case _ => false
         }
     }
-    Info("ResolveLinks", "Found the links")
-    let linkConns = MapBuilder<Target, Source>()
+    // Join all the outlinks into one wire 
     for((spec, outLinkEdges) in outlinks.toMap()){
         match(inlinks.toMap().get(spec)){
+            // If there are definitely in links to connect to, we can go ahead
             case Some(inLinkEdges) => {
                 let outs = outLinkEdges.size()
                 let ins = inLinkEdges.size()
@@ -281,69 +282,55 @@ external func ResolveLinks(f : Hypergraph, name!: String = ""){
                     var currentSource = outLinkEdges[0].sources[port]
                     // We need to join together multiple out links with the same spec
                     if(outs > 1){
-                        for(j in 1..outs){
-                            let nextSource = outLinkEdges[j].sources[port]
-                            let t1 = Target()
-                            let join = Edge(JOIN, [currentSource, nextSource], [t1])
-                            edges.add(join)
-                            let s1 = Source()
-                            linkConns.add(t1,s1)
-                            currentSource = s1
+                        for(i in 1..outs){
+                            // Get the next source
+                            let nextSource = outLinkEdges[i].sources[port]
+                            // Create a new join with these sources
+                            let join = f.CreateEdgeFromExisting(JOIN, [currentSource, nextSource])
+                            // Create a new source ready for the next iteration
+                            currentSource = f.NewSource(join.targets[0])
                         }
                     }
-
-                    let idTarget : Target
+                    // Create an identity edge in the middle
+                    let id = f.CreateEdgeFromExisting(IDENTITY, [currentSource])
+                    var currentTarget = id.targets[0]
                     // We need to fork to serve multiple in links with the same spec
                     if(ins > 1){
-                        var currentTarget = Target()
-                        idTarget = currentTarget
-                        for(j in 2..ins){
-                            let forkSource = Source()
-                            linkConns.add(currentTarget, forkSource)
-                            currentTarget = Target()
-                            let fork = Edge(FORK, [forkSource], [currentTarget, inLinkEdges[ins-j+1].targets[port]])
-                            edges.add(fork)
+                        for(i in 0..ins-1){
+                            // Go from bottom to top
+                            let j = ins - i - 1
+                            // Create a fork
+                            let fork = f.CreateEdge(FORK, [currentTarget])
+                            f.AddConn(fork.targets[1], inLinkEdges[j].targets[port].GetConn())
+                            currentTarget = fork.targets[0]
                         }
-                        let forkSource = Source()
-                        linkConns.add(currentTarget, forkSource)
-                        let fork = Edge(FORK, [forkSource], [inLinkEdges[0].targets[port], inLinkEdges[1].targets[port]])
-                        edges.add(fork)
-                    } else {
-                        idTarget = inLinkEdges[0].targets[port]
                     }
-                    // In between the links we put an identity edge to preseve closed loops
-                    let idEdge = Edge(IDENTITY,[currentSource],[idTarget])
-                    edges.add(idEdge)
+                    f.AddConn(currentTarget, inLinkEdges[0].targets[port].GetConn())
 
                 }
-                edges.removeIf({e : Edge => includes(inLinkEdges, e)})
+                f.RemoveEdges(inLinkEdges)
             }
+            // There are no corresponding in links, so we can just stub these outlinks
             case $None => {
                 for(e in outLinkEdges){
-                    let stubs = ArrayList<Edge>(spec.width, {i : Int64 => Edge(STUB, [e.sources[i]], []) })
-                    edges.addAll(stubs)
+                    for(s in e.sources){
+                        f.CreateEdgeFromExisting(STUB, [s])
+                    }
+                    f.RemoveEdge(e)
                 }
             }
         }
-        edges.removeIf({e : Edge => includes(outLinkEdges, e)})
+        f.RemoveEdges(outLinkEdges)
     }
-    let deadInlinks = ArrayList<Edge>()
-    let newEdges = ArrayList<Edge>()
-    for(e in edges){
-        match(e.generator){
-            case INLINK(spec) => {
-                for(i in 0..spec.width){
-                    let bot = Edge(VALUE(BOTTOM), [], [e.targets[i]])
-                    newEdges.add(bot)
-                }
-                deadInlinks.add(e)
-            }
-            case _ => {}
+    // There may be inlinks that have no corresponding outlink
+    // These can be replaced with bottom
+    let deadInlinks = f.GetAllInLinks()
+    for(link in deadInlinks){
+        let spec = link.GetSpec()
+        for(i in 0..spec.width){
+            f.CreateEdgeFromExisting(VALUE(BOTTOM), [link.targets[i]])
         }
-    }
-
-    edges.removeIf({e : Edge => includes(deadInlinks, e)})
-    edges.addAll(newEdges)
-
-    Hypergraph(name, edges, newF.GetInputs(), outputs)
+    }    
+    f.RemoveEdges({e : Edge => includes(deadInlinks, e)})
+    f.ToGraph()
 }

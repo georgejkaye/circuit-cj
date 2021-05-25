@@ -4,7 +4,7 @@
  * This file contains the HypBuilder class to make hypergraph construction simpler and cleaner
  */
 
-package hypergraphs
+package circuits
 
 import debug.*
 
@@ -173,26 +173,30 @@ class HypBuilder <: HypergraphStructure {
             AddOutput(t)
         }
     }
+    func NewSource(t : Target) : Source {
+        let s = Source()
+        AddNewSource(s)
+        AddConn(t, s)
+        s
+    }
     /** 
      * Create a new source vertex, assign it to a port, and connect it to an existing target
      * @param p The port to assign the source to
      * @param t The target to connect this source to
      */
     func NewSource(p : Port, t : Target){
-        let s = Source()
-        AddNewSource(s)
+        let s = NewSource(t)
         match(p){
             case EdgePort(e, i) => SetSource(e, i, s)
             case InterfacePort(i) => SetOutput(i, s)
         }
-        AddConn(t, s)
     }
     /** 
      * Create a new target vertex, assign it to a port, and connect it to an existing source
      * @param p The port to assign the source to
      * @param t The target to connect this source to
      */
-    func NewSource(p : Port, s : Source){
+    func NewTarget(p : Port, s : Source){
         let t = Target()
         AddNewTarget(t)
         match(p){
@@ -336,6 +340,7 @@ class HypBuilder <: HypergraphStructure {
             throw BadDomainException("CreateEdgeFromExisting", existingSources.size(), Dom(gen))
         }
         let targets = ArrayList<Target>(Cod(gen), {x : Int64 => Target() })
+        DetachVertices(existingSources)
         let edge = Edge(gen, existingSources, targets)
         AddEdge(edge)
         edge
@@ -357,8 +362,9 @@ class HypBuilder <: HypergraphStructure {
      */
     func CreateEdgeFromExisting(gen : Generator, existingTargets : ArrayList<Target>) : Edge {
         if(existingTargets.size() != Cod(gen)){
-            throw BadDomainException("CreateEdgeFromExisting", existingTargets.size(), Dom(gen))
+            throw BadCodomainException("CreateEdgeFromExisting", existingTargets.size(), Cod(gen))
         }
+        DetachVertices(existingTargets)
         let sources = ArrayList<Source>(Dom(gen), {x : Int64 => Source() })
         let edge = Edge(gen, sources, existingTargets)
         AddEdge(edge)
@@ -372,6 +378,24 @@ class HypBuilder <: HypergraphStructure {
      */
     func CreateEdgeFromExisting(gen : Generator, existingTargets : List<Target>) : Edge {
         CreateEdgeFromExisting(gen, ArrayList<Target>(existingTargets))
+    }
+    /**
+     * Create an edge and assign it to some already existing sources and targets
+     * @param gen     The generator
+     * @param targets The targets that will be assigned to this new edge
+     * @return The newly made edge
+     */
+    func CreateEdgeFromExisting(gen : Generator, existingSources : ArrayList<Source>, existingTargets : ArrayList<Target>){
+        if(existingSources.size() != Dom(gen)){
+            throw BadDomainException("CreateEdgeFromExisting", existingSources.size(), Dom(gen))
+        }
+        if(existingTargets.size() != Cod(gen)){
+            throw BadCodomainException("CreateEdgeFromExisting", existingTargets.size(), Cod(gen))
+        }
+        DetachVertices(existingSources, existingTargets)
+        let edge = Edge(gen, existingSources, existingTargets)
+        AddEdge(edge)
+        edge
     }
     /**
      * Create an edge and necessary infrastructure for a given generator, and connect it to some existing targets
@@ -440,20 +464,30 @@ class HypBuilder <: HypergraphStructure {
     /**
      * Detach some vertices from the edges or interface they are connected to
      * This doesn't delete their connections, as we may still want to reassign them later
-     * @param targets the targets to remove
-     * @param sources the sources to remove
+     * @param removedSources the sources to remove
+     * @param removedTargets the targets to remove
      */
     func DetachVertices(removedSources : ArrayList<Source>, removedTargets : ArrayList<Target>){
         sources.removeIf({s : Source => includes(removedSources, s)})
         targets.removeIf({t : Target => includes(removedTargets, t)})
         inputs.removeIf({t : Target => includes(removedTargets, t)})
         outputs.removeIf({s : Source => includes(removedSources, s)})
-        for(s in removedSources){
-            s.RemovePort()
-        }
-        for(t in removedTargets){
-            t.RemovePort()
-        }
+    }
+    /**
+     * Detach some vertices from the edges or interface they are connected to
+     * This doesn't delete their connections, as we may still want to reassign them later
+     * @param removedSources the sources to remove
+     */
+    func DetachVertices(removedSources : ArrayList<Source>){
+        DetachVertices(removedSources, ArrayList<Target>())
+    }
+    /**
+     * Detach some vertices from the edges or interface they are connected to
+     * This doesn't delete their connections, as we may still want to reassign them later
+     * @param removedTargets the targets to remove
+     */
+    func DetachVertices(removedTargets : ArrayList<Target>){
+        DetachVertices(ArrayList<Source>(), removedTargets)
     }
     /**
      * Remove an edge from the graph, along with its sources and targets and any references in the connections map
@@ -470,6 +504,17 @@ class HypBuilder <: HypergraphStructure {
     func RemoveEdges(es : ArrayList<Edge>){
         for(e in es){
             RemoveEdge(e)
+        }
+    }
+    /**
+     * Remove edges that satisfy a predicate
+     * @param p The predicate
+     */
+    func RemoveEdges(f : (Edge) -> Bool){
+        for(e in edges){
+            if(f(e)){
+                RemoveEdge(e)
+            }
         }
     }
     /**

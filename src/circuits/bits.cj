@@ -4,7 +4,7 @@
  * This file contains components to manipulate bits
  */
 
-package hypergraphs
+package circuits
 
 import debug.*
 

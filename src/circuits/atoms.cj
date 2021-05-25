@@ -3,7 +3,7 @@
  *
  * This file contains the definition of atoms that make up hypergraphs
  */
-package hypergraphs
+package circuits
 
 import debug.*
 
@@ -45,10 +45,10 @@ open class Vertex <: Atom {
         this.port = Some<Port>(p)
     }
     func SetPort(e : Edge, i : Int64){
-        this.port = Some<Port>(EdgePort(e, i))
+       SetPort(EdgePort(e, i))
     }
     func SetPort(i : Int64){
-        this.port = Some<Port>(InterfacePort(i))
+        SetPort(InterfacePort(i))
     }
     func RemovePort(){
         this.port = None<Port>
@@ -251,6 +251,18 @@ external open class Edge <: Atom {
     }
     override func toString() { 
         "Edge e${id} - ${generator}" 
+    }
+    /**
+     * Assuming this edge is a link, get its spec
+     * Throws an exception if this is not a link edge
+     * @return The link spec
+     */
+    func GetSpec(){
+        match(generator){
+            case INLINK(spec) => spec
+            case OUTLINK(spec) => spec
+            case _ => throw NonLinkEdgeException("GetSpec", this)
+        }
     }
 }
 append Edge with Equatable, Hashable {

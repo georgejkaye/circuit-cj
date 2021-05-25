@@ -3,7 +3,7 @@
  *
  * This file contains definitions of wires and buses that can be assigned to sources
  */
-package hypergraphs
+package circuits
 
 import debug.*
 

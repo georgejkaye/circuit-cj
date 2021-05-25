@@ -1,6 +1,6 @@
 package examples
 
-import hypergraphs.*
+import circuits.*
 import debug.*
 
 external func Accumulator(width!: Int64, initial!: Int64 = 0){

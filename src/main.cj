@@ -1,4 +1,4 @@
-import hypergraphs.*
+import circuits.*
 import examples.*
 import debug.*
 import settings.*
@@ -32,13 +32,14 @@ func main(){
     // let add = HalfAdderFunctional()
     // WriteDotToFile(add, "func")
 
-    let runsum = serial_multiplier_bit(width: 4)
-    WriteDotToFile(runsum, "runsum")
-    WriteDotToFile(ResolveLinks(runsum), "runsumresolved")
-    WriteDotToFile(runsum["loop"], "runsumextract")
+    // let runsum = serial_multiplier_bit(width: 4)
+    // WriteDotToFile(runsum, "runsum")
+    // WriteDotToFile(runsum.ResolveLinks(), "runsumresolved")
+    // WriteDotToFile(runsum.Get("loop"), "runsumextract")
 
-    //let acc = Accumulator(width: 2, initial: 1)
-    //WriteDotToFile(acc, "acc.dot")
+    let acc = Accumulator(width: 4, initial: 6)
+    WriteDotToFile(acc, "acc.dot")
+    WriteDotToFile(acc.ResolveLinks(), "res.dot")
 
     //let spec = LinkSpec("hello", 2)
     //let inputs = Input(width: 2, label: "in")

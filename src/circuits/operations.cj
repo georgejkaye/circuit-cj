@@ -4,7 +4,7 @@
  * This file contains the definition of hypergraph operations
  */
 
-package hypergraphs
+package circuits
 
 import debug.*
 
@@ -19,7 +19,7 @@ import debug.*
  */
 external func Seq(f : Hypergraph, g : Hypergraph, name!: String = "") {
     Debug("Seq", "Composing ${f.GetName()} and ${g.GetName()} in sequence")
-    Seq(f.Clone(), g.Clone(), name: name)
+    SeqBuilder(f.Clone(), g.Clone(), name: name)
 }
 /**
  * Sequentially compose hypergraphs f : m -> n and g : n -> p, creating h : m -> p
@@ -30,7 +30,7 @@ external func Seq(f : Hypergraph, g : Hypergraph, name!: String = "") {
  * @param name="" The name of the resulting hypergraph
  * @return The composed hypergraph h = f . g
  */
-func Seq(f : HypBuilder, g : HypBuilder, name!: String = "") : Hypergraph {
+func SeqBuilder(f : HypBuilder, g : HypBuilder, name!: String = "") : Hypergraph {
     if(f.GetN() != g.GetM()){
         throw TypeMismatchException("Seq", f, g)
     }
@@ -98,7 +98,7 @@ external func Identity(n : Int64, name!: String = "", output!: String = "") : Hy
  */
 external func Par(f : Hypergraph, g : Hypergraph, name!: String = "") {
     Debug("Par", "Composing ${f.GetName()} and ${g.GetName()} in parallel")
-    Par(f.Clone(), g.Clone(), name: name)
+    ParBuilder(f.Clone(), g.Clone(), name: name)
 }
 /**
  * Compose in parallel hypergraphs f : m -> n and g : p -> q, creating h : m + p -> n + q
@@ -108,7 +108,7 @@ external func Par(f : Hypergraph, g : Hypergraph, name!: String = "") {
  * @param name="" The name of the resulting hypergraph
  * @return The composed hypergraph h = f * g
  */
-func Par(f : HypBuilder, g : HypBuilder, name!: String = "") : Hypergraph {
+func ParBuilder(f : HypBuilder, g : HypBuilder, name!: String = "") : Hypergraph {
     f.AddNewGraph(g)
     f.ToGraph(name)
 }
@@ -226,12 +226,20 @@ external func Tr(x : Int64, f : Hypergraph){
  * @return The hypergraph with only the nth output exposed
  */
 external func Get(f : Hypergraph, n : Int64, label! : String = "", name!: String = ""){
-    Get(f.Clone(), ArrayList<Int64>([n]), label: label, name: name)
+    GetBuilder(f.Clone(), ArrayList<Int64>([n]), label: label, name: name)
 }
-func Get(f : HypBuilder, n : Int64, label! : String = "", name!: String = ""){
-    Get(f, ArrayList<Int64>([n]), label: label, name: name)
+/**
+ * Transform a hyp builder of type m->n to one of type m->1, preserving the nth 
+ * output and stubbing the rest.
+ * @param f     The hyp builder
+ * @param n     The index of the output to preserve
+ * @param label The label to assign the exposed port
+ * @param name  The name of the resulting hypergraph
+ * @return The hypergraph with only the nth output exposed
+ */
+func GetBuilder(f : HypBuilder, n : Int64, label! : String = "", name!: String = ""){
+    GetBuilder(f, ArrayList<Int64>([n]), label: label, name: name)
 }
-
 /**
  * Transform a hypergraph to one with only the given outputs exposed, stubbing the rest.
  * @param f  The hypergraph
@@ -240,9 +248,9 @@ func Get(f : HypBuilder, n : Int64, label! : String = "", name!: String = ""){
  * @return The hypergraph with only the given outputs exposed
  */
 external func Get(f : Hypergraph, ns : ArrayList<Int64>, label!: String = "", name!: String = ""){
-    Get(f.Clone(), ns, label: label, name: name)
+    GetBuilder(f.Clone(), ns, label: label, name: name)
 }
-func Get(f : HypBuilder, ns : ArrayList<Int64>, label!: String = "", name!: String = ""){
+func GetBuilder(f : HypBuilder, ns : ArrayList<Int64>, label!: String = "", name!: String = ""){
     Debug("Get", "Getting outputs ${PrintList(ns, {n : Int64 => "${n}"})} from ${f.GetName()}")
     for(n in ns){
         if(n < 0 || n > f.GetN()){
@@ -267,9 +275,9 @@ func Get(f : HypBuilder, ns : ArrayList<Int64>, label!: String = "", name!: Stri
  */
 external func Get(f : Hypergraph, bus : String, name!: String = ""){
     Debug("Get", "Getting bus ${bus} from ${f.GetName()}")
-    Get(f.Clone(), bus, name: name)
+    GetBuilder(f.Clone(), bus, name: name)
 }
-func Get(f : HypBuilder, bus : String, name!: String = ""){
+func GetBuilder(f : HypBuilder, bus : String, name!: String = ""){
     Extract(f, ArrayList<String>([bus]), name: name)
 }
 /**

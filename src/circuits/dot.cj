@@ -4,7 +4,7 @@
  * This file contains functions to generate dot graphs from hypergraphs
  */
 
-package hypergraphs
+package circuits
 
 import io.*
 import debug.*

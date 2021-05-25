@@ -4,7 +4,7 @@
  * This file contains functions to traverse hypergraphs
  */
 
-package hypergraphs
+package circuits
 
 import debug.*
 

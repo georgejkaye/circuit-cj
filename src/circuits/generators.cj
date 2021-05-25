@@ -5,7 +5,7 @@
  * and also defines preset generators for the user
  */
 
-package hypergraphs
+package circuits
 
 /**
  * We use a value lattice with four values

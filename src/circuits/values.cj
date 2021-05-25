@@ -4,7 +4,7 @@
  * This file contains functions to construct values (circuits of form 0->n)
  */
 
-package hypergraphs
+package circuits
 
 import debug.*
 

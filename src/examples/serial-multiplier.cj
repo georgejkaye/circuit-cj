@@ -1,6 +1,6 @@
 package examples
 
-import hypergraphs.*
+import circuits.*
 
 func partial_product(a!: Hypergraph, b0!: Hypergraph){
     Mux(width: a.GetN(), s: b0, a: a, b: Zero(width: a.GetN()))
