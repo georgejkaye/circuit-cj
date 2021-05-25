@@ -16,9 +16,8 @@ IO_CJO="$IO_MODULE/io.cjo"
 IMPORTS="$ROOT/import.conf"
 OBJS="$IO_O"
 
-
 MAIN="main"
-PACKAGES=("debug" "settings" "circuits" "examples")
+PACKAGES=("settings" "debug" "circuits" "examples")
 PKGNO=${#PACKAGES[@]}
 
 rm -rf $BUILD

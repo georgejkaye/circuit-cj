@@ -12,9 +12,9 @@ package circuits
  * ⊥ < t,f < ⊤
  */
 enum Value { BOTTOM | TRUE | FALSE | TOP }
-extend Value <: ToString {
-    func toString() {
-        match(this){
+append Value with ToString {
+    func toString(v : Value) {
+        match(v){
             case $BOTTOM => "bot"
             case $TRUE   => "t"
             case $FALSE  => "f"
@@ -53,11 +53,13 @@ append Value with Equatable {
     }
     operator func !=(lhs : Value, rhs : Value) { !(lhs == rhs) }
 }
-
+/**
+ * There are three types of structural morphisms to fork, join and stub wires
+ */
 enum Struct { ForkMorph | JoinMorph | StubMorph }
-extend Struct <: ToString {
-    func toString() {
-        match(this){
+append Struct with ToString {
+    func toString(s : Struct) {
+        match(s){
             case $ForkMorph => "fork"
             case $JoinMorph => "join"
             case $StubMorph => "stub"
@@ -107,6 +109,11 @@ class Label <: Atom {
     }
     override func toString() { "Label ${id} - ${name} : ${dom} → ${cod}" }
 }
+append Label with ToString {
+    func toString(l : Label){
+        l.toString()
+    }
+}
 append Label with Equatable {
     operator func ==(lhs: Label, rhs: Label) : Bool { lhs.name == rhs.name && lhs.dom == rhs.dom && lhs.cod == rhs.cod }
     operator func !=(lhs : Label, rhs: Label) : Bool { !(lhs == rhs) }
@@ -129,6 +136,11 @@ external class LinkSpec <: Atom {
     }
     override func toString() { "LinkSpec ${id} - ${name} width ${width}" }
 }
+append LinkSpec with ToString {
+    func toString(ls : LinkSpec){
+        ls.toString()
+    }
+}
 append LinkSpec with Equatable, Hashable {
     operator func ==(lhs : LinkSpec, rhs : LinkSpec) : Bool { lhs.id == rhs.id }
     operator func !=(lhs : LinkSpec, rhs : LinkSpec) : Bool { lhs.id != rhs.id }
@@ -147,9 +159,9 @@ external enum Generator {
     | INLINK(LinkSpec)        // An in-link 0 -> m, where wires come into the graph
     | OUTLINK(LinkSpec)       // An out-link m -> 0, where wires come out of the graph
 }
-extend Generator <: ToString {
-    func toString(){
-        match(this){
+append Generator with ToString {
+    func toString(g : Generator){
+        match(g){
             case VALUE(value)        => "value (${value})"
             case STRUCTURAL(struct)  => "structural (${struct})"
             case GATE(label)         => "gate (${label.name})"
@@ -160,6 +172,7 @@ extend Generator <: ToString {
         }
     }
 }
+// TODO I believe enums will come with Equatable out of the box at some point
 append Generator with Equatable{
     operator func ==(g1 : Generator, g2 : Generator){
         match(g1){
@@ -209,7 +222,9 @@ append Generator with Equatable{
     }
     operator func !=(g1 : Generator, g2 : Generator) { !(g1 == g2) }
 }
-
+/** 
+ * Get the signature of a generator, the pair of its domain and codomain
+ */
 func Signature(gen : Generator){
     match(gen){
         case VALUE(val)         => (0,1)
@@ -227,12 +242,90 @@ func Signature(gen : Generator){
         case OUTLINK(spec)      => (spec.width, 0)
     }
 }
-
+/**
+ * Get the domain of a generator
+ */
 func Dom(gen : Generator){
     Signature(gen)[0]
 }
+/**
+ * Get the codomain of a generator
+ */
 func Cod(gen : Generator){
     Signature(gen)[1]
+}
+/**
+ * Check if a port is connected to a given generator 
+ * @param p   The port
+ * @param gen The generator to check for
+ * @return The edge if it is the correct generator, or None otherwise.
+ */
+func PortToGenerator(p : Port, gen : Generator){
+    match(p){
+        case EdgePort(e, i) => {
+            if(e.generator == gen){
+                Some<Edge * Int64>((e, i))
+            } else {
+                None<Edge * Int64>
+            }
+        }
+        case InterfacePort(i) => {
+            None<Edge * Int64>
+        }
+    }
+}
+/**
+ * Check if a port is on a given generator
+ * @param p   The port
+ * @param gen The desired generator
+ * @return Whether port p connects to an edge with generator gen
+ */
+func IsPortToGenerator(p : Port, gen : Generator) {
+    match(PortToGenerator(p, gen)){
+        case Some((e, i)) => true
+        case $None        => false
+    }
+}
+/**
+ * Check if a port connects to an endpoint: a generator with codomain of 0
+ * @param p The port
+ * @return Either the edge and its index if it is an endpoint, or None otherwise
+ */
+func PortToEndpoint(p : Port){
+    match(p) {
+        case EdgePort(e, i) => {
+            if(Cod(e.generator) == 0){
+                Some<Edge * Int64>((e, i))
+            } else {
+                None<Edge * Int64>
+            }
+        }
+        case InterfacePort(i) => {
+            None<Edge * Int64>
+        }
+    }
+}
+/**
+ * Check if a given generator is an inlink
+ * @param gen The generator
+ * @return Whether the generator is an inlink
+ */
+func IsInlink(gen : Generator){
+    match(gen){
+        case INLINK(spec) => true
+        case _ => false
+    }
+}
+/**
+ * Check if a given generator is an outlink
+ * @param gen The generator
+ * @return Whether the generator is an outlink
+ */
+func IsOutlink(gen : Generator){
+    match(gen){
+        case OUTLINK(spec) => true
+        case _ => false
+    }
 }
 
 /**
@@ -278,46 +371,3 @@ external let XNOR : Generator = GATE(Label("XNOR", 2, 1))
  */
  
 external let MUX : Generator = GATE(Label("mux", 3, 1))
-
-/**
- * Check if a port is connected to a given generator 
- * @param p   The port
- * @param gen The generator to check for
- * @return The edge if it is the correct generator, or None otherwise.
- */
-func PortToGenerator(p : Port, gen : Generator){
-    match(p){
-        case EdgePort(e, i) => {
-            if(e.generator == gen){
-                Some<Edge * Int64>((e, i))
-            } else {
-                None<Edge * Int64>
-            }
-        }
-        case InterfacePort(i) => {
-            None<Edge * Int64>
-        }
-    }
-}
-
-func IsPortToGenerator(p : Port, gen : Generator) {
-    match(PortToGenerator(p, gen)){
-        case Some((e, i)) => true
-        case $None        => false
-    }
-}
-
-func PortToEndpoint(p : Port){
-    match(p) {
-        case EdgePort(e, i) => {
-            if(Cod(e.generator) == 0){
-                Some<Edge * Int64>((e, i))
-            } else {
-                None<Edge * Int64>
-            }
-        }
-        case InterfacePort(i) => {
-            None<Edge * Int64>
-        }
-    }
-}

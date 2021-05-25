@@ -11,7 +11,7 @@ import debug.*
  * Base atom class, every element of a hypergraph (vertex, edge, label) is an atom
  * Each atom has a unique id, and this is what comparisons should be performed on
  */
-open class Atom <: ToString {
+open class Atom {
     static var nextid : UInt64 = 0
     let id : UInt64
     init() { 
@@ -66,6 +66,11 @@ open class Vertex <: Atom {
         }
     }
     open override func toString() : String { "Vertex v${id}" }
+}
+append Vertex with ToString {
+    func toString(v : Vertex){
+        v.toString()
+    }
 }
 /**
  * Source vertices are outwards facing ports: they are the sources of edges.
@@ -137,6 +142,11 @@ external class Source <: Vertex {
         return "Source s${id} ${wireString}" 
     }
 }
+append Source with ToString {
+    func toString(s : Source){
+        s.toString()
+    }
+}
 append Source with Equatable, Hashable {
     operator func ==(lhs : Source, rhs : Source) : Bool { lhs.id == rhs.id }
     operator func !=(lhs : Source, rhs : Source) : Bool { lhs.id != rhs.id }
@@ -202,6 +212,11 @@ external class Target <: Vertex {
     }
     override func toString() { "Target t${id}" }
 }
+append Target with ToString{
+    func toString(t : Target){
+        t.toString()
+    }
+}
 append Target with Equatable, Hashable {
     operator func ==(lhs : Target, rhs : Target) : Bool { lhs.id == rhs.id }
     operator func !=(lhs : Target, rhs : Target) : Bool { lhs.id != rhs.id }
@@ -265,6 +280,11 @@ external open class Edge <: Atom {
         }
     }
 }
+append Edge with ToString {
+    func toString(e : Edge){
+        e.toString()
+    }
+}
 append Edge with Equatable, Hashable {
     operator func ==(lhs : Edge, rhs : Edge) : Bool { lhs.id == rhs.id }
     operator func !=(lhs : Edge, rhs : Edge) : Bool { lhs.id != rhs.id }
@@ -288,9 +308,9 @@ enum Port {
     | InterfacePort(Int64) 
 }
 
-extend Port <: ToString {
-    func toString(){
-        match(this){
+append Port with ToString {
+    func toString(p : Port){
+        match(p){
             case EdgePort(e, i)   => "Edge port ${e.id}[${i}]"
             case InterfacePort(i) => "Interface port ${i}"
         }

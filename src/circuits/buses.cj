@@ -62,11 +62,16 @@ class Bus <: Atom {
         wires.add(wire)
     }
     override func toString(){
-        let name = match(name){
-            case Some(name) => name
+        let res = match(name){
+            case Some(str) => str
             case $None      => "b${id}"
         }
-        "bus ${name}"
+        "bus ${res}"
+    }
+}
+append Bus with ToString {
+    func toString(b : Bus){
+        b.toString()
     }
 }
 append Bus with Equatable, Hashable {
@@ -170,6 +175,11 @@ class Wire <: Atom {
             case $None      => "b${bus.id}"
         }
         "${name}[${i}]"
+    }
+}
+append Wire with ToString {
+    func toString(w : Wire){
+        w.toString()
     }
 }
 append Wire with Equatable {

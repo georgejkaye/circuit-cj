@@ -233,43 +233,8 @@ func Extract(f : HypBuilder, buses : ArrayList<String>, name!: String = "") : Hy
  */
 func ResolveLinks(f : HypBuilder, name!: String = ""){
     Debug("ResolveLinks", "Resolving links in ${f.GetName()}")
-    let inlinks = MapBuilder<LinkSpec, ArrayList<Edge>>()
-    let outlinks = MapBuilder<LinkSpec, ArrayList<Edge>>()
-    // Define the maps of link specs to edges
-    // TODO this can definitely become a method in hypergraph
-    for(edge in f.GetEdges()){
-        match(edge.generator){
-            case INLINK(spec)  => {
-                match(inlinks.toMap().get(spec)){
-                    case Some(es) => {
-                        es.add(edge)
-                        true
-                    } 
-                    case $None    => {
-                        let es = ArrayList<Edge>([edge])
-                        inlinks.add(spec, es)
-                        false
-                    }
-                }
-                true
-            }
-            case OUTLINK(spec) => {
-                match(outlinks.toMap().get(spec)){
-                    case Some(es) => {
-                        es.add(edge)
-                        true
-                    }
-                    case $None    => {
-                        let es = ArrayList<Edge>([edge])
-                        outlinks.add(spec, es)
-                        false
-                    }
-                }
-                true
-            }
-            case _ => false
-        }
-    }
+    let inlinks = f.GetInlinkMap()
+    let outlinks = f.GetOutlinkMap()
     // Join all the outlinks into one wire 
     for((spec, outLinkEdges) in outlinks.toMap()){
         match(inlinks.toMap().get(spec)){
@@ -299,15 +264,19 @@ func ResolveLinks(f : HypBuilder, name!: String = ""){
                         for(i in 0..ins-1){
                             // Go from bottom to top
                             let j = ins - i - 1
-                            // Create a fork
+                            // Create a fork and connect it to the current target
                             let fork = f.CreateEdge(FORK, [currentTarget])
+                            // Set the right target of the fork to connect to whatever the jth target of the outlink connected to
                             f.AddConn(fork.targets[1], inLinkEdges[j].targets[port].GetConn())
+                            // Set the left target of the fork ready for the next iteration
                             currentTarget = fork.targets[0]
                         }
                     }
+                    // The last port doesn't need forking, we just connect the current target up
                     f.AddConn(currentTarget, inLinkEdges[0].targets[port].GetConn())
 
                 }
+                // Remove all the replaced in link edges
                 f.RemoveEdges(inLinkEdges)
             }
             // There are no corresponding in links, so we can just stub these outlinks

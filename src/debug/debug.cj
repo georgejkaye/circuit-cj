@@ -5,12 +5,12 @@
  */
 package debug
 
-let debugMessages : Bool = true
+import settings.*
 
 enum MessageType{ DEBUG | ERROR | WARNING | INFO }
-extend MessageType <: ToString {
-    func toString(){
-        match(this){
+append MessageType with ToString {
+    func toString(mt : MessageType){
+        match(mt){
             case $DEBUG   => "[DEBUG]"
             case $ERROR   => "[ERROR]"
             case $WARNING => "[WARNING]"
@@ -24,7 +24,7 @@ func PrintMessage(mt : MessageType, function : String, msg : String) : Unit {
 }
 
 external func Debug(fnc: String, msg : String) : Unit {
-    if(debugMessages){
+    if(DebugMessagesOn()){
         PrintMessage(DEBUG, fnc, msg)
     }
 }

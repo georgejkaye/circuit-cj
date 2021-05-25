@@ -48,6 +48,23 @@ func AddSource(s : Source, sources : ArrayList<Source>, busMaps : MapBuilder<Bus
         }
     }
 }
+func AddEdge(e : Edge, sources : ArrayList<Source>, targets : ArrayList<Target>,
+             busMaps : MapBuilder<Bus, MapBuilder<Int64, Source>>, busList : ArrayList<Bus>, wireList : ArrayList<Wire>,
+             inlinkMap : MapBuilder<LinkSpec, ArrayList<Edge>>, outlinkMap : MapBuilder<LinkSpec, ArrayList<Edge>>
+            ){
+    for(i in 0..e.sources.size()){
+        AddSource(e.sources[i], sources, busMaps, busList, wireList)
+    }
+    for(i in 0..e.targets.size()){
+        AddTarget(e.targets[i], targets)
+    }
+    if(IsInlink(e.generator)){
+        UpdateLinks(e, inlinkMap)
+    }
+    if(IsOutlink(e.generator)){
+        UpdateLinks(e, outlinkMap)
+    }        
+}
 /**
  * Update the bus vertex list, making sure that any new bus vertices are in the appropriate lists
  * @param busList The list of buses
@@ -73,6 +90,24 @@ func UpdateBusVertexList(busList : ArrayList<Bus>, busMaps : MapBuilder<Bus, Map
         }
     }
 }
+/**
+ * Update a links map
+ * Throws an exception if the edge is not a link
+ * @param e The link edge to add
+ * @param linkMap The map to update
+ */
+func UpdateLinks(e : Edge, linkMap : MapBuilder<LinkSpec, ArrayList<Edge>>){
+    let spec = e.GetSpec()
+    let es = match(linkMap.toMap().get(spec)){
+        case Some(es) => es
+        case $None => {
+            let es = ArrayList<Edge>()
+            linkMap.add(spec, es)
+            es
+        }
+    }
+    es.add(e)
+}
 
 /**
  * A hypergraph structure is a collection of edges, inputs, outputs and connections
@@ -91,6 +126,9 @@ open class HypergraphStructure <: Atom {
     protected let busList        : ArrayList<Bus>
     protected let wireList       : ArrayList<Wire> 
 
+    protected let inlinkMap  : MapBuilder<LinkSpec, ArrayList<Edge>>
+    protected let outlinkMap : MapBuilder<LinkSpec, ArrayList<Edge>> 
+
     init(edges   : ArrayList<Edge>,
          inputs  : ArrayList<Target>,
          outputs : ArrayList<Source>
@@ -107,19 +145,17 @@ open class HypergraphStructure <: Atom {
         this.busMaps = MapBuilder<Bus, MapBuilder<Int64, Source>>()
         this.busVertexMaps = MapBuilder<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>()
 
+        this.inlinkMap = MapBuilder<LinkSpec, ArrayList<Edge>>()
+        this.outlinkMap = MapBuilder<LinkSpec, ArrayList<Edge>>()
+
         // Add all the inputs to the targets
         for(i in 0..inputs.size()){
             AddTarget(inputs[i], targets)
             inputs[i].SetPort(i)
-    }
+        }
         // Add all the sources and targets of edges
         for(e in edges){
-            for(i in 0..e.sources.size()){
-                AddSource(e.sources[i], sources, busMaps, busList, wireList)
-            }
-            for(i in 0..e.targets.size()){
-                AddTarget(e.targets[i], targets)
-            }
+            AddEdge(e, sources, targets, busMaps, busList, wireList, inlinkMap, outlinkMap)
         }
         // Add all the outputs to the sources
         for(i in 0..outputs.size()){
@@ -180,6 +216,8 @@ open class HypergraphStructure <: Atom {
     func GetSources(){ sources }
     func GetTargets(){ targets }
     func GetWires(){ wireList }
+    func GetInlinkMap(){ inlinkMap }
+    func GetOutlinkMap(){ outlinkMap }
     
     open func GetName(){ "hs${id}" }
 
@@ -378,6 +416,11 @@ open class HypergraphStructure <: Atom {
         "====\nsources ${sourceString}\ntargets ${targetString}\ninputs ${inputString}\n${edgeString}outputs ${outputString}\nconnsr ${connsRString}\nconnsl ${connsLString}\nlefts ${leftString}\nrights ${rightString}\n===="
     }
 }
+append HypergraphStructure with ToString {
+    func toString(hs : HypergraphStructure){
+        hs.toString()
+    }
+}
 
 /** 
  * An enum to represent if a hypergraph structure is well formed or if there is a problem with it
@@ -568,6 +611,11 @@ external class Hypergraph <: HypergraphStructure {
            connstr = "${connstr}(${t.id} ${t.GetConn().id}) "
         }
         "${name}\n${inputString}\n${str}${outputString}\n${connstr}"
+    }
+}
+append Hypergraph with ToString {
+    func toString(h : Hypergraph){
+        h.toString()
     }
 }
 /**

@@ -1,6 +1,7 @@
 package examples
 
 import circuits.*
+import debug.*
 
 func partial_product(a!: Hypergraph, b0!: Hypergraph){
     Mux(width: a.GetN(), s: b0, a: a, b: Zero(width: a.GetN()))
@@ -30,6 +31,7 @@ func computed_bits(width!: Int64, bit!: Hypergraph){
 }
 
 external func serial_multiplier_bit(width!: Int64){
+    Info("serial_multiplier_bit", "Making serial multiplier circuit for one bit")
     let first = Input(width: 1, label: "first")
     let a = Input(width: width, label: "a")
     let b0 = Input(width: 1, label: "b0")

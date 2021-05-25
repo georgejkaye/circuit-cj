@@ -83,10 +83,10 @@ class BadHypergraphException <: Exception {
 
 class NoAssociatedEdgeException <: Exception {
     init(function : String, h : HypergraphStructure, s : Source){
-        ErrorMsg(function, "The source ${s.id} does not have an associated edge")
+        ErrorMsg(function, "The source ${s.id} does not have an associated edge\n${h}")
     }
     init(function : String, h : HypergraphStructure, t : Target){
-        ErrorMsg(function, "The target ${t.id} does not have an associated edge")
+        ErrorMsg(function, "The target ${t.id} does not have an associated edge\n${h}")
     }
     init(function : String, v : Vertex){
         ErrorMsg(function, "The vertex ${v.id} does not have an associated edge")

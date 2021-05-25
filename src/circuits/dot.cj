@@ -10,11 +10,6 @@ import io.*
 import debug.*
 import settings.*
 
-/* Whether to display debug information on the graph */
-let debugDot = false
-/* The tab string */
-let tab = "  "
-
 /**
  * Indent a string by a given number of tabs
  * @param n   the number of tabs to indent by
@@ -149,7 +144,7 @@ func DrawEdgeNode(n : Int64, id : String, nodeStyle : String, text : String, sou
     let targetTable = if(targets.size() == 0) { "" } else { WrapInTd(TargetListToTable(targets, "t", 5), n+3) }
     let sourceNewline = if(sourceTable == "") { "" } else { "\n" }
     let targetNewline = if(targetTable == "") { "" } else { "\n" }
-    let edgetext = WrapInTd(indent(n+4, if(debugDot) { "${id}: ${text}" } else { text }), n+3)
+    let edgetext = WrapInTd(indent(n+4, if(DebugDotOn()) { "${id}: ${text}" } else { text }), n+3)
     let subtable = WrapInTr("${sourceTable}${sourceNewline}${edgetext}${targetNewline}${targetTable}", n+2)
     let tablefooter = indent(n+1, "</table>")
     let conclusion = indent(n,">];")
@@ -185,11 +180,11 @@ func DrawVertex(t : Target, s : Source) {
 
         let wiretext = match(wire.bus.name){
             case Some(name) => "${name}[${wire.i}]"
-            case $None      => if(debugDot) { "${wire.bus.id}[${wire.i}]" } else { "" }
+            case $None      => if(DebugDotOn()) { "${wire.bus.id}[${wire.i}]" } else { "" }
         }
         wires = if(wires == "") { "${wiretext}" } else if(wiretext == "") { "${wires}" } else { "${wires}, ${wiretext}" }
     }
-    let text = if(debugDot) { "${t.id}|${s.id}\n${wires}" } else { wires }
+    let text = if(DebugDotOn()) { "${t.id}|${s.id}\n${wires}" } else { wires }
     "v${t.id}[label=\"\" xlabel=\"${text}\"]"
 }
 /**
@@ -206,6 +201,7 @@ func DrawSubgraph(n : Int64, opt : String, text : String){
 }
 /**
  * Translate a hypergraph into a dot graph
+ * TODO this seems very slow, is there a way to improve performance?
  * @param f The hypergraph to translate
  */
 external func DotGraph(f : Hypergraph){
@@ -263,7 +259,7 @@ external func DotGraph(f : Hypergraph){
  */
 external func WriteDotToFile(f : Hypergraph, file : String){
     let filename = GetDotFile(file)
-    Debug("WriteDotToFile", "Writing dot graph '${f.GetName()}' to file ${filename}")
+    Info("WriteDotToFile", "Writing dot file ${filename}")
     let dot = DotGraph(f)
     let fs = FileStream(filename, OpenMode.ForceCreate)
     if(fs.openFile()){
