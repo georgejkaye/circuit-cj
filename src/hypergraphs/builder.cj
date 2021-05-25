@@ -100,6 +100,7 @@ class HypBuilder <: HypergraphStructure {
      */
     func AddConn(t : Target, s : Source) : Unit {
         t.SetConn(s)
+        s.SetConn(t)
     }
     /**
      * Add a new source vertex
@@ -150,11 +151,23 @@ class HypBuilder <: HypergraphStructure {
      * @param f The new graph
      */
     func AddNewGraph(f : HypergraphStructure){
+        // HACK if for some reason f is empty the lists aren't initialised
+        if(edges.size() == 0){
+            edges = ArrayList<Edge>()
+        }
         for(e in f.GetEdges()){
             AddEdge(e)
         }
+        // HACK if for some reason f is empty the lists aren't initialised
+        if(inputs.size() == 0){
+            inputs = ArrayList<Target>()
+        }
         for(t in f.GetInputs()){
             AddInput(t)
+        }
+        // HACK if for some reason f is empty the lists aren't initialised
+        if(outputs.size() == 0){
+            outputs = ArrayList<Source>()
         }
         for(t in f.GetOutputs()){
             AddOutput(t)
@@ -195,6 +208,7 @@ class HypBuilder <: HypergraphStructure {
     func AddInput(t : Target){
         t.SetPort(inputs.size())
         inputs.add(t)
+        AddNewTarget(t)
     }
     /**
      * Set an input to be a different vertex
@@ -221,6 +235,7 @@ class HypBuilder <: HypergraphStructure {
     func AddOutput(s : Source){
         s.SetPort(outputs.size())
         outputs.add(s)
+        AddNewSource(s)
     }
     /**
      * Add a list of outputs to this builder
@@ -260,6 +275,12 @@ class HypBuilder <: HypergraphStructure {
         edge.sources.set(i, s)
         s.SetPort(edge, i)
     }
+    func SetSource(s : Source, p : Port){
+        match(p){
+            case EdgePort(e, i) => SetSource(e, i , s)
+            case InterfacePort(i) => SetOutput(i, s)
+        }
+    }
     /**
      * Set a target of an edge to be a different vertex
      * @param edge The edge
@@ -269,6 +290,12 @@ class HypBuilder <: HypergraphStructure {
     func SetTarget(edge : Edge, i : Int64, t : Target){
         edge.targets.set(i, t)
         t.SetPort(edge, i)
+    }
+    func SetTarget(t : Target, p : Port){
+        match(p){
+            case EdgePort(e, i) => SetTarget(e, i, t)
+            case InterfacePort(i) => SetInput(i, t)
+        }
     }
     /**
      * Create an edge and necessary infrastructure for a given generator 
@@ -497,13 +524,22 @@ class HypBuilder <: HypergraphStructure {
         ConnectOutputsToEdge(ArrayList<Int64>([out]), gen)
     }
     /**
+     * Set an output to be the source of a new edge
+     * @param outs  The index of the output to connect to the new edge
+     * @param gen   The generator of the new edge
+     * @return The new edge
+     */
+    func ConnectOutputToEdge(out : Source, gen : Generator) : Edge {
+        ConnectOutputsToEdge(ArrayList<Source>([out]), gen)
+    }
+    /**
      * Set some outputs to be the sources of a new edge
      * @param outs  The indices of the outputs to connect to the new edge
      * @param gen   The generator of the new edge
      * @return The new edge
      */
     func ConnectOutputsToEdge(outs : ArrayList<Int64>, gen : Generator) : Edge {
-        Debug("ConnectOutputsToEdge", "Connecting outputs ${PrintList(outs)} to generator ${gen}")
+        Debug("ConnectOutputsToEdge", "Connecting outputs ${PrintList(outs, {n : Int64 => "${n}"})} to generator ${gen}")
         if(Dom(gen) != outs.size()){
             throw BadDomainException("ConnectOutputsToEdge", outs.size(), Dom(gen))
         }
@@ -515,9 +551,13 @@ class HypBuilder <: HypergraphStructure {
             }
             outputs[j]
         })
+       
+        ConnectOutputsToEdge(chosenOutputs, gen)
+    }
+    func ConnectOutputsToEdge(outs : ArrayList<Source>, gen : Generator) : Edge {
         // Remove these vertices from the outputs
-        RemoveOutputs(chosenOutputs)
-        let edge = CreateEdgeFromExisting(gen, chosenOutputs)
+        RemoveOutputs(outs)
+        let edge = CreateEdgeFromExisting(gen, outs)
         // Connect the new edge to the outputs if necessary
         ConnectEdgeToOutputs(edge)
         edge
@@ -538,7 +578,7 @@ class HypBuilder <: HypergraphStructure {
      * @return The new edge
      */
     func ConnectInputsToEdge(ins : ArrayList<Int64>, gen : Generator){
-        Debug("ConnectInputsToEdge", "Connecting inputs ${PrintList(ins)} to generator ${gen}")
+        Debug("ConnectInputsToEdge", "Connecting inputs to generator ${gen}")
         if(Cod(gen) != ins.size()){
             throw BadCodomainException("ConnectInputsToEdge", ins.size(), Cod(gen))
         }

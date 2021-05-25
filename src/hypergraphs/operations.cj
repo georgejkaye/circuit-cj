@@ -243,14 +243,19 @@ external func Get(f : Hypergraph, ns : ArrayList<Int64>, label!: String = "", na
     Get(f.Clone(), ns, label: label, name: name)
 }
 func Get(f : HypBuilder, ns : ArrayList<Int64>, label!: String = "", name!: String = ""){
+    Debug("Get", "Getting outputs ${PrintList(ns, {n : Int64 => "${n}"})} from ${f.GetName()}")
     for(n in ns){
         if(n < 0 || n > f.GetN()){
             throw BadOutputException("Get", n, f.GetN())
         }
     }
-    let drops = ArrayList<Int64>(ns)
-    drops.removeIf({x : Int64 => includes(ns, x)})
-    f.ConnectOutputsToEdge(drops, STUB)
+    let drops = ArrayList<Source>(f.GetOutputs())
+    for(n in ns){
+        drops.removeIf({s : Source => s == f.GetOutputs()[n]})
+    }
+    for(d in drops){
+        f.ConnectOutputToEdge(d, STUB)
+    }
     f.ToGraph()
 }
 /**

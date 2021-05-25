@@ -66,23 +66,20 @@ open class HypergraphStructure <: Atom {
     protected var inputs   : ArrayList<Target>
     protected var outputs  : ArrayList<Source>
 
-    protected var sources  : ArrayList<Source>
-    protected var targets  : ArrayList<Target>
+    protected let sources  : ArrayList<Source>
+    protected let targets  : ArrayList<Target>
 
-    protected var busMaps        : MapBuilder<Bus, MapBuilder<Int64, Source>>
+    protected let busMaps        : MapBuilder<Bus, MapBuilder<Int64, Source>>
     protected var busVertexMaps  : MapBuilder<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>
-    protected var busList        : ArrayList<Bus>
-    protected var wireList       : ArrayList<Wire> 
+    protected let busList        : ArrayList<Bus>
+    protected let wireList       : ArrayList<Wire> 
 
     init(edges   : ArrayList<Edge>,
-         inputz  : ArrayList<Target>,
+         inputs  : ArrayList<Target>,
          outputs : ArrayList<Source>
     )  {
         this.edges = edges
-
-        print("this graph has ${inputz.size()}\n")
-
-        this.inputs = inputz
+        this.inputs = inputs
         this.outputs = outputs
 
         this.sources = ArrayList<Source>()
@@ -97,7 +94,7 @@ open class HypergraphStructure <: Atom {
         for(i in 0..inputs.size()){
             AddTarget(inputs[i], targets)
             inputs[i].SetPort(i)
-        }
+    }
         // Add all the sources and targets of edges
         for(e in edges){
             for(i in 0..e.sources.size()){
@@ -193,7 +190,6 @@ open class HypergraphStructure <: Atom {
             case Some((mb, ss)) => vs.addAll(ss)
             case $None          => throw BusNotInGraphException("GetBusVertexList", b)
         }
-        vs
     }
     /**
      * Get the list of vertices belonging to a given bus and append them to an existing list
@@ -213,6 +209,7 @@ open class HypergraphStructure <: Atom {
     func GetBusVertexList(b : Bus){
         let vs = ArrayList<Source>()
         GetBusVertexList(b, vs)
+        vs
     }
     /**
      * Get the list of vertices belonging to a given bus 
@@ -222,6 +219,7 @@ open class HypergraphStructure <: Atom {
     func GetBusVertexList(s : String){
         let vs = ArrayList<Source>()
         GetBusVertexList(s, vs)
+        vs
     }
     /**
      * Is this hypergraph structure a well formed hypergraph?
@@ -229,12 +227,12 @@ open class HypergraphStructure <: Atom {
      */
     func IsWellFormed(){
         Debug("IsWellFormed", "Checking if graph is well formed")
-        let encountedTargets = ArrayList<Target>()
+        let encounteredTargets = ArrayList<Target>()
         for(t in targets){
-            if(includes(encountedTargets, t)){
+            if(includes(encounteredTargets, t)){
                 return DuplicateTarget(t)
             }
-            encountedTargets.add(t)
+            encounteredTargets.add(t)
             if(!t.HasPort()){
                 return TargetNotAssociated(t)   
             }
@@ -261,25 +259,30 @@ open class HypergraphStructure <: Atom {
                 return ConnectionNotInGraph(s, s.GetConn())
             }
         }
+        for(e in edges){
+            if(e.sources.size() != Dom(e.generator)){
+                return IncorrectDomain(e, e.sources.size())
+            }
+            if(e.targets.size() != Cod(e.generator)){
+                return IncorrectCodomain(e, e.targets.size())
+            }
+        }
         return Okay
     }
-}
-
-append HypergraphStructure with ToString {
-    func toString(f : HypergraphStructure) {
-        let sourceString = PrintList(f.GetSources(), {s : Source => "${s.id}"})
-        let targetString = PrintList(f.GetTargets(), {t : Target => "${t.id}"})
+    open override func toString() {
+        let sourceString = PrintList(sources, {s : Source => "${s.id}"})
+        let targetString = PrintList(targets, {t : Target => "${t.id}"})
         var edgeString = ""
-        let inputString = PrintList(f.GetInputs(), {t : Target => "${t.id}"})
-        for(e in f.GetEdges()){
+        let inputString = PrintList(inputs, {t : Target => "${t.id}"})
+        for(e in edges){
             let edgeSources = SourceListToString(e.sources)
             let edgeTargets = TargetListToString(e.targets)
             edgeString = "${edgeString}e${e.id} - ${e.generator} ${edgeSources} ${edgeTargets}\n"
         }
-        let outputString = PrintList(f.GetOutputs(), {s : Source => "${s.id}"})
+        let outputString = PrintList(outputs, {s : Source => "${s.id}"})
         var connsRString = ""
         var leftString = ""
-        for(t in f.GetTargets()){
+        for(t in targets){
             let s = if(t.HasConn()){
                 "${t.GetConn().id}"
             } else {
@@ -298,7 +301,7 @@ append HypergraphStructure with ToString {
         }
         var connsLString = ""
         var rightString = ""
-        for(s in f.GetSources()){
+        for(s in sources){
             let t = if(s.HasConn()){
                 "${s.GetConn().id}"
             } else {
@@ -331,6 +334,8 @@ enum WellformednessStatus {
     | DuplicateTarget(Target)               // This target is associated with multiple edges
     | DuplicateSource(Source)               // This source is associated with multiple edges
     | ConnectionNotInGraph(Vertex, Vertex)  // The connection of the first vertex is not in the graph
+    | IncorrectDomain(Edge, Int64)          // This edge has the incorrect number of sources
+    | IncorrectCodomain(Edge, Int64)        // This edge has the incorrect number of targets
 }
 
 /**
@@ -425,24 +430,22 @@ external class Hypergraph <: HypergraphStructure {
     operator func [](f : Hypergraph, bus : String){
         Get(f.Clone(), bus)
     }
-}
-append Hypergraph with ToString {
-    func toString(f : Hypergraph) : String {
+    override func toString() : String {
         var str = ""
-        let inputString = "inputs ${TargetListToString(f.GetInputs())}"
-        for (e in f.GetEdges()) {
+        let inputString = "inputs ${TargetListToString(inputs)}"
+        for (e in edges) {
             let id = "e${e.id}"
             let gen = "${e.generator}"
             let sourceString = SourceListToString(e.sources)
             let targetString = TargetListToString(e.targets)
             str = "${str}${id} (${gen}) ${sourceString} ${targetString}\n"
         }
-        let outputString = "outputs ${SourceListToString(f.GetOutputs())}"
+        let outputString = "outputs ${SourceListToString(outputs)}"
         var connstr = "connections "
-        for (t in f.GetTargets()) {
+        for (t in targets) {
            connstr = "${connstr}(${t.id} ${t.GetConn().id}) "
         }
-        "${f.GetName()}\n${inputString}\n${str}${outputString}\n${connstr}"
+        "${name}\n${inputString}\n${str}${outputString}\n${connstr}"
     }
 }
 /**

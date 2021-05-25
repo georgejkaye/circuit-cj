@@ -105,6 +105,16 @@ external func InLink(spec!: LinkSpec, output!: String = "", name!:String = "") :
  * @return The iteration
  */
 external func Feedback(spec!: LinkSpec, output!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
+    Debug("Feedback", "Creating feedback to spec ${spec.name}")
+    match(input){
+        case Some(f) => {
+            if(f.GetN() != spec.width){
+                throw TypeMismatchException("Feedback", f, spec.width)
+            }
+        }
+        case $None => {}
+    }
+    
     let hb = HypBuilder(spec.width, spec.width, output)
     let link = hb.CreateEdge(OUTLINK(spec))
     for(i in 0..spec.width){

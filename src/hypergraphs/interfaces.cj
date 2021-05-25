@@ -31,18 +31,17 @@ external func Input(label!: String = "", width!: Int64 = 1){
 external func Concat(fs : ArrayList<Hypergraph>, name!: String = ""){
     Debug("Concat", "Concatting hypergraphs")
     var f = fs[0].Clone()
+    WriteDotToFile(fs[0], "f2")
     for(i in 1..fs.size()){
+        WriteDotToFile(fs[i], "g")
         var g = fs[i].Clone()
-        let (intersectionsF, intersectionsG)  = FindIntersections(f, g)
-        if(intersectionsF.size() == 0){
+        let intersections = FindIntersections(f, g)
+        if(intersections.size() == 0){
             f.AddNewGraph(g)
         } else {
-            g = RemoveLeft(g, intersectionsG)
-            f = Inject(f, intersectionsF, g, intersectionsG)
+            f = Inject(f, g, intersections)
         }
     }
-    print("about to c o n v e r t \n")
-    print("${f}\n")
     let re = f.ToGraph()
     re
 }

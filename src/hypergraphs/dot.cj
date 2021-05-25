@@ -11,7 +11,7 @@ import debug.*
 import settings.*
 
 /* Whether to display debug information on the graph */
-let debugDot = true
+let debugDot = false
 /* The tab string */
 let tab = "  "
 

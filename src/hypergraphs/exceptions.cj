@@ -74,6 +74,8 @@ class BadHypergraphException <: Exception {
             case DuplicateTarget(t)          => throw DuplicateVertexException("Wellformedness", h, t)
             case DuplicateSource(s)          => throw DuplicateVertexException("Wellformedness", h, s)
             case ConnectionNotInGraph(v1,v2) => throw BadConnectionException("Wellformedness", h, v1, v2)
+            case IncorrectDomain(e, n)       => throw BadDomainException("Wellformedness", n, Dom(e.generator))
+            case IncorrectCodomain(e, n)     => throw BadCodomainException("Wellformedness", n, Cod(e.generator))
             case _ => throw InaccessibleCodeException("Wellformedness")
         }
     }
@@ -81,10 +83,10 @@ class BadHypergraphException <: Exception {
 
 class NoAssociatedEdgeException <: Exception {
     init(function : String, h : HypergraphStructure, s : Source){
-        ErrorMsg(function, "The source ${s.id} does not have an associated edge\n${h}")
+        ErrorMsg(function, "The source ${s.id} does not have an associated edge")
     }
     init(function : String, h : HypergraphStructure, t : Target){
-        ErrorMsg(function, "The target ${t.id} does not have an associated edge\n${h}")
+        ErrorMsg(function, "The target ${t.id} does not have an associated edge")
     }
     init(function : String, v : Vertex){
         ErrorMsg(function, "The vertex ${v.id} does not have an associated edge")

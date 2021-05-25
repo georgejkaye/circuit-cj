@@ -18,14 +18,14 @@ func running_sum_loop(first!: Hypergraph, a!: Hypergraph, b0!: Hypergraph){
     let spec = LinkSpec("prev_sum", 4)
     let prev_sum = Delay(width: 4, input: InLink(spec: spec))
     let sum = running_sum(first: first, sum: prev_sum, a: a, b0: b0)
-    let msbs = Drop(sum, 0)
-    Feedback(spec: spec, input: msbs)
+    let msbs = Msbs(sum)
+    Feedback(spec: spec, input: msbs, output: "loop")
 }
 
 func computed_bits(width!: Int64, bit!: Hypergraph){
     let spec = LinkSpec("d", width)
     let prev_bits = Register(initial: 0, width: 4, input: InLink(spec: spec))
-    let bits = Par(Drop(prev_bits, 0), bit)
+    let bits = Par(Msbs(prev_bits), bit)
     Feedback(spec: spec, input: bits)
 }
 

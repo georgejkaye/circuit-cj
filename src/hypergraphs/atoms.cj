@@ -11,27 +11,21 @@ import debug.*
  * Base atom class, every element of a hypergraph (vertex, edge, label) is an atom
  * Each atom has a unique id, and this is what comparisons should be performed on
  */
-open class Atom {
+open class Atom <: ToString {
+    static var nextid : UInt64 = 0
     let id : UInt64
     init() { 
-        this.id = genId()
+        this.id = nextid
+        nextid++
+    }
+    open func toString(){
+        "Atom ${id}"
     }
 }
 append Atom with Equatable, Hashable {
     operator func ==(lhs : Atom, rhs : Atom) : Bool { lhs.id == rhs.id }
     operator func !=(lhs : Atom, rhs : Atom) : Bool { lhs.id != rhs.id }
     func hashCode(a : Atom) : UInt64 { a.id }
-}
-/** The next id available */
-var nextid : UInt64 = 0
-/**
- * Generate the next unique id for an atom
- * @return The next id
- */
-func genId(){
-    let id = nextid
-    nextid++
-    id
 }
 /** 
  * Get a string representing a list of atoms 
@@ -71,9 +65,7 @@ open class Vertex <: Atom {
             case $None   => false
         }
     }
-}
-append Vertex with ToString {
-    func toString(v : Vertex) : String { "Vertex v${v.id}" }
+    open override func toString() : String { "Vertex v${id}" }
 }
 /**
  * Source vertices are outwards facing ports: they are the sources of edges.
@@ -111,7 +103,7 @@ external class Source <: Vertex {
             t.SetConn(this)
         }
     }
-    func GetConn(){
+    func GetConn() : Target {
         match(conn){
             case Some(t) => t
             case $None   => throw MissingConnectionException("GetConn", this)
@@ -133,19 +125,19 @@ external class Source <: Vertex {
      * @param wires The wires to add 
      */
     func AddWires(wires : ArrayList<Wire>) { this.wires.addAll(wires) }
-}
-append Source with ToString, Equatable, Hashable {
-    func toString(s : Source) {
-        var wires = ""
-        for (wire in s.wires){
-            let wiretext = match(wire.bus.name){
+    override func toString() {
+        var wireString = ""
+        for (wire in wires){
+            let wireText = match(wire.bus.name){
                 case Some(str) => str
                 case $None     => ""
             }
-            wires = if(wires == "") { "${wiretext}" } else { "${wires}, ${wiretext}" }
+            wireString = if(wireString == "") { "${wireText}" } else { "${wireString}, ${wireText}" }
         }
-        return "Source s${s.id} ${wires}" 
+        return "Source s${id} ${wireString}" 
     }
+}
+append Source with Equatable, Hashable {
     operator func ==(lhs : Source, rhs : Source) : Bool { lhs.id == rhs.id }
     operator func !=(lhs : Source, rhs : Source) : Bool { lhs.id != rhs.id }
     func hashCode(t : Source) : UInt64 { t.id }
@@ -196,7 +188,7 @@ external class Target <: Vertex {
             s.SetConn(this)
         }
     }
-    func GetConn(){
+    func GetConn() : Source {
         match(conn){
             case Some(s) => s
             case $None   => throw MissingConnectionException("GetConn", this)
@@ -208,9 +200,9 @@ external class Target <: Vertex {
             case $None   => false
         }
     }
+    override func toString() { "Target t${id}" }
 }
-append Target with ToString, Equatable, Hashable {
-    func toString(t : Target) { "Target t${t.id}" }
+append Target with Equatable, Hashable {
     operator func ==(lhs : Target, rhs : Target) : Bool { lhs.id == rhs.id }
     operator func !=(lhs : Target, rhs : Target) : Bool { lhs.id != rhs.id }
     func hashCode(t : Target) : UInt64 { t.id }
@@ -257,11 +249,11 @@ external open class Edge <: Atom {
     init(generator : Generator, targets : ArrayList<Target>){
         this(generator, ArrayList<Source>(), targets)
     }
-}
-append Edge with ToString, Equatable, Hashable {
-    func toString(e : Edge) { 
-        "Edge e${e.id} - ${e.generator}" 
+    override func toString() { 
+        "Edge e${id} - ${generator}" 
     }
+}
+append Edge with Equatable, Hashable {
     operator func ==(lhs : Edge, rhs : Edge) : Bool { lhs.id == rhs.id }
     operator func !=(lhs : Edge, rhs : Edge) : Bool { lhs.id != rhs.id }
     func hashCode(t : Edge) : UInt64 { t.id }
@@ -274,7 +266,7 @@ append Edge with ToString, Equatable, Hashable {
  * @return A string containing a space-separated list of the edges
  */
 func EdgeListToString(xs : ArrayList<Edge>){ 
-    PrintList(xs)
+    PrintList(xs, { e : Edge => "Edge e${e.id}"})
 }
 /**
  * Vertices connect to ports, either on an edge or on the interface 
@@ -282,4 +274,13 @@ func EdgeListToString(xs : ArrayList<Edge>){
 enum Port { 
     | EdgePort(Edge, Int64) 
     | InterfacePort(Int64) 
+}
+
+extend Port <: ToString {
+    func toString(){
+        match(this){
+            case EdgePort(e, i)   => "Edge port ${e.id}[${i}]"
+            case InterfacePort(i) => "Interface port ${i}"
+        }
+    }
 }

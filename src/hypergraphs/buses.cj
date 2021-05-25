@@ -61,15 +61,15 @@ class Bus <: Atom {
         }
         wires.add(wire)
     }
-}
-append Bus with ToString, Equatable, Hashable {
-    func toString(b : Bus){
-        let name = match(b.name){
+    override func toString(){
+        let name = match(name){
             case Some(name) => name
-            case $None      => "b${b.id}"
+            case $None      => "b${id}"
         }
         "bus ${name}"
     }
+}
+append Bus with Equatable, Hashable {
     operator func ==(lhs : Bus, rhs : Bus) : Bool { 
         match(lhs.name){
             case Some(str1) => {
@@ -164,15 +164,15 @@ class Wire <: Atom {
         this.i = 0
         bus.AddWire(this)
     }
-}
-append Wire with ToString, Equatable {
-    func toString(w : Wire){
-        let name = match(w.bus.name){
+    override func toString(){
+        let name = match(bus.name){
             case Some(name) => name
-            case $None      => "b${w.bus.id}"
+            case $None      => "b${bus.id}"
         }
-        "${name}[${w.i}]"
+        "${name}[${i}]"
     }
+}
+append Wire with Equatable {
     operator func ==(lhs : Wire, rhs : Wire) : Bool { lhs.bus == rhs.bus && lhs.i == rhs.i }
     operator func !=(lhs : Wire, rhs : Wire) : Bool { lhs.id != rhs.id || lhs.i != rhs.i }
 }
@@ -242,5 +242,5 @@ func NewWire(string!: String = "") : Wire {
  * @return The pretty printed list of wires
  */
 func WireListToString(ws : ArrayList<Wire>){
-    PrintList(ws)
+    PrintList(ws, {w : Wire => "${w}"})
 }

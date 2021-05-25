@@ -22,31 +22,89 @@ func GetEndpoints(f : HypergraphStructure){
     }
     vs
 }
-
-func TraverseLeft(f : HypergraphStructure, s : Source, edgeAction : (Edge) -> Unit, inputAction : (Target, Int64) -> Unit){
-
-    let frontier = ArrayList<Source>([s])
+/**
+ * Traverse through a graph leftwards from a given source
+ * @param s The source to start traversing from
+ * @param edgeAction The action to take at each edge: takes the current edge and the incoming target as argument, and returns
+                     a bool dictating if traversal should continue or halt
+ * @param inputAction The action to take at each reached input: takes the input vertex and its index in the inputs list and returns unit
+ */
+func TraverseLeft(s : Source, edgeAction : (Edge, Target) -> Bool, inputAction : (Target, Int64) -> Unit){
+    TraverseLeft(s.GetConn(), edgeAction, inputAction)
+}
+/**
+ * Traverse through a graph leftwards from a given target
+ * @param s The source to start traversing from
+ * @param edgeAction The action to take at each edge: takes the current edge and the incoming target as argument, and returns
+                     a bool dictating if traversal should continue or halt
+ * @param inputAction The action to take at each reached input: takes the input vertex and its index in the inputs list and returns unit
+ */
+func TraverseLeft(t : Target, edgeAction : (Edge, Target) -> Bool, inputAction : (Target, Int64) -> Unit){
+    let frontier = ArrayList<Target>([t])
     let visitedSources = ArrayList<Source>()
     let visitedTargets = ArrayList<Target>()
     let visitedInputs = ArrayList<Target>()
     let visitedEdges = ArrayList<Edge>()
 
     while(frontier.size() != 0){
-        let s = frontier.removeAt(0)
-        visitedSources.add(s)
-        let t = s.GetConn()
+        let t = frontier.removeAt(0)
         visitedTargets.add(t)
         match(t.GetPort()){
             case EdgePort(e, i) => {
                 if(!includes(visitedEdges, e)){
                     visitedEdges.add(e)
-                    edgeAction(e)
-                    frontier.addAll(e.sources)
+                    let cont = edgeAction(e, t)
+                    if(cont){
+                        for(s in e.sources){
+                            visitedSources.add(s)
+                            frontier.add(s.GetConn())
+                        }
+                    }
                 }
             }
             case InterfacePort(i) => {
                 visitedInputs.add(t)
                 inputAction(t, i)
+            }
+        }
+    }
+    (visitedEdges, visitedSources, visitedTargets, visitedInputs)
+}
+
+/**
+ * Traverse through this graph rightwards from a given target
+ * @param f The hypergraph structure to traverse
+ * @param s The source to start traversing from
+ * @param edgeAction The action to take at each edge: takes the current edge and the incoming source as argument, and returns
+                     a bool dictating if traversal should continue or halt
+ * @param outputAction The action to take at each reached output: takes the output vertex and its index in the outputs list and returns unit
+ */
+func TraverseRight(t : Target, edgeAction : (Edge, Source) -> Bool, outputAction : (Source, Int64) -> Unit){
+
+    let frontier = ArrayList<Target>([t])
+    let visitedSources = ArrayList<Source>()
+    let visitedTargets = ArrayList<Target>()
+    let visitedInputs = ArrayList<Target>()
+    let visitedEdges = ArrayList<Edge>()
+
+    while(frontier.size() != 0){
+        let t = frontier.removeAt(0)
+        let s = t.GetConn()
+        visitedSources.add(s)
+        visitedTargets.add(t)
+        match(s.GetPort()){
+            case EdgePort(e, i) => {
+                if(!includes(visitedEdges, e)){
+                    visitedEdges.add(e)
+                    let cont = edgeAction(e, s)
+                    if(cont){
+                        frontier.addAll(e.targets)
+                    }
+                }
+            }
+            case InterfacePort(i) => {
+                visitedInputs.add(t)
+                outputAction(s, i)
             }
         }
     }

@@ -21,6 +21,36 @@ external func includes<T>(xs : ArrayList<T>, a : T) where T <: Equatable {
     return false
 }
 /**
+ * Generic includes function for the left element in an arraylist of pairs
+ * Presumably this will make its way into the standard library at some point
+ * @param xs The arraylist of pairs to search
+ * @param t  The element to search for in the first element of the pairs
+ * @return Whether this element is in the arraylist
+ */
+external func includesPairL<T,U>(xs : ArrayList<T * U>, t : T) where T <: Equatable {
+    for((x, y) in xs){
+        if(x == t){
+            return true
+        }
+    }
+    return false
+}
+/**
+ * Generic includes function for the right element in an arraylists of pairs
+ * Presumably this will make its way into the standard library at some point
+ * @param xs The arraylist of pairs to search
+ * @param u  The element to search for in the second element of the pairs
+ * @return Whether this element is in the arraylist
+ */
+external func includesPairR<T,U>(xs : ArrayList<T * U>, u : U) where U <: Equatable {
+    for((x, y) in xs){
+        if(y == u){
+            return true
+        }
+    }
+    return false
+}
+/**
  * Pretty print a list with a given string printing function
  * @param xs The arraylist to print
  * @param f  The function to print each element
@@ -35,6 +65,20 @@ external func PrintList<T>(xs : ArrayList<T>, f : (T) -> String) {
     str
 }
 /**
+ * Pretty print a list of pairs with a given string printing function for each element in the pair
+ * @param xs The arraylist to print
+ * @param f  The function to print each element
+ * @return Whether this element is in the arraylist
+ */
+external func PrintListPairs<T,U>(xs : ArrayList<T * U>, f : (T) -> String, g : (U) -> String) {
+    var str = "["
+    for((x, y) in xs){
+        str = "${str} (${f(x)}, ${g(y)})"
+    }
+    str = "${str} ]"
+    str
+}
+/**
  * Pretty print a list with a given string printing function
  * @param xs The arraylist to print
  * @param f  The function to print each element
@@ -43,7 +87,7 @@ external func PrintList<T>(xs : ArrayList<T>, f : (T) -> String) {
 external func PrintList<T>(xs : ArrayList<T>) where T <: ToString {
     var str = "["
     for(x in xs){
-        str = "${str} ${x}"
+        str = "${str} ${x.toString()}"
     }
     str = "${str} ]"
     str

@@ -7,7 +7,9 @@ BIN="$ROOT/bin"
 DOT="$DOT/dot"
 CJ_ROOT=$1
 
-IO_MODULE="$CJ_ROOT/build/build/modules/io"
+MODULES_DIR="$CJ_ROOT/build/build/modules"
+
+IO_MODULE="$MODULES_DIR/io"
 IO_O="$IO_MODULE/cangjieIO.o"
 IO_CJO="$IO_MODULE/io.cjo"
 
@@ -33,7 +35,8 @@ compile_package() {
     BUILD_DIR="$BUILD/$1"
     SRC_DIR="$SRC/$1"
     mkdir $BUILD_DIR
-    cjc -import-config $IMPORTS $OBJS -c -p $SRC_DIR -o $BUILD_DIR >> errors.txt
+    echo "cjc -g -import-config $IMPORTS $OBJS -c -p $SRC_DIR -o $BUILD_DIR"
+    cjc -import-config $IMPORTS $OBJS -c -p $SRC_DIR -o $BUILD_DIR
     CODE=$?
     if [ "$CODE" != "0" ] ; then
         echo "Error $CODE, aborting..."

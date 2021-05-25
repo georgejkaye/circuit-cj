@@ -12,15 +12,17 @@ package hypergraphs
  * ⊥ < t,f < ⊤
  */
 enum Value { BOTTOM | TRUE | FALSE | TOP }
-append Value with ToString, Equatable {
-    func toString(v : Value) {
-        match(v){
+extend Value <: ToString {
+    func toString() {
+        match(this){
             case $BOTTOM => "bot"
             case $TRUE   => "t"
             case $FALSE  => "f"
             case $TOP    => "top"
         }
     }
+}
+append Value with Equatable {
     operator func ==(lhs : Value, rhs : Value){
         match(lhs){
             case $BOTTOM => {
@@ -53,14 +55,16 @@ append Value with ToString, Equatable {
 }
 
 enum Struct { ForkMorph | JoinMorph | StubMorph }
-append Struct with ToString, Equatable {
-    func toString(s : Struct) {
-        match(s){
+extend Struct <: ToString {
+    func toString() {
+        match(this){
             case $ForkMorph => "fork"
             case $JoinMorph => "join"
             case $StubMorph => "stub"
         }
     }
+}
+append Struct with Equatable {
     operator func ==(lhs : Struct, rhs: Struct){
         match(lhs){
             case $ForkMorph => {
@@ -101,9 +105,9 @@ class Label <: Atom {
         this.dom = dom
         this.cod = cod
     }
+    override func toString() { "Label ${id} - ${name} : ${dom} → ${cod}" }
 }
-append Label with ToString, Equatable {
-    func toString(l : Label) { "Label ${l.id} - ${l.name} : ${l.dom} → ${l.cod}" }
+append Label with Equatable {
     operator func ==(lhs: Label, rhs: Label) : Bool { lhs.name == rhs.name && lhs.dom == rhs.dom && lhs.cod == rhs.cod }
     operator func !=(lhs : Label, rhs: Label) : Bool { !(lhs == rhs) }
 }
@@ -123,9 +127,9 @@ external class LinkSpec <: Atom {
         this.name = "ls${this.id}"
         this.width = width
     }
+    override func toString() { "LinkSpec ${id} - ${name} width ${width}" }
 }
-append LinkSpec with ToString, Equatable, Hashable {
-    func toString(spec : LinkSpec) { "LinkSpec ${spec.id} - ${spec.name} width ${spec.width}" }
+append LinkSpec with Equatable, Hashable {
     operator func ==(lhs : LinkSpec, rhs : LinkSpec) : Bool { lhs.id == rhs.id }
     operator func !=(lhs : LinkSpec, rhs : LinkSpec) : Bool { lhs.id != rhs.id }
     func hashCode(t : LinkSpec) : UInt64 { t.id }
@@ -143,9 +147,9 @@ external enum Generator {
     | INLINK(LinkSpec)        // An in-link 0 -> m, where wires come into the graph
     | OUTLINK(LinkSpec)       // An out-link m -> 0, where wires come out of the graph
 }
-append Generator with ToString, Equatable{
-    func toString(gen : Generator){
-        match(gen){
+extend Generator <: ToString {
+    func toString(){
+        match(this){
             case VALUE(value)        => "value (${value})"
             case STRUCTURAL(struct)  => "structural (${struct})"
             case GATE(label)         => "gate (${label.name})"
@@ -155,6 +159,8 @@ append Generator with ToString, Equatable{
             case OUTLINK(spec)       => "out link (${spec.name} - ${spec.width})"
         }
     }
+}
+append Generator with Equatable{
     operator func ==(g1 : Generator, g2 : Generator){
         match(g1){
             case VALUE(v1) => {

@@ -20,85 +20,45 @@ import debug.*
 func FindIntersections(f : HypergraphStructure, g : HypergraphStructure){
     Debug("FindIntersection", "Finding intersections between ${f.GetName()} and ${g.GetName()}")
     // The list of source vertice of intersections in f and g
-    let intersectionsF = ArrayList<Source>()
-    let intersectionsG = ArrayList<Source>()
+    let intersections = ArrayList<Source * Source>()
     // Traverse backwards from the outputs of g to find wires also in f
     let visited = ArrayList<Edge>()
     let frontier = ArrayList<Source>(GetEndpoints(g))
     let wires = f.GetWires()
+
     while(frontier.size() != 0){
         let v : Source = frontier.removeAt(0)
         var found = false
-        for(w in v.wires){
-            // Check if the wire is also in f, if so add it to the lists
-            if(!found && !includes(intersectionsG, v) && includes(wires, w)){
-                // Add the corresponding vertex for f for this wire
-                intersectionsF.add(f.GetWireVertex(w))
-                intersectionsG.add(v)
-                // We don't need to check for any more wires in this vertex now
-                found = true
-            }
-        }
-        // If we didn't find an intersection, add the next edge to our frontier
-        if(!found){
-            let p = v.GetConn().GetPort()
-            match(p) {
-                case EdgePort(e, i) => {
-                    if(!includes(visited, e)){
-                        frontier.addAll(e.sources)
-                    }       
+        if(!includesPairR(intersections, v)){
+            for(w in v.wires){
+                // Check if the wire is also in f, if so add it to the lists
+                if(!found && includes(wires, w)){
+                    // Add the corresponding vertex for f for this wire
+                    intersections.add((f.GetWireVertex(w), v))
+                    // We don't need to check for any more wires in this vertex now
+                    found = true
                 }
-                case InterfacePort(i) => {}
             }
-        }
-    }
-    print("intersections ${PrintList(intersectionsF, {s : Source => PrintList(s.wires)})}\n")
-    (intersectionsF, intersectionsG)
-}
-
-/**
- * Remove all parts of the graph that are 'left' of a list of source vertices
- * Any dangling targets will be capped off with bottom
- * @param g  The hypergraph builder
- * @param vs The list of source vertices to remove from
- * @return A clone of the hypergraph with all parts of the hypergraph left of a given source vertex removed
- */
-func RemoveLeft(g : HypBuilder, vs : ArrayList<Source>){
-    Debug("RemoveLeft", "Removing left ${g.GetName()} from ${SourceListToString(vs)}")
-    let removedEdges = ArrayList<Edge>()
-    let removedInputs = ArrayList<Target>()
-    let edgeAction = {e : Edge => if(!includes(removedEdges, e)){ removedEdges.add(e) }}
-    let inputAction = {t : Target, i : Int64 => if(!includes(removedInputs, t)){ removedInputs.add(t) }}
-
-    for(sg in vs){
-        let t = TraverseLeft(g, sg, edgeAction, inputAction)
-    }
-
-    g.RemoveEdges(removedEdges)
-    g.RemoveInputs(removedInputs)
-
-    // Cap off any dangling vertices that are not in the list of removal points
-    for(e in g.GetEdges()){
-        for(s in e.sources){
-            if(!includes(vs, s)){
-                let t = s.GetConn()
-                match(t.GetPort()){
-                    case EdgePort(e1, i) => {
-                        if(includes(removedEdges, e1)){
-                            g.CreateEdgeFromExisting(VALUE(BOTTOM), ArrayList<Target>([t]))
-                        }
+            // If we didn't find an intersection, add the next edge to our frontier
+            if(!found){
+                let p = v.GetConn().GetPort()
+                match(p) {
+                    case EdgePort(e, i) => {
+                        if(!includes(visited, e)){
+                            frontier.addAll(e.sources)
+                        }       
                     }
                     case InterfacePort(i) => {}
                 }
             }
         }
     }
-    g
+    intersections
 }
 
 /**
  * Inject a hypergraph g into a hypergraph f (g >> f)
- * For all inputs of g, find a corresponding wire in f and 
+ * For all inputs of g, find a corresponding wire in f and fork it
  * For example, for f and g defined as follows:
  *    
  *     |F| -- *(a) -- |F'|            |in| -- *(a) -- |G|
@@ -109,38 +69,45 @@ func RemoveLeft(g : HypBuilder, vs : ArrayList<Source>){
  *              |F| -- *(a) -- |fork| 
  *                                   ---- |G|
  *
+ * If one of the intersections connects to a stub in f or g, only the non-stub edge will be connected up
+ * If the intersections both connect to the same outlink, then only one is preserved
  * If any of the input wires of g does not exist in f, then throws an exception
  *
  * @param f The hypergraph to be injected into
- * @param intersectionsF The list of intersection points in f
  * @param g The hypergraph to be injected
- * @param intersectionsG The list of intersection points in g
+ * @param intersections The list of pairs of intersections in f and g
  * @return A clone of hypergraph f with a clone of g injected into it
  */
-func Inject(f : HypBuilder, intersectionsF : ArrayList<Source>, g : HypBuilder, intersectionsG : ArrayList<Source>){
-    Debug("Inject", "Injecting into ${f.GetName()}")
+func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * Source>){
+    Debug("Inject", "Injecting ${PrintListPairs(intersections, {s : Source => "${s.id}"}, {s : Source => "${s.id}"})}")
+    let removedEdges = ArrayList<Edge>()
+    let removedInputs = ArrayList<Target>()
+    let removedIntersections = ArrayList<Source>()
+
+    let danglingTargets = ArrayList<Target>()
 
     f.AddNewGraph(g)
 
     // Inject each of the vertices we have recovered
-    for(i in 0..intersectionsF.size()){
+    for((intersectionF, intersectionG) in intersections){
         var fork = true
-
         // If the intersection point leads to a non-output endpoint of the graph, we need to be clever
         // If it's a stub, we can just drop it as there is no benefit to forking to a stub
         // If it's an outlink, we need to check if the other intersection point leads to the same link
         // Therefore we need to keep track of it
-        let outlinkF = match(PortToEndpoint(intersectionsF[i].GetPort())){
+        let outlinkF = match(PortToEndpoint(intersectionF.GetPort())){
             case Some((e, j)) => {
                 match(e.generator){
                     // If we find a stub, then we don't need to copy it
+                    // We just hook up the source of the stub to the intersection with g
                     case STRUCTURAL(struct) => {
-                        f.RemoveEdge(e)
-                        f.AddConn(intersectionsF[i].GetConn(), intersectionsG[i])
+                        removedEdges.add(e)
+                        danglingTargets.add(intersectionG.GetConn())
+                        f.AddConn(intersectionF.GetConn(), intersectionG)
                         fork = false
                         None<LinkSpec>
                     }
-                    case OUTLINK(specf) => { Some(specf) }
+                    case OUTLINK(specf) => { Some<LinkSpec>(specf) }
                     case _              => { None<LinkSpec> }
                 }
             }
@@ -148,24 +115,26 @@ func Inject(f : HypBuilder, intersectionsF : ArrayList<Source>, g : HypBuilder, 
         }
         // If we've already decided to not fork then we immediately just take the content of g
         if(fork) {
-            // Ditto for the outlink of g
-            match(PortToEndpoint(intersectionsF[i].GetPort())){
+            // We need to check if the intersection sources lead to endpoints
+            match(PortToEndpoint(intersectionG.GetPort())){
                 case Some((e, j)) => {
                     match(e.generator){
                         // Once again we can ignore stubs
                         // This is a lot easier for g, as it is not the 'base' graph
-                        // We can just make a note to delete the stub edge
                         case STRUCTURAL(struct) => {
-                            f.RemoveEdge(e)
+                            removedEdges.add(e)
+                            danglingTargets.add(intersectionG.GetConn())
                             fork = false    
                         }
                         // If this and f also lead to an outlink, we can check them to see if they're the same
-                        // If so, there's no point in copying 
+                        // If so, there's no point in copying: we can just keep the link from f and ignore this one
                         case OUTLINK(specg) => {
                             match(outlinkF){
                                 case Some(specf) => {
-                                    f.RemoveEdge(e)
-                                    fork = false
+                                    if(specf == specg) {
+                                        removedEdges.add(e)
+                                        fork = false
+                                    }
                                 }
                                 case $None => {}
                             }   
@@ -179,15 +148,34 @@ func Inject(f : HypBuilder, intersectionsF : ArrayList<Source>, g : HypBuilder, 
         // If we are still satified that a fork is truly required, go for it
         if(fork){
             // Grab the ports of the intersection sources
-            let portF = intersectionsF[i].GetPort()
-            let portG = intersectionsG[i].GetPort()
+            let portF = intersectionF.GetPort()
+            let portG = intersectionG.GetPort()
             // Make a new fork
-            let edge = f.CreateEdgeFromExisting(FORK, [intersectionsF[i]])
+            let edge = f.CreateEdgeFromExisting(FORK, [intersectionF])
             // Hook up f and g to this new fork, creating new sources
             f.NewSource(portF, edge.targets[0])
             f.NewSource(portG, edge.targets[1])
+            danglingTargets.add(intersectionG.GetConn())
         }
     }
+    let edgeAction = { e : Edge, t : Target =>
+            if(!(includes(removedEdges, e))){
+                removedEdges.add(e)
+                true
+            } else {
+                false
+            }
+    }
+    let inputAction = { t : Target , i : Int64 => 
+        removedInputs.add(t)
+    }
+    for(t in danglingTargets){
+        TraverseLeft(t, edgeAction, inputAction)
+    }
+    for(edge in removedEdges){
+        f.RemoveEdge(edge)
+    }
+    f.RemoveInputs(removedInputs)
     f
 }
 
@@ -201,12 +189,12 @@ func Inject(f : HypBuilder, intersectionsF : ArrayList<Source>, g : HypBuilder, 
  * @return The hypergraph with the source vertices extracted
  */
 func Extract(f : HypBuilder, buses : ArrayList<String>, name!: String = "") : Hypergraph {
-    Debug("Extract", "Extracting buses ${PrintList(buses)} from '${f.GetName()}'")
+    Debug("Extract", "Extracting buses from '${f.GetName()}'")
     
     // Find the vertices that correspond to the buses
-    var vs = ArrayList<Source>()
+    let vs = ArrayList<Source>()
     for(bus in buses){
-        vs = f.GetBusVertexList(bus, vs)
+        f.GetBusVertexList(bus, vs)
     }
     // Set up structures to track the new atoms
     let newEdges = ArrayList<Edge>(f.GetEdges())
