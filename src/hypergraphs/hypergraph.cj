@@ -118,8 +118,28 @@ open class HypergraphStructure <: Atom {
     func GetEdges(){ edges }
     func GetInputs() { inputs }
     func GetInput(i : Int64) { inputs[i] }
+    func GetInputs(ins : ArrayList<Int64>){
+        let chosenInputs = ArrayList<Target>(ins.size(), {i : Int64 => 
+            let j = ins[i]
+            if(j < 0 || j >= inputs.size()){
+                throw BadInputException("GetInputs", i, inputs.size())
+            }
+            inputs[j]
+        })
+        chosenInputs
+    }
     func GetOutputs() { outputs }
     func GetOutput(i : Int64) { outputs[i] }
+    func GetOutputs(outs : ArrayList<Int64>){
+        let chosenOutputs = ArrayList<Source>(outs.size(), {i : Int64 => 
+            let j = outs[i]
+            if(j < 0 || j >= outputs.size()){
+                throw BadOutputException("GetOutputs", i, outputs.size())
+            }
+            outputs[j]
+        })
+        chosenOutputs
+    }
     func GetSources(){ sources }
     func GetTargets(){ targets }
     func GetWires(){ wireList }

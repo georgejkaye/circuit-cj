@@ -300,6 +300,13 @@ func PortToGenerator(p : Port, gen : Generator){
     }
 }
 
+func IsPortToGenerator(p : Port, gen : Generator) {
+    match(PortToGenerator(p, gen)){
+        case Some((e, i)) => true
+        case $None        => false
+    }
+}
+
 func PortToEndpoint(p : Port){
     match(p) {
         case EdgePort(e, i) => {

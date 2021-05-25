@@ -196,52 +196,26 @@ func Extract(f : HypBuilder, buses : ArrayList<String>, name!: String = "") : Hy
     for(bus in buses){
         f.GetBusVertexList(bus, vs)
     }
-    // Set up structures to track the new atoms
-    let newEdges = ArrayList<Edge>(f.GetEdges())
-    let newOutputs = ArrayList<Source>()
-    let newConns = MapBuilder<Target, Source>()
-    let doneMap = MapBuilder<Source, Edge>()
-    // For each vertex, fork it and set the copy to be one of the outputs
-    for(s in vs){
-        // Create a new fork edge
-        let t1 = Target()
-        let t2 = Target()
-        let fork = Edge(FORK, [s], [t1,t2])
-        newEdges.add(fork)
-        // Create a source for the original edge
-        let s1 = Source()
-        // Create a source for the outputs
-        let s2 = Source()
-        // Join up the new sources and targets
-        t1.SetConn(s1)
-        t2.SetConn(s2)
-        // If we have already forked this wire, we need to set the sources
-        // of the new fork we created rather than those of the original edge
-        let out = match(doneMap.toMap().get(s)){
-            case Some(e) => {
-                e.sources.set(0, s1)
-                s2
+    let oldOutputs = ArrayList<Source>(f.GetOutputs())
+    f.ConnectEachOutputToEdge(STUB)
+    for(i in 0..vs.size()){
+        let s = vs[i]
+        let p = s.GetPort()
+        // If p goes to a stub, then we don't need to bother forking, we can send it straight to the outputs
+        match(PortToGenerator(p, STUB)){
+            case Some((e, _)) => {
+                f.RemoveEdge(e)
+                f.AddOutput(s)
             }
             case $None => {
-                match(s.GetPort()){
-                    case EdgePort(e, i) => {
-                        e.sources.set(i,s1)
-                        s2
-                    }
-                    case InterfacePort(i) => {
-                        let stub = Edge(STUB, [s1], [])
-                        newEdges.add(stub)
-                        s2
-                    }
-                }
+                let fork = f.CreateEdgeFromExisting(FORK, [s])
+                f.NewSource(p, fork.targets[0])
+                f.NewSource(InterfacePort(i), fork.targets[1])
             }
         }
-        doneMap.add(s, fork)
-        newOutputs.add(out)
     }
-    Hypergraph(name, newEdges, f.GetInputs(), newOutputs)
+    f.ToGraph(name)
 }
-
 /**
  * Resolve links in a hypergraph - join outlinks and inlinks with the same spec together
  * If there are multiple outlinks with the same spec, these are first joined.
