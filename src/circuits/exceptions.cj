@@ -150,6 +150,11 @@ class NegativeOutputsException <: Exception {
         ErrorMsg(function, "Number of outputs cannot be negative, but ${n} requested")
     }
 }
+class NotEdgePortException <: Exception {
+    init(function : String, port : Port){
+        ErrorMsg(function, "Port ${port} is not an edge port")
+    }
+}
 
 /**
  * Type error exceptions 

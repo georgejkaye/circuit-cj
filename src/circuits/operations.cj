@@ -89,6 +89,16 @@ external func Identity(n : Int64, name!: String = "", output!: String = "") : Hy
     hb.ToGraph(name)
 }
 /**
+ * Create an identity on 1, the unit of sequential composition
+ * @param label The name of the bus these wires will be part of. Cannot already exist in global state.
+ * @param name  The name of the resulting hypergraph
+ * @return An identity hypergraph on n
+ */
+external func Identity(name!: String = "", output!: String = "") : Hypergraph {
+    Identity(1, name: name, output: output)
+}
+
+/**
  * Compose in parallel hypergraphs f : m -> n and g : p -> q, creating h : m + p -> n + q
  * Clones f and g before composing
  * @param f       The lhs of the composition
@@ -190,6 +200,13 @@ external func Swap(m : Int64, n : Int64, name!: String = "") : Hypergraph {
         t.SetConn(hb.GetOutput(i))
     }
     hb.ToGraph(name)
+}
+/**
+ * A hypergraph that swaps two wires
+ * @param name The name of the resulting hypergraph
+ */
+external func Swap(name!: String = "") : Hypergraph {
+    Swap(1, 1, name: name)
 }
 /**
  * Trace a hypergraph f : x + m -> x + n to create Tr^x(f) : m -> n

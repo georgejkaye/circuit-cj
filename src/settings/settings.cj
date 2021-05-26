@@ -11,7 +11,7 @@ package settings
  */
 
 /** Whether the debug messages are printed */
-var debugMessages = false
+var debugMessages = true
 /**
  * Toggle the debug messages on and off
  */

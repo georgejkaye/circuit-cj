@@ -39,7 +39,7 @@ func AtomListToString(xs : ArrayList<Atom>){
 /**
  * Base vertex class 
  */
-open class Vertex <: Atom {
+abstract class Vertex <: Atom {
     private var port : Option<Port> = None<Port>
     func SetPort(p : Port){
         this.port = Some<Port>(p)
@@ -65,7 +65,20 @@ open class Vertex <: Atom {
             case $None   => false
         }
     }
-    open override func toString() : String { "Vertex v${id}" }
+    func GetLeftPort() : Port
+    func GetRightPort() : Port
+    func GetLeftEdge(){
+        match(GetLeftPort()){
+            case EdgePort(e, i) => e
+            case InterfacePort(i) => throw NotEdgePortException("GetLeftEdge", GetLeftPort())
+        }
+    }
+    func GetRightEdge(){
+        match(GetRightPort()){
+            case EdgePort(e, i) => e
+            case InterfacePort(i) => throw NotEdgePortException("GetRightEdge", GetRightPort())
+        }
+    }
 }
 append Vertex with ToString {
     func toString(v : Vertex){
@@ -120,6 +133,12 @@ external class Source <: Vertex {
             case $None   => false
         }
     }
+    func GetRightPort(){
+        GetPort()
+    }
+    func GetLeftPort(){
+        GetConn().GetPort()
+    }
     /** 
      * Add a wire to this vertex
      * @param wire The wire to add 
@@ -167,10 +186,10 @@ func SourceListToString(xs : ArrayList<Source>){
                 case Some(name) => "${name}[${wire.i}]"
                 case $None      => ""
             }
-            wireString = if(wirename == "") { wireString } else if(wireString == "") { " ${wirename}" } else { "${wireString}, ${wirename}" }
+            wireString = if(wirename == "") { wireString } else if(wireString == "") { "${wirename}" } else { "${wireString}, ${wirename}" }
         }
-        wireString = if(wireString == "") { "" } else { "(${wireString})" }
-        "${idString} ${wireString}"
+        wireString = if(wireString == "") { "" } else { " (${wireString})" }
+        "${idString}${wireString}"
     })
 }
 /**
@@ -209,6 +228,12 @@ external class Target <: Vertex {
             case Some(s) => true
             case $None   => false
         }
+    }
+    func GetRightPort(){
+        GetConn().GetPort()
+    }
+    func GetLeftPort(){
+        GetPort()
     }
     override func toString() { "Target t${id}" }
 }

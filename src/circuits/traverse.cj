@@ -9,17 +9,29 @@ package circuits
 import debug.*
 
 /**
+ * Get all the startpoints of a hypergraph: the inputs and the targets of any edge with no sources
+ * @param f The hypergraph
+ * @return The list of sources that are either inputs or targets of edges with no sources
+ */
+func GetStartpoints(f : HypergraphStructure){
+    let vs = ArrayList<Target>(f.GetInputs())
+    f.ForEachEdgeWithProperty(
+        {e : Edge => e.sources.size() == 0},
+        {e : Edge => vs.addAll(e.targets)}
+    )
+    vs
+}
+/**
  * Get all the endpoints of a hypergraph: the outputs and the sources of any edge with no targets
  * @param f The hypergraph
- * @return The list of sources that are either outputs or sources to edges with no targets
+ * @return The list of sources that are either outputs or sources of edges with no targets
  */
 func GetEndpoints(f : HypergraphStructure){
     let vs = ArrayList<Source>(f.GetOutputs())
-    for(e in f.GetEdges()){
-        if(e.targets.size() == 0){
-            vs.addAll(e.sources)
-        }
-    }
+    f.ForEachEdgeWithProperty(
+        {e : Edge => e.targets.size() == 0},
+        {e : Edge => vs.addAll(e.sources)}
+    )
     vs
 }
 /**
@@ -109,4 +121,22 @@ func TraverseRight(t : Target, edgeAction : (Edge, Source) -> Bool, outputAction
         }
     }
     (visitedEdges, visitedSources, visitedTargets, visitedInputs)
+}
+
+func FullTraverse(f : HypergraphStructure, edgeAction : (Edge) -> Unit){
+    let frontier = GetStartpoints(f)
+    let visited = ArrayList<Edge>()
+
+    for(t in frontier){
+        match(t.GetRightPort()){
+            case EdgePort(e, i) => {
+                if(!includes(visited, e)){
+                    edgeAction(e)
+                    visited.add(e)
+                    frontier.addAll(e.targets)
+                }  
+            }
+            case InterfacePort(i) => {}
+        }
+    }
 }
