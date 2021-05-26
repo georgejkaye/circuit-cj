@@ -496,16 +496,6 @@ external class Hypergraph <: HypergraphStructure {
         hb
     }
     /**
-     * Resolve the links in this hypergraph
-     * If there are multiple out links with the same spec, joins them all together
-     * Then connects the resulting wire with an identity edge, to prevent self-cycles
-     * If there are multiple in links with the same spec, forks the resulting wire and joins it up
-     * @return The hypergraph with its links resolved
-     */
-    func ResolveLinks(){
-        ResolveLinks(this.Clone())
-    }
-    /**
      * Get this hypergraph with just the nth output exposed
      * @param n The index of the output to expose
      * @return The hypergraph with the given output exposed

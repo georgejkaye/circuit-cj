@@ -58,7 +58,7 @@ class HypBuilder <: HypergraphStructure {
      * @param elem   The index to start counting the bus wires from
      */
     init(dom : Int64, cod : Int64, output : String, elem : Int64){
-        this(dom, cod, ArrayList<Wire>(cod, {x : Int64 => NewWire(output, elem + x)}))
+        this(dom, cod, ArrayList<Wire>(cod, {x : Int64 => NewWire(FindBus(output), elem + x)}))
     }
     /**
      * Create a hyp builder with a certain number of inputs and outputs, with output wires assigned
@@ -67,7 +67,14 @@ class HypBuilder <: HypergraphStructure {
      * @param output The name to assign the output bus
      */
     init(dom : Int64, cod : Int64, output : String){
-        this(dom, cod, ArrayList<Wire>(cod, {x : Int64 => NewWire(string: output)}))
+        this(dom, cod, ArrayList<Wire>(cod, {x : Int64 => 
+            if(x == 0) {
+                let bus = NewBus(output)
+                NewWire(bus)
+            } else {
+                NewWire(FindBus(output))
+            }
+        }))
     }
     /**
      * Create a hyp builder with a certain number of inputs and outputs, with no given output wire name

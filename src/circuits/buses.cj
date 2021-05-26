@@ -33,6 +33,15 @@ class Bus <: Atom {
         globalBusList.add(this)
     }
     /**
+     * Get an identifier for this bus
+     */
+    func GetName(){
+        match(name){
+            case Some(str) => str
+            case $None => "b${id}"
+        }
+    }
+    /**
      * Add a wire to the bundle of wires and get its position
      * @return The position of the new wire in the bundle
      */
@@ -48,7 +57,10 @@ class Bus <: Atom {
     func GetWire(i : Int64){
         wireMap.toMap().get(i)
     }
-
+    /** 
+     * Insert a wire into the list at the appropriate position based on its index
+     * @param wire the wire
+     */
     func InsertWire(wire : Wire){
         for(i in 0..wires.size()){
             if(wire.i < wires[i].i){
@@ -239,13 +251,21 @@ func NewWire(bus : Bus){
  * @param string The name of the bus to add the wire to
  * @return The new wire
  */
-func NewWire(string!: String = "") : Wire {
+func NewWire(string : String) : Wire {
     let b = GetBusOption(string)
     match(b) {
         case Some(bus) => NewWire(bus)
         case $None     => NewWire(Bus(string), 0)
     }
 }
+/**
+ * Create a new wire in a new bus
+ * @return The new wire
+ */
+func NewWire() : Wire {
+    NewWire("")
+}
+
 /**
  * Pretty print a list of wires
  * @param ws The list of wires

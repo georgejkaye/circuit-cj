@@ -39,19 +39,17 @@ class NegativeNumberException <: Exception {
 
 class NoSuchBusException <: Exception {
     init(function : String, name : String){
-        ErrorMsg(function, "Bus ${name} does not exist")
+        ErrorMsg(function, "Bus '${name}'' does not exist")
     }
 }
-
 class DuplicateBusException <: Exception {
     init(function : String, name : String){
-        ErrorMsg(function, "Bus ${name} already exists")
+        ErrorMsg(function, "Bus '${name}' already exists")
     }
 }
-
 class DuplicateWireException <: Exception {
     init(function : String, bus : Bus, i : Int64){
-        ErrorMsg(function, "Bus ${bus} already has wire ${i}")
+        ErrorMsg(function, "Bus '${bus.GetName()}' already has wire ${i}")
     }
 }
 class BusesNotSameSizeException <: Exception {
@@ -126,7 +124,7 @@ class WireNotInGraphException <: Exception {
 }
 class BusNotInGraphException <: Exception {
     init(function : String, b : Bus){
-        ErrorMsg(function, "Bus ${b} is not in the graph")
+        ErrorMsg(function, "Bus ${b.GetName()} is not in the graph")
     }
     init(function : String, s : String){
         ErrorMsg(function, "Bus ${s} is not in the graph")

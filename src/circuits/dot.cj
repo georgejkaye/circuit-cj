@@ -40,9 +40,9 @@ func subscript(n : Int64){
 }
 
 let tableStyle = "border=\"0\" cellborder=\"1\" cellspacing=\"0\""
-let graphOptions = "rankdir=LR"
-let edgeNodeOptions = "shape=plaintext fillcolor=white fixedsize=false"
-let vertexNodeOptions = "shape=circle style=filled fillcolor=black height=0.15 fixedsize=true"
+let graphOpts = "rankdir=LR"
+let edgeNodeOpts = "shape=plaintext fillcolor=white fixedsize=false"
+let vertexNodeOpts = "shape=circle style=filled fillcolor=black height=0.15 fixedsize=true"
 
 let portHeight = 10
 let portWidth = 10
@@ -55,12 +55,20 @@ let structuralStyle = "bgcolor=\"violet\" width=\"10\""
 let delayStyle = "bgcolor=\"yellow\""
 let valueStyle = "bgcolor=\"green\""
 
-let vertexComment = "Vertices"
-let edgeComment = "Edges"
-let connsComment = "Connections"
+let vertexCommentString = "Vertices"
+let edgeCommentString = "Edges"
+let connsCommentString = "Connections"
 
 let maxSubgraphOptions = "rank=max"
 let minSubgraphOptions = "rank=min"
+
+let declaration = "graph G {"
+let graphOptions = indent(1, graphOpts)
+let vertexNodeOptions = indent(1, "node[${vertexNodeOpts}]")
+let edgeNodeOptions = indent(1, "node[${edgeNodeOpts}]")
+let vertexComment = indent(1, "// ${vertexCommentString}")
+let edgeComment = indent(1, "// ${edgeCommentString}")
+let connsComment = indent(1, "// ${connsCommentString}")
 
 // TODO should be doable with a single ArrayList<Vertex> method
 /**
@@ -202,20 +210,18 @@ func DrawSubgraph(n : Int64, opt : String, text : String){
 /**
  * Translate a hypergraph into a dot graph
  * TODO this seems very slow, is there a way to improve performance?
- * @param f The hypergraph to translate
+ * @param f        The hypergraph to translate
+ * @param resolve  Whether or not to resolve the links in this hypergraph
+ * @return The dot code for this graph
  */
-external func DotGraph(f : Hypergraph){
-
+external func DotGraph(f : Hypergraph, resolve : Bool){
     Debug("DotGraph", "Generating dot graph for '${f.GetName()}'")
-
-    let declaration = "graph G {"
-    let graphOptions = indent(1, graphOptions)
-    let vertexNodeOptions = indent(1, "node[${vertexNodeOptions}]")
-    let edgeNodeOptions = indent(1, "node[${edgeNodeOptions}]")
-    let vertexComment = indent(1, "// ${vertexComment}")
-    let edgeComment = indent(1, "// ${edgeComment}")
-    let connsComment = indent(1, "// ${connsComment}")
-
+    // If desired, resolve the links in the graph first
+    let f = if(resolve){
+        ResolveLinks(f)
+    } else {
+        f
+    }
     var vertices = ""
     var conns = ""
     for (t in f.GetTargets()) {
@@ -254,13 +260,14 @@ external func DotGraph(f : Hypergraph){
 /**
  * Write the corresponding dot graph for a hypergraph to a file
  * The file is placed in the directory specified in settings.cj and given a .dot extension
- * @param f    The hypergraph to draw
- * @param file The filename of the output
+ * @param f       The hypergraph to draw
+ * @param file    The filename of the output
+ * @param resolve Whether or not to resolve links
  */
-external func WriteDotToFile(f : Hypergraph, file : String){
+external func WriteDotToFile(f : Hypergraph, file : String, resolve!: Bool = false){
     let filename = GetDotFile(file)
     Info("WriteDotToFile", "Writing dot file ${filename}")
-    let dot = DotGraph(f)
+    let dot = DotGraph(f, resolve)
     let fs = FileStream(filename, OpenMode.ForceCreate)
     if(fs.openFile()){
         let ds = DataStream(fs)

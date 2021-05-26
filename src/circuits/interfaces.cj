@@ -18,6 +18,7 @@ external func Input(label!: String = "", width!: Int64 = 1){
     if(width < 1){
         throw NegativeWireException("Input")
     }
+    //let bus = NewBus(label)
     Identity(width, output: label)
 }
 /**

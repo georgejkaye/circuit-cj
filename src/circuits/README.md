@@ -25,6 +25,10 @@ Contains exceptions for this package.
 
 Contains definition of generators, which are used to label edges in hypergraphs.
 
+### [`reduce.cj`](reduce.cj)
+
+Contains functions for applying the operational semantics to hypergraphs and reducing them to a simpler for.
+
 ### [`traverse.cj`](traverse.cj)
 
 Contains functions for traversing hypergraphs in different ways.
@@ -55,7 +59,7 @@ Contains functions for manipulating individual bits in buses of values.
 
 Contains functions for translating circuits into dot graphs.
 
-* `DotGraph`
+* `DotGraph` whether or not to resolve links can be toggled
 * `WriteDotToFile`
 
 ### [`gates.cj`](gates.cj)
@@ -87,7 +91,6 @@ Contains functions to generate numerous gates and structures.
 The definition of hypergraphs.
 
 * `Hypergraph::Clone` Create a deep copy of this graph will new atom names
-* `Hypergraph::ResolveLinks` Connect up links to show feedback explicitly *caution: resolved graphs should not be used with other operations*
 * `Hypergraph::Get` Extract an output or bus from the graph, stubbing all other outputs
   * Also `[]`
 * `Hypergraph::Drop` Stub an output of the graph
