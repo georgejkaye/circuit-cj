@@ -30,7 +30,7 @@ func DecToBin(w : Int64, x : Int64, signed: Bool){
     let bin = ArrayList<Bool>(w, {x : Int64 => false})
     // Divide by two w times, setting the remainder to the ith bit of the list
     // If we run out of w before we run out of list, the msbs will be ignored
-    for(i in 0..w-1){
+    for(i in 0..w){
         let rem = num % 2 == 1
         bin.set(i, rem)
         num = num / 2
