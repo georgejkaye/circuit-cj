@@ -8,59 +8,28 @@
 package circuits
 
 /**
- * We use a value lattice with four values
- * ⊥ < t,f < ⊤
+ * Truth table class, to store the results of applying arguments to gates
  */
-enum Value { BOTTOM | TRUE | FALSE | TOP }
-append Value with ToString {
-    func toString(v : Value) {
-        match(v){
-            case $BOTTOM => "bot"
-            case $TRUE   => "t"
-            case $FALSE  => "f"
-            case $TOP    => "top"
+class TruthTable {
+    let generator : Generator
+    let table : (ArrayList<Value>) -> Value
+    init(generator : Generator, table : (ArrayList<Value>) -> Value) {
+        this.generator = generator
+        this.table = table
+    }
+    /**
+     * Evaluate a list of value arguments according to this truth table
+     * Throws an exception if the number of arguments is incompatible with this truth table
+     * @param args The list of arguments
+     */
+    func Eval(args : ArrayList<Value>){
+        if(args.size() != Dom(generator)){
+            throw BadDomainException("Eval", args.size(), Dom(generator))
         }
+        table(args)
     }
 }
-append Value with Equatable, Hashable {
-    operator func ==(lhs : Value, rhs : Value){
-        match(lhs){
-            case $BOTTOM => {
-                match(rhs){
-                    case $BOTTOM => true
-                    case _ => false
-                }
-            }
-            case $TRUE => {
-                match(rhs){
-                    case $TRUE => true
-                    case _ => false
-                }
-            }
-            case $FALSE => {
-                match(rhs){
-                    case $FALSE => true
-                    case _ => false
-                }
-            }
-            case $TOP => {
-                match(rhs){
-                    case $TOP => true
-                    case _ => false
-                }
-            }
-        }
-    }
-    operator func !=(lhs : Value, rhs : Value) { !(lhs == rhs) }
-    func hashCode(v : Value) : UInt64 {
-        match(v) {
-            case $BOTTOM => 0
-            case $TRUE   => 1
-            case $FALSE  => 2
-            case $TOP    => 3
-        }
-    }
-}
+
 /**
  * There are three types of structural morphisms to fork, join and stub wires
  */
@@ -374,12 +343,23 @@ let NOT : Generator = GATE(Label("NOT", 1, 1))
  * Binary gates
  */
 
-let AND  : Generator = GATE(Label("AND", 2, 1))
-let OR   : Generator = GATE(Label("OR", 2, 1))
+let AND : Generator = GATE(Label("AND", 2, 1))
+let andTable = TruthTable(AND, {args : ArrayList<Value> => and(args[0], args[1])})
+
+let OR : Generator = GATE(Label("OR", 2, 1))
+let orTable = TruthTable(OR, {args : ArrayList<Value> => or(args[0], args[1])})
+
 let NAND : Generator = GATE(Label("NAND", 2, 1))
+let nandTable = TruthTable(NAND, {args : ArrayList<Value> => not(and(args[0], args[1]))})
+
 let NOR  : Generator = GATE(Label("NOR", 2, 1))
+let norTable = TruthTable(NOR, {args : ArrayList<Value> => not(or(args[0], args[1]))})
+
 let XOR  : Generator = GATE(Label("XOR", 2, 1))
+let xorTable = TruthTable(XOR, {args : ArrayList<Value> => xor(args[0], args[1])})
+
 let XNOR : Generator = GATE(Label("XNOR", 2, 1))
+let xnorTable = TruthTable(XNOR, {args : ArrayList<Value> => not(xor(args[0], args[1]))})
 
 /**
  * Ternary gates

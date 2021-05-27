@@ -9,6 +9,129 @@ package circuits
 import debug.*
 
 /**
+ * We use a value lattice with four values
+ * ⊥ < t,f < ⊤
+ */
+enum Value { BOTTOM | TRUE | FALSE | TOP }
+append Value with ToString {
+    func toString(v : Value) {
+        match(v){
+            case $BOTTOM => "bot"
+            case $TRUE   => "t"
+            case $FALSE  => "f"
+            case $TOP    => "top"
+        }
+    }
+}
+append Value with Equatable, Hashable {
+    operator func ==(lhs : Value, rhs : Value){
+        match(lhs){
+            case $BOTTOM => {
+                match(rhs){
+                    case $BOTTOM => true
+                    case _ => false
+                }
+            }
+            case $TRUE => {
+                match(rhs){
+                    case $TRUE => true
+                    case _ => false
+                }
+            }
+            case $FALSE => {
+                match(rhs){
+                    case $FALSE => true
+                    case _ => false
+                }
+            }
+            case $TOP => {
+                match(rhs){
+                    case $TOP => true
+                    case _ => false
+                }
+            }
+        }
+    }
+    operator func !=(lhs : Value, rhs : Value) { !(lhs == rhs) }
+    func hashCode(v : Value) : UInt64 {
+        match(v) {
+            case $BOTTOM => 0
+            case $TRUE   => 1
+            case $FALSE  => 2
+            case $TOP    => 3
+        }
+    }
+}
+/**
+ * Get the logical NOT of a values
+ * @param v The argument
+ * @return The logical AND of the argument
+ */
+func not(v : Value){
+    match(v){
+        case $TOP    => TOP
+        case $BOTTOM => BOTTOM
+        case $TRUE   => FALSE
+        case $FALSE  => TRUE
+    }
+}
+/**
+ * Get the logical AND of two values
+ * @param lhs The lhs argument
+ * @param rhs The rhs argument
+ * @return The logical AND of the two arguments
+ */
+func and(lhs : Value, rhs : Value){
+    match(lhs){
+        case $TOP    => TOP
+        case $BOTTOM => BOTTOM
+        case $TRUE   => rhs
+        case $FALSE  => match(rhs){
+                case $TOP    => TOP
+                case $BOTTOM => BOTTOM
+                case _       => FALSE
+        }
+    }
+}
+/**
+ * Get the logical OR of two values
+ * @param lhs The lhs argument
+ * @param rhs The rhs argumnet
+ * @return The logical OR of the two arguments
+ */
+func or(lhs : Value, rhs : Value){
+    match(lhs){
+        case $TOP    => TOP
+        case $BOTTOM => BOTTOM
+        case $FALSE   => rhs
+        case $TRUE  => match(rhs){
+                case $TOP    => TOP
+                case $BOTTOM => BOTTOM
+                case _       => TRUE
+        }
+    }
+}
+/**
+ * Get the logical XOR of two values
+ * @param lhs The lhs argument
+ * @param rhs The rhs argumnet
+ * @return The logical OR of the two arguments
+ */
+func xor(lhs : Value, rhs : Value){
+    match(lhs){
+        case $TOP    => TOP
+        case $BOTTOM => BOTTOM
+        case $FALSE   => rhs
+        case $TRUE  => match(rhs){
+                case $TOP    => TOP
+                case $BOTTOM => BOTTOM
+                case v       => not(v)
+        }
+    }
+}
+
+
+/**
  * Convert a decimal number to a list of truth values
  * The list is ordered with the lsb first
  * e.g. 10 => [0, 1, 0, 1, 0, ...]

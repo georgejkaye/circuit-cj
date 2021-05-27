@@ -37,7 +37,26 @@ let forkStubRight = RewriteRule(
     }
 )
 
+let forkCopy = RewriteRule(
+    "Fork",
+    FORK,
+    HasValueArguments,
+    {e : Edge, hb : HypBuilder =>
+        let arg = e.sources[0].GetLeftEdge()
+        let copy = hb.CreateEdge(VALUE(arg.GetValue()))
+        hb.AddConn(arg.targets[0], e.targets[0].GetConn())
+        hb.AddConn(copy.targets[0], e.targets[1].GetConn())
+        hb.RemoveEdge(e)
+    }
+)
 
+
+/**
+ * Check if the sources of an edge all connect to value edges
+ * This allows us to reduce gates
+ * @param edge The edge
+ * @return Whether the argu
+ */
 func HasValueArguments(edge : Edge){
     for(s in edge.sources){
         match(s.GetLeftPort()){
@@ -47,7 +66,12 @@ func HasValueArguments(edge : Edge){
     }
     return true
 }
-
+/**
+ * Replace a gate edge with the value obtained from applying its arguments
+ * @param edge The edge
+ * @param hb   The hyp builder we are rewriting
+ * @param v    The result of applying the gate's arguments
+ */
 func ReplaceGateWithValue(edge : Edge, hb : HypBuilder, v : Value){
     for(s in edge.sources){
         hb.RemoveEdge(s.GetLeftEdge())
@@ -56,54 +80,44 @@ func ReplaceGateWithValue(edge : Edge, hb : HypBuilder, v : Value){
     hb.AddConn(newEdge.targets[0], edge.targets[0].GetConn())
     hb.RemoveEdge(edge)
 }
-
+/**
+ * Assuming that all its arguments are values, replaces a gate edge with the result
+ * of applying it to its arguments
+ * @param edge The edge
+ * @param hb   The hyp builder we are rewriting
+ * @param tt   The truth table to use to compute the result
+ */
 func EvaluateGate(edge : Edge, hb : HypBuilder, tt : TruthTable){
     let v = tt.Eval(map(edge.sources, {s : Source => s.GetLeftEdge().GetValue()}))
     ReplaceGateWithValue(edge, hb, v)
 }
-
-class TruthTable {
-    let dom : Int64
-    let table : (ArrayList<Value>) -> Value
-    init(dom : Int64, table : (ArrayList<Value>) -> Value) {
-        this.dom = dom
-        this.table = table
-    }
-    func Eval(args : ArrayList<Value>){
-        if(args.size() != dom){
-            throw BadDomainException("Eval", args.size(), dom)
-        }
-        table(args)
-    }
+/**
+ * Create a rewrite rule for evaluating a gate with a given truth table
+ * The precondition for this rule is that the inputs must all be values
+ * @param name The name of the rewrite rule
+ * @param truthTable The truth table associated with this gate
+ */
+func GateRewriteRule(name : String, tt : TruthTable){
+    RewriteRule(name, tt.generator, HasValueArguments, {e : Edge, hb : HypBuilder => EvaluateGate(e, hb, tt)})
 }
 
-let andTable = TruthTable(
-    2,
-    {args : ArrayList<Value> => 
-        match(args[0]){
-            case $TOP    => TOP
-            case $BOTTOM => BOTTOM
-            case $TRUE   => args[1]
-            case $FALSE  => match(args[1]){
-                case $TOP    => TOP
-                case $BOTTOM => BOTTOM
-                case _       => FALSE
-            }
-        }
-    }
-)
-
-let andEval = RewriteRule(
-    "And",
-    AND,
-    HasValueArguments,
-    {e : Edge, hb : HypBuilder => EvaluateGate(e, hb, andTable)}
-)
+let andEval = GateRewriteRule("AND eval", andTable)
+let orEval = GateRewriteRule("OR eval", orTable)
+let nandEval = GateRewriteRule("NAND eval", nandTable)
+let norEval = GateRewriteRule("NOR eval", norTable)
+let xorEval = GateRewriteRule("XOR eval", xorTable)
+let xnorEval = GateRewriteRule("XNOR eval", andTable)
 
 
 let rewriteRules = ArrayList<RewriteRule>([
     forkStubLeft,
     forkStubRight,
-    andEval
+    forkCopy,
+    andEval,
+    orEval,
+    nandEval,
+    norEval,
+    xorEval,
+    xnorEval
 ])
 let rewriter = Rewriter(rewriteRules)

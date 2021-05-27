@@ -43,7 +43,6 @@ class Rewriter {
     }
     func Run(f : Hypergraph) : Hypergraph {
         let f = f.Clone()
-        print("${f}\n")
         let frontier = GetEndpoints(f)
         while(frontier.size() != 0){
             let s = frontier.removeAt(0)
@@ -67,7 +66,6 @@ class Rewriter {
                         if(!rewrote){
                             if(rule.CanRewrite(e)){
                                 rule.Rewrite(e, hb)
-                                print("${hb}\n")
                                 rewrote = true
                             }
                         }

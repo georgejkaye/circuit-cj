@@ -129,15 +129,23 @@ func ParBuilder(f : HypBuilder, g : HypBuilder, name!: String = "") : Hypergraph
  * @return The resulting composed hypergraph h = fs[0] * fs[1] * ... * fs[n-1]
  */
 external func Par(fs : ArrayList<Hypergraph>, name!: String = "") : Hypergraph {
+    ParBuilder(map(fs, {f : Hypergraph => f.Clone()}))
+}
+/**
+ * Compose in parallel a list of hyp builders from left to right 
+ * @param fs         A list of hyp builders
+ * @param name=""    The name to give the resulting hypergrah 
+ * @return The resulting composed hypergraph h = fs[0] * fs[1] * ... * fs[n-1]
+ */
+func ParBuilder(fs : ArrayList<HypBuilder>, name!: String = "") : Hypergraph {
     if(fs.size() == 0){
         return Empty()
     }
-    if(fs.size() == 1){
-        return fs[0]
-    }
-    var res = fs[0].Clone()
-    for(i in 1..fs.size()){
-        res.AddNewGraph(fs[i].Clone())
+    let res = fs[0]
+    if(fs.size() > 1){
+        for(i in 1..fs.size()){
+            res.AddNewGraph(fs[i])
+        }
     }
     res.ToGraph(name)    
 }

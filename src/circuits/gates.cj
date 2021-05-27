@@ -483,7 +483,7 @@ external func OrGate(lhs!: Hypergraph, rhs!: Hypergraph, output!: String = "", e
     OpTwoToOne(OR, output: output, elem: elem, name: name, lhs: lhs, rhs: rhs) 
 }
 
-external func XorGate(output!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
+external func XorGate(output!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph { 
     OpTwoToOne(XOR, output: output, elem: elem, name: name, input: input) 
 }
 external func XorGate(lhs!: Hypergraph, rhs!: Hypergraph, output!: String = "", elem!: Int64 = -1, name!: String = ""){ 

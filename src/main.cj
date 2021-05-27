@@ -6,14 +6,16 @@ import settings.*
 func main(){
 
     SetDotDir("dot")
+ 
+    let a = UnsignedValueFromInt(10, width: 4)
+    WriteDotToFile(a, "a")
+    let b = UnsignedValueFromInt(2, width: 4)
+    WriteDotToFile(b, "b")
 
-    let and1 = True() * False() + AndGate()
-    let spec = NewSpec(width: 1, name: "")
-    let and2 = AndGate(lhs: InLink(spec: spec), rhs: and1)
-    let circ = Feedback(input: and2, spec: spec)
+    let circ = Plus(a : UnsignedValueFromInt(10, width: 4), b: UnsignedValueFromInt(2, width: 4))
 
-    WriteDotToFile(and2, "circ")
-    let red = TestRewrites(and2)
+    WriteDotToFile(circ, "circ")
+    let red = TestRewrites(circ)
     WriteDotToFile(red, "red")
 
     return 0
