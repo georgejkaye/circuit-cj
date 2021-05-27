@@ -19,7 +19,8 @@ let forkStubLeft = RewriteRule(
     FORK,
     {e : Edge => NextEdgeIs(e.targets[0], STUB) },
     {e : Edge, hb : HypBuilder => 
-        hb.AddConn(e.sources[0].GetConn(), e.targets[1].GetConn())
+        let t = e.sources[0].GetConn()
+        hb.AddConn(t, e.targets[1].GetConn())
         hb.RemoveEdge(e.targets[0].GetRightEdge())
         hb.RemoveEdge(e)
     }
@@ -29,7 +30,8 @@ let forkStubRight = RewriteRule(
     FORK,
     {e : Edge => NextEdgeIs(e.targets[1], STUB) },
     {e : Edge, hb : HypBuilder => 
-        hb.AddConn(e.sources[0].GetConn(), e.targets[0].GetConn())
+        let t = e.sources[0].GetConn()
+        hb.AddConn(t, e.targets[0].GetConn())
         hb.RemoveEdge(e.targets[1].GetRightEdge())
         hb.RemoveEdge(e)
     }

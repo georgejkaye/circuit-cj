@@ -42,28 +42,47 @@ class Rewriter {
     init(rules : ArrayList<RewriteRule>){
         this.rules = rules
     }
-    func Run(f : Hypergraph){
+    func Run(f : Hypergraph) : Hypergraph {
         let f = f.Clone()
+        print("${f}\n")
+        let frontier = GetEndpoints(f)
+        while(frontier.size() != 0){
+            let s = frontier.removeAt(0)
+            // We may have removed this source while rewriting other parts of the graph
+            if(includes(f.GetSources(), s)){
+                Run(f,s)
+            }
+        }
         f.ToGraph()
     }
-    func Run(hb : HypBuilder, e : Edge){
-        var rewrote = false
-        for(rule in rules){
-            if(!rewrote){
-                if(rule.CanRewrite(e)){
-                    rule.Rewrite(e, hb)
-                    rewrote = true
+    func Run(hb : HypBuilder, s : Source) : Unit {
+        Debug("Run", "Rewriting from source ${s.id}")
+        match(s.GetLeftPort()){
+            case EdgePort(e, i) => {
+                for(v in e.sources){
+                    Run(hb, v)
+                }
+                var rewrote = false
+                for(rule in rules){
+                    if(!rewrote){
+                        if(rule.CanRewrite(e)){
+                            rule.Rewrite(e, hb)
+                            print("${hb}\n")
+                            rewrote = true
+                        }
+                    }
+                }
+                if(rewrote){
+                    Run(hb, s)
                 }
             }
+            case InterfacePort(i) => {}
         }
     }
 }
 
 external func TestRewrites(f : Hypergraph){
     Info("RewriteAll", "Performing all local optimisations")
-    let f = f.Clone()
-    for(e in f.GetEdgesWithGenerator(FORK)){
-        rewriter.Run(f, e)
-    }
-    f.ToGraph()
+    let g = rewriter.Run(f)
+    g
 }
