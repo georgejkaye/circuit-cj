@@ -293,6 +293,16 @@ external open class Edge <: Atom {
         "Edge e${id} - ${generator}" 
     }
     /**
+     * Is this edge an identity edge?
+     * @return if the edge is an identity edge
+     */
+    func IsIdentity(){
+        match(generator){
+            case $IDENTITY => true
+            case _         => false
+        }
+    }
+    /**
      * Assuming this edge is a link, get its spec
      * Throws an exception if this is not a link edge
      * @return The link spec

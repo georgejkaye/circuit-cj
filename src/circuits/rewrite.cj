@@ -58,21 +58,23 @@ class Rewriter {
         Debug("Run", "Rewriting from source ${s.id}")
         match(s.GetLeftPort()){
             case EdgePort(e, i) => {
-                for(v in e.sources){
-                    Run(hb, v)
-                }
-                var rewrote = false
-                for(rule in rules){
-                    if(!rewrote){
-                        if(rule.CanRewrite(e)){
-                            rule.Rewrite(e, hb)
-                            print("${hb}\n")
-                            rewrote = true
+                if(!e.IsIdentity()){
+                    for(v in e.sources){
+                        Run(hb, v)
+                    }
+                    var rewrote = false
+                    for(rule in rules){
+                        if(!rewrote){
+                            if(rule.CanRewrite(e)){
+                                rule.Rewrite(e, hb)
+                                print("${hb}\n")
+                                rewrote = true
+                            }
                         }
                     }
-                }
-                if(rewrote){
-                    Run(hb, s)
+                    if(rewrote){
+                        Run(hb, s)
+                    }
                 }
             }
             case InterfacePort(i) => {}

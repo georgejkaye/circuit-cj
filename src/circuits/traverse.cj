@@ -16,7 +16,7 @@ import debug.*
 func GetStartpoints(f : HypergraphStructure){
     let vs = ArrayList<Target>(f.GetInputs())
     f.ForEachEdgeWithProperty(
-        {e : Edge => e.sources.size() == 0},
+        {e : Edge => e.sources.size() == 0 || e.IsIdentity()},
         {e : Edge => vs.addAll(e.targets)}
     )
     vs
@@ -29,7 +29,7 @@ func GetStartpoints(f : HypergraphStructure){
 func GetEndpoints(f : HypergraphStructure){
     let vs = ArrayList<Source>(f.GetOutputs())
     f.ForEachEdgeWithProperty(
-        {e : Edge => e.targets.size() == 0},
+        {e : Edge => e.targets.size() == 0 || e.IsIdentity()},
         {e : Edge => vs.addAll(e.sources)}
     )
     vs
