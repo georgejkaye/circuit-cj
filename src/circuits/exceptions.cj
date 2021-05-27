@@ -259,3 +259,8 @@ class NonLinkEdgeException <: Exception {
         ErrorMsg(function, "Tried to use edge ${e.id} as a link, but it is not one")
     }
 }
+class NonValueEdgeException <: Exception {
+    init(function : String, e : Edge){
+        ErrorMsg(function, "Tried to use edge ${e.id} as a value, but it is not one")
+    }
+}

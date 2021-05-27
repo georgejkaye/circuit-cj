@@ -578,15 +578,16 @@ external class Hypergraph <: HypergraphStructure {
     * @param g The rhs of the sequential composition
     * @return The result of the sequential composition
     */
-    operator func *(f : Hypergraph, g : Hypergraph) : Hypergraph {
+    operator func +(f : Hypergraph, g : Hypergraph) : Hypergraph {
         SeqBuilder(f.Clone(), g.Clone())
     }
     /**
      * Syntax sugar for parallel composition
+     * @param f The lhs of the parallel composition
      * @param g The rhs of the parallel composition
      * @return The result of the parallel composition
      */
-    operator func +(f : Hypergraph, g : Hypergraph) : Hypergraph {
+    operator func *(f : Hypergraph, g : Hypergraph) : Hypergraph {
         ParBuilder(f.Clone(), g.Clone())
     }
     /**

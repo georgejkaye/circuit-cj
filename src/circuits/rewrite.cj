@@ -36,7 +36,6 @@ class RewriteRule {
     }
 }
 
-
 class Rewriter {
     let rules : ArrayList<RewriteRule>
     init(rules : ArrayList<RewriteRule>){

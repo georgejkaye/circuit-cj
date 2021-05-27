@@ -22,7 +22,7 @@ append Value with ToString {
         }
     }
 }
-append Value with Equatable {
+append Value with Equatable, Hashable {
     operator func ==(lhs : Value, rhs : Value){
         match(lhs){
             case $BOTTOM => {
@@ -52,6 +52,14 @@ append Value with Equatable {
         }
     }
     operator func !=(lhs : Value, rhs : Value) { !(lhs == rhs) }
+    func hashCode(v : Value) : UInt64 {
+        match(v) {
+            case $BOTTOM => 0
+            case $TRUE   => 1
+            case $FALSE  => 2
+            case $TOP    => 3
+        }
+    }
 }
 /**
  * There are three types of structural morphisms to fork, join and stub wires
@@ -325,6 +333,13 @@ func IsOutlink(gen : Generator){
     match(gen){
         case OUTLINK(spec) => true
         case _ => false
+    }
+}
+
+func IsValue(gen : Generator){
+    match(gen){
+        case VALUE(v) => true
+        case _        => false
     }
 }
 

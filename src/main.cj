@@ -7,7 +7,8 @@ func main(){
 
     SetDotDir("dot")
 
-    let circ = Fork() * (Stub() + Identity()) * Fork() * (Identity() + Stub())
+    let circ = True() * False() + AndGate()
+
     WriteDotToFile(circ, "circ")
     print("${circ}\n")
     let red = TestRewrites(circ)

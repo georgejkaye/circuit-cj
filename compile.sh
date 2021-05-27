@@ -18,16 +18,6 @@ OBJS="$IO_O"
 
 MAIN="main"
 PACKAGES=("settings" "debug" "circuits" "examples")
-PKGNO=${#PACKAGES[@]}
-
-rm -rf $BUILD
-rm -rf $BIN
-mkdir $BUILD
-mkdir $BIN
-rm -f $IMPORTS
-touch $IMPORTS
-
-printf "io=$IO_CJO\n" >> $IMPORTS
 
 compile_package() {
     echo "Building package $1 ($2/$3)"
@@ -58,10 +48,38 @@ compile_exec() {
     fi
 }
 
-i=1
-for p in ${PACKAGES[@]} ; do
-    compile_package $p $i $(($PKGNO+1))
-    (( i++ ))
-done
+if [ "$#" == "1" ] ; then
+    MODE="all"
+else
+    MODE="$2"
+fi
 
-compile_exec $MAIN $i $(($PKGNO+1))
+CURRENT_PKG=1
+
+if [ "$MODE" == "all" ] ; then 
+    rm -rf $BUILD
+    rm -rf $BIN
+    mkdir $BUILD
+    mkdir $BIN
+    rm -f $IMPORTS
+    touch $IMPORTS
+
+    TOTAL_PKG=${#PACKAGES[@]}
+
+    printf "io=$IO_CJO\n" >> $IMPORTS
+    
+    for p in ${PACKAGES[@]} ; do
+        compile_package $p $CURRENT_PKG $((TOTAL_PKG+1))
+        (( CURRENT_PKG++ ))
+    done
+else 
+    for p in ${PACKAGES[@]} ; do 
+        OBJS="$OBJS $BUILD/$p/$p.o"
+    done
+fi
+
+if [ "$MODE" == "main" ] ; then
+    TOTAL_PKG=0
+fi
+
+compile_exec $MAIN $CURRENT_PKG $(($TOTAL_PKG+1))

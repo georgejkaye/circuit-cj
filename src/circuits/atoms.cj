@@ -304,6 +304,17 @@ external open class Edge <: Atom {
             case _ => throw NonLinkEdgeException("GetSpec", this)
         }
     }
+    /**
+     * Assuming this edge is a value, get the value
+     * Throws an exception if this is not a value edge
+     * @return The value
+     */
+    func GetValue(){
+        match(generator){
+            case VALUE(v) => v
+            case _        => throw NonValueEdgeException("GetValue", this)
+        }
+    }
 }
 append Edge with ToString {
     func toString(e : Edge){
