@@ -149,10 +149,19 @@ external func Par(fs : List<Hypergraph>, name!: String = "") : Hypergraph {
  */
 external func Par(f : Hypergraph, n : Int64, name!: String = "") : Hypergraph {
     Debug("Par", "Composing ${n} copies of '${f.GetName()}' in parallel")
-    let fs = ArrayList<Hypergraph>(n, {x => f})
-    Par(fs, name: name)
+    ParBuilder(f, n, name: name)
 }
-
+/**
+ * Compose multiple copies of a hyp builder in parallel
+ * @param f          The hyp builder to compose
+ * @param n          The number of times to compose the hyp builder
+ * @param name       The name to give the resulting hypergraph 
+ * @return The resulting composed hypergraph h = f * f * ... * f
+ */
+func ParBuilder(f : Hypergraph, n : Int64, name!: String = "") : Hypergraph {
+    let fs = ArrayList<HypBuilder>(n, {x => f.Clone()})
+    ParBuilder(fs, name: name)
+}
 /** 
  * The empty hypergraph, the unit of parallel composition
  * @param name="" The name to give the resulting hypergraph

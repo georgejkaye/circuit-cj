@@ -162,22 +162,25 @@ class HypBuilder <: HypergraphStructure {
         if(edges.size() == 0){
             edges = ArrayList<Edge>()
         }
-        for(e in f.GetEdges()){
-            AddEdge(e)
+        // TODO for (e in edges) causes unknown error
+        for(i in 0..f.GetEdges().size()){
+            AddEdge(f.GetEdges()[i])
         }
         // HACK if for some reason f is empty the lists aren't initialised
         if(inputs.size() == 0){
             inputs = ArrayList<Target>()
         }
-        for(t in f.GetInputs()){
-            AddInput(t)
+        // TODO for (e in edges) causes unknown error
+        for(i in 0..f.GetInputs().size()){
+            AddInput(f.GetInputs()[i])
         }
         // HACK if for some reason f is empty the lists aren't initialised
         if(outputs.size() == 0){
             outputs = ArrayList<Source>()
         }
-        for(t in f.GetOutputs()){
-            AddOutput(t)
+        // TODO for (e in edges) causes unknown error
+        for(i in 0..f.GetOutputs().size()){
+            AddOutput(f.GetOutputs()[i])
         }
     }
     func NewSource(t : Target) : Source {
