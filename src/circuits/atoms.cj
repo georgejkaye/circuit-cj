@@ -325,6 +325,16 @@ external open class Edge <: Atom {
             case _        => throw NonValueEdgeException("GetValue", this)
         }
     }
+    /**
+     * Check if it this edge has a given value
+     * @return If the edge is this value
+     */
+    func HasValue(v : Value){
+        match(generator){
+            case VALUE(v2) => v2 == v
+            case _         => false
+        }
+    }
 }
 append Edge with ToString {
     func toString(e : Edge){

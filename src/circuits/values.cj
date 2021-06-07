@@ -129,8 +129,28 @@ func xor(lhs : Value, rhs : Value){
         }
     }
 }
-
-
+/**
+ * Get the join of two values in the lattice
+ * @param lhs The lhs argument
+ * @param rhs The rhs argument
+ * @return The join of the two values
+ */
+func join(lhs : Value, rhs : Value){
+    match(lhs){
+        case $TOP    => TOP
+        case $BOTTOM => rhs
+        case $TRUE   => match(rhs){
+            case $TOP   => TOP
+            case $FALSE => TOP
+            case _      => TRUE
+        }
+        case $FALSE  => match(rhs){
+            case $TOP   => TOP
+            case $TRUE  => TOP
+            case _      => FALSE
+        }
+    }
+}
 /**
  * Convert a decimal number to a list of truth values
  * The list is ordered with the lsb first
@@ -164,7 +184,6 @@ func DecToBin(w : Int64, x : Int64, signed: Bool){
     }
     return bin
 }
-
 /**
  * Create a stack of values tensored together
  * @param vs     The list of values
@@ -179,14 +198,19 @@ func ValueStack(vs : ArrayList<Value>, label!: String = ""){
     }
     hb.ToGraph()
 }
-
+/**
+ * Create a stack of the same value tensored together a given number of times
+ * @param v      The value to stack
+ * @param n      The number of times to stack the value
+ * @param label  The wire label to assign the outputs
+ * @return The tensor stack graph
+ */
 func ValueStack(v : Value, n : Int64, label!: String = ""){
     if(n < 1){
         throw NegativeWireException("ValueStack")
     }
     ValueStack(ArrayList<Value>(n, {x : Int64 => v}), label: label)
 }
-
 /**
  * Create a tensor of values from an int
  * This tensor is ordered with the lsb at the top

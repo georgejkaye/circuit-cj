@@ -12,11 +12,12 @@ class RewriteRule {
     private let name : String
     private let entryPoint : Generator
     // Given an edge, can we perform this rewrite rule?
-    private let canRewrite : (Edge) -> Bool
-    // Perform the rewrite rule on this edge
-    private let rewrite : (Edge, HypBuilder) -> Unit
-
-    init(name : String, entryPoint: Generator, canRewrite : (Edge) -> Bool, rewrite : (Edge, HypBuilder) -> Unit){
+    // If yes, return Some(i), where i is the argument that triggers the rewrite
+    // If no, returns None
+    private let canRewrite : (Edge) -> Option<Int64>
+    // Perform the rewrite rule on this edge with a given hypbuilder and triggering argument
+    private let rewrite : (Edge, HypBuilder, Int64) -> Unit
+    init(name : String, entryPoint: Generator, canRewrite : (Edge) -> Option<Int64>, rewrite : (Edge, HypBuilder, Int64) -> Unit){
         this.name = name
         this.entryPoint = entryPoint
         this.rewrite = rewrite
@@ -27,12 +28,12 @@ class RewriteRule {
         if(e.generator == entryPoint){
             canRewrite(e)
         } else {
-            false
+            None<Int64>
         }
     }
-    func Rewrite(e : Edge, hb : HypBuilder){
+    func Rewrite(e : Edge, hb : HypBuilder, i : Int64){
         Debug("Rewrite", "Rewriting e${e.id} with rule ${name}")
-        rewrite(e, hb)
+        rewrite(e, hb, i)
     }
 }
 
@@ -64,9 +65,13 @@ class Rewriter {
                     var rewrote = false
                     for(rule in rules){
                         if(!rewrote){
-                            if(rule.CanRewrite(e)){
-                                rule.Rewrite(e, hb)
-                                rewrote = true
+                            let can = rule.CanRewrite(e)
+                            match(can){
+                                case Some(j) => {
+                                    rule.Rewrite(e, hb, j)
+                                    rewrote = true
+                                }
+                                case $None   => {}
                             }
                         }
                     }

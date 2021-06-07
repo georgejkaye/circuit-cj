@@ -29,7 +29,6 @@ class TruthTable {
         table(args)
     }
 }
-
 /**
  * There are three types of structural morphisms to fork, join and stub wires
  */
@@ -317,7 +316,10 @@ func IsValue(gen : Generator){
  */
 
 let FORK : Generator = STRUCTURAL(ForkMorph)
+
 let JOIN : Generator = STRUCTURAL(JoinMorph)
+let joinTable = TruthTable(JOIN, {args : ArrayList<Value> => join(args[0], args[1])})
+
 let STUB : Generator = STRUCTURAL(StubMorph)
 
 func IsStub(e : Edge){
