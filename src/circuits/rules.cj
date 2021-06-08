@@ -66,9 +66,10 @@ func ConsistentDelays(ss : ArrayList<Source>){
         let n : Int64
         match(ss[0].GetLeftPort()){
             case EdgePort(e, i) => {
-                match(e.IsDelay()){
-                    case Some(d) => n = d
-                    case $None   => return None<Int64>
+                if(e.IsDelay()){
+                    n = e.GetDelay()
+                } else {
+                    return None<Int64>
                 }
             }
             case InterfacePort(i) => return None<Int64>
@@ -76,9 +77,8 @@ func ConsistentDelays(ss : ArrayList<Source>){
         for(i in 1..ss.size()){
             match(ss[i].GetLeftPort()){
                 case EdgePort(e, j) => {
-                    match(e.IsDelay()){
-                        case Some(d) => if(n != d) { return None<Int64> }
-                        case $None   => return None<Int64>
+                    if(!(e.IsDelay() && n == e.GetDelay())){
+                        return None<Int64>
                     }
                 }
                 case InterfacePort(j) => return None<Int64>

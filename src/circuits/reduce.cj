@@ -18,8 +18,10 @@ import debug.*
  * @param name The name to give the resulting hypergraph
  * @return     The resolved hypergraph
  */
-func ResolveLinks(f : Hypergraph, name!: String = "") : HypBuilder {
-    ResolveLinks(f.Clone(), name: name)
+func ResolveLinks(f : Hypergraph, name!: String = "") {
+    let f = f.Clone()
+    ResolveLinks(f, name: name)
+    f
 }
 /**
  * Resolve links in a hyp builder - join outlinks and inlinks with the same spec together
@@ -30,7 +32,7 @@ func ResolveLinks(f : Hypergraph, name!: String = "") : HypBuilder {
  * @param name The name to give the resulting hypergraph
  * @return     The resolved hypergraph
  */
-func ResolveLinks(f : HypBuilder, name!: String = "") : HypBuilder {
+func ResolveLinks(f : HypBuilder, name!: String = "") {
     Debug("ResolveLinks", "Resolving links in ${f.GetName()}")
     let inlinks = f.GetInlinkMap()
     let outlinks = f.GetOutlinkMap()
@@ -100,5 +102,4 @@ func ResolveLinks(f : HypBuilder, name!: String = "") : HypBuilder {
         }
     }    
     f.RemoveEdges({e : Edge => includes(deadInlinks, e)})
-    f
 }

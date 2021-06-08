@@ -304,8 +304,14 @@ external open class Edge <: Atom {
     }
     func IsDelay(){
         match(generator){
-            case DELAY(n) => Some<Int64>(n)
-            case _        => None<Int64>
+            case DELAY(n) => true
+            case _        => false
+        }
+    }
+    func IsValue(){
+        match(generator){
+            case VALUE(v) => true
+            case _        => false
         }
     }
     /**
@@ -329,6 +335,12 @@ external open class Edge <: Atom {
         match(generator){
             case VALUE(v) => v
             case _        => throw NonValueEdgeException("GetValue", this)
+        }
+    }
+    func GetDelay(){
+        match(generator){
+            case DELAY(n) => n
+            case _        => throw NonDelayEdgeException("GetDelay", this)
         }
     }
     /**
@@ -375,6 +387,19 @@ func EdgeListToString(xs : ArrayList<Edge>){
 enum Port { 
     | EdgePort(Edge, Int64) 
     | InterfacePort(Int64) 
+}
+
+func IsValue(p : Port){
+    match(p){
+        case EdgePort(e, i) => e.IsValue()
+        case InterfacePort(i) => false
+    }
+}
+func IsDelay(p : Port){
+    match(p){
+        case EdgePort(e, i) => e.IsDelay()
+        case InterfacePort(i) => false
+    }
 }
 
 append Port with ToString {

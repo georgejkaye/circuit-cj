@@ -264,3 +264,8 @@ class NonValueEdgeException <: Exception {
         ErrorMsg(function, "Tried to use edge ${e.id} as a value, but it is not one")
     }
 }
+class NonDelayEdgeException <: Exception {
+    init(function : String, e : Edge){
+        ErrorMsg(function, "Tried to use edge ${e.id} as a delay, but it is not one")
+    }
+}

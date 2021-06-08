@@ -7,7 +7,7 @@ func main(){
 
     SetDotDir("dot")
  
-    let circ = Accumulator(width: 2, initial: 2)
+    let circ = Register(width: 4, initial: 7)
     WriteDotToFile(circ, "circ")
     let red = TestRewrites(circ)
     WriteDotToFile(red, "red")
