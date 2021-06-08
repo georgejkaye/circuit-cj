@@ -7,6 +7,14 @@
 package circuits
 
 /* Common preconditions */
+func GeneratorAndCondition(e : Edge, gen : Generator, cond : Option<Int64>){
+    if(e.HasGenerator(gen)){
+        cond
+    } else {
+        None<Int64>
+    }
+}
+
 func NextEdgeIs(t : Target, gen : Generator){
     match(t.GetRightPort()){
         case EdgePort(e, i)   => 
@@ -29,6 +37,59 @@ func PreviousEdgeIs(s : Source, gen : Generator){
         case InterfacePort(i) => None<Int64>
     }
 }
+func AllNextEdgesAre(e : Edge, gen : Generator){
+    if(e.targets.size() == 0){
+        return None<Int64>
+    }
+    for(t in e.targets){
+        match(NextEdgeIs(t, gen)){
+            case Some(i) => {}
+            case $None   => return None<Int64>
+        }
+    }
+    return Some<Int64>(0)
+}
+func AllPreviousEdgesAre(e : Edge, gen : Generator){
+    if(e.sources.size() == 0){
+        return None<Int64>
+    }
+    for(s in e.sources){
+        match(PreviousEdgeIs(s, gen)){
+            case Some(i) => {}
+            case $None   => return None<Int64>
+        }
+    }
+    return Some<Int64>(0)
+}
+func ConsistentDelays(ss : ArrayList<Source>){
+    if(ss.size() != 0){
+        let n : Int64
+        match(ss[0].GetLeftPort()){
+            case EdgePort(e, i) => {
+                match(e.IsDelay()){
+                    case Some(d) => n = d
+                    case $None   => return None<Int64>
+                }
+            }
+            case InterfacePort(i) => return None<Int64>
+        }
+        for(i in 1..ss.size()){
+            match(ss[i].GetLeftPort()){
+                case EdgePort(e, j) => {
+                    match(e.IsDelay()){
+                        case Some(d) => if(n != d) { return None<Int64> }
+                        case $None   => return None<Int64>
+                    }
+                }
+                case InterfacePort(j) => return None<Int64>
+            }
+        }
+        print("oo\n")
+        Some<Int64>(n)
+    } else {
+        None<Int64>
+    }
+}
 
 /**
  * Check if the sources of an edge all connect to value edges
@@ -37,6 +98,9 @@ func PreviousEdgeIs(s : Source, gen : Generator){
  * @return Some(0) if all the arguments are values, None otherwise)
  */
 func HasValueArguments(edge : Edge){
+    if(edge.sources.size() == 0){
+        return None<Int64>
+    }
     for(s in edge.sources){
         match(s.GetLeftPort()){
             case EdgePort(e, i) => if(!IsValue(e.generator)){ return None<Int64> }
@@ -73,6 +137,7 @@ func ReplaceGateWithValue(edge : Edge, hb : HypBuilder, v : Value){
     let newEdge = hb.CreateEdge(VALUE(v))
     hb.AddConn(newEdge.targets[0], edge.targets[0].GetConn())
     hb.RemoveEdge(edge)
+    ArrayList<Source>([newEdge.targets[0].GetConn()])
 }
 /**
  * Replace a gate with the value obtained by some calculation, and stub its inputs
@@ -86,9 +151,11 @@ func ReplaceGateWithValueAndStubs(edge : Edge, hb : HypBuilder, trig : Int64, v 
     if(trig < 0 || trig >= edge.sources.size()){
         throw BadDomainException("ReplaceGateWithValueAndStubs", trig, edge.sources.size())
     }
+    let nexts = ArrayList<Source>()
     for(i in 0..edge.sources.size()){
         if(i != trig){
             let stubEdge = hb.CreateEdgeFromExisting(STUB, [edge.sources[i]])
+            nexts.add(stubEdge.sources[0])
         } else {
             hb.RemoveEdge(edge.sources[i].GetLeftEdge())
         }
@@ -96,6 +163,8 @@ func ReplaceGateWithValueAndStubs(edge : Edge, hb : HypBuilder, trig : Int64, v 
     let newEdge = hb.CreateEdge(VALUE(v))
     hb.AddConn(newEdge.targets[0], edge.targets[0].GetConn())
     hb.RemoveEdge(edge)
+    nexts.add(newEdge.targets[0].GetConn())
+    nexts
 }
 /**
  * Replace a gate with a passthrough for all but one of its inputs, which is discarded
@@ -105,20 +174,24 @@ func ReplaceGateWithValueAndStubs(edge : Edge, hb : HypBuilder, trig : Int64, v 
  * @param v    The value to replace the gate with
  * @param trig The index of the argument that has triggered this rewrite
  */
-func ReplaceGateWithPassthrough(edge : Edge, hb : HypBuilder, trig : Int64){
+func ReplaceGateWithPassthrough(edge : Edge, hb : HypBuilder, trig : Int64) : ArrayList<Source> {
     if(trig < 0 || trig >= edge.sources.size()){
         throw BadDomainException("ReplaceGateWithValueAndStubs", trig, edge.sources.size())
     }
     var j = 0
+    let nexts = ArrayList<Source>()
     for(i in 0..edge.sources.size()){
         if(i != trig){
-            hb.AddConn(edge.sources[i].GetConn(), edge.targets[j].GetConn())
+            let nextSource = edge.targets[j].GetConn()
+            hb.AddConn(edge.sources[i].GetConn(), nextSource)
+            nexts.add(nextSource)
             j++
         } else {
             hb.RemoveEdge(edge.sources[i].GetLeftEdge())
         }
     }
     hb.RemoveEdge(edge)
+    nexts
 }
 /**
  * Assuming that all its arguments are values, replaces a gate edge with the result
@@ -138,7 +211,7 @@ func EvaluateGate(edge : Edge, hb : HypBuilder, tt : TruthTable){
  * @param truthTable The truth table associated with this gate
  */
 func GateRewriteRule(name : String, tt : TruthTable){
-    RewriteRule(name, tt.generator, HasValueArguments, {e : Edge, hb : HypBuilder, i : Int64 => EvaluateGate(e, hb, tt)})
+    RewriteRule(name, EXACTLY(tt.generator), HasValueArguments, {e : Edge, hb : HypBuilder, payload : Int64 => EvaluateGate(e, hb, tt)})
 }
 /**
  * Create a rewrite rule for replacing a gate that has a given argument with a new value
@@ -149,7 +222,7 @@ func GateRewriteRule(name : String, tt : TruthTable){
  * @param res  The argument to rewrite to
  */
 func EnhancedGateRewriteRule(name : String, gen : Generator, arg : Value, res : Value){
-    RewriteRule(name, gen, {e : Edge => HasSpecificValueArgument(e, arg)}, {e : Edge, hb : HypBuilder, i : Int64 => ReplaceGateWithValueAndStubs(e, hb, i, res)})
+    RewriteRule(name, EXACTLY(gen), {e : Edge => HasSpecificValueArgument(e, arg)}, {e : Edge, hb : HypBuilder, payload : Int64 => ReplaceGateWithValueAndStubs(e, hb, payload, res)})
 }
 /**
  * Create a rewrite rule for replacing a gate that has a given argument with just the other arguments
@@ -159,7 +232,7 @@ func EnhancedGateRewriteRule(name : String, gen : Generator, arg : Value, res : 
  * @param arg  The argument value that triggers the rewrite rule
  */
 func PassthroughGateRewriteRule(name : String, gen : Generator, arg : Value){
-    RewriteRule(name, gen, {e : Edge => HasSpecificValueArgument(e, arg)}, {e : Edge, hb : HypBuilder, i : Int64 => ReplaceGateWithPassthrough(e, hb, i)})
+    RewriteRule(name, EXACTLY(gen), {e : Edge => HasSpecificValueArgument(e, arg)}, {e : Edge, hb : HypBuilder, payload : Int64 => ReplaceGateWithPassthrough(e, hb, payload)})
 }
 
 /**
@@ -198,45 +271,52 @@ let joinUnit = PassthroughGateRewriteRule("join unit", JOIN, BOTTOM)
 /** FORK ; stub * id = id */
 let forkStubLeft = RewriteRule(
     "Fork-stub left",
-    FORK,
+    EXACTLY(FORK),
     {e : Edge => NextEdgeIs(e.targets[0], STUB) },
-    {e : Edge, hb : HypBuilder, i : Int64 => 
+    {e : Edge, hb : HypBuilder, payload : Int64 => 
         let t = e.sources[0].GetConn()
-        hb.AddConn(t, e.targets[1].GetConn())
+        let next = e.targets[1].GetConn()
+        hb.AddConn(t, next)
         hb.RemoveEdge(e.targets[0].GetRightEdge())
         hb.RemoveEdge(e)
+        ArrayList<Source>([next])
     }
 )
 /** FORK ; id * stub = id */
 let forkStubRight = RewriteRule(
     "Fork-stub right",
-    FORK,
+    EXACTLY(FORK),
     {e : Edge => NextEdgeIs(e.targets[1], STUB) },
-    {e : Edge, hb : HypBuilder, i : Int64 => 
+    {e : Edge, hb : HypBuilder, payload : Int64 => 
         let t = e.sources[0].GetConn()
-        hb.AddConn(t, e.targets[0].GetConn())
+        let next = e.targets[0].GetConn()
+        hb.AddConn(t, next)
         hb.RemoveEdge(e.targets[1].GetRightEdge())
         hb.RemoveEdge(e)
+        ArrayList<Source>([next])
     }
 )
 /** v ; FORK = v * v */
 let forkCopy = RewriteRule(
     "Fork",
-    FORK,
+    EXACTLY(FORK),
     HasValueArguments,
-    {e : Edge, hb : HypBuilder, i : Int64 =>
+    {e : Edge, hb : HypBuilder, payload : Int64 =>
         let arg = e.sources[0].GetLeftEdge()
         let copy = hb.CreateEdge(VALUE(arg.GetValue()))
-        hb.AddConn(arg.targets[0], e.targets[0].GetConn())
-        hb.AddConn(copy.targets[0], e.targets[1].GetConn())
+        let leftCopy = e.targets[0].GetConn()
+        let rightCopy = e.targets[1].GetConn()
+        hb.AddConn(arg.targets[0], leftCopy)
+        hb.AddConn(copy.targets[0], rightCopy)
         hb.RemoveEdge(e)
+        ArrayList<Source>([leftCopy, rightCopy])
     }
 )
 
 /** FORK ; JOIN = id */
 let forkJoin = RewriteRule(
     "Fork-join",
-    JOIN,
+    EXACTLY(JOIN),
     {e : Edge => 
         let s1 = e.sources[0]
         let s2 = e.sources[1] 
@@ -255,36 +335,77 @@ let forkJoin = RewriteRule(
             None<Int64>
         }
     },
-    {e : Edge, hb: HypBuilder, i : Int64 =>
+    {e : Edge, hb: HypBuilder, payload : Int64 =>
         let fork = e.sources[0].GetLeftEdge()
-        hb.AddConn(fork.sources[0].GetConn(), e.targets[0].GetConn())
+        let nextSource = e.targets[0].GetConn()
+        hb.AddConn(fork.sources[0].GetConn(), nextSource)
         hb.RemoveEdge(e)
         hb.RemoveEdge(fork)
+        ArrayList<Source>([nextSource])
     }
 )
 
 let joinFork = RewriteRule(
     "Join-fork",
-    FORK,
+    EXACTLY(FORK),
     {e : Edge => PreviousEdgeIs(e.sources[0], JOIN)},
-    {e : Edge, hb : HypBuilder, i : Int64 => 
+    {e : Edge, hb : HypBuilder, payload : Int64 => 
         let oldJoin = e.sources[0].GetLeftEdge()
-        print("eee\n")
         let fork1 = hb.CreateEdgeFromExisting(FORK, [oldJoin.sources[0]])
         let fork2 = hb.CreateEdgeFromExisting(FORK, [oldJoin.sources[1]])
         let join1 = hb.CreateEdgeFromExisting(JOIN, [e.targets[0]])
         let join2 = hb.CreateEdgeFromExisting(JOIN, [e.targets[1]])
-        print("hello\n")
         hb.AddConn(fork1.targets[0], join1.sources[0])
         hb.AddConn(fork1.targets[1], join2.sources[0])
         hb.AddConn(fork2.targets[0], join1.sources[1])
         hb.AddConn(fork2.targets[1], join2.sources[1])
         hb.RemoveEdge(e)
         hb.RemoveEdge(oldJoin)
+        ArrayList<Source>([join1.targets[0].GetConn(), join2.targets[0].GetConn()])
+    }
+)
+
+let timelessness = RewriteRule(
+    "Timelessness",
+    ANY,
+    {e : Edge => ConsistentDelays(e.sources)},
+    {e : Edge, hb : HypBuilder, payload : Int64 => 
+        let nextSources = ArrayList<Source>()
+        for(s in e.sources){
+            let del = s.GetLeftEdge()
+            hb.AddConn(del.sources[0].GetConn(), s)
+            hb.RemoveEdge(del)
+        }
+        for(t in e.targets){
+            let newDelay = hb.CreateEdge(DELAY(payload))
+            hb.AddConn(newDelay.targets[0], t.GetConn())
+            hb.AddConn(t, newDelay.sources[0])
+            nextSources.add(newDelay.sources[0])
+        }
+        nextSources
+    }
+)
+
+let propagateStubs = RewriteRule(
+    "Stub",
+    ANY,
+    {e : Edge => AllNextEdgesAre(e, STUB)},
+    {e : Edge, hb : HypBuilder, payload : Int64 => 
+        let nextSources = ArrayList<Source>()
+        for(t in e.targets){
+            hb.RemoveEdge(t.GetRightEdge())
+        }
+        for(s in e.sources){
+            hb.CreateEdgeFromExisting(STUB, [s])
+            nextSources.add(s)
+        }
+        hb.RemoveEdge(e)
+        nextSources
     }
 )
 
 let rewriteRules = ArrayList<RewriteRule>([
+    propagateStubs,
     forkStubLeft,
     forkStubRight,
     joinUnit,
@@ -301,6 +422,7 @@ let rewriteRules = ArrayList<RewriteRule>([
     andEnhanced,
     orEnhanced,
     andPassthrough,
-    orPassthrough
+    orPassthrough,
+    timelessness
 ])
 let rewriter = Rewriter(rewriteRules)

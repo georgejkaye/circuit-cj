@@ -302,6 +302,12 @@ external open class Edge <: Atom {
             case _         => false
         }
     }
+    func IsDelay(){
+        match(generator){
+            case DELAY(n) => Some<Int64>(n)
+            case _        => None<Int64>
+        }
+    }
     /**
      * Assuming this edge is a link, get its spec
      * Throws an exception if this is not a link edge
@@ -334,6 +340,13 @@ external open class Edge <: Atom {
             case VALUE(v2) => v2 == v
             case _         => false
         }
+    }
+    /**
+     * Check if it this edge has a given generator
+     * @return If the edge is this value
+     */
+    func HasGenerator(gen : Generator){
+        generator == gen
     }
 }
 append Edge with ToString {

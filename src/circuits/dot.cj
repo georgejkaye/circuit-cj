@@ -218,7 +218,7 @@ external func DotGraph(f : Hypergraph, resolve : Bool){
     Debug("DotGraph", "Generating dot graph for '${f.GetName()}'")
     // If desired, resolve the links in the graph first
     let f = if(resolve){
-        ResolveLinks(f)
+        ResolveLinks(f).ToGraph()
     } else {
         f
     }

@@ -8,16 +8,22 @@ package circuits
 
 import debug.*
 
+enum EntryPoint { 
+    | EXACTLY(Generator)
+    | ANY_GATE
+    | ANY
+}
+
 class RewriteRule {
     private let name : String
-    private let entryPoint : Generator
+    private let entryPoint : EntryPoint
     // Given an edge, can we perform this rewrite rule?
-    // If yes, return Some(i), where i is the argument that triggers the rewrite
+    // If yes, return Some(i), where i is spme numeric payload (depending on rule)
     // If no, returns None
     private let canRewrite : (Edge) -> Option<Int64>
-    // Perform the rewrite rule on this edge with a given hypbuilder and triggering argument
-    private let rewrite : (Edge, HypBuilder, Int64) -> Unit
-    init(name : String, entryPoint: Generator, canRewrite : (Edge) -> Option<Int64>, rewrite : (Edge, HypBuilder, Int64) -> Unit){
+    // Perform the rewrite rule on this edge with a given hypbuilder and payload, returning the next sources to explore
+    private let rewrite : (Edge, HypBuilder, Int64) -> ArrayList<Source>
+    init(name : String, entryPoint: EntryPoint, canRewrite : (Edge) -> Option<Int64>, rewrite : (Edge, HypBuilder, Int64) -> ArrayList<Source>){
         this.name = name
         this.entryPoint = entryPoint
         this.rewrite = rewrite
@@ -25,15 +31,22 @@ class RewriteRule {
     }
     func GetName() { name }
     func CanRewrite(e : Edge){
-        if(e.generator == entryPoint){
+        let b = match(entryPoint){
+            case EXACTLY(gen) => e.generator == gen
+            case $ANY_GATE    => e.targets.size() == 1
+            case ANY          => true
+        }
+        if(b){
             canRewrite(e)
         } else {
             None<Int64>
         }
     }
-    func Rewrite(e : Edge, hb : HypBuilder, i : Int64){
+    func Rewrite(e : Edge, hb : HypBuilder, payload : Int64){
         Debug("Rewrite", "Rewriting e${e.id} with rule ${name}")
-        rewrite(e, hb, i)
+        let nexts = rewrite(e, hb, payload)
+        print("${hb}")
+        nexts
     }
 }
 
@@ -43,7 +56,7 @@ class Rewriter {
         this.rules = rules
     }
     func Run(f : Hypergraph) : Hypergraph {
-        let f = f.Clone()
+        let f = ResolveLinks(f.Clone())
         let frontier = GetEndpoints(f)
         while(frontier.size() != 0){
             let s = frontier.removeAt(0)
@@ -58,6 +71,7 @@ class Rewriter {
         Debug("Run", "Rewriting from source ${s.id}")
         match(s.GetLeftPort()){
             case EdgePort(e, i) => {
+                let next = ArrayList<Source>()
                 if(!e.IsIdentity()){
                     for(v in e.sources){
                         Run(hb, v)
@@ -68,15 +82,16 @@ class Rewriter {
                             let can = rule.CanRewrite(e)
                             match(can){
                                 case Some(j) => {
-                                    rule.Rewrite(e, hb, j)
+                                    let nexts = rule.Rewrite(e, hb, j)
+                                    next.addAll(nexts)
                                     rewrote = true
                                 }
                                 case $None   => {}
                             }
                         }
                     }
-                    if(rewrote){
-                        Run(hb, s)
+                    for(v in next){
+                        Run(hb, v)
                     }
                 }
             }
