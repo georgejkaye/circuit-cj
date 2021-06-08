@@ -218,7 +218,6 @@ open class HypergraphStructure <: Atom {
     func GetWires(){ wireList }
     func GetInlinkMap(){ inlinkMap }
     func GetOutlinkMap(){ outlinkMap }
-    
     open func GetName(){ "hs${id}" }
     /**
      * Perform an action for each edge
@@ -235,13 +234,14 @@ open class HypergraphStructure <: Atom {
      * @param action The action to perform
      */
     func ForEachEdgeWithProperty(pred : (Edge) -> Bool, action : (Edge) -> Unit){
-        for(e in edges){
+        // TODO unknown error with for(e in edges)
+        for(i in 0..edges.size()){
+            let e = edges[i]
             if(pred(e)){
                 action(e)
             }
         }
     }
-
     /**
      * Get the vertex that corresponds to this wire, or throw an exception if it doesn't exist
      * @param w The wire

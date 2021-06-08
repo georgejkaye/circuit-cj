@@ -45,7 +45,6 @@ class RewriteRule {
     func Rewrite(e : Edge, hb : HypBuilder, payload : Int64){
         Debug("Rewrite", "Rewriting e${e.id} with rule ${name}")
         let nexts = rewrite(e, hb, payload)
-        print("${hb}")
         nexts
     }
 }
@@ -64,6 +63,11 @@ class Rewriter {
         RunLocal(f)
         // Isolate the head of the waveform
         let head = IsolateHead(f)
+        // Unfold the rest of the circuit
+        Unfold(f)
+        // Test
+        RunLocal(f)
+        // Transform the result into a new hypergraph
         f.ToGraph()
     }
     func RunLocal(f : HypBuilder){
@@ -78,7 +82,6 @@ class Rewriter {
         f.ToGraph()
     }
     func RunLocal(hb : HypBuilder, s : Source) : Unit {
-        Debug("Run", "Rewriting from source ${s.id}")
         match(s.GetLeftPort()){
             case EdgePort(e, i) => {
                 let next = ArrayList<Source>()
@@ -162,6 +165,57 @@ class Rewriter {
         }
         f.AddOutputs(newOutputs)
         Some<ArrayList<Value>>(head)
+    }
+    /**
+     * Perform one unfolding of a hypergraph, which corresponds to one clock cycle
+     * First the 'global trace delay form' is established: this is a simple case of identifying the delay and identity edges
+     * @param f The hyp builder to unfold
+     */ 
+    func Unfold(f : HypBuilder){
+        Debug("Unfold", "Performing unfolding")
+        // Identify Trace-delay form
+        let outgoingSources = ArrayList<Source>()
+        f.ForEachEdgeWithProperty(
+            { e : Edge => e.IsDelay() || e.IsIdentity() },
+            { e : Edge => outgoingSources.add(e.sources[0]) }
+        )
+        // We make a copy of the graph (the unfolding)
+        let g = f.ToGraph().Clone()
+        let danglingSources = ArrayList<Source>()
+        let identitiesToDelete = ArrayList<Edge>()
+        g.ForEachEdgeWithProperty(
+            { e : Edge => e.IsDelay() || e.IsIdentity() },
+            { e : Edge =>
+                let stub = g.CreateEdge(STUB)
+                g.AddConn(e.sources[0].GetConn(), stub.sources[0])
+                if(e.IsIdentity()){
+                    identitiesToDelete.add(e)
+                }
+                danglingSources.add(e.sources[0])
+            }
+        )
+        f.ConnectEachOutputToEdge(STUB)
+        // Add the copy to the original 
+        f.AddNewGraph(g)
+        // Hook up the dangling vertices
+        for(i in 0..outgoingSources.size()){
+            let s = outgoingSources[i]
+            let fork = f.CreateEdge(FORK)
+            f.AddConn(s.GetConn(), fork.sources[0])
+            f.AddConn(fork.targets[0], s)
+            f.AddConn(fork.targets[1], danglingSources[i])
+        }
+        for(i in 0..g.GetInputs().size()){
+            let fork = f.CreateEdge(FORK)
+            f.AddConn(fork.targets[0], f.GetInput(i).GetConn())
+            f.AddConn(f.GetInput(i), fork.sources[0])
+            f.AddConn(fork.targets[1], g.GetInput(i).GetConn())
+            f.RemoveInput(g.GetInputs().size())
+        }
+        for(e in identitiesToDelete){
+            f.AddConn(e.sources[0].GetConn(), e.targets[0].GetConn())
+            f.RemoveEdge(e)
+        }
     }
 }
 

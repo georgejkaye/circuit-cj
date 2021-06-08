@@ -84,7 +84,6 @@ func ConsistentDelays(ss : ArrayList<Source>){
                 case InterfacePort(j) => return None<Int64>
             }
         }
-        print("oo\n")
         Some<Int64>(n)
     } else {
         None<Int64>
