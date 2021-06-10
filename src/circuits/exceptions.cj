@@ -269,3 +269,8 @@ class NonDelayEdgeException <: Exception {
         ErrorMsg(function, "Tried to use edge ${e.id} as a delay, but it is not one")
     }
 }
+class NonJoinEdgeException <: Exception {
+    init(function : String, e : Edge){
+        ErrorMsg(function, "Tried to use edge ${e.id} as a join, but it is not one")
+    }
+}

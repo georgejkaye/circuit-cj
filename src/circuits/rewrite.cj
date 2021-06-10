@@ -49,6 +49,17 @@ class RewriteRule {
     }
 }
 
+func IsWaveform(s : Source){
+    match(PortToGenerator(s.GetLeftPort(), JOIN)){
+        case Some((e, i)) => {
+            let lhsArg = e.sources[0]
+            let rhsArg = e.sources[1]
+            IsValue(lhsArg.GetLeftPort()) && IsDelay(rhsArg.GetLeftPort())
+        }
+        case $None => false
+    }
+}
+
 class Rewriter {
     let rules : ArrayList<RewriteRule>
     init(rules : ArrayList<RewriteRule>){
@@ -120,35 +131,18 @@ class Rewriter {
      */ 
     func IsolateHead(f : HypBuilder){
         let outputs = f.GetOutputs()
-        let valuesDelaysJoins = ArrayList<Edge * Edge * Edge>()
+        let waveforms = ArrayList<Waveform>()
         let newOutputs = ArrayList<Source>()
         var fail = false
         for(s in outputs){
             match(s.GetLeftPort()){
                 case EdgePort(e, i) => {
-                    if(e.HasGenerator(JOIN)){
-                        let leftSource = e.sources[0]
-                        let leftArg = leftSource.GetLeftPort()
-                        let rightSource = e.sources[1]
-                        let rightArg = rightSource.GetLeftPort()
-                        let value : Edge
-                        let delay : Edge
-                        if(IsValue(leftArg) && IsDelay(rightArg)){
-                            value = leftSource.GetLeftEdge()
-                            delay = rightSource.GetLeftEdge()
-                        } else if (IsValue(rightArg) && IsDelay(leftArg)){
-                            value = rightSource.GetLeftEdge()
-                            delay = leftSource.GetLeftEdge()
-                        } else {
-                            // The arguments of the join do not have an immediate component and a delayed component
-                            return None<ArrayList<Value>>
+                    match(IsWaveform(e)){
+                        case Some(w) => {
+                            waveforms.add(w)
+                            newOutputs.add(w.delay.sources[0])
                         }
-                        valuesDelaysJoins.add((value, delay, e))
-                        newOutputs.add(delay.sources[0])
-                    } else {
-                        // This branch does not currently have an instantaneous value
-                        // Either more rewrites or an unfolding is required
-                        return None<ArrayList<Value>>
+                        case $None => return None<ArrayList<Value>>
                     }
                 }
                 case InterfacePort(i) => return None<ArrayList<Value>>
@@ -157,11 +151,11 @@ class Rewriter {
         // If we're still here, then we are in the correct form
         let head = ArrayList<Value>()
         f.RemoveOutputs()
-        for((v,d,j) in valuesDelaysJoins){
-            head.add(v.GetValue())
-            f.RemoveEdge(v)
-            f.RemoveEdge(d)
-            f.RemoveEdge(j)
+        for(w in waveforms){
+            head.add(w.value.GetValue())
+            f.RemoveEdge(w.value)
+            f.RemoveEdge(w.delay)
+            f.RemoveEdge(w.join)
         }
         f.AddOutputs(newOutputs)
         Some<ArrayList<Value>>(head)

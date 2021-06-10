@@ -8,6 +8,62 @@ package circuits
 
 import debug.*
 
+func IsWaveformArg(s : Source){
+    match(s.GetLeftPort()){
+        case EdgePort(e, i) => IsWaveform(e)
+        case InterfacePort(i) => None<Waveform>
+    }
+}
+
+func IsWaveform(edge : Edge){
+    if(edge.generator != JOIN){
+        return None<Waveform>
+    }
+    let lhsSource = edge.sources[0]
+    let lhsArg = lhsSource.GetLeftPort()
+    let rhsSource = edge.sources[1]
+    let rhsArg = rhsSource.GetLeftPort()
+    let value : Edge 
+    let delay : Edge
+    if(IsValue(lhsArg) && IsDelay(rhsArg)){
+        value = lhsSource.GetLeftEdge()
+        delay = rhsSource.GetLeftEdge()
+    } else if (IsValue(rhsArg) && IsDelay(lhsArg)){
+        value = rhsSource.GetLeftEdge()
+        delay = lhsSource.GetLeftEdge()
+    } else {
+        // The arguments of the join do not have an immediate component and a delayed component
+        return None<Waveform>
+    }
+    Some<Waveform>(Waveform(value, edge, delay))
+}
+
+/**
+ * Class to keep track of the components of a waveform
+ * a) The value edge, the head of the waveform
+ * b) The delay edge, leading to the rest of the waveform
+ * c) The join edge, connecting the two
+ */
+class Waveform {
+    let value : Edge
+    let join : Edge
+    let delay : Edge
+    init(value : Edge, join : Edge, delay : Edge){
+        if(!value.IsValue()){
+            throw NonValueEdgeException("Waveform", value)
+        }
+        this.value = value
+        if(join.generator != JOIN){
+            throw NonJoinEdgeException("Waveform", join)
+        }
+        this.join = join
+        if(!delay.IsDelay()){
+            throw NonDelayEdgeException("Waveform", delay)
+        }
+        this.delay = delay
+    }
+}
+
 /**
  * Create a new spec to be used for links
  * @param width The width of this spec

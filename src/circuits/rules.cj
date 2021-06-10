@@ -89,6 +89,26 @@ func ConsistentDelays(ss : ArrayList<Source>){
         None<Int64>
     }
 }
+func AllInputsAreConsistentWaveforms(e : Edge){
+    if(e.sources.size() == 0) {
+        return None<Int64>
+    }
+    let n = match(IsWaveformArg(e.sources[0])){
+        case Some(w) => w.delay.GetDelay()
+        case $None   => return None<Int64>
+    }
+    for(i in 1..e.sources.size()){
+        match(IsWaveformArg(e.sources[i])){
+            case Some(w) => {
+                if(w.delay.GetDelay() != n){
+                    return None<Int64>
+                }
+            }
+            case $None => return None<Int64>
+        }
+    }
+    return Some<Int64>(n)
+}
 
 /**
  * Check if the sources of an edge all connect to value edges
@@ -403,6 +423,46 @@ let propagateStubs = RewriteRule(
     }
 )
 
+let streaming = RewriteRule(
+    "Streaming",
+    ANY_GATE,
+    AllInputsAreConsistentWaveforms,
+    {e : Edge, hb : HypBuilder, payload : Int64 =>
+        let nowGate = hb.CreateEdge(e.generator)
+        let thenGate = hb.CreateEdge(e.generator)
+
+        for(i in 0..e.sources.size()){
+            let s = e.sources[i]
+            let join = s.GetLeftEdge()
+            let lhsArg = join.sources[0].GetLeftEdge()
+            let rhsArg = join.sources[1].GetLeftEdge()
+            let (value, delay) = if(lhsArg.IsValue()){
+                (lhsArg, rhsArg)
+            } else {
+                (rhsArg, lhsArg)
+            }
+            hb.AddConn(value.targets[0], nowGate.sources[i])
+            hb.AddConn(delay.sources[0].GetConn(), thenGate.sources[i])
+            hb.RemoveEdge(delay)
+            hb.RemoveEdge(join)
+        } 
+
+        let newDelay = hb.CreateEdge(DELAY(payload))
+        hb.AddConn(thenGate.targets[0], newDelay.sources[0])
+        
+        let newJoin = hb.CreateEdge(JOIN)
+        hb.AddConn(nowGate.targets[0], newJoin.sources[0])
+        hb.AddConn(newDelay.targets[0], newJoin.sources[1])
+
+        let exitSource = e.targets[0].GetConn()
+        hb.AddConn(newJoin.targets[0], exitSource)
+
+        hb.RemoveEdge(e)
+        ArrayList<Source>([exitSource])
+    }
+
+)
+
 let rewriteRules = ArrayList<RewriteRule>([
     propagateStubs,
     forkStubLeft,
@@ -422,6 +482,7 @@ let rewriteRules = ArrayList<RewriteRule>([
     orEnhanced,
     andPassthrough,
     orPassthrough,
-    timelessness
+    timelessness,
+    streaming
 ])
 let rewriter = Rewriter(rewriteRules)
