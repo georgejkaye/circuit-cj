@@ -716,6 +716,20 @@ class HypBuilder <: HypergraphStructure {
             ConnectEdgeToOutputs(edge, i)
         }
     }
+    func ConnectInputToOutputs(i : Int64){
+        if(i < 0 || i >= inputs.size()){
+            throw BadInputException("ConnectInputToOutputs", i, inputs.size())
+        }
+        let s = Source()
+        AddConn(inputs[i], s)
+        AddOutput(s)
+    }
+    func ConnectPortToOutputs(port : Port){
+        match(port){
+            case EdgePort(e, i) => ConnectEdgeToOutputs(e, i)
+            case InterfacePort(i) => ConnectInputToOutputs(i)
+        }
+    }
     /**
      * Connect all the sources of an edge to the inputs of the graph
      * @param edge The edge to connect

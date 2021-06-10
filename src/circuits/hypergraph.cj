@@ -358,6 +358,21 @@ open class HypergraphStructure <: Atom {
             if(!includes(sources, t.GetConn())){
                 return ConnectionNotInGraph(t, t.GetConn())
             }
+            match(t.GetLeftPort()){
+                case EdgePort(e, i) => {
+                    if(!includes(edges, e)){
+                        return EdgeNotInGraph(t, e)
+                    }
+                    if(e.targets[i] != t){
+                        return IncorrectTargetAssignment(t, t.GetLeftPort())
+                    }
+                }
+                case InterfacePort(i) => {
+                    if(inputs[i] != t){
+                        return IncorrectTargetAssignment(t, t.GetLeftPort())
+                    }
+                }
+            }
         }
         let encounteredSources = ArrayList<Source>()
         for(s in sources){
@@ -373,6 +388,21 @@ open class HypergraphStructure <: Atom {
             }
             if(!includes(targets, s.GetConn())){
                 return ConnectionNotInGraph(s, s.GetConn())
+            }
+            match(s.GetRightPort()){
+                case EdgePort(e, i) => {
+                    if(!includes(edges, e)){
+                        return EdgeNotInGraph(s, e)
+                    }
+                    if(e.sources[i] != s){
+                        return IncorrectSourceAssignment(s, s.GetRightPort())
+                    }
+                }
+                case InterfacePort(i) => {
+                    if(outputs[i] != s){
+                        return IncorrectSourceAssignment(s, s.GetRightPort())
+                    }
+                }
             }
         }
         for(e in edges){
@@ -447,16 +477,19 @@ append HypergraphStructure with ToString {
  * An enum to represent if a hypergraph structure is well formed or if there is a problem with it
  */
 enum WellformednessStatus {
-    | Okay                                  // Well formed hypergraph
-    | TargetNotConnected(Target)            // This target does not connect to a source vertex
-    | SourceNotConnected(Source)            // This source does not connect to a target vertex
-    | TargetNotAssociated(Target)           // This target is not associated with an edge
-    | SourceNotAssociated(Source)           // This source is not associated with an edge
-    | DuplicateTarget(Target)               // This target is associated with multiple edges
-    | DuplicateSource(Source)               // This source is associated with multiple edges
-    | ConnectionNotInGraph(Vertex, Vertex)  // The connection of the first vertex is not in the graph
-    | IncorrectDomain(Edge, Int64)          // This edge has the incorrect number of sources
-    | IncorrectCodomain(Edge, Int64)        // This edge has the incorrect number of targets
+    | Okay                                    // Well formed hypergraph
+    | TargetNotConnected(Target)              // This target does not connect to a source vertex
+    | SourceNotConnected(Source)              // This source does not connect to a target vertex
+    | TargetNotAssociated(Target)             // This target is not associated with an edge
+    | SourceNotAssociated(Source)             // This source is not associated with an edge
+    | IncorrectTargetAssignment(Target, Port) // This target has been assigned to a port but in reality it is not
+    | IncorrectSourceAssignment(Source, Port) // This source has been assigned to a port but in reality it is not
+    | DuplicateTarget(Target)                 // This target is associated with multiple edges
+    | DuplicateSource(Source)                 // This source is associated with multiple edges
+    | ConnectionNotInGraph(Vertex, Vertex)    // The connection of the first vertex is not in the graph
+    | EdgeNotInGraph(Vertex, Edge)            // This vertex is associated with an edge not in this graph
+    | IncorrectDomain(Edge, Int64)            // This edge has the incorrect number of sources
+    | IncorrectCodomain(Edge, Int64)          // This edge has the incorrect number of targets
 }
 
 /**

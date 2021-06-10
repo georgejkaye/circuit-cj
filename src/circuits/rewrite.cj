@@ -73,11 +73,17 @@ class Rewriter {
         // Run all local optimisations
         RunLocal(f)
         // Isolate the head of the waveform
-        let head = IsolateHead(f)
+        let head = DetachHead(f)
         // Unfold the rest of the circuit
         Unfold(f)
-        // Test
         RunLocal(f)
+        print("${f}\n")
+        // If we have one, reattach the head
+        match(head){
+            case Some(ws) => ReattachHead(f, ws)
+            case $None => {}
+        }
+        print("${f}\n")
         // Transform the result into a new hypergraph
         f.ToGraph()
     }
@@ -129,7 +135,8 @@ class Rewriter {
      * If we try to unfold with this in place, then we will keep going in circles
      * @param f The hyp builder
      */ 
-    func IsolateHead(f : HypBuilder){
+    func DetachHead(f : HypBuilder){
+        Debug("DetachHead", "Checking for immediate values")
         let outputs = f.GetOutputs()
         let waveforms = ArrayList<Waveform>()
         let newOutputs = ArrayList<Source>()
@@ -140,25 +147,23 @@ class Rewriter {
                     match(IsWaveform(e)){
                         case Some(w) => {
                             waveforms.add(w)
-                            newOutputs.add(w.delay.sources[0])
                         }
-                        case $None => return None<ArrayList<Value>>
+                        case $None => return None<ArrayList<Waveform>>
                     }
                 }
-                case InterfacePort(i) => return None<ArrayList<Value>>
+                case InterfacePort(i) => return None<ArrayList<Waveform>>
             }
         }
         // If we're still here, then we are in the correct form
-        let head = ArrayList<Value>()
+        let head = ArrayList<Edge>()
         f.RemoveOutputs()
         for(w in waveforms){
-            head.add(w.value.GetValue())
             f.RemoveEdge(w.value)
             f.RemoveEdge(w.delay)
             f.RemoveEdge(w.join)
+            f.ConnectPortToOutputs(w.delay.sources[0].GetLeftPort())
         }
-        f.AddOutputs(newOutputs)
-        Some<ArrayList<Value>>(head)
+        Some<ArrayList<Waveform>>(waveforms)
     }
     /**
      * Perform one unfolding of a hypergraph, which corresponds to one clock cycle
@@ -209,6 +214,19 @@ class Rewriter {
         for(e in identitiesToDelete){
             f.AddConn(e.sources[0].GetConn(), e.targets[0].GetConn())
             f.RemoveEdge(e)
+        }
+    }
+    func ReattachHead(f : HypBuilder, head : ArrayList<Waveform>){
+        Debug("ReattachHead", "Adding any immediate values")
+        for(i in 0..head.size()){
+            let w = head[i]
+            print("${w.delay.sources[0].GetRightPort()}\n")
+            print("${w.delay}\n")
+            f.AddConn(f.GetOutput(i).GetConn(), w.delay.sources[0])
+            f.AddConn(head[i].join.targets[0], f.GetOutput(i))
+            f.AddEdge(w.delay)
+            f.AddEdge(w.join)
+            f.AddEdge(w.value)
         }
     }
 }

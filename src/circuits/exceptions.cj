@@ -65,16 +65,19 @@ class BusesNotSameSizeException <: Exception {
 class BadHypergraphException <: Exception {
     init(h : HypergraphStructure, wf : WellformednessStatus){
         match(wf){
-            case TargetNotConnected(t)       => throw MissingConnectionException("Wellformedness", h, t)
-            case SourceNotConnected(s)       => throw MissingConnectionException("Wellformedness", h, s)
-            case TargetNotAssociated(t)      => throw NoAssociatedEdgeException("Wellformedness", h, t)
-            case SourceNotAssociated(s)      => throw NoAssociatedEdgeException("Wellformedness", h, s)
-            case DuplicateTarget(t)          => throw DuplicateVertexException("Wellformedness", h, t)
-            case DuplicateSource(s)          => throw DuplicateVertexException("Wellformedness", h, s)
-            case ConnectionNotInGraph(v1,v2) => throw BadConnectionException("Wellformedness", h, v1, v2)
-            case IncorrectDomain(e, n)       => throw BadDomainException("Wellformedness", n, Dom(e.generator))
-            case IncorrectCodomain(e, n)     => throw BadCodomainException("Wellformedness", n, Cod(e.generator))
-            case _ => throw InaccessibleCodeException("Wellformedness")
+            case TargetNotConnected(t)           => throw MissingConnectionException("Wellformedness", h, t)
+            case SourceNotConnected(s)           => throw MissingConnectionException("Wellformedness", h, s)
+            case TargetNotAssociated(t)          => throw NoAssociatedEdgeException("Wellformedness", h, t)
+            case SourceNotAssociated(s)          => throw NoAssociatedEdgeException("Wellformedness", h, s)
+            case IncorrectTargetAssignment(t, p) => throw IncorrectPortException("Wellformedness", h, t, p)
+            case IncorrectSourceAssignment(s, p) => throw IncorrectPortException("Wellformedness", h, s, p)
+            case DuplicateTarget(t)              => throw DuplicateVertexException("Wellformedness", h, t)
+            case DuplicateSource(s)              => throw DuplicateVertexException("Wellformedness", h, s)
+            case ConnectionNotInGraph(v1,v2)     => throw BadConnectionException("Wellformedness", h, v1, v2)
+            case EdgeNotInGraph(v, e)            => throw BadEdgeException("Wellformedness", h, v, e)
+            case IncorrectDomain(e, n)           => throw BadDomainException("Wellformedness", n, Dom(e.generator))
+            case IncorrectCodomain(e, n)         => throw BadCodomainException("Wellformedness", n, Cod(e.generator))
+            case _                               => throw InaccessibleCodeException("Wellformedness")
         }
     }
 }
@@ -90,6 +93,14 @@ class NoAssociatedEdgeException <: Exception {
         ErrorMsg(function, "The vertex ${v.id} does not have an associated edge")
     }
 }
+class IncorrectPortException <: Exception {
+    init(function : String, h : HypergraphStructure, s : Source, p : Port){
+        ErrorMsg(function, "The source ${s.id} is incorrectly assigned to port ${p}\n${h}")
+    }
+    init(function : String, h : HypergraphStructure, t : Target, p : Port){
+        ErrorMsg(function, "The source ${t.id} is incorrectly assigned to port ${p}\n${h}")
+    }
+}
 class MissingConnectionException <: Exception {
     init(function : String, h : HypergraphStructure, v : Vertex) {
         ErrorMsg(function, "No connection found for vertex ${v.id}\n${h}")
@@ -101,6 +112,11 @@ class MissingConnectionException <: Exception {
 class BadConnectionException <: Exception {
     init(function : String, h : HypergraphStructure, v1 : Vertex, v2 : Vertex){
         ErrorMsg(function, "Connection of vertex ${v1.id} (${v2.id}) is not in the graph\n${h}")
+    }
+}
+class BadEdgeException <: Exception {
+    init(function : String, h : HypergraphStructure, v : Vertex, e : Edge){
+        ErrorMsg(function, "Edge of vertex ${v.id} (${e.id}) is not in the graph\n${h}")
     }
 }
 class DuplicateVertexException <: Exception {
