@@ -651,6 +651,12 @@ external class Hypergraph <: HypergraphStructure {
     operator func [](f : Hypergraph, bus : String){
         GetBuilder(f.Clone(), bus)
     }
+    /**
+    * Get a rewriter for this hypergraph
+    */
+    func GetRewriter(){
+        Rewriter(this)
+    }
     override func toString() : String {
         var str = ""
         let inputString = "inputs ${TargetListToString(inputs)}"

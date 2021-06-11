@@ -22,7 +22,7 @@ class RewriteRule {
     // If yes, return Some(i), where i is spme numeric payload (depending on rule)
     // If no, returns None
     private let canRewrite : (Edge) -> Option<Int64>
-    // Perform the rewrite rule on this edge with a given hypbuilder and payload, returning the next sources to explore
+    // Perform the rewrite rule on this edge with a given hypf and payload, returning the next sources to explore
     private let rewrite : (Edge, HypBuilder, Int64) -> ArrayList<Source>
     init(name : String, entryPoint: EntryPoint, canRewrite : (Edge) -> Option<Int64>, rewrite : (Edge, HypBuilder, Int64) -> ArrayList<Source>){
         this.name = name
@@ -63,60 +63,57 @@ func IsWaveform(s : Source){
 }
 
 class Rewriter {
-    let rules : ArrayList<RewriteRule>
-    init(rules : ArrayList<RewriteRule>){
-        this.rules = rules
+    private let rules : ArrayList<RewriteRule> = rewriteRules
+    private let f : HypBuilder
+    private var rewrites = 0
+    init(f : Hypergraph){
+        this.f = f.Clone()
+        ResolveLinks(this.f)
     }
-    func Run(f : Hypergraph) : Hypergraph {
-        // Clone the hypergraph to be rewritten
-        let f = f.Clone()
-        // First resolve any links
-        ResolveLinks(f)
-        // Run all local optimisations
-        RunLocal(f)
-        // Isolate the head of the waveform
-        let head = DetachHead(f)
-        // Unfold the rest of the circuit
-        Unfold(f)
-        // Test: eventually this will run in a loop
-        RunLocal(f)
-        // If we have one, reattach the head
-        match(head){
-            case Some(ws) => ReattachHead(f, ws)
-            case $None => {}
-        }
-        // Transform the result into a new hypergraph
+    func GetGraph(){
         f.ToGraph()
     }
-    func RunLocal(f : HypBuilder){
+    func RunCycle() {
+        // Perform any newly unlocked reductions
+        RunLocal()  
+        // Isolate the head of the waveform
+        let head = DetachHead()
+        // Unfold the rest of the circuit
+        Unfold()     
+        // Tidy up the resulting circuit
+        RunLocal() 
+        // If we have one, reattach the head
+        match(head){
+            case Some(ws) => ReattachHead(ws)
+            case $None => {}
+        }
+    }
+    func RunLocal(){
         let frontier = GetEndpoints(f)
         while(frontier.size() != 0){
             let s = frontier.removeAt(0)
             // We may have removed this source while rewriting other parts of the graph
             if(includes(f.GetSources(), s)){
-                RunLocal(f,s)
+                RunLocal(s)
             }
         }
-        f.ToGraph()
     }
-    var rewrites = 0
-    func RunLocal(hb : HypBuilder, s : Source) : Unit {
+    func RunLocal(s : Source) : Unit {
+        var rewrote = false
         match(s.GetLeftPort()){
             case EdgePort(e, i) => {
                 let next = ArrayList<Source>()
                 // Identity edges 'block' the rewriter, as this will be handled by the unfoldings
                 if(!e.IsIdentity()){
                     for(v in e.sources){
-                        RunLocal(hb, v)
+                        RunLocal(v)
                     }
-                    var rewrote = false
                     for(rule in rules){
                         if(!rewrote){
                             let can = rule.CanRewrite(e)
                             match(can){
                                 case Some(j) => {
-                                    let nexts = rule.Rewrite(e, hb, j)
-                                    WriteDotToFile(hb.ToGraph(), "red${rewrites}")
+                                    let nexts = rule.Rewrite(e, f, j)
                                     rewrites++
                                     next.addAll(nexts)
                                     rewrote = true
@@ -126,10 +123,10 @@ class Rewriter {
                         }
                     }
                     for(v in next){
-                        RunLocal(hb, v)
+                        RunLocal(v)
                     }
                 }
-            }
+            }  
             case InterfacePort(i) => {}
         }
     }
@@ -137,9 +134,9 @@ class Rewriter {
      * Isolate the 'head' of a waveform from a larger graph
      * This applies to a circuit of form (f + delay) * v, where v will occur before anything else
      * If we try to unfold with this in place, then we will keep going in circles
-     * @param f The hyp builder
+     * @param f The hyp f
      */ 
-    func DetachHead(f : HypBuilder){
+    func DetachHead(){
         Debug("DetachHead", "Checking for immediate values")
         let outputs = f.GetOutputs()
         let waveforms = ArrayList<Waveform>()
@@ -172,9 +169,9 @@ class Rewriter {
     /**
      * Perform one unfolding of a hypergraph, which corresponds to one clock cycle
      * First the 'global trace delay form' is established: this is a simple case of identifying the delay and identity edges
-     * @param f The hyp builder to unfold
+     * @param f The hyp f to unfold
      */ 
-    func Unfold(f : HypBuilder){
+    func Unfold(){
         Debug("Unfold", "Performing unfolding")
         // Identify Trace-delay form
         let outgoingSources = ArrayList<Source>()
@@ -220,7 +217,7 @@ class Rewriter {
             f.RemoveEdge(e)
         }
     }
-    func ReattachHead(f : HypBuilder, head : ArrayList<Waveform>){
+    func ReattachHead(head : ArrayList<Waveform>){
         Debug("ReattachHead", "Adding any immediate values")
         for(i in 0..head.size()){
             let w = head[i]
@@ -231,10 +228,4 @@ class Rewriter {
             f.AddEdge(w.value)
         }
     }
-}
-
-external func TestRewrites(f : Hypergraph){
-    Info("RewriteAll", "Performing all local optimisations")
-    let g = rewriter.Run(f)
-    g
 }

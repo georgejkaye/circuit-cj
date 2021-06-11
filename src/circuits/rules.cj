@@ -573,4 +573,3 @@ let rewriteRules = ArrayList<RewriteRule>([
     streaming,
     streamingEnhanced
 ])
-let rewriter = Rewriter(rewriteRules)
