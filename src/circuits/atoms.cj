@@ -314,6 +314,12 @@ external open class Edge <: Atom {
             case _        => false
         }
     }
+    func IsGate(){
+        match(generator){
+            case GATE(k) => true
+            case _       => false
+        }
+    }
     /**
      * Assuming this edge is a link, get its spec
      * Throws an exception if this is not a link edge

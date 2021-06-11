@@ -177,6 +177,9 @@ open class HypergraphStructure <: Atom {
     func GetEdgesWithGenerator(gen : Generator){
         GetEdgesWithProperty({e : Edge => e.generator == gen})
     }
+    func GetGates(){
+        GetEdgesWithProperty({e : Edge => e.IsGate()})
+    }
     func GetAllOutLinks(){
         GetEdgesWithProperty({e : Edge => match(e.generator){
             case OUTLINK(spec) => true

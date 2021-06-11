@@ -303,11 +303,26 @@ func IsOutlink(gen : Generator){
         case _ => false
     }
 }
-
+/**
+ * Check if a given generator is a value
+ * @param gen The generator
+ * @return Whether the generator is a value
+ */
 func IsValue(gen : Generator){
     match(gen){
         case VALUE(v) => true
         case _        => false
+    }
+}
+/**
+ * Check if a given generator is a gate
+ * @param gen The generator
+ * @return Whether the generator is a gate
+ */
+func IsGate(gen : Generator){
+    match(gen){
+        case GATE(k) => true
+        case _       => false
     }
 }
 

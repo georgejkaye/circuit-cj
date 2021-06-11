@@ -10,7 +10,8 @@ import debug.*
 
 enum EntryPoint { 
     | EXACTLY(Generator)
-    | ANY_GATE
+    | GATE
+    | DELAY
     | ANY
 }
 
@@ -33,8 +34,9 @@ class RewriteRule {
     func CanRewrite(e : Edge){
         let b = match(entryPoint){
             case EXACTLY(gen) => e.generator == gen
-            case $ANY_GATE    => e.targets.size() == 1
-            case ANY          => true
+            case $GATE        => e.IsGate()
+            case $DELAY       => e.IsDelay()
+            case $ANY         => true
         }
         if(b){
             canRewrite(e)
@@ -76,14 +78,13 @@ class Rewriter {
         let head = DetachHead(f)
         // Unfold the rest of the circuit
         Unfold(f)
+        // Test: eventually this will run in a loop
         RunLocal(f)
-        print("${f}\n")
         // If we have one, reattach the head
         match(head){
             case Some(ws) => ReattachHead(f, ws)
             case $None => {}
         }
-        print("${f}\n")
         // Transform the result into a new hypergraph
         f.ToGraph()
     }
@@ -98,6 +99,7 @@ class Rewriter {
         }
         f.ToGraph()
     }
+    var rewrites = 0
     func RunLocal(hb : HypBuilder, s : Source) : Unit {
         match(s.GetLeftPort()){
             case EdgePort(e, i) => {
@@ -114,6 +116,8 @@ class Rewriter {
                             match(can){
                                 case Some(j) => {
                                     let nexts = rule.Rewrite(e, hb, j)
+                                    WriteDotToFile(hb.ToGraph(), "red${rewrites}")
+                                    rewrites++
                                     next.addAll(nexts)
                                     rewrote = true
                                 }
@@ -220,8 +224,6 @@ class Rewriter {
         Debug("ReattachHead", "Adding any immediate values")
         for(i in 0..head.size()){
             let w = head[i]
-            print("${w.delay.sources[0].GetRightPort()}\n")
-            print("${w.delay}\n")
             f.AddConn(f.GetOutput(i).GetConn(), w.delay.sources[0])
             f.AddConn(head[i].join.targets[0], f.GetOutput(i))
             f.AddEdge(w.delay)

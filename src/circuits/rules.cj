@@ -110,6 +110,46 @@ func AllInputsAreConsistentWaveforms(e : Edge){
     return Some<Int64>(n)
 }
 
+func InputsOutOfPhase(e : Edge){
+    if(e.sources.size() == 0){
+        return None<Int64>
+    }
+    var nonValue = false
+    for(s in e.sources){
+        match(IsWaveformArg(s)){
+            case Some(w) => {
+                if(w.delay.GetDelay() != 1){
+                    return None<Int64>
+                }
+                nonValue = true
+            }
+            case $None => {
+                match(s.GetLeftPort()){
+                    case EdgePort(ep, i) => {
+                        if(ep.IsDelay()){
+                            if(ep.GetDelay() != 1){
+                                return None<Int64>
+                            }
+                            nonValue = true
+                        } else if (!ep.IsValue()){
+                            return None<Int64>
+                        }
+                    }
+                    case InterfacePort(i) => {
+                        return None<Int64>
+                    }
+                }
+            }
+        }
+    }
+    // No need to stream if it has all values
+    if(!nonValue){
+        None<Int64>
+    } else {
+        Some<Int64>(0)
+    }
+}
+
 /**
  * Check if the sources of an edge all connect to value edges
  * This allows us to reduce gates
@@ -241,8 +281,20 @@ func GateRewriteRule(name : String, tt : TruthTable){
  * @param res  The argument to rewrite to
  */
 func EnhancedGateRewriteRule(name : String, gen : Generator, arg : Value, res : Value){
-    RewriteRule(name, EXACTLY(gen), {e : Edge => HasSpecificValueArgument(e, arg)}, {e : Edge, hb : HypBuilder, payload : Int64 => ReplaceGateWithValueAndStubs(e, hb, payload, res)})
+    EnhancedGateRewriteRule(name, EXACTLY(gen), arg, res)
+}   
+/**
+ * Create a rewrite rule for replacing an entry point that has a given argument with a new value
+ * The precondition for this rule is that at least one of the inputs must be a value
+ * @param name The name of the rewrite rule
+ * @param gen  The entry point 
+ * @param arg  The argument value that triggers the rewrite rule
+ * @param res  The argument to rewrite to
+ */
+func EnhancedGateRewriteRule(name : String, entryPoint : EntryPoint, arg : Value, res : Value){
+    RewriteRule(name, entryPoint, {e : Edge => HasSpecificValueArgument(e, arg)}, {e : Edge, hb : HypBuilder, payload : Int64 => ReplaceGateWithValueAndStubs(e, hb, payload, res)})
 }
+
 /**
  * Create a rewrite rule for replacing a gate that has a given argument with just the other arguments
  * The precondition for this rule is that at least one of the inputs must be a value
@@ -273,6 +325,8 @@ let xnorEval = GateRewriteRule("XNOR eval", andTable)
 let andEnhanced = EnhancedGateRewriteRule("AND false", AND, FALSE, FALSE)
 /* true AND x = true */
 let orEnhanced = EnhancedGateRewriteRule("OR true", OR, TRUE, TRUE)
+/* If an argument is bottom, the whole gate evaluates to bottom */
+let bottomElimination = EnhancedGateRewriteRule("Bottom elimination", GATE, BOTTOM, BOTTOM)
 
 /**
  * Passthrough gate evaluation rules
@@ -423,14 +477,9 @@ let propagateStubs = RewriteRule(
     }
 )
 
-let streaming = RewriteRule(
-    "Streaming",
-    ANY_GATE,
-    AllInputsAreConsistentWaveforms,
-    {e : Edge, hb : HypBuilder, payload : Int64 =>
+func PerformStreaming(hb : HypBuilder, e : Edge){
         let nowGate = hb.CreateEdge(e.generator)
         let thenGate = hb.CreateEdge(e.generator)
-
         for(i in 0..e.sources.size()){
             let s = e.sources[i]
             let join = s.GetLeftEdge()
@@ -446,8 +495,7 @@ let streaming = RewriteRule(
             hb.RemoveEdge(delay)
             hb.RemoveEdge(join)
         } 
-
-        let newDelay = hb.CreateEdge(DELAY(payload))
+        let newDelay = hb.CreateEdge(DELAY(1))
         hb.AddConn(thenGate.targets[0], newDelay.sources[0])
         
         let newJoin = hb.CreateEdge(JOIN)
@@ -459,9 +507,46 @@ let streaming = RewriteRule(
 
         hb.RemoveEdge(e)
         ArrayList<Source>([exitSource])
-    }
+}
 
+let streaming = RewriteRule(
+    "Streaming",
+    GATE,
+    AllInputsAreConsistentWaveforms,
+    {e : Edge, hb : HypBuilder, payload : Int64 =>
+        PerformStreaming(hb, e)
+    }
 )
+
+let streamingEnhanced = RewriteRule(
+    "Streaming enhanced",
+    GATE,
+    InputsOutOfPhase,
+    {e : Edge, hb : HypBuilder, payload : Int64 =>
+        for(s in e.sources){
+            match(IsWaveformArg(s)){
+                case Some(w) => {}
+                case $None => {
+                    let bot = hb.CreateEdge(VALUE(BOTTOM))
+                    let join = hb.CreateEdge(JOIN)
+                    if(s.GetLeftEdge().IsValue()){
+                        let delay = hb.CreateEdge(DELAY(1))
+                        hb.AddConn(bot.targets[0], delay.sources[0])
+                        hb.AddConn(delay.targets[0], join.sources[1])
+                        hb.AddConn(s.GetConn(), join.sources[0])
+                    } else {
+                        hb.AddConn(bot.targets[0], join.sources[0])
+                        hb.AddConn(s.GetConn(), join.sources[1])
+                    }
+                    hb.AddConn(join.targets[0], s)
+                }
+            }
+        }
+        PerformStreaming(hb, e)
+    }
+)
+
+let disconnect = EnhancedGateRewriteRule("Disconnect", DELAY, BOTTOM, BOTTOM)
 
 let rewriteRules = ArrayList<RewriteRule>([
     propagateStubs,
@@ -482,7 +567,10 @@ let rewriteRules = ArrayList<RewriteRule>([
     orEnhanced,
     andPassthrough,
     orPassthrough,
+    bottomElimination,
+    disconnect,
     timelessness,
-    streaming
+    streaming,
+    streamingEnhanced
 ])
 let rewriter = Rewriter(rewriteRules)

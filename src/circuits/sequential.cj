@@ -113,7 +113,7 @@ external func Delay(dur!: Int64 = 1, width!: Int64 = 1, output!: String = "", el
  * @param input    The input to this register
  * @return         The new register
  */
-external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 0, output!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
+external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 1, output!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
     Debug("Register", "Making regist of width ${width} with initial value ${initial} and duration ${duration}")
     match(input){
     case Some(f) => {
