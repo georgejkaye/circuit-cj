@@ -196,7 +196,7 @@ func ValueStack(vs : ArrayList<Value>, label!: String = ""){
     for(i in 0..vs.size()){
         hb.CreateEdge(VALUE(vs[i]), [], [hb.GetOutputs()[i]])
     }
-    hb.ToGraph()
+    hb
 }
 /**
  * Create a stack of the same value tensored together a given number of times
@@ -222,10 +222,24 @@ func ValueStack(v : Value, n : Int64, label!: String = ""){
  * @param label  The wire name to associate with this value
  * @param name   The name to assign the value
  */
-func ValueFromInt(x : Int64, width!: Int64, signed!: Bool, label!: String = "", name!: String = ""){
+func CreateValueFromInt(x : Int64, width!: Int64, signed!: Bool, label!: String = "", name!: String = ""){
     let bin = DecToBin(width, x, signed)
     let values = map(bin, {b : Bool => if(b) { TRUE } else { FALSE } })
     ValueStack(values)
+}
+/**
+ * Create a tensor of values from an int
+ * This tensor is ordered with the lsb at the top
+ * e.g. 10 => 0 * 1 * 0 * 1
+ * If the value is required to be signed, will be encoded in twos complement
+ * @param x      The number to create a value for
+ * @param width  The width of the bus to create
+ * @param signed Whether the number is signed or not
+ * @param label  The wire name to associate with this value
+ * @param name   The name to assign the value
+ */
+func ValueFromInt(x : Int64, width!: Int64, signed!: Bool, label!: String = "", name!: String = ""){
+    CreateValueFromInt(x, width: width, signed: signed, label: label, name: name).ToGraph(name)
 }
 /**
  * Convert an in into a graph representing its signed value stack
@@ -256,7 +270,7 @@ external func UnsignedValueFromInt(x : Int64, width!: Int64, label!: String = ""
  */
 external func Zero(width!: Int64 = 1, label!: String = ""){
     Debug("Zero", "Creating zero value of width ${width}")
-    ValueStack(FALSE, width, label: label)
+    ValueStack(FALSE, width, label: label).ToGraph()
 }
 /**
  * Extend an unsigned value by one, by adding an extra False in front of it

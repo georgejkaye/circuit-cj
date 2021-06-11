@@ -8,13 +8,23 @@ package circuits
 
 import debug.*
 
+/**
+ * Is this source vertex the start of a waveform?
+ * @param s The source vertex
+ * @return Whether this source vertex is the start of a waveform
+ */
 func IsWaveformArg(s : Source){
     match(s.GetLeftPort()){
         case EdgePort(e, i) => IsWaveform(e)
         case InterfacePort(i) => None<Waveform>
     }
 }
-
+/**
+ * Is an edge the start of a waveform?
+ * It must be a join and have a value and delay argument
+ * @param edge The edge to check
+ * @return The waveform structure if it is one, or None otherwise
+ */
 func IsWaveform(edge : Edge){
     if(edge.generator != JOIN){
         return None<Waveform>
@@ -37,7 +47,6 @@ func IsWaveform(edge : Edge){
     }
     Some<Waveform>(Waveform(value, edge, delay))
 }
-
 /**
  * Class to keep track of the components of a waveform
  * a) The value edge, the head of the waveform
@@ -63,7 +72,62 @@ class Waveform {
         this.delay = delay
     }
 }
+/**
+ * Crete a waveform from a list of numbers
+ * A waveform is a sequence of values with delays in between each one
+ * @param xs The list of numbers
+ * @param width The width of each value
+ * @param signed Whether the numbers should be signed
+ * @return The hypbuilder for this waveform
+ */
+func CreateWaveform(xs : List<Int64>, width!: Int64, signed!: Bool = false){
+    CreateWaveform(ArrayList<Int64>(xs), width: width, signed: signed)
+}
+/**
+ * Crete a waveform from a list of numbers
+ * A waveform is a sequence of values with delays in between each one
+ * @param xs The list of numbers
+ * @param width The width of each value
+ * @param signed Whether the numbers should be signed
+ * @return The hypbuilder for this waveform
+ */
+func CreateWaveform(xs : ArrayList<Int64>, width!: Int64, signed!: Bool = false) : HypBuilder {
+    if(xs.size() == 0){
+        HypBuilder()    
+    } else if (xs.size() == 1){
+        CreateValueFromInt(xs[0], width: width, signed: signed)
+    } else {
+        let headNumber = xs.removeAt(0)
+        let head = CreateValueFromInt(headNumber, width: width, signed: signed)
+        let tail : HypBuilder = CreateWaveform(xs, width: width, signed: signed)
 
+        head.AddNewGraph(tail)
+
+        for(i in 0..width){
+            let now = head.GetOutput(i)
+            let join = head.CreateEdge(JOIN)
+            let delay = head.CreateEdge(DELAY(1))
+            head.AddConn(now.GetConn(), join.sources[0])
+            head.AddConn(join.targets[0], now)
+            head.AddConn(tail.GetOutput(i).GetConn(), delay.sources[0])
+            head.AddConn(delay.targets[0], join.sources[1])
+        }
+        head.RemoveOutputs(tail.GetOutputs())
+        head
+    }
+}
+/**
+ * Create a waveform from a list of numbers
+ * @param xs The list of numbers to translate
+ * @param width The width of the values in the waveform
+ * @param name The name of the waveform
+ * @return The waveform
+ */
+external func WaveformFromList(xs : List<Int64>, width!: Int64, name!: String = ""){
+    Debug("WaveformFromList", "Creating waveform from list ${PrintList(ArrayList<Int64>(xs), {i : Int64 => "${i}"})}")
+    let waveform = CreateWaveform(xs, width: width, signed: true)
+    waveform.ToGraph(name)
+}
 /**
  * Create a new spec to be used for links
  * @param width The width of this spec

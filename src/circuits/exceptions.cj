@@ -290,3 +290,8 @@ class NonJoinEdgeException <: Exception {
         ErrorMsg(function, "Tried to use edge ${e.id} as a join, but it is not one")
     }
 }
+class NonProductiveException <: Exception {
+    init(function : String, f : HypergraphStructure){
+        ErrorMsg(function, "The hypergraph '${f.GetName()}' is not in productive form")
+    }
+}

@@ -76,16 +76,18 @@ class Rewriter {
     func RunCycle() {
         // Perform any newly unlocked reductions
         RunLocal()  
-        // Isolate the head of the waveform
-        let head = DetachHead()
+        // Isolate the head(s) of the waveform
+        let heads = ArrayList<ArrayList<Waveform>>()
+        while(f.IsProductive()){
+            heads.add(0, DetachHead())
+        }
         // Unfold the rest of the circuit
         Unfold()     
         // Tidy up the resulting circuit
         RunLocal() 
         // If we have one, reattach the head
-        match(head){
-            case Some(ws) => ReattachHead(ws)
-            case $None => {}
+        while(heads.size() != 0){
+            ReattachHead(heads.removeAt(0))
         }
     }
     func RunLocal(){
@@ -141,7 +143,6 @@ class Rewriter {
         let outputs = f.GetOutputs()
         let waveforms = ArrayList<Waveform>()
         let newOutputs = ArrayList<Source>()
-        var fail = false
         for(s in outputs){
             match(s.GetLeftPort()){
                 case EdgePort(e, i) => {
@@ -149,10 +150,10 @@ class Rewriter {
                         case Some(w) => {
                             waveforms.add(w)
                         }
-                        case $None => return None<ArrayList<Waveform>>
+                        case $None => throw NonProductiveException("DetachHead", f)
                     }
                 }
-                case InterfacePort(i) => return None<ArrayList<Waveform>>
+                case InterfacePort(i) => throw NonProductiveException("DetachHead", f)
             }
         }
         // If we're still here, then we are in the correct form
@@ -164,7 +165,7 @@ class Rewriter {
             f.RemoveEdge(w.join)
             f.ConnectPortToOutputs(w.delay.sources[0].GetLeftPort())
         }
-        Some<ArrayList<Waveform>>(waveforms)
+        waveforms
     }
     /**
      * Perform one unfolding of a hypergraph, which corresponds to one clock cycle

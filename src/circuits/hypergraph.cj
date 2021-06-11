@@ -339,6 +339,30 @@ open class HypergraphStructure <: Atom {
         let vs = ArrayList<Source>()
         GetBusVertexList(s, vs)
         vs
+    } 
+    /**
+     * Check if this hypergraph is productive
+     * i.e. its output is a join of a value and a delayed circuit
+     * @return Whether this circuit is in a productive form
+     */
+    func IsProductive(){
+        for(s in outputs){
+            match(s.GetLeftPort()){
+                case EdgePort(e, i) => {
+                    if(e.generator == JOIN){
+                        let lhs = e.sources[0].GetLeftPort()
+                        let rhs = e.sources[1].GetLeftPort()
+                        if(!((IsValue(lhs) && IsDelay(rhs)) || (IsValue(rhs) && IsDelay(lhs)))){
+                            return false
+                        }
+                    } else {
+                        return false
+                    }
+                }
+                case InterfacePort(i) => return false
+            }
+        }
+        return true
     }
     /**
      * Is this hypergraph structure a well formed hypergraph?
@@ -653,10 +677,12 @@ external class Hypergraph <: HypergraphStructure {
     }
     /**
     * Get a rewriter for this hypergraph
+    * @return The rewritied for this hypergraph
     */
     func GetRewriter(){
         Rewriter(this)
     }
+
     override func toString() : String {
         var str = ""
         let inputString = "inputs ${TargetListToString(inputs)}"
