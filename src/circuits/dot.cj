@@ -31,8 +31,8 @@ func indent(n : Int64, str : String){
 func subscript(n : Int64){
     let code = "${n}"
     var sub = ""
-    for(i in 0..code.length()){
-        let charc = ord(code.charAt(i))
+    for(i in 0..code.size()){
+        let charc = ord(code[i])
         let subs = chr(charc + 0x2050)
         sub = "${sub}${subs}"
     }
@@ -165,14 +165,23 @@ func DrawEdgeNode(n : Int64, id : String, nodeStyle : String, text : String, sou
  * @return The dot code for this edge
  */
 func DrawEdge(n : Int64, e : Edge){
-    let (style, text) = match(e.generator){
-        case VALUE(value)       => (valueStyle, "${value}")
-        case STRUCTURAL(struct) => (structuralStyle, "${struct}")
-        case GATE(label)        => (gateStyle, label.name)
-        case DELAY(dur)         => (delayStyle, "d[${dur}]")
-        case $IDENTITY          => (identityStyle, "id")
-        case INLINK(spec)       => (linkStyle, spec.name)
-        case OUTLINK(spec)      => (linkStyle, spec.name)
+    let style = match(e.generator){
+        case VALUE(value)       => valueStyle
+        case STRUCTURAL(struct) => structuralStyle
+        case GATE(label)        => gateStyle
+        case DELAY(dur)         => delayStyle
+        case $IDENTITY          => identityStyle
+        case INLINK(spec)       => linkStyle
+        case OUTLINK(spec)      => linkStyle
+    }
+    let text = match(e.generator){
+        case VALUE(value)       => "${value}"
+        case STRUCTURAL(struct) => "${struct}"
+        case GATE(label)        => label.name
+        case DELAY(dur)         => "d[${dur}]"
+        case $IDENTITY          => "id"
+        case INLINK(spec)       => spec.name
+        case OUTLINK(spec)      => spec.name
     }
     DrawEdgeNode(n, "e${e.id}", style, text, e.sources, e.targets)
 }

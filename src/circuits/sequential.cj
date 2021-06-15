@@ -161,9 +161,7 @@ external func Delay(dur!: Int64 = 1, width!: Int64 = 1, output!: String = "", el
     }
     let res = hb.ToGraph(name)
     match(input) {
-        case Some(f) => {
-            Seq(f, res)
-        }
+        case Some(f) => Seq(f, res)
         case $None   => res
     }
 }
@@ -180,12 +178,11 @@ external func Delay(dur!: Int64 = 1, width!: Int64 = 1, output!: String = "", el
 external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 1, output!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
     Debug("Register", "Making regist of width ${width} with initial value ${initial} and duration ${duration}")
     match(input){
-    case Some(f) => {
+    case Some(f) =>
             if(f.GetN() != width){
                   throw BadInputGraphException("Register", "input", width, f.GetName(), f.GetN())
             }
-        }
-        case $None => {}
+        case $None => ()
     } 
     if(duration < 0){
         throw NegativeDurationException("Register", duration)
@@ -239,12 +236,11 @@ external func InLink(spec!: LinkSpec, output!: String = "", name!:String = "") :
 external func Feedback(spec!: LinkSpec, output!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
     Debug("Feedback", "Creating feedback to spec ${spec.name}")
     match(input){
-        case Some(f) => {
+        case Some(f) =>
             if(f.GetN() != spec.width){
                 throw TypeMismatchException("Feedback", f, spec.width)
             }
-        }
-        case $None => {}
+        case $None => ()
     }
     
     let hb = HypBuilder(spec.width, spec.width, output)

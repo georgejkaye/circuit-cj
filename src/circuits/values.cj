@@ -13,9 +13,9 @@ import debug.*
  * ⊥ < t,f < ⊤
  */
 enum Value { BOTTOM | TRUE | FALSE | TOP }
-append Value with ToString {
-    func toString(v : Value) {
-        match(v){
+extend Value <: ToString { 
+    func toString() : String {
+        match(this){
             case $BOTTOM => "bot"
             case $TRUE   => "t"
             case $FALSE  => "f"
@@ -23,38 +23,37 @@ append Value with ToString {
         }
     }
 }
-append Value with Equatable, Hashable {
-    operator func ==(lhs : Value, rhs : Value){
-        match(lhs){
-            case $BOTTOM => {
+extend Value <: Equatable {
+    operator func ==(rhs : Value) : Bool {
+        match(this){
+            case $BOTTOM =>
                 match(rhs){
                     case $BOTTOM => true
                     case _ => false
                 }
-            }
-            case $TRUE => {
-                match(rhs){
-                    case $TRUE => true
-                    case _ => false
-                }
-            }
-            case $FALSE => {
-                match(rhs){
-                    case $FALSE => true
-                    case _ => false
-                }
-            }
-            case $TOP => {
+            case $TRUE => 
                 match(rhs){
                     case $TOP => true
                     case _ => false
                 }
-            }
+            case $FALSE =>
+                match(rhs){
+                    case $FALSE => true
+                    case _ => false
+                }
+            case $TOP =>
+                match(rhs){
+                    case $TOP => true
+                    case _ => false
+                }
         }
+        false
     }
-    operator func !=(lhs : Value, rhs : Value) { !(lhs == rhs) }
-    func hashCode(v : Value) : UInt64 {
-        match(v) {
+    operator func !=(rhs : Value) { !(this == rhs) }
+}
+extend Value <: Hashable {
+    func hashCode() : UInt64 {
+        match(this) {
             case $BOTTOM => 0
             case $TRUE   => 1
             case $FALSE  => 2

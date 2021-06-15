@@ -1,575 +1,565 @@
-/**
- * rules.cj
- *
- * This file contains rewrite rules that make up the first part of the operational semantics
- */
+// /**
+//  * rules.cj
+//  *
+//  * This file contains rewrite rules that make up the first part of the operational semantics
+//  */
 
 package circuits
 
-/* Common preconditions */
-func GeneratorAndCondition(e : Edge, gen : Generator, cond : Option<Int64>){
-    if(e.HasGenerator(gen)){
-        cond
-    } else {
-        None<Int64>
-    }
-}
+// /* Common preconditions */
+// func GeneratorAndCondition(e : Edge, gen : Generator, cond : Option<Int64>){
+//     if(e.HasGenerator(gen)){
+//         cond
+//     } else {
+//         None<Int64>
+//     }
+// }
 
-func NextEdgeIs(t : Target, gen : Generator){
-    match(t.GetRightPort()){
-        case EdgePort(e, i)   => 
-            if(e.generator == gen){
-                Some<Int64>(0)
-            } else {
-                None<Int64>
-            }
-        case InterfacePort(i) => None<Int64>
-    }
-}
-func PreviousEdgeIs(s : Source, gen : Generator){
-    match(s.GetLeftPort()){
-        case EdgePort(e, i)   => 
-            if(e.generator == gen){
-                Some<Int64>(0)
-            } else {
-                None<Int64>
-            }
-        case InterfacePort(i) => None<Int64>
-    }
-}
-func AllNextEdgesAre(e : Edge, gen : Generator){
-    if(e.targets.size() == 0){
-        return None<Int64>
-    }
-    for(t in e.targets){
-        match(NextEdgeIs(t, gen)){
-            case Some(i) => {}
-            case $None   => return None<Int64>
-        }
-    }
-    return Some<Int64>(0)
-}
-func AllPreviousEdgesAre(e : Edge, gen : Generator){
-    if(e.sources.size() == 0){
-        return None<Int64>
-    }
-    for(s in e.sources){
-        match(PreviousEdgeIs(s, gen)){
-            case Some(i) => {}
-            case $None   => return None<Int64>
-        }
-    }
-    return Some<Int64>(0)
-}
-func ConsistentDelays(ss : ArrayList<Source>){
-    if(ss.size() != 0){
-        let n : Int64
-        match(ss[0].GetLeftPort()){
-            case EdgePort(e, i) => {
-                if(e.IsDelay()){
-                    n = e.GetDelay()
-                } else {
-                    return None<Int64>
-                }
-            }
-            case InterfacePort(i) => return None<Int64>
-        }
-        for(i in 1..ss.size()){
-            match(ss[i].GetLeftPort()){
-                case EdgePort(e, j) => {
-                    if(!(e.IsDelay() && n == e.GetDelay())){
-                        return None<Int64>
-                    }
-                }
-                case InterfacePort(j) => return None<Int64>
-            }
-        }
-        Some<Int64>(n)
-    } else {
-        None<Int64>
-    }
-}
-func AllInputsAreConsistentWaveforms(e : Edge){
-    if(e.sources.size() == 0) {
-        return None<Int64>
-    }
-    let n = match(IsWaveformArg(e.sources[0])){
-        case Some(w) => w.delay.GetDelay()
-        case $None   => return None<Int64>
-    }
-    for(i in 1..e.sources.size()){
-        match(IsWaveformArg(e.sources[i])){
-            case Some(w) => {
-                if(w.delay.GetDelay() != n){
-                    return None<Int64>
-                }
-            }
-            case $None => return None<Int64>
-        }
-    }
-    return Some<Int64>(n)
-}
+// func NextEdgeIs(t : Target, gen : Generator){
+//     match(t.GetRightPort()){
+//         case EdgePort(e, i)   => 
+//             if(e.generator == gen){
+//                 Some<Int64>(0)
+//             } else {
+//                 None<Int64>
+//             }
+//         case InterfacePort(i) => None<Int64>
+//     }
+// }
+// func PreviousEdgeIs(s : Source, gen : Generator){
+//     match(s.GetLeftPort()){
+//         case EdgePort(e, i)   => 
+//             if(e.generator == gen){
+//                 Some<Int64>(0)
+//             } else {
+//                 None<Int64>
+//             }
+//         case InterfacePort(i) => None<Int64>
+//     }
+// }
+// func AllNextEdgesAre(e : Edge, gen : Generator){
+//     if(e.targets.size() == 0){
+//         return None<Int64>
+//     }
+//     for(t in e.targets){
+//         match(NextEdgeIs(t, gen)){
+//             case Some(i) => {}
+//             case $None   => return None<Int64>
+//         }
+//     }
+//     return Some<Int64>(0)
+// }
+// func AllPreviousEdgesAre(e : Edge, gen : Generator){
+//     if(e.sources.size() == 0){
+//         return None<Int64>
+//     }
+//     for(s in e.sources){
+//         match(PreviousEdgeIs(s, gen)){
+//             case Some(i) => {}
+//             case $None   => return None<Int64>
+//         }
+//     }
+//     return Some<Int64>(0)
+// }
+// func ConsistentDelays(ss : ArrayList<Source>){
+//     if(ss.size() != 0){
+//         let n : Int64
+//         match(ss[0].GetLeftPort()){
+//             case EdgePort(e, i) =>
+//                 if(e.IsDelay()){
+//                     n = e.GetDelay()
+//                 } else {
+//                     return None<Int64>
+//                 }
+//             case InterfacePort(i) => return None<Int64>
+//         }
+//         for(i in 1..ss.size()){
+//             match(ss[i].GetLeftPort()){
+//                 case EdgePort(e, j) =>
+//                     if(!(e.IsDelay() && n == e.GetDelay())){
+//                         return None<Int64>
+//                     }
+//                 case InterfacePort(j) => return None<Int64>
+//             }
+//         }
+//         Some<Int64>(n)
+//     } else {
+//         None<Int64>
+//     }
+// }
+// func AllInputsAreConsistentWaveforms(e : Edge){
+//     if(e.sources.size() == 0) {
+//         return None<Int64>
+//     }
+//     let n = match(IsWaveformArg(e.sources[0])){
+//         case Some(w) => w.delay.GetDelay()
+//         case $None   => return None<Int64>
+//     }
+//     for(i in 1..e.sources.size()){
+//         match(IsWaveformArg(e.sources[i])){
+//             case Some(w) =>
+//                 if(w.delay.GetDelay() != n){
+//                     return None<Int64>
+//                 }
+//             case $None => return None<Int64>
+//         }
+//     }
+//     return Some<Int64>(n)
+// }
 
-func InputsOutOfPhase(e : Edge){
-    if(e.sources.size() == 0){
-        return None<Int64>
-    }
-    var nonValue = false
-    for(s in e.sources){
-        match(IsWaveformArg(s)){
-            case Some(w) => {
-                if(w.delay.GetDelay() != 1){
-                    return None<Int64>
-                }
-                nonValue = true
-            }
-            case $None => {
-                match(s.GetLeftPort()){
-                    case EdgePort(ep, i) => {
-                        if(ep.IsDelay()){
-                            if(ep.GetDelay() != 1){
-                                return None<Int64>
-                            }
-                            nonValue = true
-                        } else if (!ep.IsValue()){
-                            return None<Int64>
-                        }
-                    }
-                    case InterfacePort(i) => {
-                        return None<Int64>
-                    }
-                }
-            }
-        }
-    }
-    // No need to stream if it has all values
-    if(!nonValue){
-        None<Int64>
-    } else {
-        Some<Int64>(0)
-    }
-}
+// func InputsOutOfPhase(e : Edge){
+//     if(e.sources.size() == 0){
+//         return None<Int64>
+//     }
+//     var nonValue = false
+//     for(s in e.sources){
+//         match(IsWaveformArg(s)){
+//             case Some(w) =>
+//                 if(w.delay.GetDelay() != 1){
+//                     return None<Int64>
+//                 }
+//                 nonValue = true
+//             case $None =>
+//                 match(s.GetLeftPort()){
+//                     case EdgePort(ep, i) =>
+//                         if(ep.IsDelay()){
+//                             if(ep.GetDelay() != 1){
+//                                 return None<Int64>
+//                             }
+//                             nonValue = true
+//                         } else if (!ep.IsValue()){
+//                             return None<Int64>
+//                         }
+//                     case InterfacePort(i) => return None<Int64>
+//                 }
+//         }
+//     }
+//     // No need to stream if it has all values
+//     if(!nonValue){
+//         None<Int64>
+//     } else {
+//         Some<Int64>(0)
+//     }
+// }
 
-/**
- * Check if the sources of an edge all connect to value edges
- * This allows us to reduce gates
- * @param edge The edge
- * @return Some(0) if all the arguments are values, None otherwise)
- */
-func HasValueArguments(edge : Edge){
-    if(edge.sources.size() == 0){
-        return None<Int64>
-    }
-    for(s in edge.sources){
-        match(s.GetLeftPort()){
-            case EdgePort(e, i) => if(!IsValue(e.generator)){ return None<Int64> }
-            case InterfacePort(i) => return None<Int64>
-        }
-    }
-    return Some<Int64>(0)
-}
-/**
- * Check if one of the sources of an edge connects to a given value
- * Returns the first occurrence if there are multiple
- * @param edge The edge
- * @return Whether the edge has the value as one of its arguments
- */
-func HasSpecificValueArgument(edge : Edge, v : Value){
-    for(i in 0..edge.sources.size()){
-        match(edge.sources[i].GetLeftPort()){
-            case EdgePort(e, j) => if(e.HasValue(v)){ return Some<Int64>(i) }
-            case InterfacePort(j) => {}
-        }
-    }
-    return None<Int64>
-}
-/**
- * Replace a gate edge with the value obtained from applying its arguments
- * @param edge The edge
- * @param hb   The hyp builder we are rewriting
- * @param v    The result of applying the gate's arguments
- */
-func ReplaceGateWithValue(edge : Edge, hb : HypBuilder, v : Value){
-    for(s in edge.sources){
-        hb.RemoveEdge(s.GetLeftEdge())
-    }
-    let newEdge = hb.CreateEdge(VALUE(v))
-    hb.AddConn(newEdge.targets[0], edge.targets[0].GetConn())
-    hb.RemoveEdge(edge)
-    ArrayList<Source>([newEdge.targets[0].GetConn()])
-}
-/**
- * Replace a gate with the value obtained by some calculation, and stub its inputs
- * One of the arguments is assumed to be a value that triggered this rewrite - it will be discarded rather than stubbed
- * @param edge The edge
- * @param hb   The hyp builder we are rewriting
- * @param v    The value to replace the gate with
- * @param trig The index of the argument that has triggered this rewrite
- */
-func ReplaceGateWithValueAndStubs(edge : Edge, hb : HypBuilder, trig : Int64, v : Value){
-    if(trig < 0 || trig >= edge.sources.size()){
-        throw BadDomainException("ReplaceGateWithValueAndStubs", trig, edge.sources.size())
-    }
-    let nexts = ArrayList<Source>()
-    for(i in 0..edge.sources.size()){
-        if(i != trig){
-            let stubEdge = hb.CreateEdgeFromExisting(STUB, [edge.sources[i]])
-            nexts.add(stubEdge.sources[0])
-        } else {
-            hb.RemoveEdge(edge.sources[i].GetLeftEdge())
-        }
-    }
-    let newEdge = hb.CreateEdge(VALUE(v))
-    hb.AddConn(newEdge.targets[0], edge.targets[0].GetConn())
-    hb.RemoveEdge(edge)
-    nexts.add(newEdge.targets[0].GetConn())
-    nexts
-}
-/**
- * Replace a gate with a passthrough for all but one of its inputs, which is discarded
- * One of the arguments is assumed to be a value that triggered this rewrite - it will be discarded rather than passed through
- * @param edge The edge
- * @param hb   The hyp builder we are rewriting
- * @param v    The value to replace the gate with
- * @param trig The index of the argument that has triggered this rewrite
- */
-func ReplaceGateWithPassthrough(edge : Edge, hb : HypBuilder, trig : Int64) : ArrayList<Source> {
-    if(trig < 0 || trig >= edge.sources.size()){
-        throw BadDomainException("ReplaceGateWithValueAndStubs", trig, edge.sources.size())
-    }
-    var j = 0
-    let nexts = ArrayList<Source>()
-    for(i in 0..edge.sources.size()){
-        if(i != trig){
-            let nextSource = edge.targets[j].GetConn()
-            hb.AddConn(edge.sources[i].GetConn(), nextSource)
-            nexts.add(nextSource)
-            j++
-        } else {
-            hb.RemoveEdge(edge.sources[i].GetLeftEdge())
-        }
-    }
-    hb.RemoveEdge(edge)
-    nexts
-}
-/**
- * Assuming that all its arguments are values, replaces a gate edge with the result
- * of applying it to its arguments
- * @param edge The edge
- * @param hb   The hyp builder we are rewriting
- * @param tt   The truth table to use to compute the result
- */
-func EvaluateGate(edge : Edge, hb : HypBuilder, tt : TruthTable){
-    let v = tt.Eval(map(edge.sources, {s : Source => s.GetLeftEdge().GetValue()}))
-    ReplaceGateWithValue(edge, hb, v)
-}
-/**
- * Create a rewrite rule for evaluating a gate with a given truth table
- * The precondition for this rule is that the inputs must all be values
- * @param name The name of the rewrite rule
- * @param truthTable The truth table associated with this gate
- */
-func GateRewriteRule(name : String, tt : TruthTable){
-    RewriteRule(name, EXACTLY(tt.generator), HasValueArguments, {e : Edge, hb : HypBuilder, payload : Int64 => EvaluateGate(e, hb, tt)})
-}
-/**
- * Create a rewrite rule for replacing a gate that has a given argument with a new value
- * The precondition for this rule is that at least one of the inputs must be a value
- * @param name The name of the rewrite rule
- * @param gen  The generator of the gate
- * @param arg  The argument value that triggers the rewrite rule
- * @param res  The argument to rewrite to
- */
-func EnhancedGateRewriteRule(name : String, gen : Generator, arg : Value, res : Value){
-    EnhancedGateRewriteRule(name, EXACTLY(gen), arg, res)
-}   
-/**
- * Create a rewrite rule for replacing an entry point that has a given argument with a new value
- * The precondition for this rule is that at least one of the inputs must be a value
- * @param name The name of the rewrite rule
- * @param gen  The entry point 
- * @param arg  The argument value that triggers the rewrite rule
- * @param res  The argument to rewrite to
- */
-func EnhancedGateRewriteRule(name : String, entryPoint : EntryPoint, arg : Value, res : Value){
-    RewriteRule(name, entryPoint, {e : Edge => HasSpecificValueArgument(e, arg)}, {e : Edge, hb : HypBuilder, payload : Int64 => ReplaceGateWithValueAndStubs(e, hb, payload, res)})
-}
+// /**
+//  * Check if the sources of an edge all connect to value edges
+//  * This allows us to reduce gates
+//  * @param edge The edge
+//  * @return Some(0) if all the arguments are values, None otherwise)
+//  */
+// func HasValueArguments(edge : Edge){
+//     if(edge.sources.size() == 0){
+//         return None<Int64>
+//     }
+//     for(s in edge.sources){
+//         match(s.GetLeftPort()){
+//             case EdgePort(e, i) => if(!IsValue(e.generator)){ return None<Int64> }
+//             case InterfacePort(i) => return None<Int64>
+//         }
+//     }
+//     return Some<Int64>(0)
+// }
+// /**
+//  * Check if one of the sources of an edge connects to a given value
+//  * Returns the first occurrence if there are multiple
+//  * @param edge The edge
+//  * @return Whether the edge has the value as one of its arguments
+//  */
+// func HasSpecificValueArgument(edge : Edge, v : Value){
+//     for(i in 0..edge.sources.size()){
+//         match(edge.sources[i].GetLeftPort()){
+//             case EdgePort(e, j) => if(e.HasValue(v)){ return Some<Int64>(i) }
+//             case InterfacePort(j) => ()
+//         }
+//     }
+//     return None<Int64>
+// }
+// /**
+//  * Replace a gate edge with the value obtained from applying its arguments
+//  * @param edge The edge
+//  * @param hb   The hyp builder we are rewriting
+//  * @param v    The result of applying the gate's arguments
+//  */
+// func ReplaceGateWithValue(edge : Edge, hb : HypBuilder, v : Value){
+//     for(s in edge.sources){
+//         hb.RemoveEdge(s.GetLeftEdge())
+//     }
+//     let newEdge = hb.CreateEdge(VALUE(v))
+//     hb.AddConn(newEdge.targets[0], edge.targets[0].GetConn())
+//     hb.RemoveEdge(edge)
+//     ArrayList<Source>([newEdge.targets[0].GetConn()])
+// }
+// /**
+//  * Replace a gate with the value obtained by some calculation, and stub its inputs
+//  * One of the arguments is assumed to be a value that triggered this rewrite - it will be discarded rather than stubbed
+//  * @param edge The edge
+//  * @param hb   The hyp builder we are rewriting
+//  * @param v    The value to replace the gate with
+//  * @param trig The index of the argument that has triggered this rewrite
+//  */
+// func ReplaceGateWithValueAndStubs(edge : Edge, hb : HypBuilder, trig : Int64, v : Value){
+//     if(trig < 0 || trig >= edge.sources.size()){
+//         throw BadDomainException("ReplaceGateWithValueAndStubs", trig, edge.sources.size())
+//     }
+//     let nexts = ArrayList<Source>()
+//     for(i in 0..edge.sources.size()){
+//         if(i != trig){
+//             let stubEdge = hb.CreateEdgeFromExisting(STUB, [edge.sources[i]])
+//             nexts.add(stubEdge.sources[0])
+//         } else {
+//             hb.RemoveEdge(edge.sources[i].GetLeftEdge())
+//         }
+//     }
+//     let newEdge = hb.CreateEdge(VALUE(v))
+//     hb.AddConn(newEdge.targets[0], edge.targets[0].GetConn())
+//     hb.RemoveEdge(edge)
+//     nexts.add(newEdge.targets[0].GetConn())
+//     nexts
+// }
+// /**
+//  * Replace a gate with a passthrough for all but one of its inputs, which is discarded
+//  * One of the arguments is assumed to be a value that triggered this rewrite - it will be discarded rather than passed through
+//  * @param edge The edge
+//  * @param hb   The hyp builder we are rewriting
+//  * @param v    The value to replace the gate with
+//  * @param trig The index of the argument that has triggered this rewrite
+//  */
+// func ReplaceGateWithPassthrough(edge : Edge, hb : HypBuilder, trig : Int64) : ArrayList<Source> {
+//     if(trig < 0 || trig >= edge.sources.size()){
+//         throw BadDomainException("ReplaceGateWithValueAndStubs", trig, edge.sources.size())
+//     }
+//     var j = 0
+//     let nexts = ArrayList<Source>()
+//     for(i in 0..edge.sources.size()){
+//         if(i != trig){
+//             let nextSource = edge.targets[j].GetConn()
+//             hb.AddConn(edge.sources[i].GetConn(), nextSource)
+//             nexts.add(nextSource)
+//             j++
+//         } else {
+//             hb.RemoveEdge(edge.sources[i].GetLeftEdge())
+//         }
+//     }
+//     hb.RemoveEdge(edge)
+//     nexts
+// }
+// /**
+//  * Assuming that all its arguments are values, replaces a gate edge with the result
+//  * of applying it to its arguments
+//  * @param edge The edge
+//  * @param hb   The hyp builder we are rewriting
+//  * @param tt   The truth table to use to compute the result
+//  */
+// func EvaluateGate(edge : Edge, hb : HypBuilder, tt : TruthTable){
+//     let v = tt.Eval(map(edge.sources, {s : Source => s.GetLeftEdge().GetValue()}))
+//     ReplaceGateWithValue(edge, hb, v)
+// }
+// /**
+//  * Create a rewrite rule for evaluating a gate with a given truth table
+//  * The precondition for this rule is that the inputs must all be values
+//  * @param name The name of the rewrite rule
+//  * @param truthTable The truth table associated with this gate
+//  */
+// func GateRewriteRule(name : String, tt : TruthTable){
+//     RewriteRule(name, EXACTLY(tt.generator), HasValueArguments, {e : Edge, hb : HypBuilder, payload : Int64 => EvaluateGate(e, hb, tt)})
+// }
+// /**
+//  * Create a rewrite rule for replacing a gate that has a given argument with a new value
+//  * The precondition for this rule is that at least one of the inputs must be a value
+//  * @param name The name of the rewrite rule
+//  * @param gen  The generator of the gate
+//  * @param arg  The argument value that triggers the rewrite rule
+//  * @param res  The argument to rewrite to
+//  */
+// func EnhancedGateRewriteRule(name : String, gen : Generator, arg : Value, res : Value){
+//     EnhancedGateRewriteRule(name, EXACTLY(gen), arg, res)
+// }   
+// /**
+//  * Create a rewrite rule for replacing an entry point that has a given argument with a new value
+//  * The precondition for this rule is that at least one of the inputs must be a value
+//  * @param name The name of the rewrite rule
+//  * @param gen  The entry point 
+//  * @param arg  The argument value that triggers the rewrite rule
+//  * @param res  The argument to rewrite to
+//  */
+// func EnhancedGateRewriteRule(name : String, entryPoint : EntryPoint, arg : Value, res : Value){
+//     RewriteRule(name, entryPoint, {e : Edge => HasSpecificValueArgument(e, arg)}, {e : Edge, hb : HypBuilder, payload : Int64 => ReplaceGateWithValueAndStubs(e, hb, payload, res)})
+// }
 
-/**
- * Create a rewrite rule for replacing a gate that has a given argument with just the other arguments
- * The precondition for this rule is that at least one of the inputs must be a value
- * @param name The name of the rewrite rule
- * @param gen  The generator of the gate
- * @param arg  The argument value that triggers the rewrite rule
- */
-func PassthroughGateRewriteRule(name : String, gen : Generator, arg : Value){
-    RewriteRule(name, EXACTLY(gen), {e : Edge => HasSpecificValueArgument(e, arg)}, {e : Edge, hb : HypBuilder, payload : Int64 => ReplaceGateWithPassthrough(e, hb, payload)})
-}
+// /**
+//  * Create a rewrite rule for replacing a gate that has a given argument with just the other arguments
+//  * The precondition for this rule is that at least one of the inputs must be a value
+//  * @param name The name of the rewrite rule
+//  * @param gen  The generator of the gate
+//  * @param arg  The argument value that triggers the rewrite rule
+//  */
+// func PassthroughGateRewriteRule(name : String, gen : Generator, arg : Value){
+//     RewriteRule(name, EXACTLY(gen), {e : Edge => HasSpecificValueArgument(e, arg)}, {e : Edge, hb : HypBuilder, payload : Int64 => ReplaceGateWithPassthrough(e, hb, payload)})
+// }
 
-/**
- * Gate evaluation rules 
- */
-let joinEval = GateRewriteRule("join", joinTable)
-let andEval = GateRewriteRule("AND eval", andTable)
-let orEval = GateRewriteRule("OR eval", orTable)
-let nandEval = GateRewriteRule("NAND eval", nandTable)
-let norEval = GateRewriteRule("NOR eval", norTable)
-let xorEval = GateRewriteRule("XOR eval", xorTable)
-let xnorEval = GateRewriteRule("XNOR eval", andTable)
+// /**
+//  * Gate evaluation rules 
+//  */
+// let joinEval = GateRewriteRule("join", joinTable)
+// let andEval = GateRewriteRule("AND eval", andTable)
+// let orEval = GateRewriteRule("OR eval", orTable)
+// let nandEval = GateRewriteRule("NAND eval", nandTable)
+// let norEval = GateRewriteRule("NOR eval", norTable)
+// let xorEval = GateRewriteRule("XOR eval", xorTable)
+// let xnorEval = GateRewriteRule("XNOR eval", andTable)
 
-/**
- * Enhanced gate evaluation rules
- */
+// /**
+//  * Enhanced gate evaluation rules
+//  */
 
-/* false AND x = false */
-let andEnhanced = EnhancedGateRewriteRule("AND false", AND, FALSE, FALSE)
-/* true AND x = true */
-let orEnhanced = EnhancedGateRewriteRule("OR true", OR, TRUE, TRUE)
-/* If an argument is bottom, the whole gate evaluates to bottom */
-let bottomElimination = EnhancedGateRewriteRule("Bottom elimination", GATE, BOTTOM, BOTTOM)
+// /* false AND x = false */
+// let andEnhanced = EnhancedGateRewriteRule("AND false", AND, FALSE, FALSE)
+// /* true AND x = true */
+// let orEnhanced = EnhancedGateRewriteRule("OR true", OR, TRUE, TRUE)
+// /* If an argument is bottom, the whole gate evaluates to bottom */
+// let bottomElimination = EnhancedGateRewriteRule("Bottom elimination", GATE, BOTTOM, BOTTOM)
 
-/**
- * Passthrough gate evaluation rules
- */
+// /**
+//  * Passthrough gate evaluation rules
+//  */
 
-/* true AND x = x */
-let andPassthrough = PassthroughGateRewriteRule("AND true", AND, TRUE)
-/* false OR x = x */
-let orPassthrough = PassthroughGateRewriteRule("OR false", OR, FALSE)
-/* bottom JOIN x = x */
-let joinUnit = PassthroughGateRewriteRule("join unit", JOIN, BOTTOM)
+// /* true AND x = x */
+// let andPassthrough = PassthroughGateRewriteRule("AND true", AND, TRUE)
+// /* false OR x = x */
+// let orPassthrough = PassthroughGateRewriteRule("OR false", OR, FALSE)
+// /* bottom JOIN x = x */
+// let joinUnit = PassthroughGateRewriteRule("join unit", JOIN, BOTTOM)
 
-/** Fork rules */
+// /** Fork rules */
 
-/** FORK ; stub * id = id */
-let forkStubLeft = RewriteRule(
-    "Fork-stub left",
-    EXACTLY(FORK),
-    {e : Edge => NextEdgeIs(e.targets[0], STUB) },
-    {e : Edge, hb : HypBuilder, payload : Int64 => 
-        let t = e.sources[0].GetConn()
-        let next = e.targets[1].GetConn()
-        hb.AddConn(t, next)
-        hb.RemoveEdge(e.targets[0].GetRightEdge())
-        hb.RemoveEdge(e)
-        ArrayList<Source>([next])
-    }
-)
-/** FORK ; id * stub = id */
-let forkStubRight = RewriteRule(
-    "Fork-stub right",
-    EXACTLY(FORK),
-    {e : Edge => NextEdgeIs(e.targets[1], STUB) },
-    {e : Edge, hb : HypBuilder, payload : Int64 => 
-        let t = e.sources[0].GetConn()
-        let next = e.targets[0].GetConn()
-        hb.AddConn(t, next)
-        hb.RemoveEdge(e.targets[1].GetRightEdge())
-        hb.RemoveEdge(e)
-        ArrayList<Source>([next])
-    }
-)
-/** v ; FORK = v * v */
-let forkCopy = RewriteRule(
-    "Fork",
-    EXACTLY(FORK),
-    HasValueArguments,
-    {e : Edge, hb : HypBuilder, payload : Int64 =>
-        let arg = e.sources[0].GetLeftEdge()
-        let copy = hb.CreateEdge(VALUE(arg.GetValue()))
-        let leftCopy = e.targets[0].GetConn()
-        let rightCopy = e.targets[1].GetConn()
-        hb.AddConn(arg.targets[0], leftCopy)
-        hb.AddConn(copy.targets[0], rightCopy)
-        hb.RemoveEdge(e)
-        ArrayList<Source>([leftCopy, rightCopy])
-    }
-)
+// /** FORK ; stub * id = id */
+// let forkStubLeft = RewriteRule(
+//     "Fork-stub left",
+//     EXACTLY(FORK),
+//     {e : Edge => NextEdgeIs(e.targets[0], STUB) },
+//     {e : Edge, hb : HypBuilder, payload : Int64 => 
+//         let t = e.sources[0].GetConn()
+//         let next = e.targets[1].GetConn()
+//         hb.AddConn(t, next)
+//         hb.RemoveEdge(e.targets[0].GetRightEdge())
+//         hb.RemoveEdge(e)
+//         ArrayList<Source>([next])
+//     }
+// )
+// /** FORK ; id * stub = id */
+// let forkStubRight = RewriteRule(
+//     "Fork-stub right",
+//     EXACTLY(FORK),
+//     {e : Edge => NextEdgeIs(e.targets[1], STUB) },
+//     {e : Edge, hb : HypBuilder, payload : Int64 => 
+//         let t = e.sources[0].GetConn()
+//         let next = e.targets[0].GetConn()
+//         hb.AddConn(t, next)
+//         hb.RemoveEdge(e.targets[1].GetRightEdge())
+//         hb.RemoveEdge(e)
+//         ArrayList<Source>([next])
+//     }
+// )
+// /** v ; FORK = v * v */
+// let forkCopy = RewriteRule(
+//     "Fork",
+//     EXACTLY(FORK),
+//     HasValueArguments,
+//     {e : Edge, hb : HypBuilder, payload : Int64 =>
+//         let arg = e.sources[0].GetLeftEdge()
+//         let copy = hb.CreateEdge(VALUE(arg.GetValue()))
+//         let leftCopy = e.targets[0].GetConn()
+//         let rightCopy = e.targets[1].GetConn()
+//         hb.AddConn(arg.targets[0], leftCopy)
+//         hb.AddConn(copy.targets[0], rightCopy)
+//         hb.RemoveEdge(e)
+//         ArrayList<Source>([leftCopy, rightCopy])
+//     }
+// )
 
-/** FORK ; JOIN = id */
-let forkJoin = RewriteRule(
-    "Fork-join",
-    EXACTLY(JOIN),
-    {e : Edge => 
-        let s1 = e.sources[0]
-        let s2 = e.sources[1] 
-        let b = match(s1.GetLeftPort()){
-            case EdgePort(e1, i) => {
-                match(s2.GetLeftPort()){
-                    case EdgePort(e2, j) => e1.id == e2.id
-                    case _ => false
-                }
-            }
-            case _ => false
-        }    
-        if(b){
-            Some<Int64>(0)
-        } else {
-            None<Int64>
-        }
-    },
-    {e : Edge, hb: HypBuilder, payload : Int64 =>
-        let fork = e.sources[0].GetLeftEdge()
-        let nextSource = e.targets[0].GetConn()
-        hb.AddConn(fork.sources[0].GetConn(), nextSource)
-        hb.RemoveEdge(e)
-        hb.RemoveEdge(fork)
-        ArrayList<Source>([nextSource])
-    }
-)
+// /** FORK ; JOIN = id */
+// let forkJoin = RewriteRule(
+//     "Fork-join",
+//     EXACTLY(JOIN),
+//     {e : Edge => 
+//         let s1 = e.sources[0]
+//         let s2 = e.sources[1] 
+//         let b = match(s1.GetLeftPort()){
+//             case EdgePort(e1, i) =>
+//                 match(s2.GetLeftPort()){
+//                     case EdgePort(e2, j) => e1.id == e2.id
+//                     case _ => false
+//                 }
+//             case _ => false
+//         }    
+//         if(b){
+//             Some<Int64>(0)
+//         } else {
+//             None<Int64>
+//         }
+//     },
+//     {e : Edge, hb: HypBuilder, payload : Int64 =>
+//         let fork = e.sources[0].GetLeftEdge()
+//         let nextSource = e.targets[0].GetConn()
+//         hb.AddConn(fork.sources[0].GetConn(), nextSource)
+//         hb.RemoveEdge(e)
+//         hb.RemoveEdge(fork)
+//         ArrayList<Source>([nextSource])
+//     }
+// )
 
-let joinFork = RewriteRule(
-    "Join-fork",
-    EXACTLY(FORK),
-    {e : Edge => PreviousEdgeIs(e.sources[0], JOIN)},
-    {e : Edge, hb : HypBuilder, payload : Int64 => 
-        let oldJoin = e.sources[0].GetLeftEdge()
-        let fork1 = hb.CreateEdgeFromExisting(FORK, [oldJoin.sources[0]])
-        let fork2 = hb.CreateEdgeFromExisting(FORK, [oldJoin.sources[1]])
-        let join1 = hb.CreateEdgeFromExisting(JOIN, [e.targets[0]])
-        let join2 = hb.CreateEdgeFromExisting(JOIN, [e.targets[1]])
-        hb.AddConn(fork1.targets[0], join1.sources[0])
-        hb.AddConn(fork1.targets[1], join2.sources[0])
-        hb.AddConn(fork2.targets[0], join1.sources[1])
-        hb.AddConn(fork2.targets[1], join2.sources[1])
-        hb.RemoveEdge(e)
-        hb.RemoveEdge(oldJoin)
-        ArrayList<Source>([join1.targets[0].GetConn(), join2.targets[0].GetConn()])
-    }
-)
+// let joinFork = RewriteRule(
+//     "Join-fork",
+//     EXACTLY(FORK),
+//     {e : Edge => PreviousEdgeIs(e.sources[0], JOIN)},
+//     {e : Edge, hb : HypBuilder, payload : Int64 => 
+//         let oldJoin = e.sources[0].GetLeftEdge()
+//         let fork1 = hb.CreateEdgeFromExisting(FORK, [oldJoin.sources[0]])
+//         let fork2 = hb.CreateEdgeFromExisting(FORK, [oldJoin.sources[1]])
+//         let join1 = hb.CreateEdgeFromExisting(JOIN, [e.targets[0]])
+//         let join2 = hb.CreateEdgeFromExisting(JOIN, [e.targets[1]])
+//         hb.AddConn(fork1.targets[0], join1.sources[0])
+//         hb.AddConn(fork1.targets[1], join2.sources[0])
+//         hb.AddConn(fork2.targets[0], join1.sources[1])
+//         hb.AddConn(fork2.targets[1], join2.sources[1])
+//         hb.RemoveEdge(e)
+//         hb.RemoveEdge(oldJoin)
+//         ArrayList<Source>([join1.targets[0].GetConn(), join2.targets[0].GetConn()])
+//     }
+// )
 
-let timelessness = RewriteRule(
-    "Timelessness",
-    ANY,
-    {e : Edge => ConsistentDelays(e.sources)},
-    {e : Edge, hb : HypBuilder, payload : Int64 => 
-        let nextSources = ArrayList<Source>()
-        for(s in e.sources){
-            let del = s.GetLeftEdge()
-            hb.AddConn(del.sources[0].GetConn(), s)
-            hb.RemoveEdge(del)
-        }
-        for(t in e.targets){
-            let newDelay = hb.CreateEdge(DELAY(payload))
-            hb.AddConn(newDelay.targets[0], t.GetConn())
-            hb.AddConn(t, newDelay.sources[0])
-            nextSources.add(newDelay.sources[0])
-        }
-        nextSources
-    }
-)
+// let timelessness = RewriteRule(
+//     "Timelessness",
+//     ANY,
+//     {e : Edge => ConsistentDelays(e.sources)},
+//     {e : Edge, hb : HypBuilder, payload : Int64 => 
+//         let nextSources = ArrayList<Source>()
+//         for(s in e.sources){
+//             let del = s.GetLeftEdge()
+//             hb.AddConn(del.sources[0].GetConn(), s)
+//             hb.RemoveEdge(del)
+//         }
+//         for(t in e.targets){
+//             let newDelay = hb.CreateEdge(DELAY(payload))
+//             hb.AddConn(newDelay.targets[0], t.GetConn())
+//             hb.AddConn(t, newDelay.sources[0])
+//             nextSources.add(newDelay.sources[0])
+//         }
+//         nextSources
+//     }
+// )
 
-let propagateStubs = RewriteRule(
-    "Stub",
-    ANY,
-    {e : Edge => AllNextEdgesAre(e, STUB)},
-    {e : Edge, hb : HypBuilder, payload : Int64 => 
-        let nextSources = ArrayList<Source>()
-        for(t in e.targets){
-            hb.RemoveEdge(t.GetRightEdge())
-        }
-        for(s in e.sources){
-            hb.CreateEdgeFromExisting(STUB, [s])
-            nextSources.add(s)
-        }
-        hb.RemoveEdge(e)
-        nextSources
-    }
-)
+// let propagateStubs = RewriteRule(
+//     "Stub",
+//     ANY,
+//     {e : Edge => AllNextEdgesAre(e, STUB)},
+//     {e : Edge, hb : HypBuilder, payload : Int64 => 
+//         let nextSources = ArrayList<Source>()
+//         for(t in e.targets){
+//             hb.RemoveEdge(t.GetRightEdge())
+//         }
+//         for(s in e.sources){
+//             hb.CreateEdgeFromExisting(STUB, [s])
+//             nextSources.add(s)
+//         }
+//         hb.RemoveEdge(e)
+//         nextSources
+//     }
+// )
 
-func PerformStreaming(hb : HypBuilder, e : Edge){
-        let nowGate = hb.CreateEdge(e.generator)
-        let thenGate = hb.CreateEdge(e.generator)
-        for(i in 0..e.sources.size()){
-            let s = e.sources[i]
-            let join = s.GetLeftEdge()
-            let lhsArg = join.sources[0].GetLeftEdge()
-            let rhsArg = join.sources[1].GetLeftEdge()
-            let (value, delay) = if(lhsArg.IsValue()){
-                (lhsArg, rhsArg)
-            } else {
-                (rhsArg, lhsArg)
-            }
-            hb.AddConn(value.targets[0], nowGate.sources[i])
-            hb.AddConn(delay.sources[0].GetConn(), thenGate.sources[i])
-            hb.RemoveEdge(delay)
-            hb.RemoveEdge(join)
-        } 
-        let newDelay = hb.CreateEdge(DELAY(1))
-        hb.AddConn(thenGate.targets[0], newDelay.sources[0])
+// func PerformStreaming(hb : HypBuilder, e : Edge){
+//         let nowGate = hb.CreateEdge(e.generator)
+//         let thenGate = hb.CreateEdge(e.generator)
+//         for(i in 0..e.sources.size()){
+//             let s = e.sources[i]
+//             let join = s.GetLeftEdge()
+//             let lhsArg = join.sources[0].GetLeftEdge()
+//             let rhsArg = join.sources[1].GetLeftEdge()
+//             let (value, delay) = if(lhsArg.IsValue()){
+//                 (lhsArg, rhsArg)
+//             } else {
+//                 (rhsArg, lhsArg)
+//             }
+//             hb.AddConn(value.targets[0], nowGate.sources[i])
+//             hb.AddConn(delay.sources[0].GetConn(), thenGate.sources[i])
+//             hb.RemoveEdge(delay)
+//             hb.RemoveEdge(join)
+//         } 
+//         let newDelay = hb.CreateEdge(DELAY(1))
+//         hb.AddConn(thenGate.targets[0], newDelay.sources[0])
         
-        let newJoin = hb.CreateEdge(JOIN)
-        hb.AddConn(nowGate.targets[0], newJoin.sources[0])
-        hb.AddConn(newDelay.targets[0], newJoin.sources[1])
+//         let newJoin = hb.CreateEdge(JOIN)
+//         hb.AddConn(nowGate.targets[0], newJoin.sources[0])
+//         hb.AddConn(newDelay.targets[0], newJoin.sources[1])
 
-        let exitSource = e.targets[0].GetConn()
-        hb.AddConn(newJoin.targets[0], exitSource)
+//         let exitSource = e.targets[0].GetConn()
+//         hb.AddConn(newJoin.targets[0], exitSource)
 
-        hb.RemoveEdge(e)
-        ArrayList<Source>([exitSource])
-}
+//         hb.RemoveEdge(e)
+//         ArrayList<Source>([exitSource])
+// }
 
-let streaming = RewriteRule(
-    "Streaming",
-    GATE,
-    AllInputsAreConsistentWaveforms,
-    {e : Edge, hb : HypBuilder, payload : Int64 =>
-        PerformStreaming(hb, e)
-    }
-)
+// let streaming = RewriteRule(
+//     "Streaming",
+//     GATE,
+//     AllInputsAreConsistentWaveforms,
+//     {e : Edge, hb : HypBuilder, payload : Int64 =>
+//         PerformStreaming(hb, e)
+//     }
+// )
 
-let streamingEnhanced = RewriteRule(
-    "Streaming enhanced",
-    GATE,
-    InputsOutOfPhase,
-    {e : Edge, hb : HypBuilder, payload : Int64 =>
-        for(s in e.sources){
-            match(IsWaveformArg(s)){
-                case Some(w) => {}
-                case $None => {
-                    let bot = hb.CreateEdge(VALUE(BOTTOM))
-                    let join = hb.CreateEdge(JOIN)
-                    if(s.GetLeftEdge().IsValue()){
-                        let delay = hb.CreateEdge(DELAY(1))
-                        hb.AddConn(bot.targets[0], delay.sources[0])
-                        hb.AddConn(delay.targets[0], join.sources[1])
-                        hb.AddConn(s.GetConn(), join.sources[0])
-                    } else {
-                        hb.AddConn(bot.targets[0], join.sources[0])
-                        hb.AddConn(s.GetConn(), join.sources[1])
-                    }
-                    hb.AddConn(join.targets[0], s)
-                }
-            }
-        }
-        PerformStreaming(hb, e)
-    }
-)
+// let streamingEnhanced = RewriteRule(
+//     "Streaming enhanced",
+//     GATE,
+//     InputsOutOfPhase,
+//     {e : Edge, hb : HypBuilder, payload : Int64 =>
+//         for(s in e.sources){
+//             match(IsWaveformArg(s)){
+//                 case Some(w) => ()
+//                 case $None =>
+//                     let bot = hb.CreateEdge(VALUE(BOTTOM))
+//                     let join = hb.CreateEdge(JOIN)
+//                     if(s.GetLeftEdge().IsValue()){
+//                         let delay = hb.CreateEdge(DELAY(1))
+//                         hb.AddConn(bot.targets[0], delay.sources[0])
+//                         hb.AddConn(delay.targets[0], join.sources[1])
+//                         hb.AddConn(s.GetConn(), join.sources[0])
+//                     } else {
+//                         hb.AddConn(bot.targets[0], join.sources[0])
+//                         hb.AddConn(s.GetConn(), join.sources[1])
+//                     }
+//                     hb.AddConn(join.targets[0], s)
+//             }
+//         }
+//         PerformStreaming(hb, e)
+//     }
+// )
 
-let disconnect = EnhancedGateRewriteRule("Disconnect", DELAY, BOTTOM, BOTTOM)
+// let disconnect = EnhancedGateRewriteRule("Disconnect", DELAY, BOTTOM, BOTTOM)
 
-let rewriteRules = ArrayList<RewriteRule>([
-    propagateStubs,
-    forkStubLeft,
-    forkStubRight,
-    joinUnit,
-    forkCopy,
-    forkJoin,
-    joinFork,
-    joinEval,
-    andEval,
-    orEval,
-    nandEval,
-    norEval,
-    xorEval,
-    xnorEval,
-    andEnhanced,
-    orEnhanced,
-    andPassthrough,
-    orPassthrough,
-    bottomElimination,
-    disconnect,
-    timelessness,
-    streaming,
-    streamingEnhanced
-])
+// let rewriteRules = ArrayList<RewriteRule>([
+//     propagateStubs,
+//     forkStubLeft,
+//     forkStubRight,
+//     joinUnit,
+//     forkCopy,
+//     forkJoin,
+//     joinFork,
+//     joinEval,
+//     andEval,
+//     orEval,
+//     nandEval,
+//     norEval,
+//     xorEval,
+//     xnorEval,
+//     andEnhanced,
+//     orEnhanced,
+//     andPassthrough,
+//     orPassthrough,
+//     bottomElimination,
+//     disconnect,
+//     timelessness,
+//     streaming,
+//     streamingEnhanced
+// ])

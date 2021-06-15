@@ -18,14 +18,21 @@ open class Atom {
         this.id = nextid
         nextid++
     }
-    open func toString(){
+    open func GetString(){
         "Atom ${id}"
     }
 }
-append Atom with Equatable, Hashable {
-    operator func ==(lhs : Atom, rhs : Atom) : Bool { lhs.id == rhs.id }
-    operator func !=(lhs : Atom, rhs : Atom) : Bool { lhs.id != rhs.id }
-    func hashCode(a : Atom) : UInt64 { a.id }
+extend Atom <: ToString {
+    func toString(){
+        this.GetString()
+    }
+}
+extend Atom <: Equatable {
+    operator func ==(rhs : Atom) : Bool { this.id == rhs.id }
+    operator func !=(rhs : Atom) : Bool { this.id != rhs.id }
+}
+extend Atom <: Hashable {
+    func hashCode() : UInt64 { this.id }
 }
 /** 
  * Get a string representing a list of atoms 
@@ -78,11 +85,6 @@ abstract class Vertex <: Atom {
             case EdgePort(e, i) => e
             case InterfacePort(i) => throw NotEdgePortException("GetRightEdge", GetRightPort())
         }
-    }
-}
-append Vertex with ToString {
-    func toString(v : Vertex){
-        v.toString()
     }
 }
 /**
@@ -149,7 +151,7 @@ external class Source <: Vertex {
      * @param wires The wires to add 
      */
     func AddWires(wires : ArrayList<Wire>) { this.wires.addAll(wires) }
-    override func toString() {
+    override func GetString() {
         var wireString = ""
         for (wire in wires){
             let wireText = match(wire.bus.name){
@@ -160,16 +162,6 @@ external class Source <: Vertex {
         }
         return "Source s${id} ${wireString}" 
     }
-}
-append Source with ToString {
-    func toString(s : Source){
-        s.toString()
-    }
-}
-append Source with Equatable, Hashable {
-    operator func ==(lhs : Source, rhs : Source) : Bool { lhs.id == rhs.id }
-    operator func !=(lhs : Source, rhs : Source) : Bool { lhs.id != rhs.id }
-    func hashCode(t : Source) : UInt64 { t.id }
 }
 /** 
  * Get a string representing a list of source vertices
@@ -235,17 +227,7 @@ external class Target <: Vertex {
     func GetLeftPort(){
         GetPort()
     }
-    override func toString() { "Target t${id}" }
-}
-append Target with ToString{
-    func toString(t : Target){
-        t.toString()
-    }
-}
-append Target with Equatable, Hashable {
-    operator func ==(lhs : Target, rhs : Target) : Bool { lhs.id == rhs.id }
-    operator func !=(lhs : Target, rhs : Target) : Bool { lhs.id != rhs.id }
-    func hashCode(t : Target) : UInt64 { t.id }
+    override func GetString() { "Target t${id}" }
 }
 /** 
  * Get a string representing a list of target vertices
@@ -289,7 +271,7 @@ external open class Edge <: Atom {
     init(generator : Generator, targets : ArrayList<Target>){
         this(generator, ArrayList<Source>(), targets)
     }
-    override func toString() { 
+    override func GetString() { 
         "Edge e${id} - ${generator}" 
     }
     /**
@@ -363,21 +345,10 @@ external open class Edge <: Atom {
      * Check if it this edge has a given generator
      * @return If the edge is this value
      */
-    func HasGenerator(gen : Generator){
+    func HasGenerator(gen : Generator) : Bool {
         generator == gen
     }
 }
-append Edge with ToString {
-    func toString(e : Edge){
-        e.toString()
-    }
-}
-append Edge with Equatable, Hashable {
-    operator func ==(lhs : Edge, rhs : Edge) : Bool { lhs.id == rhs.id }
-    operator func !=(lhs : Edge, rhs : Edge) : Bool { lhs.id != rhs.id }
-    func hashCode(t : Edge) : UInt64 { t.id }
-}
-
 /** 
  * Get a string representing a list of edges
  * The string is formatted like [ 1 (edge AND) 2 (in link x) 3 (out link y) ]
@@ -408,9 +379,9 @@ func IsDelay(p : Port){
     }
 }
 
-append Port with ToString {
-    func toString(p : Port){
-    match(p){
+extend Port <: ToString {
+    func toString(){
+    match(this){
             case EdgePort(e, i)   => "Edge port ${e.id}[${i}]"
             case InterfacePort(i) => "Interface port ${i}"
         }

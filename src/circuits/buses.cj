@@ -16,14 +16,18 @@ var globalBusList = ArrayList<Bus>()
 /**
  * A bus is a bundle of wires with a name
  */
-class Bus <: Atom {
+class Bus {
     let name : Option<String>
+    let id : UInt64
+    static var nextid : UInt64 = 0
     let wires = ArrayList<Wire>()
     private let wireMap = MapBuilder<Int64, Wire>()
     init() {
         this("")
     }
     init(name : String) {
+        this.id = nextid
+        nextid++
         if(name == ""){
             this.name = None<String>
         } else {
@@ -73,7 +77,7 @@ class Bus <: Atom {
         }
         wires.add(wire)
     }
-    override func toString(){
+    func GetString(){
         let res = match(name){
             case Some(str) => str
             case $None      => "b${id}"
@@ -81,28 +85,29 @@ class Bus <: Atom {
         "bus ${res}"
     }
 }
-append Bus with ToString {
-    func toString(b : Bus){
-        b.toString()
+extend Bus <: ToString {
+    func toString(){
+        this.GetString()
     }
 }
-append Bus with Equatable, Hashable {
-    operator func ==(lhs : Bus, rhs : Bus) : Bool { 
-        match(lhs.name){
-            case Some(str1) => {
+extend Bus <: Equatable {
+    operator func ==(rhs : Bus) : Bool { 
+        match(this.name){
+            case Some(str1) =>
                 match(rhs.name) {
                     case Some(str2) => str1 == str2
-                    case $None => lhs.id == rhs.id 
+                    case $None => this.id == rhs.id 
                 }
-            }
-            case $None => lhs.id == rhs.id
+            case $None => this.id == rhs.id
         }
     }   
-    operator func !=(lhs : Bus, rhs : Bus) : Bool { !(lhs == rhs) }
-    func hashCode(b : Bus) : UInt64 { 
-        match(b.name){
-            case Some(str) => hashCode(str) * 10 + 1
-            case $None     => b.id * 10
+    operator func !=(rhs : Bus) : Bool { !(this == rhs) }
+}
+extend Bus <: Hashable {
+    func hashCode() : UInt64 { 
+        match(this.name){
+            case Some(str) => str.hashCode() * 10 + 1
+            case $None     => this.id * 10
         }
      }
 }
@@ -181,22 +186,13 @@ class Wire <: Atom {
         this.i = 0
         bus.AddWire(this)
     }
-    override func toString(){
+    override func GetString(){
         let name = match(bus.name){
             case Some(name) => name
             case $None      => "b${bus.id}"
         }
         "${name}[${i}]"
     }
-}
-append Wire with ToString {
-    func toString(w : Wire){
-        w.toString()
-    }
-}
-append Wire with Equatable {
-    operator func ==(lhs : Wire, rhs : Wire) : Bool { lhs.bus == rhs.bus && lhs.i == rhs.i }
-    operator func !=(lhs : Wire, rhs : Wire) : Bool { lhs.id != rhs.id || lhs.i != rhs.i }
 }
 /**
  * Create a new wire at a given index of a bus

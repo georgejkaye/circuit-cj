@@ -40,7 +40,7 @@ func ResolveLinks(f : HypBuilder, name!: String = "") {
     for((spec, outLinkEdges) in outlinks.toMap()){
         match(inlinks.toMap().get(spec)){
             // If there are definitely in links to connect to, we can go ahead
-            case Some(inLinkEdges) => {
+            case Some(inLinkEdges) =>
                 let outs = outLinkEdges.size()
                 let ins = inLinkEdges.size()
                 // Deal with each port of the link in turn
@@ -79,16 +79,14 @@ func ResolveLinks(f : HypBuilder, name!: String = "") {
                 }
                 // Remove all the replaced in link edges
                 f.RemoveEdges(inLinkEdges)
-            }
             // There are no corresponding in links, so we can just stub these outlinks
-            case $None => {
+            case $None =>
                 for(e in outLinkEdges){
                     for(s in e.sources){
                         f.CreateEdgeFromExisting(STUB, [s])
                     }
                     f.RemoveEdge(e)
                 }
-            }
         }
         f.RemoveEdges(outLinkEdges)
     }

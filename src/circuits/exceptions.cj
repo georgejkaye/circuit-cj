@@ -84,10 +84,10 @@ class BadHypergraphException <: Exception {
 
 class NoAssociatedEdgeException <: Exception {
     init(function : String, h : HypergraphStructure, s : Source){
-        ErrorMsg(function, "The source ${s.id} does not have an associated edge\n${h}")
+        ErrorMsg(function, "The source ${s.id} does not have an associated edge")
     }
     init(function : String, h : HypergraphStructure, t : Target){
-        ErrorMsg(function, "The target ${t.id} does not have an associated edge\n${h}")
+        ErrorMsg(function, "The target ${t.id} does not have an associated edge")
     }
     init(function : String, v : Vertex){
         ErrorMsg(function, "The vertex ${v.id} does not have an associated edge")
@@ -95,15 +95,15 @@ class NoAssociatedEdgeException <: Exception {
 }
 class IncorrectPortException <: Exception {
     init(function : String, h : HypergraphStructure, s : Source, p : Port){
-        ErrorMsg(function, "The source ${s.id} is incorrectly assigned to port ${p}\n${h}")
+        ErrorMsg(function, "The source ${s.id} is incorrectly assigned to port ${p}")
     }
     init(function : String, h : HypergraphStructure, t : Target, p : Port){
-        ErrorMsg(function, "The source ${t.id} is incorrectly assigned to port ${p}\n${h}")
+        ErrorMsg(function, "The source ${t.id} is incorrectly assigned to port ${p}")
     }
 }
 class MissingConnectionException <: Exception {
     init(function : String, h : HypergraphStructure, v : Vertex) {
-        ErrorMsg(function, "No connection found for vertex ${v.id}\n${h}")
+        ErrorMsg(function, "No connection found for vertex ${v.id}")
     }
     init(function : String, v : Vertex) {
         ErrorMsg(function, "No connection found for vertex ${v.id}")
@@ -111,20 +111,20 @@ class MissingConnectionException <: Exception {
 }
 class BadConnectionException <: Exception {
     init(function : String, h : HypergraphStructure, v1 : Vertex, v2 : Vertex){
-        ErrorMsg(function, "Connection of vertex ${v1.id} (${v2.id}) is not in the graph\n${h}")
+        ErrorMsg(function, "Connection of vertex ${v1.id} (${v2.id}) is not in the graph")
     }
 }
 class BadEdgeException <: Exception {
     init(function : String, h : HypergraphStructure, v : Vertex, e : Edge){
-        ErrorMsg(function, "Edge of vertex ${v.id} (${e.id}) is not in the graph\n${h}")
+        ErrorMsg(function, "Edge of vertex ${v.id} (${e.id}) is not in the graph")
     }
 }
 class DuplicateVertexException <: Exception {
     init(function : String, h : HypergraphStructure, t : Target) {
-        ErrorMsg(function, "The target ${t.id} is the target of multiple edges\n${h}")
+        ErrorMsg(function, "The target ${t.id} is the target of multiple edges")
     }
     init(function : String, h : HypergraphStructure, s : Source) {
-        ErrorMsg(function, "The source ${s.id} is the source of multiple edges\n${h}")
+        ErrorMsg(function, "The source ${s.id} is the source of multiple edges")
     }
 }
 
@@ -293,5 +293,10 @@ class NonJoinEdgeException <: Exception {
 class NonProductiveException <: Exception {
     init(function : String, f : HypergraphStructure){
         ErrorMsg(function, "The hypergraph '${f.GetName()}' is not in productive form")
+    }
+}
+class BadGeneratorException <: Exception {
+    init(function : String, gen : Generator) {
+        ErrorMsg(function, "Generator ${gen} is not handled here")
     }
 }

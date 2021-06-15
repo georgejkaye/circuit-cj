@@ -43,12 +43,11 @@ func FindIntersections(f : HypergraphStructure, g : HypergraphStructure){
             if(!found){
                 let p = v.GetConn().GetPort()
                 match(p) {
-                    case EdgePort(e, i) => {
+                    case EdgePort(e, i) =>
                         if(!includes(visited, e)){
                             frontier.addAll(e.sources)
                         }       
-                    }
-                    case InterfacePort(i) => {}
+                    case InterfacePort(i) => ()
                 }
             }
         }
@@ -96,53 +95,47 @@ func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * S
         // If it's an outlink, we need to check if the other intersection point leads to the same link
         // Therefore we need to keep track of it
         let outlinkF = match(PortToEndpoint(intersectionF.GetPort())){
-            case Some((e, j)) => {
+            case Some((e, j)) =>
                 match(e.generator){
                     // If we find a stub, then we don't need to copy it
                     // We just hook up the source of the stub to the intersection with g
-                    case STRUCTURAL(struct) => {
+                    case STRUCTURAL(struct) =>
                         removedEdges.add(e)
                         danglingTargets.add(intersectionG.GetConn())
                         f.AddConn(intersectionF.GetConn(), intersectionG)
                         fork = false
                         None<LinkSpec>
-                    }
-                    case OUTLINK(specf) => { Some<LinkSpec>(specf) }
-                    case _              => { None<LinkSpec> }
+                    case OUTLINK(specf) => Some<LinkSpec>(specf)
+                    case _              => None<LinkSpec>
                 }
-            }
-            case $None => { None<LinkSpec> }
+            case $None => None<LinkSpec>
         }
         // If we've already decided to not fork then we immediately just take the content of g
         if(fork) {
             // We need to check if the intersection sources lead to endpoints
             match(PortToEndpoint(intersectionG.GetPort())){
-                case Some((e, j)) => {
+                case Some((e, j)) =>
                     match(e.generator){
                         // Once again we can ignore stubs
                         // This is a lot easier for g, as it is not the 'base' graph
-                        case STRUCTURAL(struct) => {
+                        case STRUCTURAL(struct) =>
                             removedEdges.add(e)
                             danglingTargets.add(intersectionG.GetConn())
                             fork = false    
-                        }
                         // If this and f also lead to an outlink, we can check them to see if they're the same
                         // If so, there's no point in copying: we can just keep the link from f and ignore this one
-                        case OUTLINK(specg) => {
+                        case OUTLINK(specg) =>
                             match(outlinkF){
-                                case Some(specf) => {
+                                case Some(specf) =>
                                     if(specf == specg) {
                                         removedEdges.add(e)
                                         fork = false
                                     }
-                                }
-                                case $None => {}
+                                case $None => ()
                             }   
-                        }
-                        case _ => {}
+                        case _ => ()
                     }
-                }
-                case $None => {}
+                case $None => ()
             }
         }
         // If we are still satified that a fork is truly required, go for it
@@ -209,15 +202,13 @@ func Extract(f : HypBuilder, buses : ArrayList<String>, name!: String = "") : Hy
         let p = s.GetPort()
         // If p goes to a stub, then we don't need to bother forking, we can send it straight to the outputs
         match(PortToGenerator(p, STUB)){
-            case Some((e, _)) => {
+            case Some((e, _)) =>
                 f.RemoveEdge(e)
                 f.AddOutput(s)
-            }
-            case $None => {
+            case $None =>
                 let fork = f.CreateEdgeFromExisting(FORK, [s])
                 f.NewSource(p, fork.targets[0])
                 f.NewSource(InterfacePort(i), fork.targets[1])
-            }
         }
     }
     f.ToGraph(name)

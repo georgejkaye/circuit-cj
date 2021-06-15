@@ -22,12 +22,11 @@ func OpMToN(generator : Generator, name!: String = "", wires!: ArrayList<Wire>, 
 
     let (dom, cod) = Signature(generator)
     match(input){
-        case $None => {}
-        case Some(f) => {
+        case $None => ()
+        case Some(f) =>
             if(f.GetN() != dom){
                 throw BadInputGraphException("OpMToN - ${generator}", "input", dom, f.GetName(), f.GetN())
             }
-        }
     }
     if(wires.size() != cod){
         throw BadOutputLabelsException("OpMToN - ${generator}", wires.size(), cod)
@@ -357,13 +356,13 @@ func CreateCopy(n : Int64, output1!: String = "", output2!: String = "") : HypBu
  */
 external func Copy(n : Int64, name!: String = "", output1!: String = "", output2!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
     match(input){
-        case Some(f) => {
+        case Some(f) =>
             if(f.GetN() != 2 * n){
                     throw BadInputGraphException("Copy", "input", n, f.GetName(), f.GetN())
             }
-        }
-        case $None   => {}
+        case $None   => ()
     }
+
     NewBus(output1)
     NewBus(output2)
     let copy = CreateCopy(n, output1: output1, output2: output2).ToGraph()
@@ -425,12 +424,11 @@ external func CreateMerge(n : Int64, name!: String = "", output!: String = "") :
  */
 external func Merge(n : Int64, name!: String = "", output!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
     match(input){
-        case Some(f) => {
+        case Some(f) =>
             if(f.GetN() != 2 * n){
                     throw BadInputGraphException("Merge", "input", 2 * n, f.GetName(), f.GetN())
             }
-        }
-        case $None   => {}
+        case $None   => ()
     }
     let merge = CreateMerge(n, name: name, output: output)
     match(input){
@@ -515,12 +513,11 @@ external func Mux(width!: Int64, output!: String = "", elem!: Int64 = -1, name!:
     Debug("Mux", "Creating mux of width ${width}")
     let muxInputs = 2 * width + 1
     match(input){
-        case Some(f) => {
+        case Some(f) =>
             if(f.GetN() != 2 * width + 1){
                 throw BadInputGraphException("Mux", "input", muxInputs, f.GetName(), f.GetN())
             }
-        }
-        case $None => {}
+        case $None => ()
     }
     let wires = ArrayList<Wire>()
     let hb = if(elem < 0) { HypBuilder(muxInputs, width, output) } else { HypBuilder(muxInputs, width, output, elem) }
@@ -554,12 +551,11 @@ external func Mux(width!: Int64, output!: String = "", elem!: Int64 = -1, name!:
         throw BadInputGraphException("Mux", "b", width, b.GetName(), b.GetN())
     }
     let z = match(s){
-        case Some(f) => {
+        case Some(f) =>
             if(f.GetN() != 1){
                 throw BadInputGraphException("Mux", "s", width, f.GetName(), f.GetN())
             }
             f
-        }
         case $None   => Identity(1)
     }
     let f = Concat([a,b,z])

@@ -8,9 +8,9 @@ package debug
 import settings.*
 
 enum MessageType{ DEBUG | ERROR | WARNING | INFO }
-append MessageType with ToString {
-    func toString(mt : MessageType){
-        match(mt){
+extend MessageType <: ToString {
+    func toString(){
+        match(this){
             case $DEBUG   => "[DEBUG]"
             case $ERROR   => "[ERROR]"
             case $WARNING => "[WARNING]"

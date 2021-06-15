@@ -14,7 +14,7 @@ import debug.*
  * @param bit   The bit this half adder is working on
  * @return The hyp builder for this half adder
  */
-func CreateHalfAdder(sum!: String = "", carry!: String = "", bit!: Int64 = 0) : HypBuilder {
+func CreateHalfAdder(sum!: String = "", carry!: String = "", bit!: Int64 = 0) {
     if(bit < 0){
         throw NegativeWireException("HalfAdder")
     }   
@@ -24,8 +24,12 @@ func CreateHalfAdder(sum!: String = "", carry!: String = "", bit!: Int64 = 0) : 
     let fork1 = hb.CreateEdge(FORK, [hb.GetInput(0)])
     let fork2 = hb.CreateEdge(FORK, [hb.GetInput(1)])
     // Compute sum and carry
-    let xor = hb.CreateEdge(XOR, [fork1.targets[0], fork2.targets[0]], [hb.GetOutput(0)])
-    let and = hb.CreateEdge(AND, [fork1.targets[1], fork2.targets[1]], [hb.GetOutput(1)])
+    let xorLhs = fork1.targets[0]
+    let xorRhs = fork2.targets[0]
+    let andLhs = fork1.targets[0]
+    let andRhs = fork2.targets[0]
+    let xor = hb.CreateEdge(XOR, [xorLhs, xorRhs], [hb.GetOutput(0)])
+    let and = hb.CreateEdge(AND, [andLhs, andRhs], [hb.GetOutput(1)])
     // Return the builder
     hb
 }
@@ -80,13 +84,28 @@ func CreateFullAdder(sum!: String = "", cout!: String = "", bit!: Int64 = 0) : H
     let fork2 = hb.CreateEdge(FORK, [hb.GetInput(1)])
     let fork3 = hb.CreateEdge(FORK, [hb.GetInput(2)])
     // The half adder bit
-    let xor1 = hb.CreateEdge(XOR, [fork1.targets[0], fork2.targets[0]])
-    let and1 = hb.CreateEdge(AND, [fork1.targets[1], fork2.targets[1]])
+    let xorLhs = fork1.targets[0]
+    let xorRhs = fork2.targets[0]
+    let andLhs = fork1.targets[1]
+    let andRhs = fork2.targets[1]
+    let xor1 = hb.CreateEdge(XOR, [xorLhs, xorRhs])
+    let and1 = hb.CreateEdge(AND, [andLhs, andRhs])
+    
     // Bring in the carry
-    let fork4 = hb.CreateEdge(FORK, [xor1.targets[0]])
-    let xor2 = hb.CreateEdge(XOR, [fork4.targets[0], fork3.targets[0]], [hb.GetOutput(0)])
-    let and2 = hb.CreateEdge(AND, [fork3.targets[1], fork4.targets[1]])
-    let or1 = hb.CreateEdge(OR, [and2.targets[0], and1.targets[0]], [hb.GetOutput(1)])
+    let forkv = xor1.targets[0]
+    let fork4 = hb.CreateEdge(FORK, [forkv])
+    
+    let xor2Lhs = fork4.targets[0]
+    let xor2Rhs = fork3.targets[0]
+    let xor2 = hb.CreateEdge(XOR, [xor2Lhs, xor2Rhs], [hb.GetOutput(0)])
+    
+    let and2Lhs = fork3.targets[1]
+    let and2Rhs = fork4.targets[1]
+    let and2 = hb.CreateEdge(AND, [and2Lhs, and2Rhs])
+
+    let or1Lhs = and2.targets[0]
+    let or1Rhs = and1.targets[0]
+    let or1 = hb.CreateEdge(OR, [or1Lhs, or1Rhs], [hb.GetOutput(1)])
     // Return the builder
     hb
 }

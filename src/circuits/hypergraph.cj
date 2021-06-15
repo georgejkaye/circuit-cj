@@ -34,17 +34,15 @@ func AddSource(s : Source, sources : ArrayList<Source>, busMaps : MapBuilder<Bus
         wireList.add(wire)
         let bus = wire.bus
         match(busMaps.toMap().get(bus)){
-            case Some(ws) => {
+            case Some(ws) =>
                 ws.add(wire.i, s)
                 false
-            }
-            case $None => {
+            case $None =>
                 let mb = MapBuilder<Int64, Source>()
                 mb.add(wire.i, s)
                 busMaps.add(bus, mb)
                 busList.add(bus)
                 true
-            }
         }
     }
 }
@@ -74,19 +72,18 @@ func AddEdge(e : Edge, sources : ArrayList<Source>, targets : ArrayList<Target>,
 func UpdateBusVertexList(busList : ArrayList<Bus>, busMaps : MapBuilder<Bus, MapBuilder<Int64, Source>>, busVertexMaps : MapBuilder<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>){
     for(bus in busList){
         match(busMaps.toMap().get(bus)){
-            case $None => {}
-            case Some(mb) => {
+            case $None => ()
+            case Some(mb) =>
                 let vertexList = ArrayList<Source>()
                 let wires = bus.wires
                 for(wire in wires){
                     match(mb.toMap().get(wire.i)){
                         // Not all wires from a given bus may be in a graph
-                        case $None   => {}
-                        case Some(s) => vertexList.add(s)
+                        case $None   => ()
+                        case Some(s) => let x = vertexList.add(s)
                     }
                 }
                 let x = busVertexMaps.add(bus, (mb, vertexList))
-            }
         }
     }
 }
@@ -98,17 +95,17 @@ func UpdateBusVertexList(busList : ArrayList<Bus>, busMaps : MapBuilder<Bus, Map
  */
 func UpdateLinks(e : Edge, linkMap : MapBuilder<LinkSpec, ArrayList<Edge>>){
     let spec = e.GetSpec()
-    let es = match(linkMap.toMap().get(spec)){
-        case Some(es) => es
-        case $None => {
-            let es = ArrayList<Edge>()
-            linkMap.add(spec, es)
-            es
-        }
+    // TODO something going wrong with match
+    let es : ArrayList<Edge>
+    match(linkMap.toMap().get(spec)){
+        case Some(es2) => es = es2
+        case $None =>
+            let es2 = ArrayList<Edge>()
+            linkMap.add(spec, es2)
+            es = es2
     }
     es.add(e)
 }
-
 /**
  * A hypergraph structure is a collection of edges, inputs, outputs and connections
  * This structure may not necessarily be a well-formed hypergraph
@@ -261,12 +258,10 @@ open class HypergraphStructure <: Atom {
      * @param w The wire
      * @return Some(vertex) if it exists in this graph, or None otherwise
      */
-    func GetWireVertexOption(w : Wire){
+    func GetWireVertexOption(w : Wire) : Option<Source> {
         match(busVertexMaps.toMap().get(w.bus)){
-             case Some((mb, vs)) => {
-                 mb.toMap().get(w.i)
-             }
-             case $None    => None<Source>
+             case Some((mb, vs)) => mb.toMap().get(w.i)
+             case $None          => None<Source>
         }
     }
     /** 
@@ -345,20 +340,19 @@ open class HypergraphStructure <: Atom {
      * i.e. its output is a join of a value and a delayed circuit
      * @return Whether this circuit is in a productive form
      */
-    func IsProductive(){
+    func IsProductive() : Bool {
         for(s in outputs){
             match(s.GetLeftPort()){
-                case EdgePort(e, i) => {
+                case EdgePort(e, i) =>
                     if(e.generator == JOIN){
                         let lhs = e.sources[0].GetLeftPort()
                         let rhs = e.sources[1].GetLeftPort()
                         if(!((IsValue(lhs) && IsDelay(rhs)) || (IsValue(rhs) && IsDelay(lhs)))){
                             return false
-                        }
+                        } 
                     } else {
                         return false
                     }
-                }
                 case InterfacePort(i) => return false
             }
         }
@@ -368,7 +362,7 @@ open class HypergraphStructure <: Atom {
      * Is this hypergraph structure a well formed hypergraph?
      * @return The wellformedness status of this hypergraph
      */
-    func IsWellFormed(){
+    func IsWellFormed() : WellformednessStatus {
         Debug("IsWellFormed", "Checking if graph is well formed")
         let encounteredTargets = ArrayList<Target>()
         for(t in targets){
@@ -386,19 +380,17 @@ open class HypergraphStructure <: Atom {
                 return ConnectionNotInGraph(t, t.GetConn())
             }
             match(t.GetLeftPort()){
-                case EdgePort(e, i) => {
+                case EdgePort(e, i) =>
                     if(!includes(edges, e)){
                         return EdgeNotInGraph(t, e)
                     }
                     if(e.targets[i] != t){
                         return IncorrectTargetAssignment(t, t.GetLeftPort())
                     }
-                }
-                case InterfacePort(i) => {
+                case InterfacePort(i) =>
                     if(inputs[i] != t){
                         return IncorrectTargetAssignment(t, t.GetLeftPort())
                     }
-                }
             }
         }
         let encounteredSources = ArrayList<Source>()
@@ -417,19 +409,17 @@ open class HypergraphStructure <: Atom {
                 return ConnectionNotInGraph(s, s.GetConn())
             }
             match(s.GetRightPort()){
-                case EdgePort(e, i) => {
+                case EdgePort(e, i) =>
                     if(!includes(edges, e)){
                         return EdgeNotInGraph(s, e)
                     }
                     if(e.sources[i] != s){
                         return IncorrectSourceAssignment(s, s.GetRightPort())
                     }
-                }
-                case InterfacePort(i) => {
+                case InterfacePort(i) =>
                     if(outputs[i] != s){
                         return IncorrectSourceAssignment(s, s.GetRightPort())
                     }
-                }
             }
         }
         for(e in edges){
@@ -442,7 +432,7 @@ open class HypergraphStructure <: Atom {
         }
         return Okay
     }
-    open override func toString() {
+    open override func GetString() {
         let sourceString = PrintList(sources, {s : Source => "${s.id}"})
         let targetString = PrintList(targets, {t : Target => "${t.id}"})
         var edgeString = ""
@@ -494,12 +484,6 @@ open class HypergraphStructure <: Atom {
         "====\nsources ${sourceString}\ntargets ${targetString}\ninputs ${inputString}\n${edgeString}outputs ${outputString}\nconnsr ${connsRString}\nconnsl ${connsLString}\nlefts ${leftString}\nrights ${rightString}\n===="
     }
 }
-append HypergraphStructure with ToString {
-    func toString(hs : HypergraphStructure){
-        hs.toString()
-    }
-}
-
 /** 
  * An enum to represent if a hypergraph structure is well formed or if there is a problem with it
  */
@@ -638,8 +622,8 @@ external class Hypergraph <: HypergraphStructure {
     * @param g The rhs of the sequential composition
     * @return The result of the sequential composition
     */
-    operator func +(f : Hypergraph, g : Hypergraph) : Hypergraph {
-        SeqBuilder(f.Clone(), g.Clone())
+    operator func +(g : Hypergraph) : Hypergraph {
+        SeqBuilder(this.Clone(), g.Clone())
     }
     /**
      * Syntax sugar for parallel composition
@@ -647,8 +631,8 @@ external class Hypergraph <: HypergraphStructure {
      * @param g The rhs of the parallel composition
      * @return The result of the parallel composition
      */
-    operator func *(f : Hypergraph, g : Hypergraph) : Hypergraph {
-        ParBuilder(f.Clone(), g.Clone())
+    operator func *(g : Hypergraph) : Hypergraph {
+        ParBuilder(this.Clone(), g.Clone())
     }
     /**
      * Syntax sugar for composing n copies of a hypergraph in parallel
@@ -656,34 +640,34 @@ external class Hypergraph <: HypergraphStructure {
      * @param g The rhs of the parallel composition
      * @return The result of the parallel composition
      */
-    operator func ^(f : Hypergraph, n : Int64) : Hypergraph {
-        ParBuilder(f, n)
+    operator func ^(n : Int64) : Hypergraph {
+        ParBuilder(this, n)
     }
     /**
      * Syntax sugar for getting the nth output of a hypergraph
      * @param n The index of the output to preserve
      * @return The hypergraph with all outputs except the nth stubbed off
      */
-    operator func [](f : Hypergraph, n : Int64){
-        GetBuilder(f.Clone(), n)
+    operator func [](n : Int64){
+        GetBuilder(this.Clone(), n)
     }  
     /**
      * Syntax sugar for getting a given bus from a hypergraph
      * @param bus The bus to extract
      * @return The hypergraph with the given bus extracted
      */
-    operator func [](f : Hypergraph, bus : String){
-        GetBuilder(f.Clone(), bus)
+    operator func [](bus : String){
+        GetBuilder(this.Clone(), bus)
     }
     /**
     * Get a rewriter for this hypergraph
     * @return The rewritied for this hypergraph
     */
-    func GetRewriter(){
-        Rewriter(this)
-    }
+    // func GetRewriter(){
+    //     Rewriter(this)
+    // }
 
-    override func toString() : String {
+    override func GetString() : String {
         var str = ""
         let inputString = "inputs ${TargetListToString(inputs)}"
         for (e in edges) {
@@ -699,11 +683,6 @@ external class Hypergraph <: HypergraphStructure {
            connstr = "${connstr}(${t.id} ${t.GetConn().id}) "
         }
         "${name}\n${inputString}\n${str}${outputString}\n${connstr}"
-    }
-}
-append Hypergraph with ToString {
-    func toString(h : Hypergraph){
-        h.toString()
     }
 }
 /**

@@ -62,7 +62,7 @@ func TraverseLeft(t : Target, edgeAction : (Edge, Target) -> Bool, inputAction :
         let t = frontier.removeAt(0)
         visitedTargets.add(t)
         match(t.GetPort()){
-            case EdgePort(e, i) => {
+            case EdgePort(e, i) =>
                 if(!includes(visitedEdges, e)){
                     visitedEdges.add(e)
                     let cont = edgeAction(e, t)
@@ -73,11 +73,9 @@ func TraverseLeft(t : Target, edgeAction : (Edge, Target) -> Bool, inputAction :
                         }
                     }
                 }
-            }
-            case InterfacePort(i) => {
+            case InterfacePort(i) =>
                 visitedInputs.add(t)
                 inputAction(t, i)
-            }
         }
     }
     (visitedEdges, visitedSources, visitedTargets, visitedInputs)
@@ -105,7 +103,7 @@ func TraverseRight(t : Target, edgeAction : (Edge, Source) -> Bool, outputAction
         visitedSources.add(s)
         visitedTargets.add(t)
         match(s.GetPort()){
-            case EdgePort(e, i) => {
+            case EdgePort(e, i) =>
                 if(!includes(visitedEdges, e)){
                     visitedEdges.add(e)
                     let cont = edgeAction(e, s)
@@ -113,11 +111,9 @@ func TraverseRight(t : Target, edgeAction : (Edge, Source) -> Bool, outputAction
                         frontier.addAll(e.targets)
                     }
                 }
-            }
-            case InterfacePort(i) => {
+            case InterfacePort(i) =>
                 visitedInputs.add(t)
                 outputAction(s, i)
-            }
         }
     }
     (visitedEdges, visitedSources, visitedTargets, visitedInputs)
