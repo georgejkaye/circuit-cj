@@ -16,18 +16,14 @@ var globalBusList = ArrayList<Bus>()
 /**
  * A bus is a bundle of wires with a name
  */
-class Bus {
+class Bus <: Identifiable {
     let name : Option<String>
-    let id : UInt64
-    static var nextid : UInt64 = 0
     let wires = ArrayList<Wire>()
     private let wireMap = MapBuilder<Int64, Wire>()
     init() {
         this("")
     }
     init(name : String) {
-        this.id = nextid
-        nextid++
         if(name == ""){
             this.name = None<String>
         } else {
@@ -103,14 +99,14 @@ extend Bus <: Equatable {
     }   
     operator func !=(rhs : Bus) : Bool { !(this == rhs) }
 }
-extend Bus <: Hashable {
-    func hashCode() : UInt64 { 
-        match(this.name){
-            case Some(str) => str.hashCode() * 10 + 1
-            case $None     => this.id * 10
-        }
-     }
-}
+// extend Bus <: Hashable {
+//     func hashCode() : UInt64 { 
+//         match(this.name){
+//             case Some(str) => str.hashCode() * 10 + 1
+//             case $None     => this.id * 10
+//         }
+//      }
+// }
 /**
  * Get the existing bus that corresponds to a given string
  * @param string the name of the bus
@@ -186,7 +182,7 @@ class Wire <: Atom {
         this.i = 0
         bus.AddWire(this)
     }
-    override func GetString(){
+    func GetString(){
         let name = match(bus.name){
             case Some(name) => name
             case $None      => "b${bus.id}"

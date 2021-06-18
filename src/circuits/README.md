@@ -115,7 +115,7 @@ Contains functions details operations on hypergraphs.
 * `Identity` Create an identity hypergraph
 * `Par` Compose two hypergraphs in parallel
 * `Empty` Create an empty hypergraph (identity on 0)
-* `Swap` Create a hypergraph that swaps some wires
+* `Symmetry` Create a hypergraph that swaps some wires
 * `Trace` Trace a hypergraph with a number of wires
 * `Get` Extract an output or bus from a hypergraph, stubbing all other outputs
 * `Drop` Stub an output of a hypergraph

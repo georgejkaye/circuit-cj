@@ -5,8 +5,13 @@ BUILD="$ROOT/build"
 SRC="$ROOT/src"
 BIN="$ROOT/bin"
 DOT="$DOT/dot"
-CJ_ROOT=$1
 
+if [ "$CangJie_ROOT" == "" ] ; then
+    echo "Please set \$CangJie_ROOT"
+    exit
+fi
+
+CJ_ROOT="$CangJie_ROOT"
 MODULES_DIR="$CJ_ROOT/build/build/modules"
 
 IO_MODULE="$MODULES_DIR/io"
@@ -16,47 +21,103 @@ IO_CJO="$IO_MODULE/io.cjo"
 IMPORTS="$ROOT/import.conf"
 OBJS="$IO_O"
 
-MAIN="main"
-PACKAGES=("settings" "debug" "circuits" "examples")
+MODULE_NAME="circuits"
 
-compile_package() {
-    echo "Building package $1 ($2/$3)"
+MAIN="main"
+
+IFS=":"
+read -ra PATHS <<< "$CANGJIE_PATH"
+
+MAP_CAPACITY=200
+
+YELLOW="\033[1;33m"
+NC="\033[0m"
+MAP_PATH="$CJ_ROOT/stdlib/core/Map.cj"
+echo -e "${YELLOW}[WARNING]${NC} It is recommended to set DEFAULT_INITIAL_CAPACITY in $MAP_PATH to $MAP_CAPACITY in order to avoid blowing the stack when making circuits"
+
+check_package_in_path() {
+    if [[ ! " ${PATHS[@]} " =~ " $1 " ]] ; then
+        echo "Package $1 not found, ensure the following are in your \$CANGJIE_PATH:"
+        for p in ${PKG_PATHS} ; do 
+            echo "    $p"
+        done
+        exit 1
+    fi
+}
+
+check_local_package_in_path() {
+    BUILD_DIR="$BUILD/$1" 
+    check_package_in_path $BUILD_DIR
+}
+
+pre_package() {
     BUILD_DIR="$BUILD/$1"
     SRC_DIR="$SRC/$1"
     mkdir $BUILD_DIR
-    cjc -import-config $IMPORTS $OBJS -c -p $SRC_DIR -o $BUILD_DIR
-    CODE=$?
-    if [ "$CODE" != "0" ] ; then
-        echo "Error $CODE, aborting..."
+}
+
+post_package(){
+    OBJ="$BUILD_DIR/$1.o"
+    CJO="$BUILD_DIR/$1.cjo"
+    OBJS="$OBJS:$OBJ"
+}
+
+check_errors(){
+    if [ "$1" != "0" ] ; then
+        echo "Error $1, aborting..."
         exit 1
     fi
-    OBJ=$BUILD_DIR/$1.o
-    CJO=$BUILD_DIR/$1.cjo
-    OBJS="$OBJS $OBJ"
-    printf "$1=$CJO\n" >> $IMPORTS
+}
+
+compile_package() {
+    echo "Building package $1 ($2/$3)"
+    pre_package $1
+    cjc -c -p $SRC_DIR -o $BUILD_DIR $OBJS
+    check_errors $?
+    post_package $1
+}
+
+compile_package_exec() {
+    echo "Building executable from package $1 ($2/$3)"
+    pre_package $1
+    cjc -p $SRC_DIR -o $BUILD_DIR $OBJS
+    check_errors $?
+    post_package $1    
 }
 
 compile_exec() { 
     echo "Building executable $1 ($2/$3)"
     SRC="$SRC/$1.cj"
     OUT="$BIN/$1.out"
-    cjc -import-config $IMPORTS $OBJS $SRC -o $OUT
-    CODE=$?
-    if [ "$CODE" != "0" ] ; then
-        echo "Error $CODE, aborting..."
-        exit 1
-    fi
+    cjc $SRC -o $OUT $OBJS
+    check_errors $?
 }
 
-if [ "$#" == "1" ] ; then
+if [ "$#" == "0" ] ; then
     MODE="all"
 else
-    MODE="$2"
+    MODE="$1"
 fi
+
+if [ "$MODE" == "hack" ] ; then
+    PACKAGES=("settings" "debug")
+else 
+    PACKAGES=("settings" "debug" "circuits" "examples")
+fi
+
+PKG_PATHS=("$MODULES_DIR/io")
+
+for p in ${PACKAGES} l ; do
+    PKG_PATHS+=("$BUILD_DIR/$p")
+done
+
+for p in ${PKG_PATHS} ; do
+     check_package_in_path $p
+done
 
 CURRENT_PKG=1
 
-if [ "$MODE" == "all" ] ; then 
+if [ "$MODE" == "all" ] || [ "$MODE" == "hack" ] ; then 
     rm -rf $BUILD
     rm -rf $BIN
     mkdir $BUILD
@@ -69,12 +130,12 @@ if [ "$MODE" == "all" ] ; then
     printf "io=$IO_CJO\n" >> $IMPORTS
     
     for p in ${PACKAGES[@]} ; do
-        compile_package $p $CURRENT_PKG $((TOTAL_PKG+1))
+        compile_package $p $CURRENT_PKG $((TOTAL_PKG+1)) true
         (( CURRENT_PKG++ ))
     done
 else 
     for p in ${PACKAGES[@]} ; do 
-        OBJS="$OBJS $BUILD/$p/$p.o"
+        OBJS="$OBJS:$BUILD/$p/$p.o"
     done
 fi
 
@@ -82,4 +143,8 @@ if [ "$MODE" == "main" ] ; then
     TOTAL_PKG=0
 fi
 
-compile_exec $MAIN $CURRENT_PKG $(($TOTAL_PKG+1))
+if [ "$MODE" == "hack" ] ; then
+    compile_package_exec "circuits" $CURRENT_PKG $(($TOTAL_PKG+1)) false
+else
+    compile_exec $MAIN $CURRENT_PKG $(($TOTAL_PKG+1))
+fi

@@ -188,10 +188,10 @@ class BadCodomainException <: Exception {
 }
 class TypeMismatchException <: Exception {
     init(function : String, f : HypergraphStructure, g : HypergraphStructure){
-        ErrorMsg(function, "Outputs of '${f.GetName()}' (${f.GetN()}) do not match inputs of '${g.GetName()}' (${g.GetM()})")
+        ErrorMsg(function, "Outputs of '${f.GetId()}' (${f.GetN()}) do not match inputs of '${g.GetId()}' (${g.GetM()})")
     }
     init(function : String, f : HypergraphStructure, n : Int64) {
-        ErrorMsg(function, "Outputs of '${f.GetName()}' (${f.GetN()}) do not match required inputs (${n})")
+        ErrorMsg(function, "Outputs of '${f.GetId()}' (${f.GetN()}) do not match required inputs (${n})")
     }
 }
 class BadValueException <: Exception {
@@ -227,7 +227,7 @@ class BadOutputLabelsException <: Exception {
 }
 class PortNotFoundException <: Exception {
     init(function : String, f : HypergraphStructure, s : String){
-        ErrorMsg(function, "HypergraphStructure '${f.GetName()}' does not have a port named '${s}'")
+        ErrorMsg(function, "HypergraphStructure '${f.GetId()}' does not have a port named '${s}'")
     }
 }
 
@@ -292,7 +292,7 @@ class NonJoinEdgeException <: Exception {
 }
 class NonProductiveException <: Exception {
     init(function : String, f : HypergraphStructure){
-        ErrorMsg(function, "The hypergraph '${f.GetName()}' is not in productive form")
+        ErrorMsg(function, "The hypergraph '${f.GetId()}' is not in productive form")
     }
 }
 class BadGeneratorException <: Exception {

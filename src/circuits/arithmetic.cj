@@ -26,8 +26,8 @@ func CreateHalfAdder(sum!: String = "", carry!: String = "", bit!: Int64 = 0) {
     // Compute sum and carry
     let xorLhs = fork1.targets[0]
     let xorRhs = fork2.targets[0]
-    let andLhs = fork1.targets[0]
-    let andRhs = fork2.targets[0]
+    let andLhs = fork1.targets[1]
+    let andRhs = fork2.targets[1]
     let xor = hb.CreateEdge(XOR, [xorLhs, xorRhs], [hb.GetOutput(0)])
     let and = hb.CreateEdge(AND, [andLhs, andRhs], [hb.GetOutput(1)])
     // Return the builder
@@ -83,6 +83,7 @@ func CreateFullAdder(sum!: String = "", cout!: String = "", bit!: Int64 = 0) : H
     let fork1 = hb.CreateEdge(FORK, [hb.GetInput(0)])
     let fork2 = hb.CreateEdge(FORK, [hb.GetInput(1)])
     let fork3 = hb.CreateEdge(FORK, [hb.GetInput(2)])
+
     // The half adder bit
     let xorLhs = fork1.targets[0]
     let xorRhs = fork2.targets[0]
@@ -90,15 +91,16 @@ func CreateFullAdder(sum!: String = "", cout!: String = "", bit!: Int64 = 0) : H
     let andRhs = fork2.targets[1]
     let xor1 = hb.CreateEdge(XOR, [xorLhs, xorRhs])
     let and1 = hb.CreateEdge(AND, [andLhs, andRhs])
-    
+
     // Bring in the carry
     let forkv = xor1.targets[0]
     let fork4 = hb.CreateEdge(FORK, [forkv])
-    
+
     let xor2Lhs = fork4.targets[0]
     let xor2Rhs = fork3.targets[0]
-    let xor2 = hb.CreateEdge(XOR, [xor2Lhs, xor2Rhs], [hb.GetOutput(0)])
-    
+    let t = hb.GetOutput(0)
+    let xor2 = hb.CreateEdge(XOR, [xor2Lhs, xor2Rhs], [t])
+
     let and2Lhs = fork3.targets[1]
     let and2Rhs = fork4.targets[1]
     let and2 = hb.CreateEdge(AND, [and2Lhs, and2Rhs])
@@ -206,7 +208,8 @@ func CreateAdder(width!: Int64, bit!: Int64 = 0, sum!: String = "", cout!: Strin
 external func Adder(width!: Int64, sum!: String = "", cout!: String = "", name!: String = "") {
     Debug("Adder", "Making n-bit adder of width ${width}, sum='${sum}', cout='${cout}'")
     let adderBuilder = CreateAdder(width: width, bit: 0, sum: sum, cout: cout)
-    adderBuilder.ToGraph(name)
+    let g = adderBuilder.ToGraph(name)
+    g
 }
 /**
  * Create a fresh n-bit adder and compose it to some existing circuits

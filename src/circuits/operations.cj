@@ -77,12 +77,12 @@ external func Seq(fs : List<Hypergraph>, name!: String = "") {
  * @param name  The name of the resulting hypergraph
  * @return An identity hypergraph on n
  */
-external func Identity(n : Int64, name!: String = "", output!: String = "") : Hypergraph {
-    Debug("Identity", "Making identity on ${n}, output='${output}'")
+external func Identity(n : Int64, name!: String = "", label!: String = "") : Hypergraph {
+    Debug("Identity", "Making identity on ${n}, label='${label}'")
     if(n < 0){
         throw NegativeWireException("Identity")
     }
-    let hb = HypBuilder(n, n, output)
+    let hb = HypBuilder(n, n, label)
     for(i in 0..n){
         hb.AddConn(hb.GetInput(i), hb.GetOutput(i))
     }
@@ -94,8 +94,8 @@ external func Identity(n : Int64, name!: String = "", output!: String = "") : Hy
  * @param name  The name of the resulting hypergraph
  * @return An identity hypergraph on n
  */
-external func Identity(name!: String = "", output!: String = "") : Hypergraph {
-    Identity(1, name: name, output: output)
+external func Identity(name!: String = "", label!: String = "") : Hypergraph {
+    Identity(1, name: name, label: label)
 }
 
 /**
@@ -193,10 +193,10 @@ external func Empty(name!: String = "") : Hypergraph {
  * @param n The second argument of the swap
  * @param name="" The name of the resulting hypergraph
  */
-external func Swap(m : Int64, n : Int64, name!: String = "") : Hypergraph {
-    Debug("Swap", "Creating swap on ${m} and ${n}")
+external func Symmetry(m : Int64, n : Int64, name!: String = "") : Hypergraph {
+    Debug("Symmetry", "Creating swap on ${m} and ${n}")
     if(m < 0 || n < 0){
-        throw NegativeWireException("Swap")
+        throw NegativeWireException("Symmetry")
     }
     let hb = HypBuilder(m + n, m + n)
     for(i in 0..m){
@@ -213,8 +213,8 @@ external func Swap(m : Int64, n : Int64, name!: String = "") : Hypergraph {
  * A hypergraph that swaps two wires
  * @param name The name of the resulting hypergraph
  */
-external func Swap(name!: String = "") : Hypergraph {
-    Swap(1, 1, name: name)
+external func Symmetry(name!: String = "") : Hypergraph {
+    Symmetry(1, 1, name: name)
 }
 /**
  * Trace a hypergraph f : x + m -> x + n to create Tr^x(f) : m -> n

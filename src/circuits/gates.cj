@@ -409,7 +409,7 @@ external func CreateMerge(n : Int64, name!: String = "", output!: String = "") :
     if(n == 0){
         Empty(name: name)
     } else {
-        let m1 = Par([Identity(n-1), Swap(n-1,1), Identity(1)])
+        let m1 = Par([Identity(n-1), Symmetry(n-1,1), Identity(1)])
         let m2 = Par(Merge(n-1, output: output), Join(output: output, elem: n-1))
         Seq(m1, m2, name: name)
     }
@@ -509,7 +509,7 @@ external func XnorGate(lhs!: Hypergraph, rhs!: Hypergraph, output!: String = "",
     OpTwoToOne(XNOR, output: output, elem: elem, name: name, lhs: lhs, rhs: rhs)
 }
 
-external func Mux(width!: Int64, output!: String = "", elem!: Int64 = -1, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
+external func Mux(width!: Int64 = 1, output!: String = "", elem!: Int64 = -1, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
     Debug("Mux", "Creating mux of width ${width}")
     let muxInputs = 2 * width + 1
     match(input){
@@ -543,7 +543,7 @@ external func Mux(width!: Int64, output!: String = "", elem!: Int64 = -1, name!:
     }
 }
 
-external func Mux(width!: Int64, output!: String = "", elem!: Int64 = -1, name!: String = "", a!: Hypergraph, b!: Hypergraph, s!: Option<Hypergraph> = None<Hypergraph>){
+external func Mux(width!: Int64 = 1, output!: String = "", elem!: Int64 = -1, name!: String = "", a!: Hypergraph, b!: Hypergraph, s!: Option<Hypergraph> = None<Hypergraph>){
     if(a.GetN() != width){
         throw BadInputGraphException("Mux", "a", width, a.GetName(), a.GetN())
     }

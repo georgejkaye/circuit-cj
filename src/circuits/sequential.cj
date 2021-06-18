@@ -227,13 +227,26 @@ external func InLink(spec!: LinkSpec, output!: String = "", name!:String = "") :
     OpMToN(INLINK(spec), wires: wires, name: name) 
 }
 /**
- * Create a iteration: a construct that feeds its outputs back to some in link while also outputting them
+ * Create a fixpoint: a construct that feeds its outputs back to some in link while also outputting them
+ * @param spec   The link spec for the loop
+ * @return The fixpoint
+ */
+external func CreateFeedback(spec: LinkSpec, output!: String = "") : HypBuilder {
+    let hb = HypBuilder(spec.width, spec.width, output)
+    let link = hb.CreateEdge(OUTLINK(spec))
+    for(i in 0..spec.width){
+        let fork = hb.CreateEdge(FORK, [hb.GetInputs()[i]], [link.sources[i], hb.GetOutputs()[i]])
+    }
+    hb
+}
+/**
+ * Create a fixpoint: a construct that feeds its outputs back to some in link while also outputting them
  * @param spec   The link spec for the loop
  * @param output The name to assign the output bus
  * @param name   The name to give this circuit
- * @return The iteration
+ * @return The fixpoint
  */
-external func Feedback(spec!: LinkSpec, output!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
+external func Feedback(spec!: LinkSpec, output!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
     Debug("Feedback", "Creating feedback to spec ${spec.name}")
     match(input){
         case Some(f) =>
@@ -242,13 +255,43 @@ external func Feedback(spec!: LinkSpec, output!: String = "", name!: String = ""
             }
         case $None => ()
     }
-    
-    let hb = HypBuilder(spec.width, spec.width, output)
-    let link = hb.CreateEdge(OUTLINK(spec))
-    for(i in 0..spec.width){
-        let fork = hb.CreateEdge(FORK, [hb.GetInputs()[i]], [link.sources[i], hb.GetOutputs()[i]])
+    let res = CreateFeedback(spec, output: output).ToGraph()
+    match(input){
+        case Some(f) => Seq(f, res)
+        case $None   => res
     }
-    let res = hb.ToGraph()
+}
+
+external func FeedbackReg(spec!: LinkSpec, output!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>, initial!: Int64, signed!: Bool = false){
+    Debug("FeedbackReg", "Creating feedback to spec ${spec.name} with register")
+    match(input){
+        case Some(f) =>
+            if(f.GetN() != spec.width){
+                throw TypeMismatchException("Feedback", f, spec.width)
+            }
+        case $None => ()
+    }
+    let fb = CreateFeedback(spec, output: output)
+    let v = CreateValueFromInt(initial, width: spec.width, signed: signed)
+    fb.AddNewGraph(v)
+
+    for(i in 0..spec.width){
+        let fork = fb.GetOutput(i).GetLeftEdge()
+        let join = fb.CreateEdge(JOIN)
+        let t0 = join.targets[0]
+        let s0 = fork.targets[0].GetConn()
+        let t1 = fork.targets[0]
+        let s1 = join.sources[1]
+        let t2 = v.GetOutput(i).GetConn()
+        let s2 = join.sources[0]
+        fb.AddConn(t0, s0)
+        fb.AddConn(t1, s1)
+        fb.AddConn(t2, s2)
+        fb.RemoveOutput(spec.width)
+    }
+
+    let res = fb.ToGraph()
+
     match(input){
         case Some(f) => Seq(f, res)
         case $None   => res

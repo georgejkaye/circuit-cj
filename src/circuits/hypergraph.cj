@@ -110,7 +110,8 @@ func UpdateLinks(e : Edge, linkMap : MapBuilder<LinkSpec, ArrayList<Edge>>){
  * A hypergraph structure is a collection of edges, inputs, outputs and connections
  * This structure may not necessarily be a well-formed hypergraph
  */
-open class HypergraphStructure <: Atom {
+open class HypergraphStructure <: Identifiable {
+
     protected var edges    : ArrayList<Edge>
     protected var inputs   : ArrayList<Target>
     protected var outputs  : ArrayList<Source>
@@ -130,6 +131,7 @@ open class HypergraphStructure <: Atom {
          inputs  : ArrayList<Target>,
          outputs : ArrayList<Source>
     )  {
+
         this.edges = edges
         this.inputs = inputs
         this.outputs = outputs
@@ -219,6 +221,7 @@ open class HypergraphStructure <: Atom {
     func GetInlinkMap(){ inlinkMap }
     func GetOutlinkMap(){ outlinkMap }
     open func GetName(){ "hs${id}" }
+    func GetId(){ id }
     /**
      * Perform an action for each edge
      * @param action The action to perform
@@ -432,7 +435,7 @@ open class HypergraphStructure <: Atom {
         }
         return Okay
     }
-    open override func GetString() {
+    open func GetString() {
         let sourceString = PrintList(sources, {s : Source => "${s.id}"})
         let targetString = PrintList(targets, {t : Target => "${t.id}"})
         var edgeString = ""
@@ -663,9 +666,9 @@ external class Hypergraph <: HypergraphStructure {
     * Get a rewriter for this hypergraph
     * @return The rewritied for this hypergraph
     */
-    // func GetRewriter(){
-    //     Rewriter(this)
-    // }
+    func GetRewriter(){
+        Rewriter(this)
+    }
 
     override func GetString() : String {
         var str = ""
@@ -752,3 +755,27 @@ func CloneTarget(cr : Cloner, t : Target){
  * TODO find out why this doesn't compile
  */
 // type Circuit = Hypergraph
+
+func main(){
+
+    SetDotDir("dot")
+
+    let width = 2
+
+    let link_spec = NewSpec(name: "prev_sum", width: width)
+    let prev_sum = InLink(spec: link_spec, output: "prev_sum")
+    let x = Input(label: "x", width: width)
+    let sum = Plus(a: prev_sum, b: x, output: "sum", name: "Plus")
+    // TODO have to use Some to avoid segfault here
+    let circ = FeedbackReg(spec: link_spec, input: Some(sum), initial: 10)
+
+    WriteDotToFile(circ, "circ")
+    let rw = circ.GetRewriter()
+    rw.RunCycle()
+    WriteDotToFile(circ, "circ")
+    rw.RunCycle()
+    WriteDotToFile(circ, "circ")
+
+
+    0   
+}

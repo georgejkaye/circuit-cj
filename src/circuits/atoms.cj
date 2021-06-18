@@ -7,20 +7,24 @@ package circuits
 
 import debug.*
 
-/**
- * Base atom class, every element of a hypergraph (vertex, edge, label) is an atom
- * Each atom has a unique id, and this is what comparisons should be performed on
- */
-open class Atom {
+open class Identifiable {
     static var nextid : UInt64 = 0
     let id : UInt64
     init() { 
         this.id = nextid
         nextid++
     }
-    open func GetString(){
-        "Atom ${id}"
-    }
+}
+extend Identifiable <: Hashable {
+    func hashCode() : UInt64 { this.id }
+}
+
+/**
+ * Base atom class, every element of a hypergraph (vertex, edge, label) is an atom
+ * Each atom has a unique id, and this is what comparisons should be performed on
+ */
+abstract class Atom <: Identifiable {
+    func GetString() : String
 }
 extend Atom <: ToString {
     func toString(){
@@ -31,9 +35,7 @@ extend Atom <: Equatable {
     operator func ==(rhs : Atom) : Bool { this.id == rhs.id }
     operator func !=(rhs : Atom) : Bool { this.id != rhs.id }
 }
-extend Atom <: Hashable {
-    func hashCode() : UInt64 { this.id }
-}
+
 /** 
  * Get a string representing a list of atoms 
  * The string is formatted like [ 1 2 3 ]
@@ -151,7 +153,7 @@ external class Source <: Vertex {
      * @param wires The wires to add 
      */
     func AddWires(wires : ArrayList<Wire>) { this.wires.addAll(wires) }
-    override func GetString() {
+    func GetString() {
         var wireString = ""
         for (wire in wires){
             let wireText = match(wire.bus.name){
@@ -227,7 +229,7 @@ external class Target <: Vertex {
     func GetLeftPort(){
         GetPort()
     }
-    override func GetString() { "Target t${id}" }
+    func GetString() { "Target t${id}" }
 }
 /** 
  * Get a string representing a list of target vertices
@@ -271,7 +273,7 @@ external open class Edge <: Atom {
     init(generator : Generator, targets : ArrayList<Target>){
         this(generator, ArrayList<Source>(), targets)
     }
-    override func GetString() { 
+    func GetString() { 
         "Edge e${id} - ${generator}" 
     }
     /**

@@ -19,7 +19,7 @@ external func Input(label!: String = "", width!: Int64 = 1){
         throw NegativeWireException("Input")
     }
     //let bus = NewBus(label)
-    Identity(width, output: label)
+    Identity(width, label: label)
 }
 /**
  * Combine a list of hypergraphs into a single hypergraph, ensuring that any shared wires are

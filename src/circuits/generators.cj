@@ -90,7 +90,7 @@ extend Label <: Equatable {
  * A link spec contains information about a link
  * It has an id, a name, and a width 
  */
-class LinkSpec <: Atom {
+class LinkSpec <: Identifiable {
     let name : String
     let width : Int64
     init(name : String, width : Int64) {
@@ -101,7 +101,19 @@ class LinkSpec <: Atom {
         this.name = "ls${this.id}"
         this.width = width
     }
-    override func GetString() { "LinkSpec ${id} - ${name} width ${width}" }
+}
+extend LinkSpec <: Equatable {
+    operator func ==(rhs : LinkSpec){
+        this.name == rhs.name && this.width == rhs.width
+    }
+    operator func !=(rhs : LinkSpec){
+        !(this == rhs)
+    }
+}
+extend LinkSpec <: ToString{
+    func toString(){
+        "LinkSpec - ${name} width ${width}"
+    }
 }
 /**
  * Enum for the different types of generators
@@ -189,7 +201,6 @@ func Signature(gen : Generator) : Int64 * Int64 {
         case INLINK(spec)       => (0, spec.width)
         case OUTLINK(spec)      => (spec.width, 0)
     }
-    throw BadGeneratorException("Signature", gen)
 }
 /**
  * Get the domain of a generator

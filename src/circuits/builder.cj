@@ -127,6 +127,7 @@ class HypBuilder <: HypergraphStructure {
      * Update the bus lists, maps, and vertex maps
      */
     func UpdateBuses(){
+        busVertexMaps = MapBuilder<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>()
         UpdateBusVertexList(busList, busMaps, busVertexMaps)
     }
     /**
@@ -134,7 +135,6 @@ class HypBuilder <: HypergraphStructure {
      * @param e the edge
      */
     func AddEdge(e : Edge) {
-        busVertexMaps = MapBuilder<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>()
         edges.add(e)
         for(i in 0..e.sources.size()){
             AddNewSource(e.sources[i])

@@ -3,8 +3,8 @@ import circuits.*
 
 external func HalfAdderCombinator(){
     // Not necessary but nice if we want to label our inputs
-    let a = Identity(1, output: "a1")
-    let b = Identity(1, output: "b1")
+    let a = Identity(1, label: "a1")
+    let b = Identity(1, label: "b1")
     let inputs = a + b
     // We need to copy our inputs so there are versions for the AND and the XOR
     let copy = Copy(2)
