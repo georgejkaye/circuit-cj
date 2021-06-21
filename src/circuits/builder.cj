@@ -137,6 +137,7 @@ class HypBuilder <: HypergraphStructure {
     func AddEdge(e : Edge) {
         edges.add(e)
         for(i in 0..e.sources.size()){
+            print("adding source ${e.sources[i].id}\n")
             AddNewSource(e.sources[i])
         }
         for(i in 0..e.targets.size()){
@@ -266,8 +267,7 @@ class HypBuilder <: HypergraphStructure {
      */
     func NewOutput(){
         let s = Source()
-        s.SetPort(InterfacePort(outputs.size()))
-        outputs.add(s)
+        AddOutput(s)
         s
     }
     /**
@@ -626,7 +626,11 @@ class HypBuilder <: HypergraphStructure {
     func ConnectOutputsToEdge(outs : ArrayList<Source>, gen : Generator) : Edge {
         // Remove these vertices from the outputs
         RemoveOutputs(outs)
-        let edge = CreateEdgeFromExisting(gen, outs)
+        let edge = CreateEdge(gen)
+        
+        for(i in 0..outs.size()){
+            AddConn(outs[i].GetConn(), edge.sources[i])
+        }
         // Connect the new edge to the outputs if necessary
         ConnectEdgeToOutputs(edge)
         edge
@@ -651,7 +655,8 @@ class HypBuilder <: HypergraphStructure {
     func ConnectEachOutputToEdge(outs : ArrayList<Source>, gen : Generator) {
         RemoveOutputs(outs)
         for(s in outs){
-            let edge = CreateEdgeFromExisting(gen, [s])
+            let edge = CreateEdge(gen)
+            AddConn(s.GetConn(), edge.sources[0])
             ConnectEdgeToOutputs(edge)
         }
     }
@@ -690,7 +695,10 @@ class HypBuilder <: HypergraphStructure {
             inputs[j]
         })
         RemoveInputs(chosenInputs)
-        let edge = CreateEdgeFromExisting(gen, chosenInputs)
+        let edge = CreateEdge(gen)
+        for(i in 0..chosenInputs.size()){
+            AddConn(edge.targets[i], chosenInputs[i].GetConn())
+        }
         ConnectEdgeToInputs(edge)
         edge
     }

@@ -144,11 +144,12 @@ func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * S
             let portF = intersectionF.GetPort()
             let portG = intersectionG.GetPort()
             // Make a new fork
-            let edge = f.CreateEdgeFromExisting(FORK, [intersectionF])
+            let fork = f.CreateEdge(FORK)
+            f.AddConn(intersectionF.GetConn(), fork.sources[0])
             // Hook up f and g to this new fork, creating new sources
-            f.NewSource(portF, edge.targets[0])
-            f.NewSource(portG, edge.targets[1])
+            f.AddConn(fork.targets[0], intersectionF)
             danglingTargets.add(intersectionG.GetConn())
+            f.AddConn(fork.targets[1], intersectionG)    
         }
     }
     // Functions to use when traversing the graph to find the dangling elements
@@ -206,9 +207,13 @@ func Extract(f : HypBuilder, buses : ArrayList<String>, name!: String = "") : Hy
                 f.RemoveEdge(e)
                 f.AddOutput(s)
             case $None =>
-                let fork = f.CreateEdgeFromExisting(FORK, [s])
-                f.NewSource(p, fork.targets[0])
-                f.NewSource(InterfacePort(i), fork.targets[1])
+                let fork = f.CreateEdge(FORK)
+                f.AddConn(s.GetConn(), fork.sources[0])
+                f.AddConn(fork.targets[0], s)
+                // Add the output at the appropriate place
+                let out = Source()
+                f.SetOutput(i, out)
+                f.AddConn(fork.targets[1], out)
         }
     }
     f.ToGraph(name)

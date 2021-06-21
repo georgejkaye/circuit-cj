@@ -45,21 +45,24 @@ func ResolveLinks(f : HypBuilder, name!: String = "") {
                 let ins = inLinkEdges.size()
                 // Deal with each port of the link in turn
                 for(port in 0..spec.width){
-                    var currentSource = outLinkEdges[0].sources[port]
+                    var currentTarget = outLinkEdges[0].sources[port].GetConn()
                     // We need to join together multiple out links with the same spec
                     if(outs > 1){
                         for(i in 1..outs){
                             // Get the next source
-                            let nextSource = outLinkEdges[i].sources[port]
+                            let nextTarget = outLinkEdges[i].sources[port].GetConn()
                             // Create a new join with these sources
-                            let join = f.CreateEdgeFromExisting(JOIN, [currentSource, nextSource])
+                            let join = f.CreateEdge(JOIN)
+                            f.AddConn(currentTarget, join.sources[0])
+                            f.AddConn(nextTarget, join.sources[1])
                             // Create a new source ready for the next iteration
-                            currentSource = f.NewSource(join.targets[0])
+                            currentTarget = join.targets[0]
                         }
                     }
                     // Create an identity edge in the middle
-                    let id = f.CreateEdgeFromExisting(IDENTITY, [currentSource])
-                    var currentTarget = id.targets[0]
+                    let id = f.CreateEdge(IDENTITY)
+                    f.AddConn(currentTarget, id.sources[0])
+                    currentTarget = id.targets[0]
                     // We need to fork to serve multiple in links with the same spec
                     if(ins > 1){
                         for(i in 0..ins-1){
@@ -83,7 +86,8 @@ func ResolveLinks(f : HypBuilder, name!: String = "") {
             case $None =>
                 for(e in outLinkEdges){
                     for(s in e.sources){
-                        f.CreateEdgeFromExisting(STUB, [s])
+                        let stub = f.CreateEdge(STUB)
+                        f.AddConn(s.GetConn(), stub.sources[0])
                     }
                     f.RemoveEdge(e)
                 }
@@ -96,7 +100,8 @@ func ResolveLinks(f : HypBuilder, name!: String = "") {
     for(link in deadInlinks){
         let spec = link.GetSpec()
         for(i in 0..spec.width){
-            f.CreateEdgeFromExisting(VALUE(BOTTOM), [link.targets[i]])
+            let bot = f.CreateEdge(VALUE(BOTTOM))
+            f.AddConn(bot.targets[0], link.targets[i].GetConn())
         }
     }    
     f.RemoveEdges({e : Edge => includes(deadInlinks, e)})

@@ -205,7 +205,8 @@ func ReplaceGateWithValueAndStubs(edge : Edge, hb : HypBuilder, trig : Int64, v 
     let nexts = ArrayList<Source>()
     for(i in 0..edge.sources.size()){
         if(i != trig){
-            let stubEdge = hb.CreateEdgeFromExisting(STUB, [edge.sources[i]])
+            let stubEdge = hb.CreateEdge(STUB)
+            hb.AddConn(edge.sources[i].GetConn(), stubEdge.sources[0])
             nexts.add(stubEdge.sources[0])
         } else {
             hb.RemoveEdge(edge.sources[i].GetLeftEdge())
@@ -415,10 +416,14 @@ let joinFork = RewriteRule(
     {e : Edge => PreviousEdgeIs(e.sources[0], JOIN)},
     {e : Edge, hb : HypBuilder, payload : Int64 => 
         let oldJoin = e.sources[0].GetLeftEdge()
-        let fork1 = hb.CreateEdgeFromExisting(FORK, [oldJoin.sources[0]])
-        let fork2 = hb.CreateEdgeFromExisting(FORK, [oldJoin.sources[1]])
-        let join1 = hb.CreateEdgeFromExisting(JOIN, [e.targets[0]])
-        let join2 = hb.CreateEdgeFromExisting(JOIN, [e.targets[1]])
+        let fork1 = hb.CreateEdge(FORK)
+        hb.AddConn(oldJoin.sources[0].GetConn(), fork1.sources[0])
+        let fork2 = hb.CreateEdge(FORK)
+        hb.AddConn(oldJoin.sources[1].GetConn(), fork1.sources[0])
+        let join1 = hb.CreateEdge(JOIN)
+        hb.AddConn(join1.targets[0], e.targets[0].GetConn())
+        let join2 = hb.CreateEdge(JOIN)
+        hb.AddConn(join2.targets[0], e.targets[1].GetConn())
         hb.AddConn(fork1.targets[0], join1.sources[0])
         hb.AddConn(fork1.targets[1], join2.sources[0])
         hb.AddConn(fork2.targets[0], join1.sources[1])
@@ -460,7 +465,8 @@ let propagateStubs = RewriteRule(
             hb.RemoveEdge(t.GetRightEdge())
         }
         for(s in e.sources){
-            hb.CreateEdgeFromExisting(STUB, [s])
+            let stub = hb.CreateEdge(STUB)
+            hb.AddConn(s.GetConn(), stub.sources[0])
             nextSources.add(s)
         }
         hb.RemoveEdge(e)

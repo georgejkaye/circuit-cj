@@ -1,8 +1,8 @@
-// /**
-// * rewrite.cj
-// *
-// * This file contains the definition of rewrite rules and the rewriter
-// */
+/**
+* rewrite.cj
+*
+* This file contains the definition of rewrite rules and the rewriter
+*/
 
 package circuits
 
@@ -47,6 +47,7 @@ class RewriteRule {
     func Rewrite(e : Edge, hb : HypBuilder, payload : Int64){
         Debug("Rewrite", "Rewriting e${e.id} with rule ${name}")
         let nexts = rewrite(e, hb, payload)
+        hb.ToGraph()
         nexts
     }
 }
@@ -73,12 +74,17 @@ class Rewriter {
         f.ToGraph()
     }
     func RunCycle() {
+        WriteDotToFile(f.ToGraph(), "init")
         // Perform any newly unlocked reductions
         RunLocal()  
         // Isolate the head(s) of the waveform
         let heads = ArrayList<ArrayList<Waveform>>()
+        var i = 0
         while(f.IsProductive()){
+            print("detaching a head\n")
+            WriteDotToFile(f.ToGraph(), "det${i}")
             heads.add(0, DetachHead())
+            i++
         }
         // Unfold the rest of the circuit
         Unfold()     
@@ -153,12 +159,15 @@ class Rewriter {
         // If we're still here, then we are in the correct form
         let head = ArrayList<Edge>()
         f.RemoveOutputs()
+        print("hello\n")
         for(w in waveforms){
             f.RemoveEdge(w.value)
             f.RemoveEdge(w.delay)
             f.RemoveEdge(w.join)
             f.ConnectPortToOutputs(w.delay.sources[0].GetLeftPort())
         }
+        print("${f}\n")
+        print("Done!\n")
         waveforms
     }
     /**

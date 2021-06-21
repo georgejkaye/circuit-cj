@@ -40,7 +40,7 @@ external func DebugMessagesOn(){
 external let tab = "  "
 
 /* Whether to display debug information on the dot graph */
-var debugDot = false
+var debugDot = true
 /**
  * Toggle the debug dot on and off
  */

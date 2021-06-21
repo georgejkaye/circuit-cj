@@ -380,6 +380,7 @@ open class HypergraphStructure <: Identifiable {
                 return TargetNotConnected(t)
             }
             if(!includes(sources, t.GetConn())){
+                print("ahoy\n")
                 return ConnectionNotInGraph(t, t.GetConn())
             }
             match(t.GetLeftPort()){
@@ -409,6 +410,7 @@ open class HypergraphStructure <: Identifiable {
                 return SourceNotConnected(s)
             }
             if(!includes(targets, s.GetConn())){
+                print("ahoo\n")
                 return ConnectionNotInGraph(s, s.GetConn())
             }
             match(s.GetRightPort()){
@@ -433,6 +435,7 @@ open class HypergraphStructure <: Identifiable {
                 return IncorrectCodomain(e, e.targets.size())
             }
         }
+        Debug("IsWellFormed", "Hypergraph is well-formed")
         return Okay
     }
     open func GetString() {
@@ -487,6 +490,11 @@ open class HypergraphStructure <: Identifiable {
         "====\nsources ${sourceString}\ntargets ${targetString}\ninputs ${inputString}\n${edgeString}outputs ${outputString}\nconnsr ${connsRString}\nconnsl ${connsLString}\nlefts ${leftString}\nrights ${rightString}\n===="
     }
 }
+extend HypergraphStructure <: ToString {
+    func toString(){
+        this.GetString()
+    }
+}
 /** 
  * An enum to represent if a hypergraph structure is well formed or if there is a problem with it
  */
@@ -504,6 +512,26 @@ enum WellformednessStatus {
     | EdgeNotInGraph(Vertex, Edge)            // This vertex is associated with an edge not in this graph
     | IncorrectDomain(Edge, Int64)            // This edge has the incorrect number of sources
     | IncorrectCodomain(Edge, Int64)          // This edge has the incorrect number of targets
+}
+
+extend WellformednessStatus <: ToString {
+    func toString(){
+        match(this){
+            case TargetNotConnected(t)           => "Target ${t} not connected"
+            case SourceNotConnected(s)           => "Source ${s} not connected"
+            case TargetNotAssociated(t)          => "Target ${t} not associated"
+            case SourceNotAssociated(s)          => "Source ${s} not associated"
+            case IncorrectTargetAssignment(t, p) => "Incorrect target assignment of ${t} to ${p}"
+            case IncorrectSourceAssignment(s, p) => "Incorrect source assignment of ${s} to ${p}"
+            case DuplicateTarget(t)              => "Duplicated target ${t}"
+            case DuplicateSource(s)              => "Duplicated source ${s}"
+            case ConnectionNotInGraph(v1,v2)     => "Connection of ${v1} which is ${v2} not in the graph"
+            case EdgeNotInGraph(v, e)            => "The edge of vertex ${v} which is ${e} not in the graph"
+            case IncorrectDomain(e, n)           => "Incorrect domain of ${e}"
+            case IncorrectCodomain(e, n)         => "Incorrect codomain of ${e}"
+            case _                               => "All okay"
+        }
+    }
 }
 
 /**
@@ -535,9 +563,12 @@ external class Hypergraph <: HypergraphStructure {
     ){
         super(edges, inputs, outputs)
         this.name = if(name == ""){ "h${this.id}" } else { name }
-        match(IsWellFormed()){
-            case $Okay => {}
-            case wf    => throw BadHypergraphException(this, wf)
+        match(this.IsWellFormed()){
+            case $Okay => 
+                print("this is well-formed\n")
+            case wf    =>
+                print("this is not well-formed\n")
+                throw BadHypergraphException(this, wf)
         }
     }
     /**
