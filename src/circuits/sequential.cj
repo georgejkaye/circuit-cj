@@ -128,6 +128,26 @@ external func WaveformFromList(xs : List<Int64>, width!: Int64, name!: String = 
     let waveform = CreateWaveform(xs, width: width, signed: true)
     waveform.ToGraph(name)
 }
+
+external func InfiniteWaveform(value : Int64, width!: Int64, name!: String = "", signed!: Bool = false){
+    Debug("InfiniteWaveform", "Creating infinite waveform for value ${value}")
+    let hb = CreateValueFromInt(value, width: width, signed: signed)
+    for(i in 0..width){
+        let value = hb.GetOutput(i).GetLeftEdge()
+        let join = hb.CreateEdge(JOIN)
+        let fork = hb.CreateEdge(FORK)
+        let delay = hb.CreateEdge(DELAY(1))
+        let id = hb.CreateEdge(IDENTITY)
+
+        hb.AddConn(value.targets[0], join.sources[0])
+        hb.AddConn(delay.targets[0], join.sources[1])
+        hb.AddConn(join.targets[0], fork.sources[0])
+        hb.AddConn(fork.targets[0], id.sources[0])
+        hb.AddConn(id.targets[0], delay.sources[0])
+        hb.AddConn(fork.targets[1], hb.GetOutput(i))
+    }
+    hb.ToGraph()
+}
 /**
  * Create a new spec to be used for links
  * @param width The width of this spec

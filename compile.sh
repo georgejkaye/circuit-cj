@@ -28,7 +28,7 @@ MAIN="main"
 IFS=":"
 read -ra PATHS <<< "$CANGJIE_PATH"
 
-MAP_CAPACITY=200
+MAP_CAPACITY=512
 
 YELLOW="\033[1;33m"
 NC="\033[0m"

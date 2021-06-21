@@ -366,7 +366,6 @@ open class HypergraphStructure <: Identifiable {
      * @return The wellformedness status of this hypergraph
      */
     func WellFormedCheck() : WellformednessStatus {
-        Debug("WellFormedCheck", "Checking if graph is well formed")
         let encounteredTargets = ArrayList<Target>()
         for(t in targets){
             if(includes(encounteredTargets, t)){
@@ -433,7 +432,6 @@ open class HypergraphStructure <: Identifiable {
                 return IncorrectCodomain(e, e.targets.size())
             }
         }
-        Debug("WellFormedCheck", "Hypergraph is well-formed")
         return Okay
     }
     /**
@@ -658,11 +656,11 @@ external class Hypergraph <: HypergraphStructure {
         Trace(this, n)
     }
     /**
-    * Syntax sugar for sequential composition
-    * @param f The lhs of the sequential composition
-    * @param g The rhs of the sequential composition
-    * @return The result of the sequential composition
-    */
+     * Syntax sugar for sequential composition
+     * @param f The lhs of the sequential composition
+     * @param g The rhs of the sequential composition
+     * @return The result of the sequential composition
+     */
     operator func +(g : Hypergraph) : Hypergraph {
         SeqBuilder(this.Clone(), g.Clone())
     }
@@ -805,18 +803,19 @@ func main(){
     let x = Input(label: "x", width: width)
     let sum = Plus(a: prev_sum, b: x, output: "sum", name: "Plus")
     // TODO have to use Some to avoid segfault here
-    let circ = FeedbackReg(spec: link_spec, input: Some(sum), initial: 1)
+    let circ = FeedbackReg(spec: link_spec, input: Some(sum), initial: 0)
 
     WriteDotToFile(circ, "circuit")
-    let applied = UnsignedValueFromInt(1, width: 2) + circ
+    
+    let wf = WaveformFromList([1,2], width: width)
+    let applied = wf + circ
     WriteDotToFile(applied, "applied")
 
     let rw = applied.GetRewriter()
     rw.RunCycle()
-    //WriteDotToFile(circ, "circ")
-    //rw.RunCycle()
-    WriteDotToFile(rw.GetGraph(), "after-rewrites")
-
+    WriteDotToFile(rw.GetGraph(), "cycle-1")
+    rw.RunCycle()
+    WriteDotToFile(rw.GetGraph(), "cycle-2")
 
     0   
 }

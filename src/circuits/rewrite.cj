@@ -77,22 +77,22 @@ class Rewriter {
         f.ToGraph()
     }
     func RunCycle() {
-        // Perform any newly unlocked reductions
-        RunLocal()  
         // Isolate the head(s) of the waveform
         let heads = ArrayList<ArrayList<Waveform>>()
         var i = 0
         while(f.IsProductive()){
-            heads.add(0, DetachHead())
+            heads.add(DetachHead())
             i++
         }
+        // Perform any available redexes
+        RunLocal()
         // Unfold the rest of the circuit
-        Unfold()     
+        Unfold()  
         // Tidy up the resulting circuit
         RunLocal() 
         // If we have one, reattach the head
         while(heads.size() != 0){
-            ReattachHead(heads.removeAt(0))
+            ReattachHead(heads.removeAt(heads.size() - 1))
         }
     }
     func RunLocal(){
@@ -109,28 +109,30 @@ class Rewriter {
         var rewrote = false
         match(s.GetLeftPort()){
             case EdgePort(e, i) =>
-                let next = ArrayList<Source>()
-                // Identity edges 'block' the rewriter, as this will be handled by the unfoldings
-                if(!e.IsIdentity()){
-                    for(v in e.sources){
-                        RunLocal(v)
-                    }
-                    for(rule in rules){
-                        if(!rewrote){
-                            let can = rule.CanRewrite(e)
-                            match(can){
-                                case Some(j) =>
-                                    let nexts = rule.Rewrite(e, f, j)
-                                    rewrites++
-                                    next.addAll(nexts)
-                                    rewrote = true
-                                case $None   => ()
+                if(includes(f.GetEdges(), e)){
+                    let next = ArrayList<Source>()
+                    // Identity edges 'block' the rewriter, as this will be handled by the unfoldings
+                    if(!e.IsIdentity()){
+                        for(v in e.sources){
+                            RunLocal(v)
+                        }
+                        for(rule in rules){
+                            if(!rewrote){
+                                let can = rule.CanRewrite(e)
+                                match(can){
+                                    case Some(j) =>
+                                        let nexts = rule.Rewrite(e, f, j)
+                                        rewrites++
+                                        next.addAll(nexts)
+                                        rewrote = true
+                                    case $None   => ()
+                                }
                             }
                         }
-                    }
-                    for(v in next){
-                        if(includes(f.GetSources(), v)){
-                            RunLocal(v)
+                        for(v in next){
+                            if(v.HasConn()){
+                                RunLocal(v)
+                            }
                         }
                     }
                 }
@@ -192,7 +194,7 @@ class Rewriter {
                 let stub = g.CreateEdge(STUB)
                 g.AddConn(e.sources[0].GetConn(), stub.sources[0])
                 if(e.IsIdentity()){
-                identitiesToDelete.add(e)
+                    identitiesToDelete.add(e)
                 }
                 danglingSources.add(e.sources[0])
             }

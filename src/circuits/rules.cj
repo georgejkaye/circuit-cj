@@ -169,7 +169,10 @@ func HasValueArguments(edge : Edge){
 func HasSpecificValueArgument(edge : Edge, v : Value){
     for(i in 0..edge.sources.size()){
         match(edge.sources[i].GetLeftPort()){
-            case EdgePort(e, j) => if(e.HasValue(v)){ return Some<Int64>(i) }
+            case EdgePort(e, j) => 
+                if(e.HasValue(v)){ 
+                    
+                    return Some<Int64>(i) }
             case InterfacePort(j) => ()
         }
     }
@@ -546,6 +549,7 @@ let disconnect = EnhancedGateRewriteRule("Disconnect", DELAY, BOTTOM, BOTTOM)
 
 let rewriteRules = ArrayList<RewriteRule>([
     propagateStubs,
+    bottomElimination,
     forkStubLeft,
     forkStubRight,
     joinUnit,
@@ -563,7 +567,6 @@ let rewriteRules = ArrayList<RewriteRule>([
     orEnhanced,
     andPassthrough,
     orPassthrough,
-    bottomElimination,
     disconnect,
     timelessness,
     streaming,

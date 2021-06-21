@@ -47,7 +47,6 @@ extend Value <: Equatable {
                     case _ => false
                 }
         }
-        false
     }
     operator func !=(rhs : Value) { !(this == rhs) }
 }

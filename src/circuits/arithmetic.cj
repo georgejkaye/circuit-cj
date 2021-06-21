@@ -238,7 +238,7 @@ external func Adder(width!: Int64, a!: Hypergraph, b!: Hypergraph, cin!: Hypergr
 }
 /**
  * Create a fresh plus circuit of arbitrary width
- * A plus is just an adder that initialises the first carry in to zero discards the final carry out
+ * A plus is just an adder that initialises the first carry in to an infinite wavelength of zeroes and discards the final carry out
  * @param width The width of the inputs
  * @param output The name of the output bus
  * @param name The name of the new circuit
@@ -247,7 +247,7 @@ external func Adder(width!: Int64, a!: Hypergraph, b!: Hypergraph, cin!: Hypergr
 external func Plus(width!: Int64, output!: String = "", name!: String = "") : Hypergraph {
     Debug("Plus", "Making plus of width ${width}")
     let adder = Adder(width: width, sum: output)
-    let inputs = Par(Identity(2 * width), Zero(width: 1))
+    let inputs = Par(Identity(2 * width), InfiniteWaveform(0, width: 1, signed: false))
     let plus = Seq(inputs, adder)
     Drop(plus, width, name: name)
 }
