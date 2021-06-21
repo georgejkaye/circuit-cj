@@ -419,7 +419,7 @@ let joinFork = RewriteRule(
         let fork1 = hb.CreateEdge(FORK)
         hb.AddConn(oldJoin.sources[0].GetConn(), fork1.sources[0])
         let fork2 = hb.CreateEdge(FORK)
-        hb.AddConn(oldJoin.sources[1].GetConn(), fork1.sources[0])
+        hb.AddConn(oldJoin.sources[1].GetConn(), fork2.sources[0])
         let join1 = hb.CreateEdge(JOIN)
         hb.AddConn(join1.targets[0], e.targets[0].GetConn())
         let join2 = hb.CreateEdge(JOIN)
@@ -467,7 +467,7 @@ let propagateStubs = RewriteRule(
         for(s in e.sources){
             let stub = hb.CreateEdge(STUB)
             hb.AddConn(s.GetConn(), stub.sources[0])
-            nextSources.add(s)
+            nextSources.add(stub.sources[0])
         }
         hb.RemoveEdge(e)
         nextSources

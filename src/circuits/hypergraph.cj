@@ -362,11 +362,11 @@ open class HypergraphStructure <: Identifiable {
         return true
     }
     /**
-     * Is this hypergraph structure a well formed hypergraph?
+     * Perform a well-formedness check on this hypergraph
      * @return The wellformedness status of this hypergraph
      */
-    func IsWellFormed() : WellformednessStatus {
-        Debug("IsWellFormed", "Checking if graph is well formed")
+    func WellFormedCheck() : WellformednessStatus {
+        Debug("WellFormedCheck", "Checking if graph is well formed")
         let encounteredTargets = ArrayList<Target>()
         for(t in targets){
             if(includes(encounteredTargets, t)){
@@ -380,7 +380,6 @@ open class HypergraphStructure <: Identifiable {
                 return TargetNotConnected(t)
             }
             if(!includes(sources, t.GetConn())){
-                print("ahoy\n")
                 return ConnectionNotInGraph(t, t.GetConn())
             }
             match(t.GetLeftPort()){
@@ -410,7 +409,6 @@ open class HypergraphStructure <: Identifiable {
                 return SourceNotConnected(s)
             }
             if(!includes(targets, s.GetConn())){
-                print("ahoo\n")
                 return ConnectionNotInGraph(s, s.GetConn())
             }
             match(s.GetRightPort()){
@@ -435,8 +433,19 @@ open class HypergraphStructure <: Identifiable {
                 return IncorrectCodomain(e, e.targets.size())
             }
         }
-        Debug("IsWellFormed", "Hypergraph is well-formed")
+        Debug("WellFormedCheck", "Hypergraph is well-formed")
         return Okay
+    }
+    /**
+     * Get a truth value representing whether this hypergraph is well formed
+     * @return A tuple of whether the hypergraph is well formed and the well formed status
+     */
+    func IsWellFormed(){
+        let wf = WellFormedCheck()
+        match(wf){
+            case $Okay => (true, wf)
+            case _     => (false, wf)
+        }
     }
     open func GetString() {
         let sourceString = PrintList(sources, {s : Source => "${s.id}"})
@@ -563,11 +572,9 @@ external class Hypergraph <: HypergraphStructure {
     ){
         super(edges, inputs, outputs)
         this.name = if(name == ""){ "h${this.id}" } else { name }
-        match(this.IsWellFormed()){
-            case $Okay => 
-                print("this is well-formed\n")
+        match(this.WellFormedCheck()){
+            case $Okay => () 
             case wf    =>
-                print("this is not well-formed\n")
                 throw BadHypergraphException(this, wf)
         }
     }
@@ -798,14 +805,17 @@ func main(){
     let x = Input(label: "x", width: width)
     let sum = Plus(a: prev_sum, b: x, output: "sum", name: "Plus")
     // TODO have to use Some to avoid segfault here
-    let circ = FeedbackReg(spec: link_spec, input: Some(sum), initial: 10)
+    let circ = FeedbackReg(spec: link_spec, input: Some(sum), initial: 1)
 
-    WriteDotToFile(circ, "circ")
-    let rw = circ.GetRewriter()
+    WriteDotToFile(circ, "circuit")
+    let applied = UnsignedValueFromInt(1, width: 2) + circ
+    WriteDotToFile(applied, "applied")
+
+    let rw = applied.GetRewriter()
     rw.RunCycle()
-    WriteDotToFile(circ, "circ")
-    rw.RunCycle()
-    WriteDotToFile(circ, "circ")
+    //WriteDotToFile(circ, "circ")
+    //rw.RunCycle()
+    WriteDotToFile(rw.GetGraph(), "after-rewrites")
 
 
     0   

@@ -137,7 +137,6 @@ class HypBuilder <: HypergraphStructure {
     func AddEdge(e : Edge) {
         edges.add(e)
         for(i in 0..e.sources.size()){
-            print("adding source ${e.sources[i].id}\n")
             AddNewSource(e.sources[i])
         }
         for(i in 0..e.targets.size()){

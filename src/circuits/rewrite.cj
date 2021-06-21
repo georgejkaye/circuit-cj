@@ -47,7 +47,10 @@ class RewriteRule {
     func Rewrite(e : Edge, hb : HypBuilder, payload : Int64){
         Debug("Rewrite", "Rewriting e${e.id} with rule ${name}")
         let nexts = rewrite(e, hb, payload)
-        hb.ToGraph()
+        let (b, wf) = hb.IsWellFormed()
+        if(!b){
+            throw BadHypergraphException(hb, wf)
+        }
         nexts
     }
 }
@@ -74,15 +77,12 @@ class Rewriter {
         f.ToGraph()
     }
     func RunCycle() {
-        WriteDotToFile(f.ToGraph(), "init")
         // Perform any newly unlocked reductions
         RunLocal()  
         // Isolate the head(s) of the waveform
         let heads = ArrayList<ArrayList<Waveform>>()
         var i = 0
         while(f.IsProductive()){
-            print("detaching a head\n")
-            WriteDotToFile(f.ToGraph(), "det${i}")
             heads.add(0, DetachHead())
             i++
         }
@@ -129,7 +129,9 @@ class Rewriter {
                         }
                     }
                     for(v in next){
-                        RunLocal(v)
+                        if(includes(f.GetSources(), v)){
+                            RunLocal(v)
+                        }
                     }
                 }
             case InterfacePort(i) => ()
@@ -159,15 +161,12 @@ class Rewriter {
         // If we're still here, then we are in the correct form
         let head = ArrayList<Edge>()
         f.RemoveOutputs()
-        print("hello\n")
         for(w in waveforms){
             f.RemoveEdge(w.value)
             f.RemoveEdge(w.delay)
             f.RemoveEdge(w.join)
             f.ConnectPortToOutputs(w.delay.sources[0].GetLeftPort())
         }
-        print("${f}\n")
-        print("Done!\n")
         waveforms
     }
     /**
@@ -193,7 +192,7 @@ class Rewriter {
                 let stub = g.CreateEdge(STUB)
                 g.AddConn(e.sources[0].GetConn(), stub.sources[0])
                 if(e.IsIdentity()){
-                    identitiesToDelete.add(e)
+                identitiesToDelete.add(e)
                 }
                 danglingSources.add(e.sources[0])
             }

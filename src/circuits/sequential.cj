@@ -278,15 +278,15 @@ external func FeedbackReg(spec!: LinkSpec, output!: String = "", name!: String =
     for(i in 0..spec.width){
         let fork = fb.GetOutput(i).GetLeftEdge()
         let join = fb.CreateEdge(JOIN)
-        let t0 = join.targets[0]
-        let s0 = fork.targets[0].GetConn()
-        let t1 = fork.targets[0]
-        let s1 = join.sources[1]
-        let t2 = v.GetOutput(i).GetConn()
-        let s2 = join.sources[0]
-        fb.AddConn(t0, s0)
-        fb.AddConn(t1, s1)
-        fb.AddConn(t2, s2)
+        let delay = fb.CreateEdge(DELAY(1))
+        // Connect the join to the outlink
+        fb.AddConn(join.targets[0], fork.targets[0].GetConn())
+        // Connect the target of the value to the lhs of the join
+        fb.AddConn(v.GetOutput(i).GetConn(), join.sources[0])
+        // Connect the lhs of the fork to the delay
+        fb.AddConn(fork.targets[0], delay.sources[0])
+        // Connect the target of the delay to the rhs of the join
+        fb.AddConn(delay.targets[0], join.sources[1])
         fb.RemoveOutput(spec.width)
     }
 
