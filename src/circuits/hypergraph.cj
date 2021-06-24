@@ -180,16 +180,13 @@ open class HypergraphStructure <: Identifiable {
         GetEdgesWithProperty({e : Edge => e.IsGate()})
     }
     func GetAllOutLinks(){
-        GetEdgesWithProperty({e : Edge => match(e.generator){
-            case OUTLINK(spec) => true
-            case _             => false
-        }})
+        GetEdgesWithProperty({e : Edge => e.IsOutlink()})
     }
     func GetAllInLinks(){
-        GetEdgesWithProperty({e : Edge => match(e.generator){
-            case INLINK(spec) => true
-            case _             => false
-        }})
+        GetEdgesWithProperty({e : Edge => e.IsInlink()})
+    }
+    func GetAllIdentityEdges(){
+        GetEdgesWithProperty({e : Edge => e.IsIdentity()})
     }
     func GetInputs() { inputs }
     func GetInput(i : Int64) { inputs[i] }

@@ -304,6 +304,18 @@ external open class Edge <: Atom {
             case _       => false
         }
     }
+    func IsInlink(){
+        match(generator){
+            case INLINK(spec) => true
+            case _            => false
+        }
+    }
+    func IsOutlink(){
+        match(generator){
+            case OUTLINK(spec) => true
+            case _             => false
+        }
+    }
     /**
      * Assuming this edge is a link, get its spec
      * Throws an exception if this is not a link edge

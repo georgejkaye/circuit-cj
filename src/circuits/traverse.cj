@@ -118,7 +118,12 @@ func TraverseRight(t : Target, edgeAction : (Edge, Source) -> Bool, outputAction
     }
     (visitedEdges, visitedSources, visitedTargets, visitedInputs)
 }
-
+/**
+ * Perform a full traversal of a hypergraph structure, starting from the inputs 
+ * and performing an action at each edge
+ * @param f The hypergraph structure to traverse
+ * @param edgeAction The action to perform at each edge
+ */
 func FullTraverse(f : HypergraphStructure, edgeAction : (Edge) -> Unit){
     let frontier = GetStartpoints(f)
     let visited = ArrayList<Edge>()
@@ -135,4 +140,30 @@ func FullTraverse(f : HypergraphStructure, edgeAction : (Edge) -> Unit){
             case InterfacePort(i) => {}
         }
     }
+}
+/**
+ * Is there a path to the outputs from a given edge?
+ * @param e The edge to traverse from
+ * @return Whether there is a path to the outputs from this edge
+ */
+func PathToOutputs(e : Edge){
+    let visited = ArrayList<Edge>()
+    let frontier = ArrayList<Target>(e.targets)
+    while(frontier.size() != 0){
+        let t = frontier.removeAt(0)
+        if(t.HasConn()){
+            let s = t.GetConn()
+            if(s.HasPort()){
+                match(s.GetRightPort()){
+                    case InterfacePort(i) => return true
+                    case EdgePort(e1, i) => 
+                        if(!includes(visited, e1)){
+                            visited.add(e1)
+                            frontier.addAll(e1.targets)
+                        }
+                }
+            }
+        }
+    }
+    return false
 }

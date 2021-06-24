@@ -90,6 +90,9 @@ class Rewriter {
         Unfold()  
         // Tidy up the resulting circuit
         RunLocal() 
+        // There may be loops that are inaccessible from the outputs
+        RemoveLoops()
+        print("${f}\n")
         // If we have one, reattach the head
         while(heads.size() != 0){
             ReattachHead(heads.removeAt(heads.size() - 1))
@@ -231,6 +234,29 @@ class Rewriter {
             f.AddEdge(w.delay)
             f.AddEdge(w.join)
             f.AddEdge(w.value)
+        }
+    }
+    func RemoveLoops(){
+        Debug("RemoveLoops", "Removing loops")
+        let idEdges = f.GetAllIdentityEdges()
+        for(id in idEdges){
+            print("Hello e${id.id}\n")
+            if(!PathToOutputs(id)){
+                print("Removing from e${id.id}\n")
+                TraverseLeft(id.sources[0].GetConn(), 
+                    {e : Edge, t : Target => 
+                        if(e.IsIdentity()){
+                            false
+                        } else {
+                            print("Removing edge e${e.id}\n")
+                            f.RemoveEdge(e)
+                            true
+                        }
+                    }, 
+                    {t : Target, i : Int64 => }
+                )
+                f.RemoveEdge(id)
+            }
         }
     }
 }
