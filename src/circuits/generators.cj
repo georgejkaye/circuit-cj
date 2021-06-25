@@ -94,7 +94,11 @@ class LinkSpec <: Identifiable {
     let name : String
     let width : Int64
     init(name : String, width : Int64) {
-        this.name = name
+        this.name = if(name == ""){
+            "ls${this.id}"
+        } else {
+            name
+        }
         this.width = width
     }
     init(width : Int64) {

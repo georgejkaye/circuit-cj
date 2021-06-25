@@ -8,21 +8,36 @@ package circuits
 
 import debug.*
 
+/**
+ * Conditions that can trigger the activation of rewrites 
+ * If an edge satisfies the trigger, it will be checked for rewriting potential
+ * If there is potential, the rewrite will be performed
+ */
 enum EntryPoint { 
-    | EXACTLY(Generator)
-    | GATE
-    | DELAY
-    | ANY
+    | EXACTLY(Generator)  // Trigger for a given generator 
+    | GATE                // Trigger for all gates
+    | DELAY               // Trigger for a delay
+    | ANY                 // Trigger for any edge
 }
 
 class RewriteRule {
+    /**
+     * The name of this rewrite rule
+     */
     private let name : String
+    /**
+     * The entry point that will trigger this rewrite rule 
+     */
     private let entryPoint : EntryPoint
-    // Given an edge, can we perform this rewrite rule?
-    // If yes, return Some(i), where i is spme numeric payload (depending on rule)
-    // If no, returns None
+    /**
+     * Given an edge, can we perform this rewrite rule?
+     * If yes, return Some(i), where i is spme numeric payload (depending on rule)
+     * If no, returns None
+     */
     private let canRewrite : (Edge) -> Option<Int64>
-    // Perform the rewrite rule on this edge with a given hypf and payload, returning the next sources to explore
+    /**
+     * Perform the rewrite rule on this edge with a given hypf and payload, returning the next sources to explore
+     */
     private let rewrite : (Edge, HypBuilder, Int64) -> ArrayList<Source>
     init(name : String, entryPoint: EntryPoint, canRewrite : (Edge) -> Option<Int64>, rewrite : (Edge, HypBuilder, Int64) -> ArrayList<Source>){
         this.name = name
@@ -30,7 +45,14 @@ class RewriteRule {
         this.rewrite = rewrite
         this.canRewrite = canRewrite
     }
+    /**
+     * Get the name of this rewrite rule
+     */
     func GetName() { name }
+    /**
+     * Check if this rewrite rule can be performed for a given edge
+     * @param e The edge to check for rewriting potential
+     */
     func CanRewrite(e : Edge){
         let b = match(entryPoint){
             case EXACTLY(gen) => e.generator == gen
@@ -44,6 +66,13 @@ class RewriteRule {
             None<Int64>
         }
     }
+    /**
+     * Perform a rewrite with this rewrite rule
+     * Assumes that CanRewrite has returned true
+     * @param e The edge to rewrite
+     * @param hb The hyp builder the edge belongs to
+     * @param payload Additional information provided by CanRewrite
+     */
     func Rewrite(e : Edge, hb : HypBuilder, payload : Int64){
         Debug("Rewrite", "Rewriting e${e.id} with rule ${name}")
         let nexts = rewrite(e, hb, payload)
@@ -54,7 +83,12 @@ class RewriteRule {
         nexts
     }
 }
-
+/**
+ * Is a given source target the output of a waveform?
+ * For this to be the case, it must be connected to a join edge on the right
+ * that joins a delay and a value together
+ * @param s The source vertex
+ */
 func IsWaveform(s : Source){
     match(PortToGenerator(s.GetLeftPort(), JOIN)){
         case Some((e, i)) =>
@@ -66,16 +100,33 @@ func IsWaveform(s : Source){
 }
 
 class Rewriter {
+    /**
+     * The list of rules that this rewriter will consider when performing rewriting
+     * By default this is the list specified in rules.cj
+     */
     private let rules : ArrayList<RewriteRule> = rewriteRules
+    /**
+     * The hyp builder that is being rewritten
+     * This will be modified during rewriting
+     */
     private let f : HypBuilder
     private var rewrites = 0
     init(f : Hypergraph){
         this.f = f.Clone()
         ResolveLinks(this.f)
     }
+    /**
+     * Clone the graph in this rewriter, unresolve the links
+     * and return it
+     */
     func GetGraph(){
-        f.ToGraph()
+        let g = f.ToGraph().Clone()
+        UnresolveLinks(g)
+        g.ToGraph()
     }
+    /**
+     * Run a cycle of the rewriting system
+     */
     func RunCycle() {
         // Isolate the head(s) of the waveform
         let heads = ArrayList<ArrayList<Waveform>>()
@@ -98,6 +149,9 @@ class Rewriter {
             ReattachHead(heads.removeAt(heads.size() - 1))
         }
     }
+    /**
+     * Perform all local reductions in the graph, traversing from the endpoints (outputs and edges with 0 inputs)
+     */
     func RunLocal(){
         let frontier = GetEndpoints(f)
         while(frontier.size() != 0){
@@ -108,6 +162,10 @@ class Rewriter {
             }
         }
     }
+    /**
+     * Perform all local reductions from a given source vertex
+     * @param s The source vertex to traverse from
+     */
     func RunLocal(s : Source) : Unit {
         var rewrote = false
         match(s.GetLeftPort()){
@@ -147,7 +205,6 @@ class Rewriter {
      * Isolate the 'head' of a waveform from a larger graph
      * This applies to a circuit of form (f + delay) * v, where v will occur before anything else
      * If we try to unfold with this in place, then we will keep going in circles
-     * @param f The hyp f
      */ 
     func DetachHead(){
         Debug("DetachHead", "Checking for immediate values")
@@ -226,6 +283,10 @@ class Rewriter {
             f.RemoveEdge(e)
         }
     }
+    /**
+     * Reattach a list of waveform heads to the graph
+     * @param head The list of waveform heads to reattach
+     */
     func ReattachHead(head : ArrayList<Waveform>){
         Debug("ReattachHead", "Adding any immediate values")
         for(i in 0..head.size()){

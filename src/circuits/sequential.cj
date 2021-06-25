@@ -129,7 +129,14 @@ external func WaveformFromList(xs : List<Int64>, width!: Int64, signed!: Bool = 
     let waveform = CreateWaveform(xs, width: width, signed: signed)
     waveform.ToGraph(name)
 }
-
+/**
+ * Create a waveform that produces a given value infinitely
+ * @param value The value this waveform produces
+ * @param width The width of the waveform
+ * @param name The name to assign the waveform
+ * @param signed Whether or not the value is signed
+ * @return The infinite waveform
+ */
 external func InfiniteWaveform(value : Int64, width!: Int64, name!: String = "", signed!: Bool = false){
     Debug("InfiniteWaveform", "Creating infinite waveform for value ${value}")
     let hb = CreateValueFromInt(value, width: width, signed: signed)
@@ -155,7 +162,7 @@ external func InfiniteWaveform(value : Int64, width!: Int64, name!: String = "",
  * @param name The name to associate with this spec
  * @return The new link spec
  */
-external func NewSpec(width!: Int64 = 1, name!: String){
+external func NewSpec(width!: Int64 = 1, name!: String = ""){
     if(width < 1){
         throw NegativeWireException("NewSpec")
     }

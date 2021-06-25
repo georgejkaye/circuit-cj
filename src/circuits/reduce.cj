@@ -106,3 +106,18 @@ func ResolveLinks(f : HypBuilder, name!: String = "") {
     }    
     f.RemoveEdges({e : Edge => includes(deadInlinks, e)})
 }
+/**
+ * Undoes the actions of ResolveLinks and creates links where there used to be identity edges
+ * Modifies the provided hyp builder
+ */
+func UnresolveLinks(f : HypBuilder){
+    let ids = f.GetAllIdentityEdges()
+    for(e in ids){
+        let spec = NewSpec()
+        let outlink = f.CreateEdge(OUTLINK(spec))
+        f.AddConn(e.sources[0].GetConn(), outlink.sources[0])
+        let inlink = f.CreateEdge(INLINK(spec))
+        f.AddConn(inlink.targets[0], e.targets[0].GetConn())
+        f.RemoveEdge(e)
+    }
+}
