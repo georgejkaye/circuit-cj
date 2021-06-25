@@ -90,6 +90,7 @@ class Rewriter {
         Unfold()  
         // Tidy up the resulting circuit
         RunLocal() 
+        WriteDotToFile(f.ToGraph(), "reduced")
         // There may be loops that are inaccessible from the outputs
         TidyUpGraph()
         // If we have one, reattach the head
@@ -114,27 +115,28 @@ class Rewriter {
                 if(includes(f.GetEdges(), e)){
                     let next = ArrayList<Source>()
                     // Identity edges 'block' the rewriter, as this will be handled by the unfoldings
+                    // However we sometimes can rewrite them, like if they're just stubbed
                     if(!e.IsIdentity()){
                         for(v in e.sources){
                             RunLocal(v)
                         }
-                        for(rule in rules){
-                            if(!rewrote){
-                                let can = rule.CanRewrite(e)
-                                match(can){
-                                    case Some(j) =>
-                                        let nexts = rule.Rewrite(e, f, j)
-                                        rewrites++
-                                        next.addAll(nexts)
-                                        rewrote = true
-                                    case $None   => ()
-                                }
+                    }
+                    for(rule in rules){
+                        if(!rewrote){
+                            let can = rule.CanRewrite(e)
+                            match(can){
+                                case Some(j) =>
+                                    let nexts = rule.Rewrite(e, f, j)
+                                    rewrites++
+                                    next.addAll(nexts)
+                                    rewrote = true
+                                case $None   => ()
                             }
                         }
-                        for(v in next){
-                            if(v.HasConn()){
-                                RunLocal(v)
-                            }
+                    }
+                    for(v in next){
+                        if(v.HasConn()){
+                            RunLocal(v)
                         }
                     }
                 }
@@ -238,20 +240,12 @@ class Rewriter {
     /**
      * Perform some tidy up operations that cannot be done by the rewriter
      * a) Remove any self loops that are inaccessible from the outputs
-     * b) Remove any identity edges that are inaccessible from the outputs
      */
     func TidyUpGraph(){
         Debug("TidyUpGraph", "Tidying up graph")
         let idEdges = f.GetAllIdentityEdges()
         for(id in idEdges){
             if(!PathToOutputs(id)){
-                // The right edge might be a stub, in which case it won't be removed by this left traversal
-                // We delete it now to take care of that
-                let rightEdge = id.targets[0].GetRightEdge()
-                if(rightEdge.IsStub()){
-                    print("rightedge\n")
-                    f.RemoveEdge(rightEdge)
-                }
                 // Traverse leftwards from the id edge and delete as we go
                 // Importantly, this will eliminate any loops
                 TraverseLeft(id.sources[0].GetConn(), 

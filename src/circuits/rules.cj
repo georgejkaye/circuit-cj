@@ -351,7 +351,9 @@ let orPassthrough = PassthroughGateRewriteRule("OR false", OR, FALSE)
 /* bottom JOIN x = x */
 let joinUnit = PassthroughGateRewriteRule("join unit", JOIN, BOTTOM)
 
-/* The index of the control wire to a multiplexer */
+/* The indices of the multiplexer inputs */
+let muxTrue = 0
+let muxFalse = 1
 let muxControl = 2
 /* Evaluate a multiplexer */
 let muxEval = RewriteRule(
@@ -361,8 +363,8 @@ let muxEval = RewriteRule(
     {e : Edge, hb : HypBuilder, payload : Int64 =>
         let control = e.sources[muxControl].GetLeftEdge()
         let (acc, rej) = match(control.GetValue()){
-            case TRUE => (0, 1)
-            case FALSE => (1, 0)
+            case $TRUE => (muxTrue, muxFalse)
+            case $FALSE => (muxFalse, muxTrue)
             case _ => (-1,-1)
         }
         // Stub off the discarded input

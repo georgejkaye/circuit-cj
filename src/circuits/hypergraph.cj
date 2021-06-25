@@ -810,7 +810,7 @@ func main(){
 
     // WriteDotToFile(circ, "circuit", resolve: true)
     
-    // let wf = WaveformFromList([0,1], width: width)
+    // let wf = WaveformFromList([0,1], width: width)s
     // let applied = wf + circ
     // WriteDotToFile(applied, "applied", resolve: true)
 
@@ -818,24 +818,31 @@ func main(){
     let c = Input(label: "c")
     let spec = NewSpec(width: 1, name: "comb_fb")
     let mux1 = Mux(a: InLink(spec: spec), b: x, s: c)
-    let not1 = NotGate(input: mux1)
-    let mux2 = Mux(a: x, b: not1, s: c)
-    let fb = Feedback(spec: spec, input: mux2)
-    let circ = Mux(a: not1, b: fb, s: c)
+    let f = BlackBox("F", 1, 1, input: mux1)
+    let mux2 = Mux(a: x, b: f, s: c)
+    let g = BlackBox("G", 1, 1, input: mux2)
+    let fb = Feedback(spec: spec, input: g)
+    let circ = Mux(a: f, b: fb, s: c)
 
     WriteDotToFile(circ, "circ", resolve: true)
 
-    let applied = True() * False() + circ
+    let app1 = True() * False() + circ
+    let app2 = True() * True() + circ
 
-    WriteDotToFile(applied, "applied", resolve: true)
+    WriteDotToFile(app1, "applied1", resolve: true)
+    WriteDotToFile(app2, "applied2", resolve: true)
 
-    let rw = applied.GetRewriter()
-    rw.RunCycle()
-    WriteDotToFile(rw.GetGraph(), "cycle-1")
+    let rw1 = app1.GetRewriter()
+    rw1.RunCycle()
+    WriteDotToFile(rw1.GetGraph(), "red1")
+    let rw2 = app2.GetRewriter()
+    rw2.RunCycle()
+    WriteDotToFile(rw2.GetGraph(), "red2")
     //rw.RunCycle()
     //WriteDotToFile(rw.GetGraph(), "cycle-2")
 
     // let reg = WaveformFromList([1,0,1], width: 1)
     // WriteDotToFile(reg, "wf", resolve: true)
+ 
     0   
 }

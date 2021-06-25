@@ -562,3 +562,20 @@ external func Mux(width!: Int64 = 1, label!: String = "", elem!: Int64 = -1, nam
     Mux(width: width, label: label, elem: elem, name: name, input: f)
 }
 
+func BlackBox(label: String, dom: Int64, cod: Int64, wires!: ArrayList<Wire> = ArrayList<Wire>(), input!: Option<Hypergraph> = None<Hypergraph>, name!: String = ""){
+    if(dom < 0){
+        throw NegativeNumberException("BlackBox", dom)
+    }
+    if(cod < 0){
+        throw NegativeNumberException("BlackBox", cod)
+    }
+    if(wires.size() == 0){
+        for(i in 0..cod){
+            wires.add(NewWire())
+        }
+    } else if(wires.size() != cod){
+        throw BadOutputLabelsException("BlackBox", wires.size(), cod)
+    }
+    let gen = GATE(Label(label, dom, cod))
+    OpMToN(gen, wires: wires, input: input, name: name)
+}
