@@ -244,9 +244,9 @@ external func Adder(width!: Int64, a!: Hypergraph, b!: Hypergraph, cin!: Hypergr
  * @param name The name of the new circuit
  * @return The new plus circuit
  */
-external func Plus(width!: Int64, output!: String = "", name!: String = "") : Hypergraph {
+external func Plus(width!: Int64, label!: String = "", name!: String = "") : Hypergraph {
     Debug("Plus", "Making plus of width ${width}")
-    let adder = Adder(width: width, sum: output)
+    let adder = Adder(width: width, sum: label)
     let inputs = Par(Identity(2 * width), InfiniteWaveform(0, width: 1, signed: false))
     let plus = Seq(inputs, adder)
     Drop(plus, width, name: name)
@@ -261,11 +261,11 @@ external func Plus(width!: Int64, output!: String = "", name!: String = "") : Hy
  * @param name The name of the new circuit
  * @return The new plus circuit
  */
-external func Plus(a!: Hypergraph, b!: Hypergraph, output!: String = "", name!: String = "") : Hypergraph {
+external func Plus(a!: Hypergraph, b!: Hypergraph, label!: String = "", name!: String = "") : Hypergraph {
     Debug("Plus", "Making plus with inputs a='${a.GetName()}' and b='${b.GetName()}'")
     if(a.GetN() != b.GetN()){
         throw BusesNotSameSizeException("Plus", a.GetN(), b.GetN())
     }
-    let plus = Plus(width: a.GetN(), output: output)
+    let plus = Plus(width: a.GetN(), label: label)
     Seq(Concat([a,b]), plus, name: name)
 }

@@ -53,12 +53,12 @@ func DropBit(w : Int64, n : Int64){
  * @param output The wire name to associate with the outputs of this construct
  * @return A construct that does the given action for each of its w inputs
  */
-func ForEachBit(w : Int64, f : (Int64, HypBuilder, Source) -> Unit, output!: String = ""){
+func ForEachBit(w : Int64, f : (Int64, HypBuilder, Source) -> Unit, label!: String = ""){
     if(w < 1){
         throw NotEnoughBitsException("ForEachBit")
     }
     let hb = HypBuilder()
-    let bus = NewBus(output)
+    let bus = NewBus(label)
     for(i in 0..w){
         let t = Target()
         let s = Source(NewWire(bus))

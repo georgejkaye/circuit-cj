@@ -78,7 +78,7 @@ func FindIntersections(f : HypergraphStructure, g : HypergraphStructure){
  * @return A clone of hypergraph f with a clone of g injected into it
  */
 func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * Source>){
-    Debug("Inject", "Injecting ${PrintListPairs(intersections, {s : Source => "${s.id}"}, {s : Source => "${s.id}"})}")
+    Debug("Inject", "Injecting")
     let removedEdges = ArrayList<Edge>()
     let removedInputs = ArrayList<Target>()
     let removedIntersections = ArrayList<Source>()
@@ -145,11 +145,15 @@ func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * S
             let portG = intersectionG.GetPort()
             // Make a new fork
             let fork = f.CreateEdge(FORK)
-            f.AddConn(intersectionF.GetConn(), fork.sources[0])
+            // HACK inline access arraylist creates segfault
+            let s = fork.sources[0]
+            f.AddConn(intersectionF.GetConn(), s)
             // Hook up f and g to this new fork, creating new sources
-            f.AddConn(fork.targets[0], intersectionF)
+            let t1 = fork.targets[0]
+            f.AddConn(t1, intersectionF)
             danglingTargets.add(intersectionG.GetConn())
-            f.AddConn(fork.targets[1], intersectionG)    
+            let t2 = fork.targets[1]
+            f.AddConn(t2, intersectionG)    
         }
     }
     // Functions to use when traversing the graph to find the dangling elements

@@ -334,6 +334,7 @@ func IsStub(e : Edge){
 
 let BUF : Generator = GATE(Label("BUF", 1, 1))
 let NOT : Generator = GATE(Label("NOT", 1, 1))
+let notTable = TruthTable(NOT, {args : ArrayList<Value> => not(args[0])})
 
 /**
  * Binary gates

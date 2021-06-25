@@ -793,26 +793,49 @@ func main(){
 
     SetDotDir("dot")
 
-    let width = 2
+    let width = 1
 
-    let link_spec = NewSpec(name: "prev_sum", width: width)
-    let prev_sum = InLink(spec: link_spec, output: "prev_sum")
-    let x = Input(label: "x", width: width)
-    let sum = Plus(a: prev_sum, b: x, output: "sum", name: "Plus")
-    // TODO have to use Some to avoid segfault here
-    let circ = FeedbackReg(spec: link_spec, input: Some(sum), initial: 0)
-
-    WriteDotToFile(circ, "circuit")
+    // let link_spec = NewSpec(name: "prev_sum", width: width)
+    // let prev_sum = InLink(spec: link_spec, label: "prev_sum")
+    // let x = Input(label: "x", width: width)
+    // let sum = Plus(a: prev_sum, b: x, label: "sum", name: "Plus")
+    // let circ = FeedbackReg(spec: link_spec, input: Some(sum), initial: 0)
+   
+   
+    // // TODO have to use Some to avoid segfault here
     
-    let wf = WaveformFromList([1,2], width: width)
-    let applied = wf + circ
-    WriteDotToFile(applied, "applied")
+    // let spec = LinkSpec()
+    // let circ = FeedbackReg(spec: link_spec, input: AndGate(), initial: 0)
+    // let circ2 = Feedback(spec: link_spec, )
+
+    // WriteDotToFile(circ, "circuit", resolve: true)
+    
+    // let wf = WaveformFromList([0,1], width: width)
+    // let applied = wf + circ
+    // WriteDotToFile(applied, "applied", resolve: true)
+
+    let x = Input(label: "x")
+    let c = Input(label: "c")
+    let spec = NewSpec(width: 1, name: "comb_fb")
+    let mux1 = Mux(a: InLink(spec: spec), b: x, s: c)
+    let not1 = NotGate(input: mux1)
+    let mux2 = Mux(a: x, b: not1, s: c)
+    let fb = Feedback(spec: spec, input: mux2)
+    let circ = Mux(a: not1, b: fb, s: c)
+
+    WriteDotToFile(circ, "circ", resolve: true)
+
+    let applied = True() * False() + circ
+
+    WriteDotToFile(applied, "applied", resolve: true)
 
     let rw = applied.GetRewriter()
     rw.RunCycle()
     WriteDotToFile(rw.GetGraph(), "cycle-1")
-    rw.RunCycle()
-    WriteDotToFile(rw.GetGraph(), "cycle-2")
+    //rw.RunCycle()
+    //WriteDotToFile(rw.GetGraph(), "cycle-2")
 
+    // let reg = WaveformFromList([1,0,1], width: 1)
+    // WriteDotToFile(reg, "wf", resolve: true)
     0   
 }

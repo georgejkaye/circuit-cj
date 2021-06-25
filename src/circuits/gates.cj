@@ -59,12 +59,12 @@ func OpMToZero(gen : Generator, name!: String = "", input!: Option<Hypergraph> =
  * @param input  The hypergraph to compose to the front of this operation
  * @return A hypergraph corresponding to this operation
  */
-func OpMToOne(gen : Generator, output!: String = "", elem!: Int64 = -1, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
+func OpMToOne(gen : Generator, label!: String = "", elem!: Int64 = -1, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
     let wire = if(elem < 0){
-        let bus = NewBus(output)
+        let bus = NewBus(label)
         NewWire(bus)
     } else {
-        NewWire(output, elem)
+        NewWire(label, elem)
     }
     let wires : ArrayList<Wire> = ArrayList<Wire>([wire])
     OpMToN(gen, name: name, wires: wires, input: input)
@@ -103,8 +103,8 @@ func OpMToTwo(gen : Generator, output1!: String = "", elem1!: Int64 = 0, output2
  * @param name   The name of the resulting hypergraph
  * @return The hypergraph corresponding to this operation
  */
-func OpZeroToOne(gen : Generator, output!: String = "", elem!: Int64 = -1, name!: String = ""){ 
-    OpMToOne(gen, output: output, elem: elem, name: name) 
+func OpZeroToOne(gen : Generator, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
+    OpMToOne(gen, label: label, elem: elem, name: name) 
 }
 /**
  * Create a hypergraph for an operation 1 -> 0
@@ -125,8 +125,8 @@ func OpOneToZero(gen : Generator, name!: String = "", input!: Option<Hypergraph>
  * @param input  The hypergraph that will be input to this operation
  * @return The hypergraph corresponding to this operation
  */
-func OpOneToOne(gen : Generator, output!: String = "", elem!: Int64 = -1, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
-    OpMToOne(gen, output: output, elem: elem, name: name, input: input) 
+func OpOneToOne(gen : Generator, label!: String = "", elem!: Int64 = -1, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
+    OpMToOne(gen, label: label, elem: elem, name: name, input: input) 
 }
 /**
  * Create a hypergraph for an operation 2 -> 1
@@ -137,8 +137,8 @@ func OpOneToOne(gen : Generator, output!: String = "", elem!: Int64 = -1, name!:
  * @param input  The hypergraph that will be input to this operation
  * @return The hypergraph corresponding to this operation
  */
-func OpTwoToOne(gen : Generator, output!: String = "", elem!: Int64 = -1, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){ 
-    OpMToOne(gen, output: output, elem: elem, name: name, input: input) 
+func OpTwoToOne(gen : Generator, label!: String = "", elem!: Int64 = -1, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){ 
+    OpMToOne(gen, label: label, elem: elem, name: name, input: input) 
 }
 /**
  * Create a hypergraph for an operation 2 -> 1
@@ -150,7 +150,7 @@ func OpTwoToOne(gen : Generator, output!: String = "", elem!: Int64 = -1, name!:
  * @param rhs    The hypergraph that will be the second argument to this operation
  * @return The hypergraph corresponding to this operation
  */
-func OpTwoToOne(gen : Generator, output!: String = "", elem!: Int64 = -1, name!: String = "", lhs!: Option<Hypergraph>, rhs!: Option<Hypergraph>){
+func OpTwoToOne(gen : Generator, label!: String = "", elem!: Int64 = -1, name!: String = "", lhs!: Option<Hypergraph>, rhs!: Option<Hypergraph>){
     let lhs = match(lhs){
         case Some(f) => f
         case $None   => Identity(1)
@@ -159,7 +159,7 @@ func OpTwoToOne(gen : Generator, output!: String = "", elem!: Int64 = -1, name!:
         case Some(f) => f
         case $None   => Identity(1)
     }
-    OpMToOne(gen, output: output, elem: elem, name: name, input: Concat([lhs,rhs]))
+    OpMToOne(gen, label: label, elem: elem, name: name, input: Concat([lhs,rhs]))
 }
 /**
  * Create a hypergraph for an operation 3 -> 1
@@ -169,8 +169,8 @@ func OpTwoToOne(gen : Generator, output!: String = "", elem!: Int64 = -1, name!:
  * @param input The hypergraph that will be input to this operation
  * @return The hypergraph corresponding to this operation
  */
-func OpThreeToOne(gen : Generator, output!: String = "", elem!: Int64 = -1, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){ 
-    OpMToOne(gen, output: output, elem: elem, name: name, input: input) 
+func OpThreeToOne(gen : Generator, label!: String = "", elem!: Int64 = -1, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){ 
+    OpMToOne(gen, label: label, elem: elem, name: name, input: input) 
 }
 /**
  * Create a hypergraph for an operation 3 -> 1
@@ -183,7 +183,7 @@ func OpThreeToOne(gen : Generator, output!: String = "", elem!: Int64 = -1, name
  * @param name  The name of the resulting hypergraph
  * @return The hypergraph corresponding to this operation
  */
-func OpThreeToOne(gen : Generator, output!: String = "", elem!: Int64 = -1, name!: String = "", x!: Option<Hypergraph>, y!: Option<Hypergraph>, z!: Option<Hypergraph>){
+func OpThreeToOne(gen : Generator, label!: String = "", elem!: Int64 = -1, name!: String = "", x!: Option<Hypergraph>, y!: Option<Hypergraph>, z!: Option<Hypergraph>){
     let x = match(x){
         case Some(f) => f
         case $None   => Identity(1)
@@ -196,7 +196,7 @@ func OpThreeToOne(gen : Generator, output!: String = "", elem!: Int64 = -1, name
         case Some(f) => f
         case $None   => Identity(1)
     }
-    OpMToOne(gen, output: output, elem: elem, name: name, input: Concat([x,y,z]))
+    OpMToOne(gen, label: label, elem: elem, name: name, input: Concat([x,y,z]))
 }
 /**
  * Create a hypergraph for an operation 1 -> 2
@@ -219,8 +219,8 @@ func OpOneToTwo(gen : Generator, output1!: String = "", elem1!: Int64 = 0, outpu
  * @param input  The hypergraph that will be input to this operation
  * @return The hypergraph corresponding to this operation
  */
-func OpOneToTwo(gen : Generator, output!: String = "", elem!: Int64 = -1, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){ 
-    OpMToTwo(gen, output1: output, elem1: elem, output2: output, elem2: elem + 1, name: name, input: input) 
+func OpOneToTwo(gen : Generator, label!: String = "", elem!: Int64 = -1, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){ 
+    OpMToTwo(gen, output1: label, elem1: elem, output2: label, elem2: elem + 1, name: name, input: input) 
 }
 
 /**
@@ -229,8 +229,8 @@ func OpOneToTwo(gen : Generator, output!: String = "", elem!: Int64 = -1, name!:
  * @param elem   The element of the bus to assign to output to
  * @return A hypergraph for a bottom value
  */
-external func Bottom(output!: String = "", elem!: Int64 = -1) { 
-    OpZeroToOne(VALUE(BOTTOM), output: output, elem: elem, name: "Bottom") 
+external func Bottom(label!: String = "", elem!: Int64 = -1) { 
+    OpZeroToOne(VALUE(BOTTOM), label: label, elem: elem, name: "Bottom") 
 }
 /**
  * Create a hypergraph for a top value
@@ -238,8 +238,8 @@ external func Bottom(output!: String = "", elem!: Int64 = -1) {
  * @param elem   The element of the bus to assign to output to
  * @return A hypergraph for a top value
  */
-external func Top(output!: String = "", elem!: Int64 = -1){
-    OpZeroToOne(VALUE(TOP), output: output, elem: elem, name: "Top")
+external func Top(label!: String = "", elem!: Int64 = -1){
+    OpZeroToOne(VALUE(TOP), label: label, elem: elem, name: "Top")
 }
 /**
  * Create a hypergraph for a true value
@@ -247,8 +247,8 @@ external func Top(output!: String = "", elem!: Int64 = -1){
  * @param elem   The element of the bus to assign to output to
  * @return A hypergraph for a true value
  */
-external func True(output!: String = "", elem!: Int64 = -1) { 
-    OpZeroToOne(VALUE(TRUE), output: output, elem: elem, name: "True") 
+external func True(label!: String = "", elem!: Int64 = -1) { 
+    OpZeroToOne(VALUE(TRUE), label: label, elem: elem, name: "True") 
 }
 /**
  * Create a hypergraph for a false value
@@ -256,8 +256,8 @@ external func True(output!: String = "", elem!: Int64 = -1) {
  * @param elem   The element of the bus to assign to output to
  * @return A hypergraph for a false value
  */
-external func False(output!: String = "", elem!: Int64 = -1){
-    OpZeroToOne(VALUE(FALSE), output: output, elem: elem, name: "False")
+external func False(label!: String = "", elem!: Int64 = -1){
+    OpZeroToOne(VALUE(FALSE), label: label, elem: elem, name: "False")
 }
 /**
  * Create a hypergraph for a fork
@@ -278,8 +278,8 @@ external func Fork(output1!: String = "", elem1!: Int64 = 0, output2!: String = 
  * @param input  The input to the join
  * @return A hypergraph for a join
  */
-external func Join(output!: String = "", elem!: Int64 = -1,  input!: Option<Hypergraph> = None<Hypergraph>){ 
-    OpTwoToOne(JOIN, output: output, name: "Join", input: input) 
+external func Join(label!: String = "", elem!: Int64 = -1,  input!: Option<Hypergraph> = None<Hypergraph>){ 
+    OpTwoToOne(JOIN, label: label, name: "Join", input: input) 
 }
 /**
  * Create a hypergraph for a join
@@ -289,8 +289,8 @@ external func Join(output!: String = "", elem!: Int64 = -1,  input!: Option<Hype
  * @param rhs    The second input to the join
  * @return A hypergraph for a join
  */
-external func Join(output!: String = "", elem!: Int64 = -1, lhs!: Option<Hypergraph>, rhs!: Option<Hypergraph>){
-    OpTwoToOne(JOIN, output: output, elem: elem, name: "Join", lhs: lhs, rhs: rhs)
+external func Join(label!: String = "", elem!: Int64 = -1, lhs!: Option<Hypergraph>, rhs!: Option<Hypergraph>){
+    OpTwoToOne(JOIN, label: label, elem: elem, name: "Join", lhs: lhs, rhs: rhs)
 }
 /**
  * Create a hypergraph for a stub
@@ -402,7 +402,7 @@ external func Erase(n : Int64, name!: String = "", input!: Option<Hypergraph> = 
  * @param n The number of wires to copy
  * @return The copy hypergraph
  */
-external func CreateMerge(n : Int64, name!: String = "", output!: String = "") : Hypergraph {
+external func CreateMerge(n : Int64, name!: String = "", label!: String = "") : Hypergraph {
     if(n < 0){
         throw NegativeWireException("CreateMerge")
     }
@@ -410,7 +410,7 @@ external func CreateMerge(n : Int64, name!: String = "", output!: String = "") :
         Empty(name: name)
     } else {
         let m1 = Par([Identity(n-1), Symmetry(n-1,1), Identity(1)])
-        let m2 = Par(Merge(n-1, output: output), Join(output: output, elem: n-1))
+        let m2 = Par(Merge(n-1, label: label), Join(label: label, elem: n-1))
         Seq(m1, m2, name: name)
     }
 }
@@ -422,7 +422,7 @@ external func CreateMerge(n : Int64, name!: String = "", output!: String = "") :
  * @param name   The name of the resulting hypergraph
  * @return A hypergraph for a merge
  */
-external func Merge(n : Int64, name!: String = "", output!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
+external func Merge(n : Int64, name!: String = "", label!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
     match(input){
         case Some(f) =>
             if(f.GetN() != 2 * n){
@@ -430,7 +430,7 @@ external func Merge(n : Int64, name!: String = "", output!: String = "", input!:
             }
         case $None   => ()
     }
-    let merge = CreateMerge(n, name: name, output: output)
+    let merge = CreateMerge(n, name: name, label: label)
     match(input){
         case Some(f) => Seq(f, merge, name: name)
         case $None   => merge
@@ -441,11 +441,11 @@ external func Merge(n : Int64, name!: String = "", output!: String = "", input!:
  * @param n The number of wires to init
  * @return A hypergraph for an init
  */
-external func CreateInit(n : Int64, name!: String = "", output!: String = "") : Hypergraph {
+external func CreateInit(n : Int64, name!: String = "", label!: String = "") : Hypergraph {
     if(n == 0){
         Empty(name: name)
     } else {
-        Par(Init(n-1, output: output), Bottom(output: output, elem: n-1), name: name)  
+        Par(Init(n-1, label: label), Bottom(label: label, elem: n-1), name: name)  
     }
 }
 /**
@@ -456,60 +456,60 @@ external func CreateInit(n : Int64, name!: String = "", output!: String = "") : 
  * @param name   The name of the resulting hypergraph
  * @return A hypergraph for a erase
  */
-external func Init(n : Int64, name!: String = "", output!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
-    let ini = CreateInit(n, output: output, name: name)
+external func Init(n : Int64, name!: String = "", label!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
+    let ini = CreateInit(n, label: label, name: name)
     match(input){
         case Some(f) => Seq(f, ini, name: name)
         case $None   => ini
     }
 }
 
-external func NotGate(output!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
-    OpOneToOne(NOT, output: output, elem: elem, name: name, input: input) 
+external func NotGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
+    OpOneToOne(NOT, label: label, elem: elem, name: name, input: input) 
 }
-external func AndGate(output!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
-    OpTwoToOne(AND, output: output, elem: elem, name: name, input: input) 
+external func AndGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
+    OpTwoToOne(AND, label: label, elem: elem, name: name, input: input) 
 }
-external func AndGate(lhs!: Hypergraph, rhs!: Hypergraph, output!: String = "", elem!: Int64 = -1, name!: String = ""){ 
-    OpTwoToOne(AND, output: output, elem: elem, name: name, lhs: lhs, rhs: rhs) 
-}
-
-external func OrGate(output!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
-    OpTwoToOne(OR, output: output, elem: elem, name: name, input: input) 
-}
-external func OrGate(lhs!: Hypergraph, rhs!: Hypergraph, output!: String = "", elem!: Int64 = -1, name!: String = ""){ 
-    OpTwoToOne(OR, output: output, elem: elem, name: name, lhs: lhs, rhs: rhs) 
+external func AndGate(lhs!: Hypergraph, rhs!: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
+    OpTwoToOne(AND, label: label, elem: elem, name: name, lhs: lhs, rhs: rhs) 
 }
 
-external func XorGate(output!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph { 
-    OpTwoToOne(XOR, output: output, elem: elem, name: name, input: input) 
+external func OrGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
+    OpTwoToOne(OR, label: label, elem: elem, name: name, input: input) 
 }
-external func XorGate(lhs!: Hypergraph, rhs!: Hypergraph, output!: String = "", elem!: Int64 = -1, name!: String = ""){ 
-    OpTwoToOne(XOR, output: output, elem: elem, name: name, lhs: lhs, rhs: rhs) 
-}
-
-external func NandGate(output!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
-    OpTwoToOne(NAND, output: output, elem: elem, name: name, input: input) 
-}
-external func NandGate(lhs!: Hypergraph, rhs!: Hypergraph, output!: String = "", elem!: Int64 = -1, name!: String = ""){
-    OpTwoToOne(NAND, output: output, elem: elem, name: name, lhs: lhs, rhs: rhs) 
+external func OrGate(lhs!: Hypergraph, rhs!: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
+    OpTwoToOne(OR, label: label, elem: elem, name: name, lhs: lhs, rhs: rhs) 
 }
 
-external func NorGate(output!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
-    OpTwoToOne(NOR, output: output, elem: elem, name: name, input: input) 
+external func XorGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph { 
+    OpTwoToOne(XOR, label: label, elem: elem, name: name, input: input) 
 }
-external func NorGate(lhs!: Hypergraph, rhs!: Hypergraph, output!: String = "", elem!: Int64 = -1, name!: String = ""){ 
-    OpTwoToOne(NOR, output: output, elem: elem, name: name, lhs: lhs, rhs: rhs) 
-}
-
-external func XnorGate(output!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
-    OpTwoToOne(XNOR, output: output, elem: elem, name: name, input: input) 
-}
-external func XnorGate(lhs!: Hypergraph, rhs!: Hypergraph, output!: String = "", elem!: Int64 = -1, name!: String = ""){ 
-    OpTwoToOne(XNOR, output: output, elem: elem, name: name, lhs: lhs, rhs: rhs)
+external func XorGate(lhs!: Hypergraph, rhs!: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
+    OpTwoToOne(XOR, label: label, elem: elem, name: name, lhs: lhs, rhs: rhs) 
 }
 
-external func Mux(width!: Int64 = 1, output!: String = "", elem!: Int64 = -1, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
+external func NandGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
+    OpTwoToOne(NAND, label: label, elem: elem, name: name, input: input) 
+}
+external func NandGate(lhs!: Hypergraph, rhs!: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){
+    OpTwoToOne(NAND, label: label, elem: elem, name: name, lhs: lhs, rhs: rhs) 
+}
+
+external func NorGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
+    OpTwoToOne(NOR, label: label, elem: elem, name: name, input: input) 
+}
+external func NorGate(lhs!: Hypergraph, rhs!: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
+    OpTwoToOne(NOR, label: label, elem: elem, name: name, lhs: lhs, rhs: rhs) 
+}
+
+external func XnorGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
+    OpTwoToOne(XNOR, label: label, elem: elem, name: name, input: input) 
+}
+external func XnorGate(lhs!: Hypergraph, rhs!: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
+    OpTwoToOne(XNOR, label: label, elem: elem, name: name, lhs: lhs, rhs: rhs)
+}
+
+external func Mux(width!: Int64 = 1, label!: String = "", elem!: Int64 = -1, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
     Debug("Mux", "Creating mux of width ${width}")
     let muxInputs = 2 * width + 1
     match(input){
@@ -520,7 +520,7 @@ external func Mux(width!: Int64 = 1, output!: String = "", elem!: Int64 = -1, na
         case $None => ()
     }
     let wires = ArrayList<Wire>()
-    let hb = if(elem < 0) { HypBuilder(muxInputs, width, output) } else { HypBuilder(muxInputs, width, output, elem) }
+    let hb = if(elem < 0) { HypBuilder(muxInputs, width, label) } else { HypBuilder(muxInputs, width, label, elem) }
     var currentC = hb.GetInputs()[muxInputs - 1]
     if(width > 1){
         for(i in 0..width-1){
@@ -543,7 +543,7 @@ external func Mux(width!: Int64 = 1, output!: String = "", elem!: Int64 = -1, na
     }
 }
 
-external func Mux(width!: Int64 = 1, output!: String = "", elem!: Int64 = -1, name!: String = "", a!: Hypergraph, b!: Hypergraph, s!: Option<Hypergraph> = None<Hypergraph>){
+external func Mux(width!: Int64 = 1, label!: String = "", elem!: Int64 = -1, name!: String = "", a!: Hypergraph, b!: Hypergraph, s!: Option<Hypergraph> = None<Hypergraph>){
     if(a.GetN() != width){
         throw BadInputGraphException("Mux", "a", width, a.GetName(), a.GetN())
     }
@@ -559,6 +559,6 @@ external func Mux(width!: Int64 = 1, output!: String = "", elem!: Int64 = -1, na
         case $None   => Identity(1)
     }
     let f = Concat([a,b,z])
-    Mux(width: width, output: output, elem: elem, name: name, input: f)
+    Mux(width: width, label: label, elem: elem, name: name, input: f)
 }
 

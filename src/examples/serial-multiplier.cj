@@ -20,7 +20,7 @@ func running_sum_loop(first!: Hypergraph, a!: Hypergraph, b0!: Hypergraph){
     let prev_sum = Delay(width: 4, input: InLink(spec: spec))
     let sum = running_sum(first: first, sum: prev_sum, a: a, b0: b0)
     let msbs = Msbs(sum)
-    Feedback(spec: spec, input: msbs, output: "loop")
+    Feedback(spec: spec, input: msbs, label: "loop")
 }
 
 func computed_bits(width!: Int64, bit!: Hypergraph){

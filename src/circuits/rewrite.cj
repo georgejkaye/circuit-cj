@@ -91,8 +91,7 @@ class Rewriter {
         // Tidy up the resulting circuit
         RunLocal() 
         // There may be loops that are inaccessible from the outputs
-        RemoveLoops()
-        print("${f}\n")
+        TidyUpGraph()
         // If we have one, reattach the head
         while(heads.size() != 0){
             ReattachHead(heads.removeAt(heads.size() - 1))
@@ -236,19 +235,30 @@ class Rewriter {
             f.AddEdge(w.value)
         }
     }
-    func RemoveLoops(){
-        Debug("RemoveLoops", "Removing loops")
+    /**
+     * Perform some tidy up operations that cannot be done by the rewriter
+     * a) Remove any self loops that are inaccessible from the outputs
+     * b) Remove any identity edges that are inaccessible from the outputs
+     */
+    func TidyUpGraph(){
+        Debug("TidyUpGraph", "Tidying up graph")
         let idEdges = f.GetAllIdentityEdges()
         for(id in idEdges){
-            print("Hello e${id.id}\n")
             if(!PathToOutputs(id)){
-                print("Removing from e${id.id}\n")
+                // The right edge might be a stub, in which case it won't be removed by this left traversal
+                // We delete it now to take care of that
+                let rightEdge = id.targets[0].GetRightEdge()
+                if(rightEdge.IsStub()){
+                    print("rightedge\n")
+                    f.RemoveEdge(rightEdge)
+                }
+                // Traverse leftwards from the id edge and delete as we go
+                // Importantly, this will eliminate any loops
                 TraverseLeft(id.sources[0].GetConn(), 
                     {e : Edge, t : Target => 
                         if(e.IsIdentity()){
                             false
                         } else {
-                            print("Removing edge e${e.id}\n")
                             f.RemoveEdge(e)
                             true
                         }

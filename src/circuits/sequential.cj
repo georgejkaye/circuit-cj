@@ -120,12 +120,13 @@ func CreateWaveform(xs : ArrayList<Int64>, width!: Int64, signed!: Bool = false)
  * Create a waveform from a list of numbers
  * @param xs The list of numbers to translate
  * @param width The width of the values in the waveform
+ * @param signed Whether the values are signed
  * @param name The name of the waveform
  * @return The waveform
  */
-external func WaveformFromList(xs : List<Int64>, width!: Int64, name!: String = ""){
+external func WaveformFromList(xs : List<Int64>, width!: Int64, signed!: Bool = false, name!: String = ""){
     Debug("WaveformFromList", "Creating waveform from list ${PrintList(ArrayList<Int64>(xs), {i : Int64 => "${i}"})}")
-    let waveform = CreateWaveform(xs, width: width, signed: true)
+    let waveform = CreateWaveform(xs, width: width, signed: signed)
     waveform.ToGraph(name)
 }
 
@@ -154,7 +155,7 @@ external func InfiniteWaveform(value : Int64, width!: Int64, name!: String = "",
  * @param name The name to associate with this spec
  * @return The new link spec
  */
-external func NewSpec(width!: Int64, name!: String){
+external func NewSpec(width!: Int64 = 1, name!: String){
     if(width < 1){
         throw NegativeWireException("NewSpec")
     }
@@ -170,12 +171,12 @@ external func NewSpec(width!: Int64, name!: String){
  * @param input The input to this delay construct (m->width)
  * @return The new delay construct, composed with the input if provided
  */
-external func Delay(dur!: Int64 = 1, width!: Int64 = 1, output!: String = "", elem!: Int64 = 0, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph { 
+external func Delay(dur!: Int64 = 1, width!: Int64 = 1, label!: String = "", elem!: Int64 = 0, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph { 
     Debug("Delay", "Creating delay of duration ${dur} and width ${width}")
     if(width < 1){
         throw NegativeWireException("Delay")
     }
-    let hb = HypBuilder(width, width, output, elem)
+    let hb = HypBuilder(width, width, label, elem)
     for(i in 0..width){
         hb.CreateEdge(DELAY(dur), [hb.GetInputs()[i]], [hb.GetOutputs()[i]])
     }
@@ -195,7 +196,7 @@ external func Delay(dur!: Int64 = 1, width!: Int64 = 1, output!: String = "", el
  * @param input    The input to this register
  * @return         The new register
  */
-external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 1, output!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
+external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 1, label!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
     Debug("Register", "Making regist of width ${width} with initial value ${initial} and duration ${duration}")
     match(input){
     case Some(f) =>
@@ -207,7 +208,7 @@ external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 1, out
     if(duration < 0){
         throw NegativeDurationException("Register", duration)
     }
-    let hb = HypBuilder(width, width, output, 0)
+    let hb = HypBuilder(width, width, label, 0)
     // Convert the initial value into binary
     let initialBin = DecToBin(width, initial, true)
     // We need to join the ith bit of this number with a delay
@@ -241,9 +242,9 @@ external func OutLink(spec!: LinkSpec, name!: String = "") : Hypergraph {
  * @param name The name to give this circuit
  * @return The in link
  */
-external func InLink(spec!: LinkSpec, output!: String = "", name!:String = "") : Hypergraph { 
+external func InLink(spec!: LinkSpec, label!: String = "", name!:String = "") : Hypergraph { 
     Debug("InLink", "Creating in link for spec ${spec.name}")
-    let wires = ArrayList<Wire>(spec.width, {i : Int64 => NewWire(output, i)})
+    let wires = ArrayList<Wire>(spec.width, {i : Int64 => NewWire(label, i)})
     OpMToN(INLINK(spec), wires: wires, name: name) 
 }
 /**
@@ -251,8 +252,8 @@ external func InLink(spec!: LinkSpec, output!: String = "", name!:String = "") :
  * @param spec   The link spec for the loop
  * @return The fixpoint
  */
-external func CreateFeedback(spec: LinkSpec, output!: String = "") : HypBuilder {
-    let hb = HypBuilder(spec.width, spec.width, output)
+external func CreateFeedback(spec: LinkSpec, label!: String = "") : HypBuilder {
+    let hb = HypBuilder(spec.width, spec.width, label)
     let link = hb.CreateEdge(OUTLINK(spec))
     for(i in 0..spec.width){
         let fork = hb.CreateEdge(FORK, [hb.GetInputs()[i]], [link.sources[i], hb.GetOutputs()[i]])
@@ -266,7 +267,7 @@ external func CreateFeedback(spec: LinkSpec, output!: String = "") : HypBuilder 
  * @param name   The name to give this circuit
  * @return The fixpoint
  */
-external func Feedback(spec!: LinkSpec, output!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
+external func Feedback(spec!: LinkSpec, label!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
     Debug("Feedback", "Creating feedback to spec ${spec.name}")
     match(input){
         case Some(f) =>
@@ -275,14 +276,14 @@ external func Feedback(spec!: LinkSpec, output!: String = "", name!: String = ""
             }
         case $None => ()
     }
-    let res = CreateFeedback(spec, output: output).ToGraph()
+    let res = CreateFeedback(spec, label: label).ToGraph()
     match(input){
         case Some(f) => Seq(f, res)
         case $None   => res
     }
 }
 
-external func FeedbackReg(spec!: LinkSpec, output!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>, initial!: Int64, signed!: Bool = false){
+external func FeedbackReg(spec!: LinkSpec, label!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>, initial!: Int64, signed!: Bool = false){
     Debug("FeedbackReg", "Creating feedback to spec ${spec.name} with register")
     match(input){
         case Some(f) =>
@@ -291,7 +292,7 @@ external func FeedbackReg(spec!: LinkSpec, output!: String = "", name!: String =
             }
         case $None => ()
     }
-    let fb = CreateFeedback(spec, output: output)
+    let fb = CreateFeedback(spec, label: label)
     let v = CreateValueFromInt(initial, width: spec.width, signed: signed)
     fb.AddNewGraph(v)
 

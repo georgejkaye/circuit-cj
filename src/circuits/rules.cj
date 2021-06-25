@@ -178,6 +178,21 @@ func HasSpecificValueArgument(edge : Edge, v : Value){
     }
     return None<Int64>
 }
+func NthArgumentIsValue(edge : Edge, i : Int64){
+    if(i < 0 || i >= edge.sources.size()){
+        throw BadDomainException("NthArgumentIsValue", i, edge.sources.size())
+    }
+    let s = edge.sources[i]
+    match(s.GetLeftPort()){
+        case EdgePort(e, j) =>
+            if(e.IsValue()){
+                Some<Int64>(i)
+            } else {
+                None<Int64>
+            }
+        case InterfacePort(j) => None<Int64>
+    }
+}
 /**
  * Replace a gate edge with the value obtained from applying its arguments
  * @param edge The edge
@@ -306,6 +321,7 @@ func PassthroughGateRewriteRule(name : String, gen : Generator, arg : Value){
  * Gate evaluation rules 
  */
 let joinEval = GateRewriteRule("join", joinTable)
+let notEval = GateRewriteRule("NOT eval", notTable)
 let andEval = GateRewriteRule("AND eval", andTable)
 let orEval = GateRewriteRule("OR eval", orTable)
 let nandEval = GateRewriteRule("NAND eval", nandTable)
@@ -334,6 +350,55 @@ let andPassthrough = PassthroughGateRewriteRule("AND true", AND, TRUE)
 let orPassthrough = PassthroughGateRewriteRule("OR false", OR, FALSE)
 /* bottom JOIN x = x */
 let joinUnit = PassthroughGateRewriteRule("join unit", JOIN, BOTTOM)
+
+/* The index of the control wire to a multiplexer */
+let muxControl = 2
+/* Evaluate a multiplexer */
+let muxEval = RewriteRule(
+    "Mux eval",
+    EXACTLY(MUX),
+    {e : Edge => NthArgumentIsValue(e, muxControl)},
+    {e : Edge, hb : HypBuilder, payload : Int64 =>
+        let control = e.sources[muxControl].GetLeftEdge()
+        let (acc, rej) = match(control.GetValue()){
+            case TRUE => (0, 1)
+            case FALSE => (1, 0)
+            case _ => (-1,-1)
+        }
+        // Stub off the discarded input
+        let stub = hb.CreateEdge(STUB)
+        let stubSource = stub.sources[0]
+        let outputSource = e.targets[0].GetConn()
+
+        let nextSources = ArrayList<Source>()
+
+        let (fstSource, sndSource) = 
+            if(acc != -1){
+                if(acc == 0) {
+                    (outputSource, stubSource)
+                } else {
+                    (stubSource, outputSource)
+                }
+            } else {
+                // We need to stub both inputs in this case
+                let stub2 = hb.CreateEdge(STUB)
+                let stubSource2 = stub.sources[0]
+                // Cap off the output of the mux
+                let bot = hb.CreateEdge(VALUE(BOTTOM))
+                hb.AddConn(bot.targets[0], outputSource)
+                nextSources.add(outputSource)
+                (stubSource, stubSource2)
+            }
+        // Connect the original inputs appropriately
+        hb.AddConn(e.sources[0].GetConn(), fstSource)
+        hb.AddConn(e.sources[1].GetConn(), sndSource)
+        // Remove the multiplexer edge
+        hb.RemoveEdge(e)
+        hb.RemoveEdge(control)
+        nextSources.addAll([fstSource, sndSource])
+        nextSources
+    }
+)
 
 /** Fork rules */
 
@@ -557,12 +622,14 @@ let rewriteRules = ArrayList<RewriteRule>([
     forkJoin,
     joinFork,
     joinEval,
+    notEval,
     andEval,
     orEval,
     nandEval,
     norEval,
     xorEval,
     xnorEval,
+    muxEval,
     andEnhanced,
     orEnhanced,
     andPassthrough,

@@ -316,6 +316,15 @@ external open class Edge <: Atom {
             case _             => false
         }
     }
+    func IsStub(){
+        match(generator){
+            case STRUCTURAL(s) => match(s){
+                case $StubMorph => true
+                case _ => false
+            }
+            case _ => false
+        }
+    }
     /**
      * Assuming this edge is a link, get its spec
      * Throws an exception if this is not a link edge
@@ -379,7 +388,6 @@ enum Port {
     | EdgePort(Edge, Int64) 
     | InterfacePort(Int64) 
 }
-
 func IsValue(p : Port){
     match(p){
         case EdgePort(e, i) => e.IsValue()

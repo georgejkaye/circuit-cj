@@ -87,7 +87,7 @@ func TraverseLeft(t : Target, edgeAction : (Edge, Target) -> Bool, inputAction :
  * @param s The source to start traversing from
  * @param edgeAction The action to take at each edge: takes the current edge and the incoming source as argument, and returns
                      a bool dictating if traversal should continue or halt
- * @param outputAction The action to take at each reached output: takes the output vertex and its index in the outputs list and returns unit
+ * @param outputAction The action to take at each reached label: takes the output vertex and its index in the outputs list and returns unit
  */
 func TraverseRight(t : Target, edgeAction : (Edge, Source) -> Bool, outputAction : (Source, Int64) -> Unit){
 
