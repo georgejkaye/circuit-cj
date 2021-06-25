@@ -146,14 +146,14 @@ class BusNotInGraphException <: Exception {
         ErrorMsg(function, "Bus ${s} is not in the graph")
     }
 }
-class BadTargetsException <: Exception {
+class BadTargetException <: Exception {
     init(function : String, edge : Edge, i : Int64){
-        ErrorMsg(function, "Attempted to access ${i}th target but ${edge} only has ${edge.targets.size()}")
+        ErrorMsg(function, "Attempted to access ${i}th target but edge ${edge.id} (${edge.generator}) only has ${edge.targets.size()}")
     }
 }
-class BadSourcesException <: Exception {
+class BadSourceException <: Exception {
     init(function : String, edge : Edge, i : Int64){
-        ErrorMsg(function, "Attempted to access ${i}th sources but ${edge} only has ${edge.sources.size()}")
+        ErrorMsg(function, "Attempted to access ${i}th source but edge ${edge.id} (${edge.generator}) only has ${edge.sources.size()}")
     }
 }
 class NegativeInputsException <: Exception {

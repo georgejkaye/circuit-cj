@@ -92,8 +92,8 @@ class RewriteRule {
 func IsWaveform(s : Source){
     match(PortToGenerator(s.GetLeftPort(), JOIN)){
         case Some((e, i)) =>
-            let lhsArg = e.sources[0]
-            let rhsArg = e.sources[1]
+            let lhsArg = e.GetSource(0)
+            let rhsArg = e.GetSource(1)
             IsValue(lhsArg.GetLeftPort()) && IsDelay(rhsArg.GetLeftPort())
         case $None => false
     }
@@ -228,7 +228,7 @@ class Rewriter {
             f.RemoveEdge(w.value)
             f.RemoveEdge(w.delay)
             f.RemoveEdge(w.join)
-            f.ConnectPortToOutputs(w.delay.sources[0].GetLeftPort())
+            f.ConnectPortToOutputs(w.delay.GetSource(0).GetLeftPort())
         }
         waveforms
     }
@@ -243,7 +243,7 @@ class Rewriter {
         let outgoingSources = ArrayList<Source>()
         f.ForEachEdgeWithProperty(
             { e : Edge => e.IsDelay() || e.IsIdentity() },
-            { e : Edge => outgoingSources.add(e.sources[0]) }
+            { e : Edge => outgoingSources.add(e.GetSource(0)) }
         )
         // We make a copy of the graph (the unfolding)
         let g = f.ToGraph().Clone()
@@ -253,11 +253,11 @@ class Rewriter {
             { e : Edge => e.IsDelay() || e.IsIdentity() },
             { e : Edge =>
                 let stub = g.CreateEdge(STUB)
-                g.AddConn(e.sources[0].GetConn(), stub.sources[0])
+                g.AddConn(e.GetSource(0).GetConn(), stub.GetSource(0))
                 if(e.IsIdentity()){
                     identitiesToDelete.add(e)
                 }
-                danglingSources.add(e.sources[0])
+                danglingSources.add(e.GetSource(0))
             }
         )
         f.ConnectEachOutputToEdge(STUB)
@@ -267,19 +267,19 @@ class Rewriter {
         for(i in 0..outgoingSources.size()){
             let s = outgoingSources[i]
             let fork = f.CreateEdge(FORK)
-            f.AddConn(s.GetConn(), fork.sources[0])
-            f.AddConn(fork.targets[0], s)
-            f.AddConn(fork.targets[1], danglingSources[i])
+            f.AddConn(s.GetConn(), fork.GetSource(0))
+            f.AddConn(fork.GetTarget(0), s)
+            f.AddConn(fork.GetTarget(1), danglingSources[i])
         }
         for(i in 0..g.GetInputs().size()){
             let fork = f.CreateEdge(FORK)
-            f.AddConn(fork.targets[0], f.GetInput(i).GetConn())
-            f.AddConn(f.GetInput(i), fork.sources[0])
-            f.AddConn(fork.targets[1], g.GetInput(i).GetConn())
+            f.AddConn(fork.GetTarget(0), f.GetInput(i).GetConn())
+            f.AddConn(f.GetInput(i), fork.GetSource(0))
+            f.AddConn(fork.GetTarget(1), g.GetInput(i).GetConn())
             f.RemoveInput(g.GetInputs().size())
         }
         for(e in identitiesToDelete){
-            f.AddConn(e.sources[0].GetConn(), e.targets[0].GetConn())
+            f.AddConn(e.GetSource(0).GetConn(), e.GetTarget(0).GetConn())
             f.RemoveEdge(e)
         }
     }
@@ -291,8 +291,8 @@ class Rewriter {
         Debug("ReattachHead", "Adding any immediate values")
         for(i in 0..head.size()){
             let w = head[i]
-            f.AddConn(f.GetOutput(i).GetConn(), w.delay.sources[0])
-            f.AddConn(head[i].join.targets[0], f.GetOutput(i))
+            f.AddConn(f.GetOutput(i).GetConn(), w.delay.GetSource(0))
+            f.AddConn(head[i].join.GetTarget(0), f.GetOutput(i))
             f.AddEdge(w.delay)
             f.AddEdge(w.join)
             f.AddEdge(w.value)
@@ -309,7 +309,7 @@ class Rewriter {
             if(!PathToOutputs(id)){
                 // Traverse leftwards from the id edge and delete as we go
                 // Importantly, this will eliminate any loops
-                TraverseLeft(id.sources[0].GetConn(), 
+                TraverseLeft(id.GetSource(0).GetConn(), 
                     {e : Edge, t : Target => 
                         if(e.IsIdentity()){
                             false

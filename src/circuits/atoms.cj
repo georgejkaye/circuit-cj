@@ -277,6 +277,30 @@ external open class Edge <: Atom {
         "Edge e${id} - ${generator}" 
     }
     /**
+     * Get the source from this edge with a given index
+     * Throws an exception if the index is bad
+     * @param i The index of the source
+     * @return The source vertex
+     */
+    func GetSource(i : Int64){
+        if(i < 0 || i >= sources.size()){
+            throw BadSourceException("GetSource", this, i)
+        }
+        sources[i]
+    }
+    /**
+     * Get the target from this edge with a given index
+     * Throws an exception if the index is bad
+     * @param i The index of the target
+     * @return The target vertex
+     */
+    func GetTarget(i : Int64){
+        if(i < 0 || i >= targets.size()){
+            throw BadTargetException("GetTarget", this, i)
+        }
+        targets[i]
+    }
+    /**
      * Is this edge an identity edge?
      * @return if the edge is an identity edge
      */
@@ -286,36 +310,60 @@ external open class Edge <: Atom {
             case _         => false
         }
     }
+    /**
+     * Is this edge a delay edge?
+     * @return if the edge is an delay edge
+     */
     func IsDelay(){
         match(generator){
             case DELAY(n) => true
             case _        => false
         }
     }
+    /**
+     * Is this edge a value edge?
+     * @return if the edge is a value edge
+     */
     func IsValue(){
         match(generator){
             case VALUE(v) => true
             case _        => false
         }
     }
+    /**
+     * Is this edge a gate edge?
+     * @return if the edge is a gate edge
+     */
     func IsGate(){
         match(generator){
             case GATE(k) => true
             case _       => false
         }
     }
+    /**
+     * Is this edge an inlink edge?
+     * @return if the edge is an inlink edge
+     */
     func IsInlink(){
         match(generator){
             case INLINK(spec) => true
             case _            => false
         }
     }
+    /**
+     * Is this edge an outlink edge?
+     * @return if the edge is an outlink edge
+     */
     func IsOutlink(){
         match(generator){
             case OUTLINK(spec) => true
             case _             => false
         }
     }
+    /**
+     * Is this edge a stub edge?
+     * @return if the edge is a stub edge
+     */
     func IsStub(){
         match(generator){
             case STRUCTURAL(s) => match(s){
@@ -348,6 +396,11 @@ external open class Edge <: Atom {
             case _        => throw NonValueEdgeException("GetValue", this)
         }
     }
+    /**
+     * Assuming this edge is a delay edge, get the value of the delay
+     * Throws an exception if it is not a delay edge
+     * @return if the edge is an identity edge
+     */
     func GetDelay(){
         match(generator){
             case DELAY(n) => n
@@ -388,12 +441,22 @@ enum Port {
     | EdgePort(Edge, Int64) 
     | InterfacePort(Int64) 
 }
+/**
+ * Check if this port leads to a value
+ * @param p The port to check
+ * @return Whether the port leads to a value
+ */
 func IsValue(p : Port){
     match(p){
         case EdgePort(e, i) => e.IsValue()
         case InterfacePort(i) => false
     }
 }
+/**
+ * Check if this port leads to a delay
+ * @param p The port to check
+ * @return Whether the port leads to a delay
+ */
 func IsDelay(p : Port){
     match(p){
         case EdgePort(e, i) => e.IsDelay()

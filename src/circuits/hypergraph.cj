@@ -189,7 +189,11 @@ open class HypergraphStructure <: Identifiable {
         GetEdgesWithProperty({e : Edge => e.IsIdentity()})
     }
     func GetInputs() { inputs }
-    func GetInput(i : Int64) { inputs[i] }
+    func GetInput(i : Int64) { 
+        if(i < 0 || i >= inputs.size()){
+            throw BadInputException("GetInputs", i, inputs.size())
+        }
+        inputs[i] }
     func GetInputs(ins : ArrayList<Int64>){
         let chosenInputs = ArrayList<Target>(ins.size(), {i : Int64 => 
             let j = ins[i]
@@ -201,7 +205,12 @@ open class HypergraphStructure <: Identifiable {
         chosenInputs
     }
     func GetOutputs() { outputs }
-    func GetOutput(i : Int64) { outputs[i] }
+    func GetOutput(i : Int64) { 
+        if(i < 0 || i >= outputs.size()){
+            throw BadOutputException("GetOutputs", i, outputs.size())
+        }
+        outputs[i] 
+    }
     func GetOutputs(outs : ArrayList<Int64>){
         let chosenOutputs = ArrayList<Source>(outs.size(), {i : Int64 => 
             let j = outs[i]
@@ -345,8 +354,8 @@ open class HypergraphStructure <: Identifiable {
             match(s.GetLeftPort()){
                 case EdgePort(e, i) =>
                     if(e.generator == JOIN){
-                        let lhs = e.sources[0].GetLeftPort()
-                        let rhs = e.sources[1].GetLeftPort()
+                        let lhs = e.GetSource(0).GetLeftPort()
+                        let rhs = e.GetSource(1).GetLeftPort()
                         if(!((IsValue(lhs) && IsDelay(rhs)) || (IsValue(rhs) && IsDelay(lhs)))){
                             return false
                         } 
@@ -795,11 +804,15 @@ func main(){
 
     let width = 1
 
-    let link_spec = NewSpec(name: "prev_sum", width: width)
-    let prev_sum = InLink(spec: link_spec, label: "prev_sum")
-    let x = Input(label: "x", width: width)
-    let sum = Plus(a: prev_sum, b: x, label: "sum", name: "Plus")
-    let circ = FeedbackReg(spec: link_spec, input: Some(sum), initial: 0)
+    let wf = InfiniteWaveform(4, width: 2)
+    WriteDotToFile(wf, "wf")
+
+
+    // let link_spec = NewSpec(name: "prev_sum", width: width)
+    // let prev_sum = InLink(spec: link_spec, label: "prev_sum")
+    // let x = Input(label: "x", width: width)
+    // let sum = Plus(a: prev_sum, b: x, label: "sum", name: "Plus")
+    // let circ = FeedbackReg(spec: link_spec, input: Some(sum), initial: 0)
     
 
    
@@ -811,9 +824,9 @@ func main(){
 
     // WriteDotToFile(circ, "circuit", resolve: true)
     
-    let wf = WaveformFromList([0,1], width: width)
-    let applied = wf + circ
-    WriteDotToFile(applied, "applied", resolve: true)
+    // let wf = WaveformFromList([0,1], width: width)
+    // let applied = wf + circ
+    // WriteDotToFile(applied, "applied", resolve: true)
 
     // let x = Input(label: "x")
     // let c = Input(label: "c")
@@ -833,18 +846,93 @@ func main(){
     // WriteDotToFile(app1, "applied1", resolve: true)
     // WriteDotToFile(app2, "applied2", resolve: true)
 
-    let rw1 = applied.GetRewriter()
-    rw1.RunCycle()
-    WriteDotToFile(rw1.GetGraph(), "cycle1")
+    // let rw1 = applied.GetRewriter()
+    // rw1.RunCycle()
+    // WriteDotToFile(rw1.GetGraph(), "cycle1")
 
-    rw1.RunCycle()
-    WriteDotToFile(rw1.GetGraph(), "cycle2")
+    // rw1.RunCycle()
+    // WriteDotToFile(rw1.GetGraph(), "cycle2")
 
     //rw.RunCycle()
     //WriteDotToFile(rw.GetGraph(), "cycle-2")
 
     // let reg = WaveformFromList([1,0,1], width: 1)
     // WriteDotToFile(reg, "wf", resolve: true)
- 
+
+    // let c = Input(label: "c")
+    // let x = Input(label: "x")
+
+    // let spec = NewSpec(width: 1, name: "fb")
+    // let mux1 = Mux(a: x, b: InLink(spec: spec), s: c)
+    // let f = BlackBox("F", 1, 1, input: Some(mux1))
+    // let mux2 = Mux(a: f, b: x, s: c)
+    // let g = BlackBox("G", 1, 1, input: Some(mux2))
+    // let fb = Feedback(spec: spec, input: g)
+    // let circ = Mux(a: f, b: fb, s: c)
+
+    // WriteDotToFile(circ, "circ")
+
+    // let app1 = True() * False() + circ
+    // let app2 = True() * True() + circ
+
+    // WriteDotToFile(app1, "applied1", resolve: true)
+    // WriteDotToFile(app2, "applied2", resolve: true)
+
+    // let rw1 = app1.GetRewriter()
+    // rw1.RunCycle()
+    // WriteDotToFile(rw1.GetGraph(), "red1", resolve: true)
+    // let rw2 = app2.GetRewriter()
+    // rw2.RunCycle()
+    // WriteDotToFile(rw2.GetGraph(), "red2", resolve: true)
+
+    // let circ = serial_multiplier_bit(width: 2)
+    // let a = WaveformFromList([1], width: 2)
+    // let b = WaveformFromList([2], width: 2)
+
+    // let applied = a * b + circ
+
+    // let rw = applied.GetRewriter()
+    // rw.PerformCycle()
+    // WriteDotToFile(rw.GetGraph(), "red")
+
     0   
+}
+
+func partial_product(a!: Hypergraph, b0!: Hypergraph){
+    Mux(width: a.GetN(), s: b0, a: a, b: Zero(width: a.GetN()))
+}
+
+func running_sum(first!: Hypergraph, sum!: Hypergraph, a!: Hypergraph, b0!: Hypergraph){
+    let lhs = Mux(width: sum.GetN(), s: first, a: Zero(width: a.GetN()), b: sum)
+    let rhs = partial_product(a: a, b0: b0)
+    let a = UnsignedExtend(lhs)
+    let b = UnsignedExtend(rhs)
+    Plus(a: a, b: b)
+}
+
+func running_sum_loop(first!: Hypergraph, a!: Hypergraph, b0!: Hypergraph){
+    let spec = NewSpec(name: "prev_sum", width: 4)
+    let prev_sum = Delay(width: 4, input: InLink(spec: spec))
+    let sum = running_sum(first: first, sum: prev_sum, a: a, b0: b0)
+    let msbs = Msbs(sum)
+    Feedback(spec: spec, input: msbs, label: "loop")
+}
+
+func computed_bits(width!: Int64, bit!: Hypergraph){
+    let spec = NewSpec(name: "d", width: width)
+    let prev_bits = Register(initial: 0, width: 4, input: InLink(spec: spec))
+    let bits = Par(Msbs(prev_bits), bit)
+    Feedback(spec: spec, input: bits)
+}
+
+external func serial_multiplier_bit(width!: Int64){
+    Info("serial_multiplier_bit", "Making serial multiplier circuit for one bit")
+    let first = Input(width: 1, label: "first")
+    let a = Input(width: width, label: "a")
+    let b0 = Input(width: 1, label: "b0")
+    let sum_bit = running_sum_loop(first: first, a: a, b0: b0)
+    let bit = Lsb(sum_bit)
+    let sum = Msbs(sum_bit)
+    let computed_bits_v = computed_bits(width: width, bit: bit)
+    Concat([sum, computed_bits_v])
 }

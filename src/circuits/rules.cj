@@ -91,7 +91,7 @@ func AllInputsAreConsistentWaveforms(e : Edge){
     if(e.sources.size() == 0) {
         return None<Int64>
     }
-    let n = match(IsWaveformArg(e.sources[0])){
+    let n = match(IsWaveformArg(e.GetSource(0))){
         case Some(w) => w.delay.GetDelay()
         case $None   => return None<Int64>
     }
@@ -204,9 +204,9 @@ func ReplaceGateWithValue(edge : Edge, hb : HypBuilder, v : Value){
         hb.RemoveEdge(s.GetLeftEdge())
     }
     let newEdge = hb.CreateEdge(VALUE(v))
-    hb.AddConn(newEdge.targets[0], edge.targets[0].GetConn())
+    hb.AddConn(newEdge.GetTarget(0), edge.GetTarget(0).GetConn())
     hb.RemoveEdge(edge)
-    ArrayList<Source>([newEdge.targets[0].GetConn()])
+    ArrayList<Source>([newEdge.GetTarget(0).GetConn()])
 }
 /**
  * Replace a gate with the value obtained by some calculation, and stub its inputs
@@ -224,16 +224,16 @@ func ReplaceGateWithValueAndStubs(edge : Edge, hb : HypBuilder, trig : Int64, v 
     for(i in 0..edge.sources.size()){
         if(i != trig){
             let stubEdge = hb.CreateEdge(STUB)
-            hb.AddConn(edge.sources[i].GetConn(), stubEdge.sources[0])
-            nexts.add(stubEdge.sources[0])
+            hb.AddConn(edge.sources[i].GetConn(), stubEdge.GetSource(0))
+            nexts.add(stubEdge.GetSource(0))
         } else {
             hb.RemoveEdge(edge.sources[i].GetLeftEdge())
         }
     }
     let newEdge = hb.CreateEdge(VALUE(v))
-    hb.AddConn(newEdge.targets[0], edge.targets[0].GetConn())
+    hb.AddConn(newEdge.GetTarget(0), edge.GetTarget(0).GetConn())
     hb.RemoveEdge(edge)
-    nexts.add(newEdge.targets[0].GetConn())
+    nexts.add(newEdge.GetTarget(0).GetConn())
     nexts
 }
 /**
@@ -369,8 +369,8 @@ let muxEval = RewriteRule(
         }
         // Stub off the discarded input
         let stub = hb.CreateEdge(STUB)
-        let stubSource = stub.sources[0]
-        let outputSource = e.targets[0].GetConn()
+        let stubSource = stub.GetSource(0)
+        let outputSource = e.GetTarget(0).GetConn()
 
         let nextSources = ArrayList<Source>()
 
@@ -384,16 +384,16 @@ let muxEval = RewriteRule(
             } else {
                 // We need to stub both inputs in this case
                 let stub2 = hb.CreateEdge(STUB)
-                let stubSource2 = stub.sources[0]
+                let stubSource2 = stub.GetSource(0)
                 // Cap off the output of the mux
                 let bot = hb.CreateEdge(VALUE(BOTTOM))
-                hb.AddConn(bot.targets[0], outputSource)
+                hb.AddConn(bot.GetTarget(0), outputSource)
                 nextSources.add(outputSource)
                 (stubSource, stubSource2)
             }
         // Connect the original inputs appropriately
-        hb.AddConn(e.sources[0].GetConn(), fstSource)
-        hb.AddConn(e.sources[1].GetConn(), sndSource)
+        hb.AddConn(e.GetSource(0).GetConn(), fstSource)
+        hb.AddConn(e.GetSource(1).GetConn(), sndSource)
         // Remove the multiplexer edge
         hb.RemoveEdge(e)
         hb.RemoveEdge(control)
@@ -408,12 +408,12 @@ let muxEval = RewriteRule(
 let forkStubLeft = RewriteRule(
     "Fork-stub left",
     EXACTLY(FORK),
-    {e : Edge => NextEdgeIs(e.targets[0], STUB) },
+    {e : Edge => NextEdgeIs(e.GetTarget(0), STUB) },
     {e : Edge, hb : HypBuilder, payload : Int64 => 
-        let t = e.sources[0].GetConn()
-        let next = e.targets[1].GetConn()
+        let t = e.GetSource(0).GetConn()
+        let next = e.GetTarget(1).GetConn()
         hb.AddConn(t, next)
-        hb.RemoveEdge(e.targets[0].GetRightEdge())
+        hb.RemoveEdge(e.GetTarget(0).GetRightEdge())
         hb.RemoveEdge(e)
         ArrayList<Source>([next])
     }
@@ -422,12 +422,12 @@ let forkStubLeft = RewriteRule(
 let forkStubRight = RewriteRule(
     "Fork-stub right",
     EXACTLY(FORK),
-    {e : Edge => NextEdgeIs(e.targets[1], STUB) },
+    {e : Edge => NextEdgeIs(e.GetTarget(1), STUB) },
     {e : Edge, hb : HypBuilder, payload : Int64 => 
-        let t = e.sources[0].GetConn()
-        let next = e.targets[0].GetConn()
+        let t = e.GetSource(0).GetConn()
+        let next = e.GetTarget(0).GetConn()
         hb.AddConn(t, next)
-        hb.RemoveEdge(e.targets[1].GetRightEdge())
+        hb.RemoveEdge(e.GetTarget(1).GetRightEdge())
         hb.RemoveEdge(e)
         ArrayList<Source>([next])
     }
@@ -438,12 +438,12 @@ let forkCopy = RewriteRule(
     EXACTLY(FORK),
     HasValueArguments,
     {e : Edge, hb : HypBuilder, payload : Int64 =>
-        let arg = e.sources[0].GetLeftEdge()
+        let arg = e.GetSource(0).GetLeftEdge()
         let copy = hb.CreateEdge(VALUE(arg.GetValue()))
-        let leftCopy = e.targets[0].GetConn()
-        let rightCopy = e.targets[1].GetConn()
-        hb.AddConn(arg.targets[0], leftCopy)
-        hb.AddConn(copy.targets[0], rightCopy)
+        let leftCopy = e.GetTarget(0).GetConn()
+        let rightCopy = e.GetTarget(1).GetConn()
+        hb.AddConn(arg.GetTarget(0), leftCopy)
+        hb.AddConn(copy.GetTarget(0), rightCopy)
         hb.RemoveEdge(e)
         ArrayList<Source>([leftCopy, rightCopy])
     }
@@ -454,8 +454,8 @@ let forkJoin = RewriteRule(
     "Fork-join",
     EXACTLY(JOIN),
     {e : Edge => 
-        let s1 = e.sources[0]
-        let s2 = e.sources[1] 
+        let s1 = e.GetSource(0)
+        let s2 = e.GetSource(1) 
         let b = match(s1.GetLeftPort()){
             case EdgePort(e1, i) =>
                 match(s2.GetLeftPort()){
@@ -471,9 +471,9 @@ let forkJoin = RewriteRule(
         }
     },
     {e : Edge, hb: HypBuilder, payload : Int64 =>
-        let fork = e.sources[0].GetLeftEdge()
-        let nextSource = e.targets[0].GetConn()
-        hb.AddConn(fork.sources[0].GetConn(), nextSource)
+        let fork = e.GetSource(0).GetLeftEdge()
+        let nextSource = e.GetTarget(0).GetConn()
+        hb.AddConn(fork.GetSource(0).GetConn(), nextSource)
         hb.RemoveEdge(e)
         hb.RemoveEdge(fork)
         ArrayList<Source>([nextSource])
@@ -483,24 +483,24 @@ let forkJoin = RewriteRule(
 let joinFork = RewriteRule(
     "Join-fork",
     EXACTLY(FORK),
-    {e : Edge => PreviousEdgeIs(e.sources[0], JOIN)},
+    {e : Edge => PreviousEdgeIs(e.GetSource(0), JOIN)},
     {e : Edge, hb : HypBuilder, payload : Int64 => 
-        let oldJoin = e.sources[0].GetLeftEdge()
+        let oldJoin = e.GetSource(0).GetLeftEdge()
         let fork1 = hb.CreateEdge(FORK)
-        hb.AddConn(oldJoin.sources[0].GetConn(), fork1.sources[0])
+        hb.AddConn(oldJoin.GetSource(0).GetConn(), fork1.GetSource(0))
         let fork2 = hb.CreateEdge(FORK)
-        hb.AddConn(oldJoin.sources[1].GetConn(), fork2.sources[0])
+        hb.AddConn(oldJoin.GetSource(1).GetConn(), fork2.GetSource(0))
         let join1 = hb.CreateEdge(JOIN)
-        hb.AddConn(join1.targets[0], e.targets[0].GetConn())
+        hb.AddConn(join1.GetTarget(0), e.GetTarget(0).GetConn())
         let join2 = hb.CreateEdge(JOIN)
-        hb.AddConn(join2.targets[0], e.targets[1].GetConn())
-        hb.AddConn(fork1.targets[0], join1.sources[0])
-        hb.AddConn(fork1.targets[1], join2.sources[0])
-        hb.AddConn(fork2.targets[0], join1.sources[1])
-        hb.AddConn(fork2.targets[1], join2.sources[1])
+        hb.AddConn(join2.GetTarget(0), e.GetTarget(1).GetConn())
+        hb.AddConn(fork1.GetTarget(0), join1.GetSource(0))
+        hb.AddConn(fork1.GetTarget(1), join2.GetSource(0))
+        hb.AddConn(fork2.GetTarget(0), join1.GetSource(1))
+        hb.AddConn(fork2.GetTarget(1), join2.GetSource(1))
         hb.RemoveEdge(e)
         hb.RemoveEdge(oldJoin)
-        ArrayList<Source>([join1.targets[0].GetConn(), join2.targets[0].GetConn()])
+        ArrayList<Source>([join1.GetTarget(0).GetConn(), join2.GetTarget(0).GetConn()])
     }
 )
 
@@ -512,14 +512,14 @@ let timelessness = RewriteRule(
         let nextSources = ArrayList<Source>()
         for(s in e.sources){
             let del = s.GetLeftEdge()
-            hb.AddConn(del.sources[0].GetConn(), s)
+            hb.AddConn(del.GetSource(0).GetConn(), s)
             hb.RemoveEdge(del)
         }
         for(t in e.targets){
             let newDelay = hb.CreateEdge(DELAY(payload))
-            hb.AddConn(newDelay.targets[0], t.GetConn())
-            hb.AddConn(t, newDelay.sources[0])
-            nextSources.add(newDelay.sources[0])
+            hb.AddConn(newDelay.GetTarget(0), t.GetConn())
+            hb.AddConn(t, newDelay.GetSource(0))
+            nextSources.add(newDelay.GetSource(0))
         }
         nextSources
     }
@@ -536,8 +536,8 @@ let propagateStubs = RewriteRule(
         }
         for(s in e.sources){
             let stub = hb.CreateEdge(STUB)
-            hb.AddConn(s.GetConn(), stub.sources[0])
-            nextSources.add(stub.sources[0])
+            hb.AddConn(s.GetConn(), stub.GetSource(0))
+            nextSources.add(stub.GetSource(0))
         }
         hb.RemoveEdge(e)
         nextSources
@@ -550,27 +550,27 @@ func PerformStreaming(hb : HypBuilder, e : Edge){
         for(i in 0..e.sources.size()){
             let s = e.sources[i]
             let join = s.GetLeftEdge()
-            let lhsArg = join.sources[0].GetLeftEdge()
-            let rhsArg = join.sources[1].GetLeftEdge()
+            let lhsArg = join.GetSource(0).GetLeftEdge()
+            let rhsArg = join.GetSource(1).GetLeftEdge()
             let (value, delay) = if(lhsArg.IsValue()){
                 (lhsArg, rhsArg)
             } else {
                 (rhsArg, lhsArg)
             }
-            hb.AddConn(value.targets[0], nowGate.sources[i])
-            hb.AddConn(delay.sources[0].GetConn(), thenGate.sources[i])
+            hb.AddConn(value.GetTarget(0), nowGate.sources[i])
+            hb.AddConn(delay.GetSource(0).GetConn(), thenGate.sources[i])
             hb.RemoveEdge(delay)
             hb.RemoveEdge(join)
         } 
         let newDelay = hb.CreateEdge(DELAY(1))
-        hb.AddConn(thenGate.targets[0], newDelay.sources[0])
+        hb.AddConn(thenGate.GetTarget(0), newDelay.GetSource(0))
         
         let newJoin = hb.CreateEdge(JOIN)
-        hb.AddConn(nowGate.targets[0], newJoin.sources[0])
-        hb.AddConn(newDelay.targets[0], newJoin.sources[1])
+        hb.AddConn(nowGate.GetTarget(0), newJoin.GetSource(0))
+        hb.AddConn(newDelay.GetTarget(0), newJoin.GetSource(1))
 
-        let exitSource = e.targets[0].GetConn()
-        hb.AddConn(newJoin.targets[0], exitSource)
+        let exitSource = e.GetTarget(0).GetConn()
+        hb.AddConn(newJoin.GetTarget(0), exitSource)
 
         hb.RemoveEdge(e)
         ArrayList<Source>([exitSource])
@@ -598,14 +598,14 @@ let streamingEnhanced = RewriteRule(
                     let join = hb.CreateEdge(JOIN)
                     if(s.GetLeftEdge().IsValue()){
                         let delay = hb.CreateEdge(DELAY(1))
-                        hb.AddConn(bot.targets[0], delay.sources[0])
-                        hb.AddConn(delay.targets[0], join.sources[1])
-                        hb.AddConn(s.GetConn(), join.sources[0])
+                        hb.AddConn(bot.GetTarget(0), delay.GetSource(0))
+                        hb.AddConn(delay.GetTarget(0), join.GetSource(1))
+                        hb.AddConn(s.GetConn(), join.GetSource(0))
                     } else {
-                        hb.AddConn(bot.targets[0], join.sources[0])
-                        hb.AddConn(s.GetConn(), join.sources[1])
+                        hb.AddConn(bot.GetTarget(0), join.GetSource(0))
+                        hb.AddConn(s.GetConn(), join.GetSource(1))
                     }
-                    hb.AddConn(join.targets[0], s)
+                    hb.AddConn(join.GetTarget(0), s)
             }
         }
         PerformStreaming(hb, e)

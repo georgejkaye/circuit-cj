@@ -53,16 +53,16 @@ func ResolveLinks(f : HypBuilder, name!: String = "") {
                             let nextTarget = outLinkEdges[i].sources[port].GetConn()
                             // Create a new join with these sources
                             let join = f.CreateEdge(JOIN)
-                            f.AddConn(currentTarget, join.sources[0])
-                            f.AddConn(nextTarget, join.sources[1])
+                            f.AddConn(currentTarget, join.GetSource(0))
+                            f.AddConn(nextTarget, join.GetSource(1))
                             // Create a new source ready for the next iteration
-                            currentTarget = join.targets[0]
+                            currentTarget = join.GetTarget(0)
                         }
                     }
                     // Create an identity edge in the middle
                     let id = f.CreateEdge(IDENTITY)
-                    f.AddConn(currentTarget, id.sources[0])
-                    currentTarget = id.targets[0]
+                    f.AddConn(currentTarget, id.GetSource(0))
+                    currentTarget = id.GetTarget(0)
                     // We need to fork to serve multiple in links with the same spec
                     if(ins > 1){
                         for(i in 0..ins-1){
@@ -71,9 +71,9 @@ func ResolveLinks(f : HypBuilder, name!: String = "") {
                             // Create a fork and connect it to the current target
                             let fork = f.CreateEdge(FORK, [currentTarget])
                             // Set the right target of the fork to connect to whatever the jth target of the outlink connected to
-                            f.AddConn(fork.targets[1], inLinkEdges[j].targets[port].GetConn())
+                            f.AddConn(fork.GetTarget(1), inLinkEdges[j].targets[port].GetConn())
                             // Set the left target of the fork ready for the next iteration
-                            currentTarget = fork.targets[0]
+                            currentTarget = fork.GetTarget(0)
                         }
                     }
                     // The last port doesn't need forking, we just connect the current target up
@@ -87,7 +87,7 @@ func ResolveLinks(f : HypBuilder, name!: String = "") {
                 for(e in outLinkEdges){
                     for(s in e.sources){
                         let stub = f.CreateEdge(STUB)
-                        f.AddConn(s.GetConn(), stub.sources[0])
+                        f.AddConn(s.GetConn(), stub.GetSource(0))
                     }
                     f.RemoveEdge(e)
                 }
@@ -101,7 +101,7 @@ func ResolveLinks(f : HypBuilder, name!: String = "") {
         let spec = link.GetSpec()
         for(i in 0..spec.width){
             let bot = f.CreateEdge(VALUE(BOTTOM))
-            f.AddConn(bot.targets[0], link.targets[i].GetConn())
+            f.AddConn(bot.GetTarget(0), link.targets[i].GetConn())
         }
     }    
     f.RemoveEdges({e : Edge => includes(deadInlinks, e)})
@@ -115,9 +115,9 @@ func UnresolveLinks(f : HypBuilder){
     for(e in ids){
         let spec = NewSpec()
         let outlink = f.CreateEdge(OUTLINK(spec))
-        f.AddConn(e.sources[0].GetConn(), outlink.sources[0])
+        f.AddConn(e.GetSource(0).GetConn(), outlink.GetSource(0))
         let inlink = f.CreateEdge(INLINK(spec))
-        f.AddConn(inlink.targets[0], e.targets[0].GetConn())
+        f.AddConn(inlink.GetTarget(0), e.GetTarget(0).GetConn())
         f.RemoveEdge(e)
     }
 }

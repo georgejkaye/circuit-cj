@@ -529,9 +529,9 @@ external func Mux(width!: Int64 = 1, label!: String = "", elem!: Int64 = -1, nam
             // Create a fork to split the control signal
             let fork = hb.CreateEdge(FORK, [currentC])
             // Create the mux edge
-            let mux = hb.CreateEdge(MUX, [hb.GetInputs()[j], hb.GetInputs()[j + width], fork.targets[1]], [hb.GetOutputs()[j]])
+            let mux = hb.CreateEdge(MUX, [hb.GetInputs()[j], hb.GetInputs()[j + width], fork.GetTarget(1)], [hb.GetOutputs()[j]])
             // Assign the control wire for the next iteration
-            currentC = fork.targets[0]
+            currentC = fork.GetTarget(0)
         }
     }
     // Create the final mux edge

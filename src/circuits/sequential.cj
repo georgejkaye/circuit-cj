@@ -29,9 +29,9 @@ func IsWaveform(edge : Edge){
     if(edge.generator != JOIN){
         return None<Waveform>
     }
-    let lhsSource = edge.sources[0]
+    let lhsSource = edge.GetSource(0)
     let lhsArg = lhsSource.GetLeftPort()
-    let rhsSource = edge.sources[1]
+    let rhsSource = edge.GetSource(1)
     let rhsArg = rhsSource.GetLeftPort()
     let value : Edge 
     let delay : Edge
@@ -107,10 +107,10 @@ func CreateWaveform(xs : ArrayList<Int64>, width!: Int64, signed!: Bool = false)
             let now = head.GetOutput(i)
             let join = head.CreateEdge(JOIN)
             let delay = head.CreateEdge(DELAY(1))
-            head.AddConn(now.GetConn(), join.sources[0])
-            head.AddConn(join.targets[0], now)
-            head.AddConn(tail.GetOutput(i).GetConn(), delay.sources[0])
-            head.AddConn(delay.targets[0], join.sources[1])
+            head.AddConn(now.GetConn(), join.GetSource(0))
+            head.AddConn(join.GetTarget(0), now)
+            head.AddConn(tail.GetOutput(i).GetConn(), delay.GetSource(0))
+            head.AddConn(delay.GetTarget(0), join.GetSource(1))
         }
         head.RemoveOutputs(tail.GetOutputs())
         head
@@ -135,27 +135,61 @@ external func WaveformFromList(xs : List<Int64>, width!: Int64, signed!: Bool = 
  * @param width The width of the waveform
  * @param name The name to assign the waveform
  * @param signed Whether or not the value is signed
- * @return The infinite waveform
+ * @return The infinite waveform builder
  */
-external func InfiniteWaveform(value : Int64, width!: Int64, name!: String = "", signed!: Bool = false){
+func CreateInfiniteWaveform(value : Int64, width!: Int64, name!: String = "", signed!: Bool = false){
     Debug("InfiniteWaveform", "Creating infinite waveform for value ${value}")
-    let hb = CreateValueFromInt(value, width: width, signed: signed)
+    let hb = CreateIdentity(width)
+    PrependHead(value, hb, signed: signed)
     for(i in 0..width){
-        let value = hb.GetOutput(i).GetLeftEdge()
-        let join = hb.CreateEdge(JOIN)
         let fork = hb.CreateEdge(FORK)
-        let delay = hb.CreateEdge(DELAY(1))
-        let id = hb.CreateEdge(IDENTITY)
-
-        hb.AddConn(value.targets[0], join.sources[0])
-        hb.AddConn(delay.targets[0], join.sources[1])
-        hb.AddConn(join.targets[0], fork.sources[0])
-        hb.AddConn(fork.targets[0], id.sources[0])
-        hb.AddConn(id.targets[0], delay.sources[0])
-        hb.AddConn(fork.targets[1], hb.GetOutput(i))
+        hb.AddConn(hb.GetOutput(i).GetConn(), fork.GetSource(0))
+        print("a\n")
+        hb.AddConn(fork.GetTarget(1), hb.GetOutput(i))
+        print("b\n")
+        let spec = NewSpec()
+        let outlink = hb.CreateEdge(OUTLINK(spec))
+        hb.AddConn(fork.GetTarget(0), outlink.GetSource(0))
+        print("c\n")
+        let inlink = hb.CreateEdge(INLINK(spec))
+        hb.AddConn(inlink.GetTarget(0), hb.GetInput(0).GetConn())
+        hb.RemoveInput(0)
     }
-    hb.ToGraph()
+    print("hello\n")
+    hb
 }
+
+func InfiniteWaveform(value : Int64, width!: Int64, name!: String = "", signed!: Bool = false){
+    let f = CreateInfiniteWaveform(value, width: width, name: name, signed: signed)
+    f.ToGraph()
+}
+
+
+
+func PrependHead(value : Int64, hb : HypBuilder, signed!: Bool = false){
+    Debug("PrependHead", "Prepending value ${value} to the head of this circuit")
+    let width = hb.GetN()
+    let v = CreateValueFromInt(value, width: width, signed: signed)
+    hb.AddNewGraph(v)
+    for(i in 0..width){
+        let value = v.GetOutput(i).GetLeftEdge()
+        let join = hb.CreateEdge(JOIN)
+        let delay = hb.CreateEdge(DELAY(1))
+        // Connect the value to the join
+        hb.AddConn(value.GetTarget(0), join.GetSource(0))
+        // Connect the output of f to the new delay
+        hb.AddConn(hb.GetOutput(i).GetConn(), delay.GetSource(0))
+        // Connect the delay to the join
+        hb.AddConn(delay.GetTarget(0), join.GetSource(1))
+        // Connect the join to the outputs
+        hb.AddConn(join.GetTarget(0), hb.GetOutput(i))
+        // Remove the original output inherited from f
+        hb.RemoveOutput(width)
+    }
+    print("Hello\n")
+    hb
+}
+
 /**
  * Create a new spec to be used for links
  * @param width The width of this spec
@@ -225,7 +259,7 @@ external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 1, lab
         // Delay
         let delay = hb.CreateEdge(DELAY(duration), [hb.GetInputs()[i]])
         // Join the value and the delay
-        let join = hb.CreateEdge(JOIN, [value.targets[0], delay.targets[0]], [hb.GetOutputs()[i]])
+        let join = hb.CreateEdge(JOIN, [value.GetTarget(0), delay.GetTarget(0)], [hb.GetOutputs()[i]])
     }
     let reg = hb.ToGraph(name)
     // If we have an input, compose it to the front
@@ -308,13 +342,13 @@ external func FeedbackReg(spec!: LinkSpec, label!: String = "", name!: String = 
         let join = fb.CreateEdge(JOIN)
         let delay = fb.CreateEdge(DELAY(1))
         // Connect the join to the outlink
-        fb.AddConn(join.targets[0], fork.targets[0].GetConn())
+        fb.AddConn(join.GetTarget(0), fork.GetTarget(0).GetConn())
         // Connect the target of the value to the lhs of the join
-        fb.AddConn(v.GetOutput(i).GetConn(), join.sources[0])
+        fb.AddConn(v.GetOutput(i).GetConn(), join.GetSource(0))
         // Connect the lhs of the fork to the delay
-        fb.AddConn(fork.targets[0], delay.sources[0])
+        fb.AddConn(fork.GetTarget(0), delay.GetSource(0))
         // Connect the target of the delay to the rhs of the join
-        fb.AddConn(delay.targets[0], join.sources[1])
+        fb.AddConn(delay.GetTarget(0), join.GetSource(1))
         fb.RemoveOutput(spec.width)
     }
 

@@ -146,13 +146,13 @@ func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * S
             // Make a new fork
             let fork = f.CreateEdge(FORK)
             // HACK inline access arraylist creates segfault
-            let s = fork.sources[0]
+            let s = fork.GetSource(0)
             f.AddConn(intersectionF.GetConn(), s)
             // Hook up f and g to this new fork, creating new sources
-            let t1 = fork.targets[0]
+            let t1 = fork.GetTarget(0)
             f.AddConn(t1, intersectionF)
             danglingTargets.add(intersectionG.GetConn())
-            let t2 = fork.targets[1]
+            let t2 = fork.GetTarget(1)
             f.AddConn(t2, intersectionG)    
         }
     }
@@ -212,12 +212,12 @@ func Extract(f : HypBuilder, buses : ArrayList<String>, name!: String = "") : Hy
                 f.AddOutput(s)
             case $None =>
                 let fork = f.CreateEdge(FORK)
-                f.AddConn(s.GetConn(), fork.sources[0])
-                f.AddConn(fork.targets[0], s)
+                f.AddConn(s.GetConn(), fork.GetSource(0))
+                f.AddConn(fork.GetTarget(0), s)
                 // Add the output at the appropriate place
                 let out = Source()
                 f.SetOutput(i, out)
-                f.AddConn(fork.targets[1], out)
+                f.AddConn(fork.GetTarget(1), out)
         }
     }
     f.ToGraph(name)

@@ -71,13 +71,13 @@ external func Seq(fs : List<Hypergraph>, name!: String = "") {
     Seq(ArrayList<Hypergraph>(fs), name: name)
 }
 /**
- * Create an identity on n, the unit of sequential composition
+ * Create an identity hyp builder on n, the unit of sequential composition
  * @param n     The number of identity wires
  * @param label The name of the bus these wires will be part of. Cannot already exist in global state.
  * @param name  The name of the resulting hypergraph
- * @return An identity hypergraph on n
+ * @return An identity hyp builder on n
  */
-external func Identity(n : Int64, name!: String = "", label!: String = "") : Hypergraph {
+func CreateIdentity(n : Int64, name!: String = "", label!: String = "") : HypBuilder {
     Debug("Identity", "Making identity on ${n}, label='${label}'")
     if(n < 0){
         throw NegativeWireException("Identity")
@@ -86,6 +86,17 @@ external func Identity(n : Int64, name!: String = "", label!: String = "") : Hyp
     for(i in 0..n){
         hb.AddConn(hb.GetInput(i), hb.GetOutput(i))
     }
+    hb
+}
+/**
+ * Create an identity on n, the unit of sequential composition
+ * @param n     The number of identity wires
+ * @param label The name of the bus these wires will be part of. Cannot already exist in global state.
+ * @param name  The name of the resulting hypergraph
+ * @return An identity hypergraph on n
+ */
+external func Identity(n : Int64, name!: String = "", label!: String = "") : Hypergraph {
+    let hb = CreateIdentity(n, name: name, label: label)
     hb.ToGraph(name)
 }
 /**

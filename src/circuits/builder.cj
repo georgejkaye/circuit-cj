@@ -655,7 +655,7 @@ class HypBuilder <: HypergraphStructure {
         RemoveOutputs(outs)
         for(s in outs){
             let edge = CreateEdge(gen)
-            AddConn(s.GetConn(), edge.sources[0])
+            AddConn(s.GetConn(), edge.GetSource(0))
             ConnectEdgeToOutputs(edge)
         }
     }
