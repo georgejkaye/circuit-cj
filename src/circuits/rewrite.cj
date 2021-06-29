@@ -54,6 +54,7 @@ class RewriteRule {
      * @param e The edge to check for rewriting potential
      */
     func CanRewrite(e : Edge){
+        Debug("CanRewrite", "Checking ${name} against e${e.id}")
         let b = match(entryPoint){
             case EXACTLY(gen) => e.generator == gen
             case $GATE        => e.IsGate()
@@ -156,10 +157,7 @@ class Rewriter {
         let frontier = GetEndpoints(f)
         while(frontier.size() != 0){
             let s = frontier.removeAt(0)
-            // We may have removed this source while rewriting other parts of the graph
-            if(includes(f.GetSources(), s)){
-                RunLocal(s)
-            }
+            RunLocal(s)
         }
     }
     /**
@@ -167,10 +165,11 @@ class Rewriter {
      * @param s The source vertex to traverse from
      */
     func RunLocal(s : Source) : Unit {
-        var rewrote = false
-        match(s.GetLeftPort()){
-            case EdgePort(e, i) =>
-                if(includes(f.GetEdges(), e)){
+        // We may have removed this source while rewriting other parts of the graph
+        if(includes(f.GetSources(), s) && s.HasConn()){
+            var rewrote = false
+            match(s.GetLeftPort()){
+                case EdgePort(e, i) =>
                     let next = ArrayList<Source>()
                     // Identity edges 'block' the rewriter, as this will be handled by the unfoldings
                     // However we sometimes can rewrite them, like if they're just stubbed
@@ -179,26 +178,27 @@ class Rewriter {
                             RunLocal(v)
                         }
                     }
-                    for(rule in rules){
-                        if(!rewrote){
-                            let can = rule.CanRewrite(e)
-                            match(can){
-                                case Some(j) =>
-                                    let nexts = rule.Rewrite(e, f, j)
-                                    rewrites++
-                                    next.addAll(nexts)
-                                    rewrote = true
-                                case $None   => ()
+                    // We may have removed this edge while rewriting the children
+                    if(includes(f.GetEdges(), e)){
+                        for(rule in rules){
+                            if(!rewrote){
+                                let can = rule.CanRewrite(e)
+                                match(can){
+                                    case Some(j) =>
+                                        let nexts = rule.Rewrite(e, f, j)
+                                        rewrites++
+                                        next.addAll(nexts)
+                                        rewrote = true
+                                    case $None   => ()
+                                }
                             }
                         }
-                    }
-                    for(v in next){
-                        if(v.HasConn()){
+                        for(v in next){
                             RunLocal(v)
                         }
                     }
-                }
-            case InterfacePort(i) => ()
+                case InterfacePort(i) => ()
+            }
         }
     }
     /**

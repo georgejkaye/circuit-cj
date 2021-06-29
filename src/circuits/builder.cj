@@ -123,6 +123,16 @@ class HypBuilder <: HypergraphStructure {
     func AddNewTarget(t : Target){
         AddTarget(t, targets)
     }
+    func AddWires(s : Source, wires : ArrayList<Wire>){
+        s.AddWires(wires)
+        wireList.addAll(wires)
+        busList.addAll(map(wires, {w : Wire => w.bus}))
+        UpdateBuses()
+    }
+    func RefreshWires(s : Source){
+        s.RemoveAllWires()
+        AddWires(s, ArrayList<Wire>([NewWire()]))
+    }
     /**
      * Update the bus lists, maps, and vertex maps
      */
@@ -275,7 +285,7 @@ class HypBuilder <: HypergraphStructure {
      * @param s The new output
      */
     func SetOutput(i : Int64, s : Source){
-        if(i == outputs.size()){
+        if(i >= outputs.size()){
             AddOutput(s)
             true
         } else {
@@ -481,6 +491,12 @@ class HypBuilder <: HypergraphStructure {
         targets.removeIf({t : Target => includes(removedTargets, t)})
         inputs.removeIf({t : Target => includes(removedTargets, t)})
         outputs.removeIf({s : Source => includes(removedSources, s)})
+        for(s in removedSources){
+            s.RemovePort()
+        }
+        for(t in removedTargets){
+            t.RemovePort()
+        }
     }
     /**
      * Detach some vertices from the edges or interface they are connected to

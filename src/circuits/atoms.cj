@@ -152,7 +152,16 @@ external class Source <: Vertex {
      * Add a list of wires to this vertex
      * @param wires The wires to add 
      */
-    func AddWires(wires : ArrayList<Wire>) { this.wires.addAll(wires) }
+    func AddWires(wires : ArrayList<Wire>) { 
+        for(w in wires){
+            if(!includes(this.wires, w)){
+                this.wires.add(w)
+            }
+        }
+    }
+    func RemoveAllWires(){
+        wires.clear()
+    }
     func GetString() {
         var wireString = ""
         for (wire in wires){
@@ -299,6 +308,33 @@ external open class Edge <: Atom {
             throw BadTargetException("GetTarget", this, i)
         }
         targets[i]
+    }
+    /**
+     * Set the source of this edge with a given index
+     * Throws an exception if the index is bad
+     * @param i The index of the source
+     * @param s The new source vertex
+     */
+    func SetSource(i : Int64, s : Source){
+        if(i < 0 || i >= sources.size()){
+            throw BadSourceException("SetSource", this, i)
+        }
+        sources.set(i, s)
+        s.SetPort(this, i)
+    }
+    /**
+     * Set the target of this edge with a given index
+     * Throws an exception if the index is bad
+     * @param i The index of the target
+     * @param t The new target vertex
+     */
+    func SetTarget(i : Int64, t : Target){
+        if(i < 0 || i >= targets.size()){
+            throw BadTargetException("SetTarget", this, i)
+        }
+        targets.set(i, t)
+        t.SetPort(this, i)
+        
     }
     /**
      * Is this edge an identity edge?
@@ -461,6 +497,13 @@ func IsDelay(p : Port){
     match(p){
         case EdgePort(e, i) => e.IsDelay()
         case InterfacePort(i) => false
+    }
+}
+
+func IsInterface(p : Port){
+    match(p){
+        case EdgePort(e, i) => false
+        case InterfacePort(i) => true
     }
 }
 

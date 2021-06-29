@@ -20,9 +20,10 @@ func GetBit(w : Int64, n : Int64){
     }
     let f = {i : Int64, hb : HypBuilder, s : Source => 
         if(i == n) {
-            hb.AddOutput(s)
+            let s = hb.AddOutput(s)
         } else {
-            hb.GetEdges().add(Edge(STUB, [s], []))
+            let stub = hb.CreateEdge(STUB)
+            let s = stub.sources.set(0, s)
         }
     }
     ForEachBit(w, f)
@@ -39,9 +40,10 @@ func DropBit(w : Int64, n : Int64){
     }
     let f = {i : Int64, hb : HypBuilder, s : Source => 
         if(i == n){
-            hb.GetEdges().add(Edge(STUB, [s], []))
+            let stub = hb.CreateEdge(STUB)
+            let s = stub.sources.set(0, s)
         } else {
-            hb.AddOutput(s)
+            let s = hb.AddOutput(s)
         }
     }
     ForEachBit(w, f)

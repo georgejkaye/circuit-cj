@@ -144,18 +144,14 @@ func CreateInfiniteWaveform(value : Int64, width!: Int64, name!: String = "", si
     for(i in 0..width){
         let fork = hb.CreateEdge(FORK)
         hb.AddConn(hb.GetOutput(i).GetConn(), fork.GetSource(0))
-        print("a\n")
         hb.AddConn(fork.GetTarget(1), hb.GetOutput(i))
-        print("b\n")
-        let spec = NewSpec()
+        let spec = NewLink()
         let outlink = hb.CreateEdge(OUTLINK(spec))
         hb.AddConn(fork.GetTarget(0), outlink.GetSource(0))
-        print("c\n")
         let inlink = hb.CreateEdge(INLINK(spec))
         hb.AddConn(inlink.GetTarget(0), hb.GetInput(0).GetConn())
         hb.RemoveInput(0)
     }
-    print("hello\n")
     hb
 }
 
@@ -163,8 +159,6 @@ func InfiniteWaveform(value : Int64, width!: Int64, name!: String = "", signed!:
     let f = CreateInfiniteWaveform(value, width: width, name: name, signed: signed)
     f.ToGraph()
 }
-
-
 
 func PrependHead(value : Int64, hb : HypBuilder, signed!: Bool = false){
     Debug("PrependHead", "Prepending value ${value} to the head of this circuit")
@@ -186,7 +180,6 @@ func PrependHead(value : Int64, hb : HypBuilder, signed!: Bool = false){
         // Remove the original output inherited from f
         hb.RemoveOutput(width)
     }
-    print("Hello\n")
     hb
 }
 
@@ -196,11 +189,11 @@ func PrependHead(value : Int64, hb : HypBuilder, signed!: Bool = false){
  * @param name The name to associate with this spec
  * @return The new link spec
  */
-external func NewSpec(width!: Int64 = 1, name!: String = ""){
+external func NewLink(width!: Int64 = 1, name!: String = ""){
     if(width < 1){
-        throw NegativeWireException("NewSpec")
+        throw NegativeWireException("NewLink")
     }
-    LinkSpec(name, width)
+    Link(name, width)
 }
 /**
  * Create a delay construct containing a number of delay morphisms 
@@ -274,7 +267,7 @@ external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 1, lab
  * @param name The name to give this circuit
  * @return The out link
  */
-external func OutLink(spec!: LinkSpec, name!: String = "") : Hypergraph { 
+external func OutLink(spec!: Link, name!: String = "") : Hypergraph { 
     OpMToZero(OUTLINK(spec), name: name) 
 }
 /**
@@ -283,7 +276,7 @@ external func OutLink(spec!: LinkSpec, name!: String = "") : Hypergraph {
  * @param name The name to give this circuit
  * @return The in link
  */
-external func InLink(spec!: LinkSpec, label!: String = "", name!:String = "") : Hypergraph { 
+external func InLink(spec!: Link, label!: String = "", name!:String = "") : Hypergraph { 
     Debug("InLink", "Creating in link for spec ${spec.name}")
     let wires = ArrayList<Wire>(spec.width, {i : Int64 => NewWire(label, i)})
     OpMToN(INLINK(spec), wires: wires, name: name) 
@@ -293,7 +286,7 @@ external func InLink(spec!: LinkSpec, label!: String = "", name!:String = "") : 
  * @param spec   The link spec for the loop
  * @return The fixpoint
  */
-external func CreateFeedback(spec: LinkSpec, label!: String = "") : HypBuilder {
+external func CreateFeedback(spec: Link, label!: String = "") : HypBuilder {
     let hb = HypBuilder(spec.width, spec.width, label)
     let link = hb.CreateEdge(OUTLINK(spec))
     for(i in 0..spec.width){
@@ -308,7 +301,7 @@ external func CreateFeedback(spec: LinkSpec, label!: String = "") : HypBuilder {
  * @param name   The name to give this circuit
  * @return The fixpoint
  */
-external func Feedback(spec!: LinkSpec, label!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
+external func Feedback(spec!: Link, label!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
     Debug("Feedback", "Creating feedback to spec ${spec.name}")
     match(input){
         case Some(f) =>
@@ -324,7 +317,7 @@ external func Feedback(spec!: LinkSpec, label!: String = "", name!: String = "",
     }
 }
 
-external func FeedbackReg(spec!: LinkSpec, label!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>, initial!: Int64, signed!: Bool = false){
+external func FeedbackReg(spec!: Link, label!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>, initial!: Int64, signed!: Bool = false){
     Debug("FeedbackReg", "Creating feedback to spec ${spec.name} with register")
     match(input){
         case Some(f) =>

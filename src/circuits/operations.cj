@@ -247,7 +247,7 @@ external func Trace(f : Hypergraph, x : Int64, name!: String = ""){
     }
 
     let hb = f.Clone()
-    let spec = LinkSpec(4)
+    let spec = Link(4)
     let outlink = hb.ConnectOutputsToEdge(ArrayList<Int64>(x, {i : Int64 => i}), OUTLINK(spec))
     let inlink = hb.ConnectInputsToEdge(ArrayList<Int64>(x, {i : Int64 => i}), INLINK(spec)) 
     hb.ToGraph()

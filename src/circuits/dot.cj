@@ -54,6 +54,7 @@ let gateStyle = "bgcolor=\"cyan\""
 let structuralStyle = "bgcolor=\"violet\" width=\"10\""
 let delayStyle = "bgcolor=\"yellow\""
 let valueStyle = "bgcolor=\"green\""
+let blackboxStyle = "bgcolor=\"white\""
 
 let vertexCommentString = "Vertices"
 let edgeCommentString = "Edges"
@@ -169,6 +170,7 @@ func DrawEdge(n : Int64, e : Edge){
         case VALUE(value)       => valueStyle
         case STRUCTURAL(struct) => structuralStyle
         case GATE(label)        => gateStyle
+        case BLACKBOX(label)    => blackboxStyle
         case DELAY(dur)         => delayStyle
         case $IDENTITY          => identityStyle
         case INLINK(spec)       => linkStyle
@@ -178,6 +180,7 @@ func DrawEdge(n : Int64, e : Edge){
         case VALUE(value)       => "${value}"
         case STRUCTURAL(struct) => "${struct}"
         case GATE(label)        => label.name
+        case BLACKBOX(label)    => label.name
         case DELAY(dur)         => "d[${dur}]"
         case $IDENTITY          => "id"
         case INLINK(spec)       => spec.name

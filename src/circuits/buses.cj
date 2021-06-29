@@ -55,7 +55,7 @@ class Bus <: Identifiable {
      * @param i The index of the wire to get
      */
     func GetWire(i : Int64){
-        wireMap.toMap().get(i)
+        wireMap.get(i)
     }
     /** 
      * Insert a wire into the list at the appropriate position based on its index
@@ -116,7 +116,7 @@ func GetBusOption(string: String){
     if(string == ""){
         None<Bus>
     } else {
-        usedBusNames.toMap().get(string)
+        usedBusNames.get(string)
     }
 }
 /**

@@ -37,8 +37,8 @@ func ResolveLinks(f : HypBuilder, name!: String = "") {
     let inlinks = f.GetInlinkMap()
     let outlinks = f.GetOutlinkMap()
     // Join all the outlinks into one wire 
-    for((spec, outLinkEdges) in outlinks.toMap()){
-        match(inlinks.toMap().get(spec)){
+    for((spec, outLinkEdges) in outlinks){
+        match(inlinks.get(spec)){
             // If there are definitely in links to connect to, we can go ahead
             case Some(inLinkEdges) =>
                 let outs = outLinkEdges.size()
@@ -113,7 +113,7 @@ func ResolveLinks(f : HypBuilder, name!: String = "") {
 func UnresolveLinks(f : HypBuilder){
     let ids = f.GetAllIdentityEdges()
     for(e in ids){
-        let spec = NewSpec()
+        let spec = NewLink()
         let outlink = f.CreateEdge(OUTLINK(spec))
         f.AddConn(e.GetSource(0).GetConn(), outlink.GetSource(0))
         let inlink = f.CreateEdge(INLINK(spec))

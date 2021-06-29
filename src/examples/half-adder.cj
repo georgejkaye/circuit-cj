@@ -26,3 +26,15 @@ external func HalfAdderFunctional(){
     // We need to return both the carry and the sum
     Concat([sum, carry], name: "half adder - functional style")
 }
+
+
+let a = Input()
+let b = Input()
+let sum = XorGate(lhs: a, rhs: b)
+let carry = AndGate(lhs: a, rhs: b)
+let circ = Concat([and, xor])
+
+let sum = XorGate()
+let carry = AndGate()
+let gates = sum * carry
+let circ = Copy(2) + gates

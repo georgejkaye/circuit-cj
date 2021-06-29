@@ -352,8 +352,8 @@ let orPassthrough = PassthroughGateRewriteRule("OR false", OR, FALSE)
 let joinUnit = PassthroughGateRewriteRule("join unit", JOIN, BOTTOM)
 
 /* The indices of the multiplexer inputs */
-let muxTrue = 0
-let muxFalse = 1
+let muxTrue = 1
+let muxFalse = 0
 let muxControl = 2
 /* Evaluate a multiplexer */
 let muxEval = RewriteRule(

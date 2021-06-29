@@ -124,7 +124,7 @@ Contains functions details operations on hypergraphs.
 
 Contains functions to create sequential circuits with delays and feedback.
 
-* `NewSpec` Create a new linkspec for tagging feedback with
+* `NewLink` Create a new Link for tagging feedback with
 * `Delay` Create a delay construct
 * `Register` Create a register with some initial value, that delays all inputs for some cycles
 * `OutLink` Create an outlink that takes in signals with the intention of spitting them out somewhere else in the graph

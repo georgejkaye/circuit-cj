@@ -277,8 +277,8 @@ external func Zero(width!: Int64 = 1, label!: String = ""){
  */
 external func UnsignedExtend(v: Hypergraph){
     let hb = v.Clone()
-    let s = Source()
-    hb.AddOutput(s)
-    hb.CreateEdge(VALUE(FALSE), [], [s]) 
+    let f = hb.CreateEdge(VALUE(FALSE))
+    let s = hb.NewOutput()
+    hb.AddConn(f.targets[0], s) 
     hb.ToGraph()
 }

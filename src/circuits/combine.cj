@@ -19,12 +19,17 @@ import debug.*
  */ 
 func FindIntersections(f : HypergraphStructure, g : HypergraphStructure){
     Debug("FindIntersection", "Finding intersections between ${f.GetName()} and ${g.GetName()}")
+
     // The list of source vertice of intersections in f and g
     let intersections = ArrayList<Source * Source>()
     // Traverse backwards from the outputs of g to find wires also in f
     let visited = ArrayList<Edge>()
     let frontier = ArrayList<Source>(GetEndpoints(g))
-    let wires = f.GetWires()
+
+    let wires = ArrayList<Wire>()
+    for(s in f.GetSources()){
+        wires.addAll(s.wires)
+    }
 
     while(frontier.size() != 0){
         let v : Source = frontier.removeAt(0)
@@ -32,7 +37,7 @@ func FindIntersections(f : HypergraphStructure, g : HypergraphStructure){
         if(!includesPairR(intersections, v)){
             for(w in v.wires){
                 // Check if the wire is also in f, if so add it to the lists
-                if(!found && includes(wires, w)){
+                if(!found && includes(wires, w)){                    
                     // Add the corresponding vertex for f for this wire
                     intersections.add((f.GetWireVertex(w), v))
                     // We don't need to check for any more wires in this vertex now
@@ -104,11 +109,11 @@ func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * S
                         danglingTargets.add(intersectionG.GetConn())
                         f.AddConn(intersectionF.GetConn(), intersectionG)
                         fork = false
-                        None<LinkSpec>
-                    case OUTLINK(specf) => Some<LinkSpec>(specf)
-                    case _              => None<LinkSpec>
+                        None<Link>
+                    case OUTLINK(specf) => Some<Link>(specf)
+                    case _              => None<Link>
                 }
-            case $None => None<LinkSpec>
+            case $None => None<Link>
         }
         // If we've already decided to not fork then we immediately just take the content of g
         if(fork) {
@@ -129,6 +134,7 @@ func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * S
                                 case Some(specf) =>
                                     if(specf == specg) {
                                         removedEdges.add(e)
+                                        danglingTargets.add(intersectionG.GetConn())
                                         fork = false
                                     }
                                 case $None => ()
@@ -137,23 +143,25 @@ func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * S
                     }
                 case $None => ()
             }
-        }
-        // If we are still satified that a fork is truly required, go for it
-        if(fork){
-            // Grab the ports of the intersection sources
-            let portF = intersectionF.GetPort()
-            let portG = intersectionG.GetPort()
-            // Make a new fork
-            let fork = f.CreateEdge(FORK)
-            // HACK inline access arraylist creates segfault
-            let s = fork.GetSource(0)
-            f.AddConn(intersectionF.GetConn(), s)
-            // Hook up f and g to this new fork, creating new sources
-            let t1 = fork.GetTarget(0)
-            f.AddConn(t1, intersectionF)
-            danglingTargets.add(intersectionG.GetConn())
-            let t2 = fork.GetTarget(1)
-            f.AddConn(t2, intersectionG)    
+            // If we are still satified that a fork is truly required, go for it
+            if(fork){
+                // Make a new fork
+                let fork = f.CreateEdge(FORK)
+                // The source of the fork is the 'intersection point'
+                // We add any wires from the two intersections
+                f.AddWires(fork.GetSource(0), intersectionF.wires)
+                f.AddWires(fork.GetSource(0), intersectionG.wires)
+                // The left of the intersection from g will be left danglings
+                danglingTargets.add(intersectionG.GetConn())
+                // Hook the fork up to everything
+                f.AddConn(intersectionF.GetConn(), fork.GetSource(0))
+                f.AddConn(fork.GetTarget(0), intersectionF)
+                f.AddConn(fork.GetTarget(1), intersectionG)
+                // Refresh the wires in the intersection points
+                // We don't want to duplicate the intersected wires
+                f.RefreshWires(intersectionF)
+                f.RefreshWires(intersectionG)
+            }
         }
     }
     // Functions to use when traversing the graph to find the dangling elements
@@ -210,6 +218,7 @@ func Extract(f : HypBuilder, buses : ArrayList<String>, name!: String = "") : Hy
             case Some((e, _)) =>
                 f.RemoveEdge(e)
                 f.AddOutput(s)
+                ()
             case $None =>
                 let fork = f.CreateEdge(FORK)
                 f.AddConn(s.GetConn(), fork.GetSource(0))

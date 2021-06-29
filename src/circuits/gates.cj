@@ -543,22 +543,22 @@ external func Mux(width!: Int64 = 1, label!: String = "", elem!: Int64 = -1, nam
     }
 }
 
-external func Mux(width!: Int64 = 1, label!: String = "", elem!: Int64 = -1, name!: String = "", a!: Hypergraph, b!: Hypergraph, s!: Option<Hypergraph> = None<Hypergraph>){
-    if(a.GetN() != width){
-        throw BadInputGraphException("Mux", "a", width, a.GetName(), a.GetN())
+external func Mux(width!: Int64 = 1, label!: String = "", elem!: Int64 = -1, name!: String = "", low!: Hypergraph, high!: Hypergraph, sel!: Option<Hypergraph> = None<Hypergraph>){
+    if(low.GetN() != width){
+        throw BadInputGraphException("Mux", "low", width, low.GetName(), low.GetN())
     }
-    if(b.GetN() != width){
-        throw BadInputGraphException("Mux", "b", width, b.GetName(), b.GetN())
+    if(high.GetN() != width){
+        throw BadInputGraphException("Mux", "high", width, high.GetName(), high.GetN())
     }
-    let z = match(s){
+    let z = match(sel){
         case Some(f) =>
             if(f.GetN() != 1){
-                throw BadInputGraphException("Mux", "s", width, f.GetName(), f.GetN())
+                throw BadInputGraphException("Mux", "sel", 1, f.GetName(), f.GetN())
             }
             f
         case $None   => Identity(1)
     }
-    let f = Concat([a,b,z])
+    let f = Concat([low,high,z])
     Mux(width: width, label: label, elem: elem, name: name, input: f)
 }
 
@@ -576,6 +576,6 @@ func BlackBox(label: String, dom: Int64, cod: Int64, wires!: ArrayList<Wire> = A
     } else if(wires.size() != cod){
         throw BadOutputLabelsException("BlackBox", wires.size(), cod)
     }
-    let gen = GATE(Label(label, dom, cod))
+    let gen = BLACKBOX(Label(label, dom, cod))
     OpMToN(gen, wires: wires, input: input, name: name)
 }

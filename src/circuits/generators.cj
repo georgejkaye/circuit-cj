@@ -90,7 +90,7 @@ extend Label <: Equatable {
  * A link spec contains information about a link
  * It has an id, a name, and a width 
  */
-class LinkSpec <: Identifiable {
+class Link <: Identifiable {
     let name : String
     let width : Int64
     init(name : String, width : Int64) {
@@ -106,17 +106,17 @@ class LinkSpec <: Identifiable {
         this.width = width
     }
 }
-extend LinkSpec <: Equatable {
-    operator func ==(rhs : LinkSpec){
+extend Link <: Equatable {
+    operator func ==(rhs : Link){
         this.name == rhs.name && this.width == rhs.width
     }
-    operator func !=(rhs : LinkSpec){
+    operator func !=(rhs : Link){
         !(this == rhs)
     }
 }
-extend LinkSpec <: ToString{
+extend Link <: ToString{
     func toString(){
-        "LinkSpec - ${name} width ${width}"
+        "Link - ${name} width ${width}"
     }
 }
 /**
@@ -126,10 +126,11 @@ enum Generator {
     | VALUE(Value)            // A value 0 -> 1
     | STRUCTURAL(Struct)      // A structural generator 
     | GATE(Label)             // A gate m -> 1
+    | BLACKBOX(Label)         // A black box with arbitrary name and codomain
     | DELAY(Int64)            // A delay parameterised by a duration
     | IDENTITY                // An identity 1 -> 1
-    | INLINK(LinkSpec)        // An in-link 0 -> m, where wires come into the graph
-    | OUTLINK(LinkSpec)       // An out-link m -> 0, where wires come out of the graph
+    | INLINK(Link)        // An in-link 0 -> m, where wires come into the graph
+    | OUTLINK(Link)       // An out-link m -> 0, where wires come out of the graph
 }
 extend Generator <: ToString {
     func toString(){
@@ -137,6 +138,7 @@ extend Generator <: ToString {
             case VALUE(value)        => "value (${value})"
             case STRUCTURAL(struct)  => "structural (${struct})"
             case GATE(label)         => "gate (${label.name})"
+            case BLACKBOX(label)     => "black box (${label.name})"
             case DELAY(dur)          => "delay (${dur})"
             case $IDENTITY           => "identity"
             case INLINK(spec)        => "in link (${spec.name} - ${spec.width})"
@@ -161,6 +163,11 @@ extend Generator <: Equatable {
             case GATE(l1) =>
                 match(g2) {
                     case GATE(l2) => l1 == l2
+                    case _ => false
+                }
+            case BLACKBOX(l1) =>
+                match(g2) {
+                    case BLACKBOX(l2) => l1 == l2
                     case _ => false
                 }
             case DELAY(d1) =>
@@ -200,6 +207,7 @@ func Signature(gen : Generator) : Int64 * Int64 {
                 case $StubMorph => (1,0)
             }
         case GATE(label)        => (label.dom, label.cod)
+        case BLACKBOX(label)    => (label.dom, label.cod)
         case DELAY(dur)         => (1,1)
         case $IDENTITY          => (1,1)
         case INLINK(spec)       => (0, spec.width)

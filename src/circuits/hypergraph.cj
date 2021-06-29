@@ -33,7 +33,7 @@ func AddSource(s : Source, sources : ArrayList<Source>, busMaps : MapBuilder<Bus
     for(wire in s.wires){
         wireList.add(wire)
         let bus = wire.bus
-        match(busMaps.toMap().get(bus)){
+        match(busMaps.get(bus)){
             case Some(ws) =>
                 ws.add(wire.i, s)
                 false
@@ -45,10 +45,11 @@ func AddSource(s : Source, sources : ArrayList<Source>, busMaps : MapBuilder<Bus
                 true
         }
     }
+    busMaps
 }
 func AddEdge(e : Edge, sources : ArrayList<Source>, targets : ArrayList<Target>,
              busMaps : MapBuilder<Bus, MapBuilder<Int64, Source>>, busList : ArrayList<Bus>, wireList : ArrayList<Wire>,
-             inlinkMap : MapBuilder<LinkSpec, ArrayList<Edge>>, outlinkMap : MapBuilder<LinkSpec, ArrayList<Edge>>
+             inlinkMap : MapBuilder<Link, ArrayList<Edge>>, outlinkMap : MapBuilder<Link, ArrayList<Edge>>
             ){
     for(i in 0..e.sources.size()){
         AddSource(e.sources[i], sources, busMaps, busList, wireList)
@@ -71,13 +72,13 @@ func AddEdge(e : Edge, sources : ArrayList<Source>, targets : ArrayList<Target>,
  */
 func UpdateBusVertexList(busList : ArrayList<Bus>, busMaps : MapBuilder<Bus, MapBuilder<Int64, Source>>, busVertexMaps : MapBuilder<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>){
     for(bus in busList){
-        match(busMaps.toMap().get(bus)){
+        match(busMaps.get(bus)){
             case $None => ()
             case Some(mb) =>
                 let vertexList = ArrayList<Source>()
                 let wires = bus.wires
                 for(wire in wires){
-                    match(mb.toMap().get(wire.i)){
+                    match(mb.get(wire.i)){
                         // Not all wires from a given bus may be in a graph
                         case $None   => ()
                         case Some(s) => let x = vertexList.add(s)
@@ -93,11 +94,11 @@ func UpdateBusVertexList(busList : ArrayList<Bus>, busMaps : MapBuilder<Bus, Map
  * @param e The link edge to add
  * @param linkMap The map to update
  */
-func UpdateLinks(e : Edge, linkMap : MapBuilder<LinkSpec, ArrayList<Edge>>){
+func UpdateLinks(e : Edge, linkMap : MapBuilder<Link, ArrayList<Edge>>){
     let spec = e.GetSpec()
     // TODO something going wrong with match
     let es : ArrayList<Edge>
-    match(linkMap.toMap().get(spec)){
+    match(linkMap.get(spec)){
         case Some(es2) => es = es2
         case $None =>
             let es2 = ArrayList<Edge>()
@@ -124,8 +125,8 @@ open class HypergraphStructure <: Identifiable {
     protected let busList        : ArrayList<Bus>
     protected let wireList       : ArrayList<Wire> 
 
-    protected let inlinkMap  : MapBuilder<LinkSpec, ArrayList<Edge>>
-    protected let outlinkMap : MapBuilder<LinkSpec, ArrayList<Edge>> 
+    protected let inlinkMap  : MapBuilder<Link, ArrayList<Edge>>
+    protected let outlinkMap : MapBuilder<Link, ArrayList<Edge>> 
 
     init(edges   : ArrayList<Edge>,
          inputs  : ArrayList<Target>,
@@ -144,8 +145,8 @@ open class HypergraphStructure <: Identifiable {
         this.busMaps = MapBuilder<Bus, MapBuilder<Int64, Source>>()
         this.busVertexMaps = MapBuilder<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>()
 
-        this.inlinkMap = MapBuilder<LinkSpec, ArrayList<Edge>>()
-        this.outlinkMap = MapBuilder<LinkSpec, ArrayList<Edge>>()
+        this.inlinkMap = MapBuilder<Link, ArrayList<Edge>>()
+        this.outlinkMap = MapBuilder<Link, ArrayList<Edge>>()
 
         // Add all the inputs to the targets
         for(i in 0..inputs.size()){
@@ -268,10 +269,13 @@ open class HypergraphStructure <: Identifiable {
      * @return Some(vertex) if it exists in this graph, or None otherwise
      */
     func GetWireVertexOption(w : Wire) : Option<Source> {
-        match(busVertexMaps.toMap().get(w.bus)){
-             case Some((mb, vs)) => mb.toMap().get(w.i)
-             case $None          => None<Source>
+        // HACK because buses are a bit of a mess right now
+        for(s in sources){
+            if(includes(s.wires, w)){
+                return Some<Source>(s)
+            }
         }
+        return None<Source>
     }
     /** 
      * Does this hypergraph contain a given bus?
@@ -280,7 +284,7 @@ open class HypergraphStructure <: Identifiable {
      */
     func ContainsBus(b : String) {
         let b = GetBus(b)
-        match(busVertexMaps.toMap().get(b)){
+        match(busVertexMaps.get(b)){
             case Some(x) => return true
             case $None   => return false
         }
@@ -291,7 +295,10 @@ open class HypergraphStructure <: Identifiable {
      * @return  The index-vertex map of vertices belonging to this bus
      */  
     func GetBusVertexMap(b : Bus){
-        busVertexMaps.toMap().get(b)
+        match(busVertexMaps.get(b)){
+            case Some(vms) => vms
+            case $None => throw BusNotInGraphException("GetBusVertexMap", b)
+        }
     }
     /**
      * Get the index-vertex map of vertices belonging to a given bus 
@@ -309,7 +316,7 @@ open class HypergraphStructure <: Identifiable {
      * @return The list of vertices that belong to this bus
      */
     func GetBusVertexList(b : Bus, vs : ArrayList<Source>){
-        match(busVertexMaps.toMap().get(b)){
+        match(busVertexMaps.get(b)){
             case Some((mb, ss)) => vs.addAll(ss)
             case $None          => throw BusNotInGraphException("GetBusVertexList", b)
         }
@@ -392,11 +399,11 @@ open class HypergraphStructure <: Identifiable {
                     if(!includes(edges, e)){
                         return EdgeNotInGraph(t, e)
                     }
-                    if(e.targets[i] != t){
+                    if(e.GetTarget(i) != t){
                         return IncorrectTargetAssignment(t, t.GetLeftPort())
                     }
                 case InterfacePort(i) =>
-                    if(inputs[i] != t){
+                    if(i >= GetM() || GetInput(i) != t){
                         return IncorrectTargetAssignment(t, t.GetLeftPort())
                     }
             }
@@ -421,11 +428,11 @@ open class HypergraphStructure <: Identifiable {
                     if(!includes(edges, e)){
                         return EdgeNotInGraph(s, e)
                     }
-                    if(e.sources[i] != s){
+                    if(e.GetSource(i) != s){
                         return IncorrectSourceAssignment(s, s.GetRightPort())
                     }
                 case InterfacePort(i) =>
-                    if(outputs[i] != s){
+                    if(i >= GetN() || GetOutput(i) != s){
                         return IncorrectSourceAssignment(s, s.GetRightPort())
                     }
             }
@@ -735,17 +742,17 @@ external class Hypergraph <: HypergraphStructure {
  */
 class Cloner {
     let original : Hypergraph
-    let sourceMap : MapBuilder<Source, Source> = MapBuilder<Source, Source>()
-    let targetMap : MapBuilder<Target, Target> = MapBuilder<Target, Target>()
+    var sourceMap : MapBuilder<Source, Source> = MapBuilder<Source, Source>()
+    var targetMap : MapBuilder<Target, Target> = MapBuilder<Target, Target>()
     init(original : Hypergraph){
         this.original = original
         for(s in original.GetSources()){
             let newS = Source(ArrayList<Wire>(s.wires))
-            sourceMap.add(s, newS)    
+            sourceMap = sourceMap.add(s, newS)    
         }
         for(t in original.GetTargets()){
             let newT = Target()
-            targetMap.add(t, newT)
+            targetMap = targetMap.add(t, newT)
         }
     }
     /**
@@ -754,7 +761,7 @@ class Cloner {
      * @return The cloned source
      */
     func GetNewSource(s : Source){
-        match(sourceMap.toMap().get(s)){
+        match(sourceMap.get(s)){
             case $None => throw VertexNotInGraphException("GetNewSource", s)
             case Some(s1) => s1
         }
@@ -765,7 +772,7 @@ class Cloner {
      * @return The cloned target
      */
     func GetNewTarget(t : Target){
-        match(targetMap.toMap().get(t)){
+        match(targetMap.get(t)){
             case $None => throw VertexNotInGraphException("GetNewTarget", t)
             case Some(t1) => t1
         }
@@ -804,54 +811,63 @@ func main(){
 
     let width = 1
 
-    let wf = InfiniteWaveform(4, width: 2)
-    WriteDotToFile(wf, "wf")
+    //let circ = serial_multiplier_bit()
+
+    //let wf = InfiniteWaveform(4, width: 2)
+    //WriteDotToFile(wf, "wf")
 
 
-    // let link_spec = NewSpec(name: "prev_sum", width: width)
-    // let prev_sum = InLink(spec: link_spec, label: "prev_sum")
-    // let x = Input(label: "x", width: width)
-    // let sum = Plus(a: prev_sum, b: x, label: "sum", name: "Plus")
+    // let link_spec = NewLink(width: width)
+    // let prev_sum = InLink(spec: link_spec)
+    // let x = Input(width: width)
+    // let sum = Plus(a: prev_sum, b: x)
     // let circ = FeedbackReg(spec: link_spec, input: Some(sum), initial: 0)
     
 
    
     // // TODO have to use Some to avoid segfault here
     
-    // let spec = LinkSpec()
+    // let spec = Link()
     // let circ = FeedbackReg(spec: link_spec, input: AndGate(), initial: 0)
     // let circ2 = Feedback(spec: link_spec, )
 
     // WriteDotToFile(circ, "circuit", resolve: true)
     
+
+
+
     // let wf = WaveformFromList([0,1], width: width)
     // let applied = wf + circ
     // WriteDotToFile(applied, "applied", resolve: true)
 
-    // let x = Input(label: "x")
-    // let c = Input(label: "c")
-    // let spec = NewSpec(width: 1, name: "comb_fb")
-    // let mux1 = Mux(a: InLink(spec: spec), b: x, s: c)
-    // let f = BlackBox("F", 1, 1, input: mux1)
-    // let mux2 = Mux(a: x, b: f, s: c)
-    // let g = BlackBox("G", 1, 1, input: mux2)
-    // let fb = Feedback(spec: spec, input: g)
-    // let circ = Mux(a: f, b: fb, s: c)
+    let x = Input()
+    let c = Input()
+    let spec = NewLink(width: 1)
+    let mux1 = Mux(low: x, high: InLink(spec: spec), sel: c)
+    let f = BlackBox("F", 1, 1, input: Some(mux1))
+    let mux2 = Mux(low: f, high: x, sel: c)
+    let g = BlackBox("G", 1, 1, input: Some(mux2))
+    let fb = Feedback(spec: spec, input: g)
+    let circ = Mux(high: f, low: fb, sel: c)
 
-    // WriteDotToFile(circ, "circ", resolve: true)
+    WriteDotToFile(circ, "circ", resolve: true)
 
-    // let app1 = True() * False() + circ
-    // let app2 = True() * True() + circ
+    let app1 = True() * True() + circ
+    let app2 = True() * False() + circ
 
-    // WriteDotToFile(app1, "applied1", resolve: true)
-    // WriteDotToFile(app2, "applied2", resolve: true)
+    WriteDotToFile(app1, "applied1", resolve: true)
+    WriteDotToFile(app2, "applied2", resolve: true)
 
-    // let rw1 = applied.GetRewriter()
-    // rw1.RunCycle()
-    // WriteDotToFile(rw1.GetGraph(), "cycle1")
+    let rw1 = app1.GetRewriter()
+    rw1.RunCycle()
+    WriteDotToFile(rw1.GetGraph(), "cycle1")
 
-    // rw1.RunCycle()
-    // WriteDotToFile(rw1.GetGraph(), "cycle2")
+    let rw2 = app2.GetRewriter()
+    rw2.RunCycle()
+    WriteDotToFile(rw2.GetGraph(), "cycle2")
+
+    //rw1.RunCycle()
+    //WriteDotToFile(rw1.GetGraph(), "cycle2")
 
     //rw.RunCycle()
     //WriteDotToFile(rw.GetGraph(), "cycle-2")
@@ -862,7 +878,7 @@ func main(){
     // let c = Input(label: "c")
     // let x = Input(label: "x")
 
-    // let spec = NewSpec(width: 1, name: "fb")
+    // let spec = NewLink(width: 1, name: "fb")
     // let mux1 = Mux(a: x, b: InLink(spec: spec), s: c)
     // let f = BlackBox("F", 1, 1, input: Some(mux1))
     // let mux2 = Mux(a: f, b: x, s: c)
@@ -886,6 +902,7 @@ func main(){
     // WriteDotToFile(rw2.GetGraph(), "red2", resolve: true)
 
     // let circ = serial_multiplier_bit(width: 2)
+    // WriteDotToFile(circ, "mult")
     // let a = WaveformFromList([1], width: 2)
     // let b = WaveformFromList([2], width: 2)
 
@@ -899,11 +916,11 @@ func main(){
 }
 
 func partial_product(a!: Hypergraph, b0!: Hypergraph){
-    Mux(width: a.GetN(), s: b0, a: a, b: Zero(width: a.GetN()))
+    Mux(width: a.GetN(), sel: b0, high: a, low: Zero(width: a.GetN()))
 }
 
 func running_sum(first!: Hypergraph, sum!: Hypergraph, a!: Hypergraph, b0!: Hypergraph){
-    let lhs = Mux(width: sum.GetN(), s: first, a: Zero(width: a.GetN()), b: sum)
+    let lhs = Mux(width: sum.GetN(), sel: first, high: Zero(width: a.GetN()), low: sum)
     let rhs = partial_product(a: a, b0: b0)
     let a = UnsignedExtend(lhs)
     let b = UnsignedExtend(rhs)
@@ -911,21 +928,22 @@ func running_sum(first!: Hypergraph, sum!: Hypergraph, a!: Hypergraph, b0!: Hype
 }
 
 func running_sum_loop(first!: Hypergraph, a!: Hypergraph, b0!: Hypergraph){
-    let spec = NewSpec(name: "prev_sum", width: 4)
-    let prev_sum = Delay(width: 4, input: InLink(spec: spec))
+    let width = a.GetN()
+    let spec = NewLink(name: "prev_sum", width: width)
+    let prev_sum = Delay(width: width, input: InLink(spec: spec))
     let sum = running_sum(first: first, sum: prev_sum, a: a, b0: b0)
     let msbs = Msbs(sum)
     Feedback(spec: spec, input: msbs, label: "loop")
 }
 
 func computed_bits(width!: Int64, bit!: Hypergraph){
-    let spec = NewSpec(name: "d", width: width)
-    let prev_bits = Register(initial: 0, width: 4, input: InLink(spec: spec))
+    let spec = NewLink(name: "d", width: width)
+    let prev_bits = Register(initial: 0, width: width, input: InLink(spec: spec))
     let bits = Par(Msbs(prev_bits), bit)
     Feedback(spec: spec, input: bits)
 }
 
-external func serial_multiplier_bit(width!: Int64){
+func serial_multiplier_bit(width!: Int64){
     Info("serial_multiplier_bit", "Making serial multiplier circuit for one bit")
     let first = Input(width: 1, label: "first")
     let a = Input(width: width, label: "a")
@@ -934,5 +952,12 @@ external func serial_multiplier_bit(width!: Int64){
     let bit = Lsb(sum_bit)
     let sum = Msbs(sum_bit)
     let computed_bits_v = computed_bits(width: width, bit: bit)
+    WriteDotToFile(sum, "sum")
+    WriteDotToFile(computed_bits_v, "cbits")
     Concat([sum, computed_bits_v])
+}
+
+func serial_multiplier(a : Int64, b : Int64, w : Int64){
+    let av = UnsignedValueFromInt(a, width: w)
+    let bv = UnsignedValueFromInt(b, width: w)
 }
