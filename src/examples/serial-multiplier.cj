@@ -16,18 +16,18 @@ func running_sum(first!: Hypergraph, sum!: Hypergraph, a!: Hypergraph, b0!: Hype
 }
 
 func running_sum_loop(first!: Hypergraph, a!: Hypergraph, b0!: Hypergraph){
-    let spec = NewLink(name: "prev_sum", width: 4)
-    let prev_sum = Delay(width: 4, input: InLink(spec: spec))
+    let link = NewLink(name: "prev_sum", width: 4)
+    let prev_sum = Delay(width: 4, input: InLink(link: link))
     let sum = running_sum(first: first, sum: prev_sum, a: a, b0: b0)
     let msbs = Msbs(sum)
-    Feedback(spec: spec, input: msbs, label: "loop")
+    Feedback(link: link, input: msbs, label: "loop")
 }
 
 func computed_bits(width!: Int64, bit!: Hypergraph){
-    let spec = NewLink(name: "d", width: width)
-    let prev_bits = Register(initial: 0, width: 4, input: InLink(spec: spec))
+    let link = NewLink(name: "d", width: width)
+    let prev_bits = Register(initial: 0, width: 4, input: InLink(link: link))
     let bits = Par(Msbs(prev_bits), bit)
-    Feedback(spec: spec, input: bits)
+    Feedback(link: link, input: bits)
 }
 
 external func serial_multiplier_bit(width!: Int64){

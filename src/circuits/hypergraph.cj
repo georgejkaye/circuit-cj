@@ -95,14 +95,14 @@ func UpdateBusVertexList(busList : ArrayList<Bus>, busMaps : MapBuilder<Bus, Map
  * @param linkMap The map to update
  */
 func UpdateLinks(e : Edge, linkMap : MapBuilder<Link, ArrayList<Edge>>){
-    let spec = e.GetSpec()
+    let link = e.Getlink()
     // TODO something going wrong with match
     let es : ArrayList<Edge>
-    match(linkMap.get(spec)){
+    match(linkMap.get(link)){
         case Some(es2) => es = es2
         case $None =>
             let es2 = ArrayList<Edge>()
-            linkMap.add(spec, es2)
+            linkMap.add(link, es2)
             es = es2
     }
     es.add(e)
@@ -809,27 +809,25 @@ func main(){
 
     SetDotDir("dot")
 
-    let width = 1
-
     //let circ = serial_multiplier_bit()
 
     //let wf = InfiniteWaveform(4, width: 2)
     //WriteDotToFile(wf, "wf")
 
 
-    // let link_spec = NewLink(width: width)
-    // let prev_sum = InLink(spec: link_spec)
+    // let link_link = NewLink(width: width)
+    // let prev_sum = InLink(link: link_link)
     // let x = Input(width: width)
     // let sum = Plus(a: prev_sum, b: x)
-    // let circ = FeedbackReg(spec: link_spec, input: Some(sum), initial: 0)
+    // let circ = FeedbackReg(link: link_link, input: Some(sum), initial: 0)
     
 
    
     // // TODO have to use Some to avoid segfault here
     
-    // let spec = Link()
-    // let circ = FeedbackReg(spec: link_spec, input: AndGate(), initial: 0)
-    // let circ2 = Feedback(spec: link_spec, )
+    // let link = Link()
+    // let circ = FeedbackReg(link: link_link, input: AndGate(), initial: 0)
+    // let circ2 = Feedback(link: link_link, )
 
     // WriteDotToFile(circ, "circuit", resolve: true)
     
@@ -840,31 +838,43 @@ func main(){
     // let applied = wf + circ
     // WriteDotToFile(applied, "applied", resolve: true)
 
-    let x = Input()
-    let c = Input()
-    let spec = NewLink(width: 1)
-    let mux1 = Mux(low: x, high: InLink(spec: spec), sel: c)
-    let f = BlackBox("F", 1, 1, input: Some(mux1))
-    let mux2 = Mux(low: f, high: x, sel: c)
-    let g = BlackBox("G", 1, 1, input: Some(mux2))
-    let fb = Feedback(spec: spec, input: g)
-    let circ = Mux(high: f, low: fb, sel: c)
+    // let x = Input()
+    // let c = Input()
+    // let link = NewLink(width: 1)
+    // let mux1 = Mux(low: x, high: InLink(link: link), sel: c)
+    // let f = BlackBox("F", 1, 1, input: Some(mux1))
+    // let mux2 = Mux(low: f, high: x, sel: c)
+    // let g = BlackBox("G", 1, 1, input: Some(mux2))
+    // let fb = Feedback(link: link, input: g)
+    // let circ = Mux(high: f, low: fb, sel: c)
 
-    WriteDotToFile(circ, "circ", resolve: true)
+    // let width = 2
+    // let circ = Accumulator(width: width, initial: 0)
+    // WriteDotToFile(circ, "circ", resolve: true)
 
-    let app1 = True() * True() + circ
-    let app2 = True() * False() + circ
+    // let wf = WaveformFromList([1,2], width: width)
+    // let applied = wf + circ
+    // WriteDotToFile(applied, "applied", resolve: true)
 
-    WriteDotToFile(app1, "applied1", resolve: true)
-    WriteDotToFile(app2, "applied2", resolve: true)
+    // let rw = applied.GetRewriter()
+    // rw.RunCycle()
+    // WriteDotToFile(rw.GetGraph(), "cycle1")
+    // rw.RunCycle()
+    // WriteDotToFile(rw.GetGraph(), "cycle2")
 
-    let rw1 = app1.GetRewriter()
-    rw1.RunCycle()
-    WriteDotToFile(rw1.GetGraph(), "cycle1")
+    // let app1 = True() * True() + circ
+    // let app2 = True() * False() + circ
 
-    let rw2 = app2.GetRewriter()
-    rw2.RunCycle()
-    WriteDotToFile(rw2.GetGraph(), "cycle2")
+    // WriteDotToFile(app1, "applied1", resolve: true)
+    // WriteDotToFile(app2, "applied2", resolve: true)
+
+    // let rw1 = app1.GetRewriter()
+    // rw1.RunCycle()
+    // WriteDotToFile(rw1.GetGraph(), "cycle1")
+
+    // let rw2 = app2.GetRewriter()
+    // rw2.RunCycle()
+    // WriteDotToFile(rw2.GetGraph(), "cycle2")
 
     //rw1.RunCycle()
     //WriteDotToFile(rw1.GetGraph(), "cycle2")
@@ -878,12 +888,12 @@ func main(){
     // let c = Input(label: "c")
     // let x = Input(label: "x")
 
-    // let spec = NewLink(width: 1, name: "fb")
-    // let mux1 = Mux(a: x, b: InLink(spec: spec), s: c)
+    // let link = NewLink(width: 1, name: "fb")
+    // let mux1 = Mux(a: x, b: InLink(link: link), s: c)
     // let f = BlackBox("F", 1, 1, input: Some(mux1))
     // let mux2 = Mux(a: f, b: x, s: c)
     // let g = BlackBox("G", 1, 1, input: Some(mux2))
-    // let fb = Feedback(spec: spec, input: g)
+    // let fb = Feedback(link: link, input: g)
     // let circ = Mux(a: f, b: fb, s: c)
 
     // WriteDotToFile(circ, "circ")
@@ -915,6 +925,18 @@ func main(){
     0   
 }
 
+func CyclicCombinational(){
+    let x = Input()
+    let c = Input()
+    let link = NewLink(width: 1)
+    let mux1 = Mux(low: x, high: InLink(link: link), sel: c)
+    let f = BlackBox("F", 1, 1, input: Some(mux1))
+    let mux2 = Mux(low: f, high: x, sel: c)
+    let g = BlackBox("G", 1, 1, input: Some(mux2))
+    let fb = Feedback(link: link, input: g)
+    Mux(high: f, low: fb, sel: c)
+}
+
 func partial_product(a!: Hypergraph, b0!: Hypergraph){
     Mux(width: a.GetN(), sel: b0, high: a, low: Zero(width: a.GetN()))
 }
@@ -929,18 +951,18 @@ func running_sum(first!: Hypergraph, sum!: Hypergraph, a!: Hypergraph, b0!: Hype
 
 func running_sum_loop(first!: Hypergraph, a!: Hypergraph, b0!: Hypergraph){
     let width = a.GetN()
-    let spec = NewLink(name: "prev_sum", width: width)
-    let prev_sum = Delay(width: width, input: InLink(spec: spec))
+    let link = NewLink(name: "prev_sum", width: width)
+    let prev_sum = Delay(width: width, input: InLink(link: link))
     let sum = running_sum(first: first, sum: prev_sum, a: a, b0: b0)
     let msbs = Msbs(sum)
-    Feedback(spec: spec, input: msbs, label: "loop")
+    Feedback(link: link, input: msbs, label: "loop")
 }
 
 func computed_bits(width!: Int64, bit!: Hypergraph){
-    let spec = NewLink(name: "d", width: width)
-    let prev_bits = Register(initial: 0, width: width, input: InLink(spec: spec))
+    let link = NewLink(name: "d", width: width)
+    let prev_bits = Register(initial: 0, width: width, input: InLink(link: link))
     let bits = Par(Msbs(prev_bits), bit)
-    Feedback(spec: spec, input: bits)
+    Feedback(link: link, input: bits)
 }
 
 func serial_multiplier_bit(width!: Int64){
@@ -960,4 +982,12 @@ func serial_multiplier_bit(width!: Int64){
 func serial_multiplier(a : Int64, b : Int64, w : Int64){
     let av = UnsignedValueFromInt(a, width: w)
     let bv = UnsignedValueFromInt(b, width: w)
+}
+
+func Accumulator(width!: Int64, initial!: Int64){
+    let link = NewLink(width: width)
+    let prev_sum = InLink(link: link)
+    let x = Input(width: width)
+    let sum = Plus(a: prev_sum, b: x)
+    FeedbackReg(link: link, input: Some(sum), initial: initial)
 }

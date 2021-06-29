@@ -1,6 +1,6 @@
 # `settings` package
 
-This package specifies numerous settings for the module, which can be edited in the file directly or accessed through functions within programs.
+This package linkifies numerous settings for the module, which can be edited in the file directly or accessed through functions within programs.
 
 ## Files
 

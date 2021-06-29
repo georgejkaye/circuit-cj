@@ -10,10 +10,10 @@ package circuits
 import debug.*
 
 /**
- * Resolve links in a hypergraph - join outlinks and inlinks with the same spec together
- * If there are multiple outlinks with the same spec, these are first joined.
+ * Resolve links in a hypergraph - join outlinks and inlinks with the same link together
+ * If there are multiple outlinks with the same link, these are first joined.
  * In between the outlinks and the inlinks an identity edge is placed (this avoids closed loops)
- * If there are multiple inlinks with the same spec, the wire is forked before connecting to them
+ * If there are multiple inlinks with the same link, the wire is forked before connecting to them
  * @param f    The hypergraph to resolve links in
  * @param name The name to give the resulting hypergraph
  * @return     The resolved hypergraph
@@ -24,10 +24,10 @@ func ResolveLinks(f : Hypergraph, name!: String = "") {
     f
 }
 /**
- * Resolve links in a hyp builder - join outlinks and inlinks with the same spec together
- * If there are multiple outlinks with the same spec, these are first joined.
+ * Resolve links in a hyp builder - join outlinks and inlinks with the same link together
+ * If there are multiple outlinks with the same link, these are first joined.
  * In between the outlinks and the inlinks an identity edge is placed (this avoids closed loops)
- * If there are multiple inlinks with the same spec, the wire is forked before connecting to them
+ * If there are multiple inlinks with the same link, the wire is forked before connecting to them
  * @param f    The hypergraph to resolve links in
  * @param name The name to give the resulting hypergraph
  * @return     The resolved hypergraph
@@ -37,16 +37,16 @@ func ResolveLinks(f : HypBuilder, name!: String = "") {
     let inlinks = f.GetInlinkMap()
     let outlinks = f.GetOutlinkMap()
     // Join all the outlinks into one wire 
-    for((spec, outLinkEdges) in outlinks){
-        match(inlinks.get(spec)){
+    for((link, outLinkEdges) in outlinks){
+        match(inlinks.get(link)){
             // If there are definitely in links to connect to, we can go ahead
             case Some(inLinkEdges) =>
                 let outs = outLinkEdges.size()
                 let ins = inLinkEdges.size()
                 // Deal with each port of the link in turn
-                for(port in 0..spec.width){
+                for(port in 0..link.width){
                     var currentTarget = outLinkEdges[0].sources[port].GetConn()
-                    // We need to join together multiple out links with the same spec
+                    // We need to join together multiple out links with the same link
                     if(outs > 1){
                         for(i in 1..outs){
                             // Get the next source
@@ -63,7 +63,7 @@ func ResolveLinks(f : HypBuilder, name!: String = "") {
                     let id = f.CreateEdge(IDENTITY)
                     f.AddConn(currentTarget, id.GetSource(0))
                     currentTarget = id.GetTarget(0)
-                    // We need to fork to serve multiple in links with the same spec
+                    // We need to fork to serve multiple in links with the same link
                     if(ins > 1){
                         for(i in 0..ins-1){
                             // Go from bottom to top
@@ -97,11 +97,11 @@ func ResolveLinks(f : HypBuilder, name!: String = "") {
     // There may be inlinks that have no corresponding outlink
     // These can be replaced with bottom
     let deadInlinks = f.GetAllInLinks()
-    for(link in deadInlinks){
-        let spec = link.GetSpec()
-        for(i in 0..spec.width){
+    for(e in deadInlinks){
+        let link = e.Getlink()
+        for(i in 0..link.width){
             let bot = f.CreateEdge(VALUE(BOTTOM))
-            f.AddConn(bot.GetTarget(0), link.targets[i].GetConn())
+            f.AddConn(bot.GetTarget(0), e.targets[i].GetConn())
         }
     }    
     f.RemoveEdges({e : Edge => includes(deadInlinks, e)})
@@ -113,10 +113,10 @@ func ResolveLinks(f : HypBuilder, name!: String = "") {
 func UnresolveLinks(f : HypBuilder){
     let ids = f.GetAllIdentityEdges()
     for(e in ids){
-        let spec = NewLink()
-        let outlink = f.CreateEdge(OUTLINK(spec))
+        let link = NewLink()
+        let outlink = f.CreateEdge(OUTLINK(link))
         f.AddConn(e.GetSource(0).GetConn(), outlink.GetSource(0))
-        let inlink = f.CreateEdge(INLINK(spec))
+        let inlink = f.CreateEdge(INLINK(link))
         f.AddConn(inlink.GetTarget(0), e.GetTarget(0).GetConn())
         f.RemoveEdge(e)
     }

@@ -382,7 +382,7 @@ external open class Edge <: Atom {
      */
     func IsInlink(){
         match(generator){
-            case INLINK(spec) => true
+            case INLINK(link) => true
             case _            => false
         }
     }
@@ -392,7 +392,7 @@ external open class Edge <: Atom {
      */
     func IsOutlink(){
         match(generator){
-            case OUTLINK(spec) => true
+            case OUTLINK(link) => true
             case _             => false
         }
     }
@@ -410,15 +410,15 @@ external open class Edge <: Atom {
         }
     }
     /**
-     * Assuming this edge is a link, get its spec
+     * Assuming this edge is a link, get its link
      * Throws an exception if this is not a link edge
-     * @return The link spec
+     * @return The link
      */
-    func GetSpec(){
+    func Getlink(){
         match(generator){
-            case INLINK(spec) => spec
-            case OUTLINK(spec) => spec
-            case _ => throw NonLinkEdgeException("GetSpec", this)
+            case INLINK(link) => link
+            case OUTLINK(link) => link
+            case _ => throw NonLinkEdgeException("Getlink", this)
         }
     }
     /**

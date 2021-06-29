@@ -110,7 +110,7 @@ func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * S
                         f.AddConn(intersectionF.GetConn(), intersectionG)
                         fork = false
                         None<Link>
-                    case OUTLINK(specf) => Some<Link>(specf)
+                    case OUTLINK(linkf) => Some<Link>(linkf)
                     case _              => None<Link>
                 }
             case $None => None<Link>
@@ -129,10 +129,10 @@ func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * S
                             fork = false    
                         // If this and f also lead to an outlink, we can check them to see if they're the same
                         // If so, there's no point in copying: we can just keep the link from f and ignore this one
-                        case OUTLINK(specg) =>
+                        case OUTLINK(linkg) =>
                             match(outlinkF){
-                                case Some(specf) =>
-                                    if(specf == specg) {
+                                case Some(linkf) =>
+                                    if(linkf == linkg) {
                                         removedEdges.add(e)
                                         danglingTargets.add(intersectionG.GetConn())
                                         fork = false

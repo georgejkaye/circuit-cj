@@ -15,7 +15,7 @@ Contains the definition of `HypBuilder`, a class for constructing hypergraphs th
 ### [`buses.cj`](buses.cj)
 
 Contains definitions of buses and wires, which are used to label source vertices.
-These buses form the backbone of how users can refer to and extract specific parts of circuits.
+These buses form the backbone of how users can refer to and extract linkific parts of circuits.
 
 ### [`exceptions.cj`](exceptions.cj)
 

@@ -87,7 +87,7 @@ extend Label <: Equatable {
 }
 
 /**
- * A link spec contains information about a link
+ * A link contains information about a link
  * It has an id, a name, and a width 
  */
 class Link <: Identifiable {
@@ -141,8 +141,8 @@ extend Generator <: ToString {
             case BLACKBOX(label)     => "black box (${label.name})"
             case DELAY(dur)          => "delay (${dur})"
             case $IDENTITY           => "identity"
-            case INLINK(spec)        => "in link (${spec.name} - ${spec.width})"
-            case OUTLINK(spec)       => "out link (${spec.name} - ${spec.width})"
+            case INLINK(link)        => "in link (${link.name} - ${link.width})"
+            case OUTLINK(link)       => "out link (${link.name} - ${link.width})"
         }
     }
 }
@@ -210,8 +210,8 @@ func Signature(gen : Generator) : Int64 * Int64 {
         case BLACKBOX(label)    => (label.dom, label.cod)
         case DELAY(dur)         => (1,1)
         case $IDENTITY          => (1,1)
-        case INLINK(spec)       => (0, spec.width)
-        case OUTLINK(spec)      => (spec.width, 0)
+        case INLINK(link)       => (0, link.width)
+        case OUTLINK(link)      => (link.width, 0)
     }
 }
 /**
@@ -280,7 +280,7 @@ func PortToEndpoint(p : Port){
  */
 func IsInlink(gen : Generator){
     match(gen){
-        case INLINK(spec) => true
+        case INLINK(link) => true
         case _ => false
     }
 }
@@ -291,7 +291,7 @@ func IsInlink(gen : Generator){
  */
 func IsOutlink(gen : Generator){
     match(gen){
-        case OUTLINK(spec) => true
+        case OUTLINK(link) => true
         case _ => false
     }
 }

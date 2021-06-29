@@ -491,12 +491,6 @@ class HypBuilder <: HypergraphStructure {
         targets.removeIf({t : Target => includes(removedTargets, t)})
         inputs.removeIf({t : Target => includes(removedTargets, t)})
         outputs.removeIf({s : Source => includes(removedSources, s)})
-        for(s in removedSources){
-            s.RemovePort()
-        }
-        for(t in removedTargets){
-            t.RemovePort()
-        }
     }
     /**
      * Detach some vertices from the edges or interface they are connected to

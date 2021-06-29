@@ -145,10 +145,10 @@ func CreateInfiniteWaveform(value : Int64, width!: Int64, name!: String = "", si
         let fork = hb.CreateEdge(FORK)
         hb.AddConn(hb.GetOutput(i).GetConn(), fork.GetSource(0))
         hb.AddConn(fork.GetTarget(1), hb.GetOutput(i))
-        let spec = NewLink()
-        let outlink = hb.CreateEdge(OUTLINK(spec))
+        let link = NewLink()
+        let outlink = hb.CreateEdge(OUTLINK(link))
         hb.AddConn(fork.GetTarget(0), outlink.GetSource(0))
-        let inlink = hb.CreateEdge(INLINK(spec))
+        let inlink = hb.CreateEdge(INLINK(link))
         hb.AddConn(inlink.GetTarget(0), hb.GetInput(0).GetConn())
         hb.RemoveInput(0)
     }
@@ -184,10 +184,10 @@ func PrependHead(value : Int64, hb : HypBuilder, signed!: Bool = false){
 }
 
 /**
- * Create a new spec to be used for links
- * @param width The width of this spec
- * @param name The name to associate with this spec
- * @return The new link spec
+ * Create a new link to be used for links
+ * @param width The width of this link
+ * @param name The name to associate with this link
+ * @return The new link
  */
 external func NewLink(width!: Int64 = 1, name!: String = ""){
     if(width < 1){
@@ -262,75 +262,75 @@ external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 1, lab
     }
 }
 /**
- * Create an out link for a given link spec
- * @param spec The link spec for this link
+ * Create an out link for a given link
+ * @param link The link for this link
  * @param name The name to give this circuit
  * @return The out link
  */
-external func OutLink(spec!: Link, name!: String = "") : Hypergraph { 
-    OpMToZero(OUTLINK(spec), name: name) 
+external func OutLink(link!: Link, name!: String = "") : Hypergraph { 
+    OpMToZero(OUTLINK(link), name: name) 
 }
 /**
- * Create an in link for a given link spec
- * @param spec The link spec for this link
+ * Create an in link for a given link
+ * @param link The link for this link
  * @param name The name to give this circuit
  * @return The in link
  */
-external func InLink(spec!: Link, label!: String = "", name!:String = "") : Hypergraph { 
-    Debug("InLink", "Creating in link for spec ${spec.name}")
-    let wires = ArrayList<Wire>(spec.width, {i : Int64 => NewWire(label, i)})
-    OpMToN(INLINK(spec), wires: wires, name: name) 
+external func InLink(link!: Link, label!: String = "", name!:String = "") : Hypergraph { 
+    Debug("InLink", "Creating in link for link ${link.name}")
+    let wires = ArrayList<Wire>(link.width, {i : Int64 => NewWire(label, i)})
+    OpMToN(INLINK(link), wires: wires, name: name) 
 }
 /**
  * Create a fixpoint: a construct that feeds its outputs back to some in link while also outputting them
- * @param spec   The link spec for the loop
+ * @param link   The link for the loop
  * @return The fixpoint
  */
-external func CreateFeedback(spec: Link, label!: String = "") : HypBuilder {
-    let hb = HypBuilder(spec.width, spec.width, label)
-    let link = hb.CreateEdge(OUTLINK(spec))
-    for(i in 0..spec.width){
-        let fork = hb.CreateEdge(FORK, [hb.GetInputs()[i]], [link.sources[i], hb.GetOutputs()[i]])
+external func CreateFeedback(link: Link, label!: String = "") : HypBuilder {
+    let hb = HypBuilder(link.width, link.width, label)
+    let e = hb.CreateEdge(OUTLINK(link))
+    for(i in 0..link.width){
+        let fork = hb.CreateEdge(FORK, [hb.GetInputs()[i]], [e.sources[i], hb.GetOutputs()[i]])
     }
     hb
 }
 /**
  * Create a fixpoint: a construct that feeds its outputs back to some in link while also outputting them
- * @param spec   The link spec for the loop
+ * @param link   The link for the loop
  * @param output The name to assign the output bus
  * @param name   The name to give this circuit
  * @return The fixpoint
  */
-external func Feedback(spec!: Link, label!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
-    Debug("Feedback", "Creating feedback to spec ${spec.name}")
+external func Feedback(link!: Link, label!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
+    Debug("Feedback", "Creating feedback to link ${link.name}")
     match(input){
         case Some(f) =>
-            if(f.GetN() != spec.width){
-                throw TypeMismatchException("Feedback", f, spec.width)
+            if(f.GetN() != link.width){
+                throw TypeMismatchException("Feedback", f, link.width)
             }
         case $None => ()
     }
-    let res = CreateFeedback(spec, label: label).ToGraph()
+    let res = CreateFeedback(link, label: label).ToGraph()
     match(input){
         case Some(f) => Seq(f, res)
         case $None   => res
     }
 }
 
-external func FeedbackReg(spec!: Link, label!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>, initial!: Int64, signed!: Bool = false){
-    Debug("FeedbackReg", "Creating feedback to spec ${spec.name} with register")
+external func FeedbackReg(link!: Link, label!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>, initial!: Int64, signed!: Bool = false){
+    Debug("FeedbackReg", "Creating feedback to link ${link.name} with register")
     match(input){
         case Some(f) =>
-            if(f.GetN() != spec.width){
-                throw TypeMismatchException("Feedback", f, spec.width)
+            if(f.GetN() != link.width){
+                throw TypeMismatchException("Feedback", f, link.width)
             }
         case $None => ()
     }
-    let fb = CreateFeedback(spec, label: label)
-    let v = CreateValueFromInt(initial, width: spec.width, signed: signed)
+    let fb = CreateFeedback(link, label: label)
+    let v = CreateValueFromInt(initial, width: link.width, signed: signed)
     fb.AddNewGraph(v)
 
-    for(i in 0..spec.width){
+    for(i in 0..link.width){
         let fork = fb.GetOutput(i).GetLeftEdge()
         let join = fb.CreateEdge(JOIN)
         let delay = fb.CreateEdge(DELAY(1))
@@ -342,7 +342,7 @@ external func FeedbackReg(spec!: Link, label!: String = "", name!: String = "", 
         fb.AddConn(fork.GetTarget(0), delay.GetSource(0))
         // Connect the target of the delay to the rhs of the join
         fb.AddConn(delay.GetTarget(0), join.GetSource(1))
-        fb.RemoveOutput(spec.width)
+        fb.RemoveOutput(link.width)
     }
 
     let res = fb.ToGraph()

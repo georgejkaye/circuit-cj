@@ -166,7 +166,7 @@ func HasValueArguments(edge : Edge){
  * @param edge The edge
  * @return Whether the edge has the value as one of its arguments
  */
-func HasSpecificValueArgument(edge : Edge, v : Value){
+func HaslinkificValueArgument(edge : Edge, v : Value){
     for(i in 0..edge.sources.size()){
         match(edge.sources[i].GetLeftPort()){
             case EdgePort(e, j) => 
@@ -303,7 +303,7 @@ func EnhancedGateRewriteRule(name : String, gen : Generator, arg : Value, res : 
  * @param res  The argument to rewrite to
  */
 func EnhancedGateRewriteRule(name : String, entryPoint : EntryPoint, arg : Value, res : Value){
-    RewriteRule(name, entryPoint, {e : Edge => HasSpecificValueArgument(e, arg)}, {e : Edge, hb : HypBuilder, payload : Int64 => ReplaceGateWithValueAndStubs(e, hb, payload, res)})
+    RewriteRule(name, entryPoint, {e : Edge => HaslinkificValueArgument(e, arg)}, {e : Edge, hb : HypBuilder, payload : Int64 => ReplaceGateWithValueAndStubs(e, hb, payload, res)})
 }
 
 /**
@@ -314,7 +314,7 @@ func EnhancedGateRewriteRule(name : String, entryPoint : EntryPoint, arg : Value
  * @param arg  The argument value that triggers the rewrite rule
  */
 func PassthroughGateRewriteRule(name : String, gen : Generator, arg : Value){
-    RewriteRule(name, EXACTLY(gen), {e : Edge => HasSpecificValueArgument(e, arg)}, {e : Edge, hb : HypBuilder, payload : Int64 => ReplaceGateWithPassthrough(e, hb, payload)})
+    RewriteRule(name, EXACTLY(gen), {e : Edge => HaslinkificValueArgument(e, arg)}, {e : Edge, hb : HypBuilder, payload : Int64 => ReplaceGateWithPassthrough(e, hb, payload)})
 }
 
 /**

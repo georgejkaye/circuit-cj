@@ -54,7 +54,6 @@ class RewriteRule {
      * @param e The edge to check for rewriting potential
      */
     func CanRewrite(e : Edge){
-        Debug("CanRewrite", "Checking ${name} against e${e.id}")
         let b = match(entryPoint){
             case EXACTLY(gen) => e.generator == gen
             case $GATE        => e.IsGate()
@@ -103,7 +102,7 @@ func IsWaveform(s : Source){
 class Rewriter {
     /**
      * The list of rules that this rewriter will consider when performing rewriting
-     * By default this is the list specified in rules.cj
+     * By default this is the list linkified in rules.cj
      */
     private let rules : ArrayList<RewriteRule> = rewriteRules
     /**
@@ -149,6 +148,8 @@ class Rewriter {
         while(heads.size() != 0){
             ReattachHead(heads.removeAt(heads.size() - 1))
         }
+        print("${f}\n")
+        print("exit\n")
     }
     /**
      * Perform all local reductions in the graph, traversing from the endpoints (outputs and edges with 0 inputs)
@@ -289,6 +290,7 @@ class Rewriter {
      */
     func ReattachHead(head : ArrayList<Waveform>){
         Debug("ReattachHead", "Adding any immediate values")
+        print("${f}\n")
         for(i in 0..head.size()){
             let w = head[i]
             f.AddConn(f.GetOutput(i).GetConn(), w.delay.GetSource(0))
@@ -297,6 +299,7 @@ class Rewriter {
             f.AddEdge(w.join)
             f.AddEdge(w.value)
         }
+        print("done\n")
     }
     /**
      * Perform some tidy up operations that cannot be done by the rewriter
@@ -304,7 +307,10 @@ class Rewriter {
      */
     func TidyUpGraph(){
         Debug("TidyUpGraph", "Tidying up graph")
+        WriteDotToFile(f.ToGraph(), "beforetidy")
+        print("${f}")
         let idEdges = f.GetAllIdentityEdges()
+        let removedEdges = ArrayList<Edge>()
         for(id in idEdges){
             if(!PathToOutputs(id)){
                 // Traverse leftwards from the id edge and delete as we go
@@ -314,14 +320,18 @@ class Rewriter {
                         if(e.IsIdentity()){
                             false
                         } else {
-                            f.RemoveEdge(e)
+                            removedEdges.add(e)
                             true
                         }
                     }, 
                     {t : Target, i : Int64 => }
                 )
-                f.RemoveEdge(id)
+                removedEdges.add(id)
             }
+        }
+        f.RemoveEdges(removedEdges)
+        if(f.IsWellFormed()[0]){
+            print("wellfomred!\n")
         }
     }
 }

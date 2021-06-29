@@ -35,8 +35,6 @@ external func Concat(fs : ArrayList<Hypergraph>, name!: String = ""){
     for(i in 1..fs.size()){
         var g = fs[i].Clone()
         let intersections = FindIntersections(f, g)
-        WriteDotToFile(f.ToGraph(), "f1")
-        WriteDotToFile(g.ToGraph(), "g1")
         if(intersections.size() == 0){
             f.AddNewGraph(g)
         } else {

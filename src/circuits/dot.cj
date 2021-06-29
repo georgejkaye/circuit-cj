@@ -173,8 +173,8 @@ func DrawEdge(n : Int64, e : Edge){
         case BLACKBOX(label)    => blackboxStyle
         case DELAY(dur)         => delayStyle
         case $IDENTITY          => identityStyle
-        case INLINK(spec)       => linkStyle
-        case OUTLINK(spec)      => linkStyle
+        case INLINK(link)       => linkStyle
+        case OUTLINK(link)      => linkStyle
     }
     let text = match(e.generator){
         case VALUE(value)       => "${value}"
@@ -183,8 +183,8 @@ func DrawEdge(n : Int64, e : Edge){
         case BLACKBOX(label)    => label.name
         case DELAY(dur)         => "d[${dur}]"
         case $IDENTITY          => "id"
-        case INLINK(spec)       => spec.name
-        case OUTLINK(spec)      => spec.name
+        case INLINK(link)       => link.name
+        case OUTLINK(link)      => link.name
     }
     DrawEdgeNode(n, "e${e.id}", style, text, e.sources, e.targets)
 }
@@ -272,12 +272,12 @@ external func DotGraph(f : Hypergraph, resolve : Bool){
 }
 /**
  * Write the corresponding dot graph for a hypergraph to a file
- * The file is placed in the directory specified in settings.cj and given a .dot extension
+ * The file is placed in the directory linkified in settings.cj and given a .dot extension
  * @param f       The hypergraph to draw
  * @param file    The filename of the output
  * @param resolve Whether or not to resolve links
  */
-external func WriteDotToFile(f : Hypergraph, file : String, resolve!: Bool = false){
+external func WriteDotToFile(f : Hypergraph, file : String, resolve!: Bool = true){
     let filename = GetDotFile(file)
     Info("WriteDotToFile", "Writing dot file ${filename}")
     let dot = DotGraph(f, resolve)
