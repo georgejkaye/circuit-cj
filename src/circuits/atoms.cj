@@ -7,6 +7,9 @@ package circuits
 
 import debug.*
 
+/**
+ * Base class for objects that have a unique id
+ */
 open class Identifiable {
     static var nextid : UInt64 = 0
     let id : UInt64
@@ -20,11 +23,22 @@ extend Identifiable <: Hashable {
 }
 
 /**
- * Base atom class, every element of a hypergraph (vertex, edge, label) is an atom
- * Each atom has a unique id, and this is what comparisons should be performed on
+ * Base class for objects that are atoms: their equality is determined solely by their id
+ * Atoms also have a concept of *global id*, where multiple atoms can correspond to the same actual object
+ * e.g. the same gate in a circuit can be represented by different atoms in different graphs
  */
 abstract class Atom <: Identifiable {
+    let globalId : UInt64
     func GetString() : String
+    init(){
+        this.globalId = this.id
+    }
+    /**
+     * Check if this atom has the same global id as another atom
+     */
+    func Same(a : Atom){
+        a.globalId == globalId
+    }
 }
 extend Atom <: ToString {
     func toString(){
@@ -108,6 +122,11 @@ external class Source <: Vertex {
     init(wires: ArrayList<Wire>) { 
         this.conn = None<Target>
         this.wires = wires 
+    }
+    init(globalId : UInt64, wires : ArrayList<Wire>){
+        this.globalId = globalId
+        this.conn = None<Target>
+        this.wires = wires
     }
     func RemoveConn() {
         if(HasConn()){
@@ -204,6 +223,10 @@ external class Target <: Vertex {
     init() {
         this.conn = None<Source>
     }
+    init(globalId : UInt64){
+        this.globalId = globalId
+        this.conn = None<Source>
+    }
     func RemoveConn() {
         if(HasConn()){
             let s = GetConn()
@@ -256,7 +279,11 @@ external open class Edge <: Atom {
     let generator : Generator
     let sources : ArrayList<Source>
     let targets : ArrayList<Target>
-    init(gen : Generator, sources : ArrayList<Source>, targets : ArrayList<Target>){
+    init(globalId: Option<UInt64>, gen : Generator, sources : ArrayList<Source>, targets : ArrayList<Target>){
+        this.globalId = match(globalId){
+            case Some(i) => i
+            case $None   => this.id 
+        }
         this.generator = gen
         if(sources.size() != Dom(gen)){
             throw BadDomainException("Edge", sources.size(), Dom(gen))
@@ -272,6 +299,9 @@ external open class Edge <: Atom {
         for(i in 0..Cod(gen)){
             targets[i].SetPort(EdgePort(this, i))
         }
+    }
+    init(gen : Generator, sources : ArrayList<Source>, targets : ArrayList<Target>){
+        this(None<UInt64>, gen, sources, targets)
     }
     init(generator : Generator, sources : List<Source>, targets: List<Target>){
         this(generator, ArrayList<Source>(sources), ArrayList<Target>(targets))

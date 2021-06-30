@@ -14,9 +14,10 @@ import debug.*
  * @param t       The target to add
  * @param targets The list of targets
  */
-func AddTarget(t : Target, targets : ArrayList<Target>){
+func AddTarget(t : Target, targets : ArrayList<Target>, targetGlobalIds : MapBuilder<UInt64, Target>){
     // Add to the targets list
     targets.add(t)
+    targetGlobalIds.add(t.globalId, t)
 }
 /**
  * Peform the necessary actions to add a source to the graph
@@ -26,9 +27,10 @@ func AddTarget(t : Target, targets : ArrayList<Target>){
  * @param busList  The list of buses
  * @param wireList The list of wires
  */
-func AddSource(s : Source, sources : ArrayList<Source>, busMaps : MapBuilder<Bus, MapBuilder<Int64, Source>>, busList : ArrayList<Bus>, wireList : ArrayList<Wire>){
+func AddSource(s : Source, sources : ArrayList<Source>, sourceGlobalIds : MapBuilder<UInt64, Source>, busMaps : MapBuilder<Bus, MapBuilder<Int64, Source>>, busList : ArrayList<Bus>, wireList : ArrayList<Wire>){
     // Add to the sources list
     sources.add(s)
+    sourceGlobalIds.add(s.globalId, s)
     // Update all the buses accordingly
     for(wire in s.wires){
         wireList.add(wire)
@@ -48,14 +50,16 @@ func AddSource(s : Source, sources : ArrayList<Source>, busMaps : MapBuilder<Bus
     busMaps
 }
 func AddEdge(e : Edge, sources : ArrayList<Source>, targets : ArrayList<Target>,
+             edgeGlobalIds : MapBuilder<UInt64, Edge>, sourceGlobalIds : MapBuilder<UInt64, Source>, targetGlobalIds : MapBuilder<UInt64, Target>, 
              busMaps : MapBuilder<Bus, MapBuilder<Int64, Source>>, busList : ArrayList<Bus>, wireList : ArrayList<Wire>,
              inlinkMap : MapBuilder<Link, ArrayList<Edge>>, outlinkMap : MapBuilder<Link, ArrayList<Edge>>
             ){
+    edgeGlobalIds.add(e.globalId, e)
     for(i in 0..e.sources.size()){
-        AddSource(e.sources[i], sources, busMaps, busList, wireList)
+        AddSource(e.sources[i], sources, sourceGlobalIds, busMaps, busList, wireList)
     }
     for(i in 0..e.targets.size()){
-        AddTarget(e.targets[i], targets)
+        AddTarget(e.targets[i], targets, targetGlobalIds)
     }
     if(IsInlink(e.generator)){
         UpdateLinks(e, inlinkMap)
@@ -117,6 +121,10 @@ open class HypergraphStructure <: Identifiable {
     protected var inputs   : ArrayList<Target>
     protected var outputs  : ArrayList<Source>
 
+    protected var sourceGlobalIds : MapBuilder<UInt64, Source>
+    protected var targetGlobalIds : MapBuilder<UInt64, Target>
+    protected var edgeGlobalIds : MapBuilder<UInt64, Edge>
+
     protected let sources  : ArrayList<Source>
     protected let targets  : ArrayList<Target>
 
@@ -137,6 +145,10 @@ open class HypergraphStructure <: Identifiable {
         this.inputs = inputs
         this.outputs = outputs
 
+        this.edgeGlobalIds = MapBuilder<UInt64, Edge>()
+        this.sourceGlobalIds = MapBuilder<UInt64, Source>()
+        this.targetGlobalIds = MapBuilder<UInt64, Target>()
+
         this.sources = ArrayList<Source>()
         this.targets = ArrayList<Target>()
 
@@ -150,16 +162,16 @@ open class HypergraphStructure <: Identifiable {
 
         // Add all the inputs to the targets
         for(i in 0..inputs.size()){
-            AddTarget(inputs[i], targets)
+            AddTarget(inputs[i], targets, targetGlobalIds)
             inputs[i].SetPort(i)
         }
         // Add all the sources and targets of edges
         for(e in edges){
-            AddEdge(e, sources, targets, busMaps, busList, wireList, inlinkMap, outlinkMap)
+            AddEdge(e, sources, targets, edgeGlobalIds, sourceGlobalIds, targetGlobalIds, busMaps, busList, wireList, inlinkMap, outlinkMap)
         }
         // Add all the outputs to the sources
         for(i in 0..outputs.size()){
-            AddSource(outputs[i], sources, busMaps, busList, wireList)
+            AddSource(outputs[i], sources, sourceGlobalIds, busMaps, busList, wireList)
             outputs[i].SetPort(i)
         }
         // With all the buses in place, create lists containing the wires of each bus
@@ -168,6 +180,11 @@ open class HypergraphStructure <: Identifiable {
     
     func GetM() { inputs.size() }
     func GetN() { outputs.size() }
+    func GetInputsWithProperty(p : (Target) -> Bool){
+        let satisfyingTargets = ArrayList<Target>(inputs)
+        satisfyingTargets.removeIf({t : Target => !p(t)})
+        satisfyingTargets
+    }
     func GetEdges(){ edges }
     func GetEdgesWithProperty(p : (Edge) -> Bool){
         let satisfyingEdges = ArrayList<Edge>(edges)
@@ -224,11 +241,22 @@ open class HypergraphStructure <: Identifiable {
     }
     func GetSources(){ sources }
     func GetTargets(){ targets }
+    func GetEdgeGlobalIds(){ edgeGlobalIds }
+    func GetSourceGlobalIds(){ sourceGlobalIds }
+    func GetTargetGlobalIds(){ targetGlobalIds }
     func GetWires(){ wireList }
     func GetInlinkMap(){ inlinkMap }
     func GetOutlinkMap(){ outlinkMap }
     open func GetName(){ "hs${id}" }
     func GetId(){ id }
+    /**
+     * Does this hypergraph contain a given edge?
+     * @param e the edge
+     * @return Whether the edge is in this hypergraphs
+     */
+    func HasEdge(e : Edge){
+        includes(edges, e)
+    }
     /**
      * Perform an action for each edge
      * @param action The action to perform
@@ -437,7 +465,12 @@ open class HypergraphStructure <: Identifiable {
                     }
             }
         }
+        let encounteredGlobalIds = ArrayList<UInt64>()
         for(e in edges){
+            if(includes(encounteredGlobalIds, e.globalId)){
+                return DuplicateEdgeGlobalId(e.globalId)
+            }
+            encounteredGlobalIds.add(e.globalId)
             if(e.sources.size() != Dom(e.generator)){
                 return IncorrectDomain(e, e.sources.size())
             }
@@ -528,6 +561,7 @@ enum WellformednessStatus {
     | IncorrectSourceAssignment(Source, Port) // This source has been assigned to a port but in reality it is not
     | DuplicateTarget(Target)                 // This target is associated with multiple edges
     | DuplicateSource(Source)                 // This source is associated with multiple edges
+    | DuplicateEdgeGlobalId(UInt64)           // This edge global id is used multiple times in this graph
     | ConnectionNotInGraph(Vertex, Vertex)    // The connection of the first vertex is not in the graph
     | EdgeNotInGraph(Vertex, Edge)            // This vertex is associated with an edge not in this graph
     | IncorrectDomain(Edge, Int64)            // This edge has the incorrect number of sources
@@ -598,15 +632,19 @@ external class Hypergraph <: HypergraphStructure {
      * Create a deep clone of this hypergraph for future manipulation
      * @return A HypBuilder with deep copies of all elements in this hypergraph
      */
-    func Clone() {
-        let cr = Cloner(this)
+    func Clone(deep!: Bool = false) {
+        let cr = Cloner(this, deep)
         let newEdges = ArrayList<Edge>()
         var newInputs = ArrayList<Target>(inputs.size(), {i : Int64 => CloneTarget(cr, inputs[i])})
         var newOutputs = ArrayList<Source>(outputs.size(), {i : Int64 => CloneSource(cr, outputs[i])})
         for(e in edges){
             let newSources = ArrayList<Source>(e.sources.size(), {i : Int64 => CloneSource(cr, e.sources[i])})
             let newTargets = ArrayList<Target>(e.targets.size(), {i : Int64 => CloneTarget(cr, e.targets[i])})
-            let newEdge = Edge(e.generator, newSources, newTargets)
+            let newEdge = if(deep){
+                Edge(e.generator, newSources, newTargets)
+            } else {
+                Edge(e.globalId, e.generator, newSources, newTargets)
+            }
             newEdges.add(newEdge)
         }
         let hb = HypBuilder(newEdges, newInputs, newOutputs)
@@ -744,14 +782,22 @@ class Cloner {
     let original : Hypergraph
     var sourceMap : MapBuilder<Source, Source> = MapBuilder<Source, Source>()
     var targetMap : MapBuilder<Target, Target> = MapBuilder<Target, Target>()
-    init(original : Hypergraph){
+    init(original : Hypergraph, deep : Bool){
         this.original = original
         for(s in original.GetSources()){
-            let newS = Source(ArrayList<Wire>(s.wires))
+            let newS = if(deep){
+                Source(ArrayList<Wire>(s.wires))
+            } else {
+                Source(s.globalId, ArrayList<Wire>(s.wires))
+            }
             sourceMap = sourceMap.add(s, newS)    
         }
         for(t in original.GetTargets()){
-            let newT = Target()
+            let newT = if(deep){
+                Target()
+            } else {
+                Target(t.globalId)
+            }
             targetMap = targetMap.add(t, newT)
         }
     }
@@ -911,16 +957,16 @@ func main(){
     // rw2.RunCycle()
     // WriteDotToFile(rw2.GetGraph(), "red2", resolve: true)
 
-    // let circ = serial_multiplier_bit(width: 2)
-    // WriteDotToFile(circ, "mult")
-    // let a = WaveformFromList([1], width: 2)
-    // let b = WaveformFromList([2], width: 2)
+    let circ = serial_multiplier_bit(width: 2)
+    WriteDotToFile(circ, "mult")
+    let a = WaveformFromList([1], width: 2)
+    let b = WaveformFromList([2], width: 2)
 
-    // let applied = a * b + circ
+    let applied = a * b + circ
 
-    // let rw = applied.GetRewriter()
-    // rw.PerformCycle()
-    // WriteDotToFile(rw.GetGraph(), "red")
+    let rw = applied.GetRewriter()
+    rw.RunCycle()
+    WriteDotToFile(rw.GetGraph(), "red")
 
     0   
 }
@@ -974,8 +1020,8 @@ func serial_multiplier_bit(width!: Int64){
     let bit = Lsb(sum_bit)
     let sum = Msbs(sum_bit)
     let computed_bits_v = computed_bits(width: width, bit: bit)
-    WriteDotToFile(sum, "sum")
-    WriteDotToFile(computed_bits_v, "cbits")
+    //WriteDotToFile(sum, "sum")
+    //WriteDotToFile(computed_bits_v, "cbits")
     Concat([sum, computed_bits_v])
 }
 

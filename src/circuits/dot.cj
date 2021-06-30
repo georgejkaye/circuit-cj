@@ -176,7 +176,7 @@ func DrawEdge(n : Int64, e : Edge){
         case INLINK(link)       => linkStyle
         case OUTLINK(link)      => linkStyle
     }
-    let text = match(e.generator){
+    let desc = match(e.generator){
         case VALUE(value)       => "${value}"
         case STRUCTURAL(struct) => "${struct}"
         case GATE(label)        => label.name
@@ -185,6 +185,11 @@ func DrawEdge(n : Int64, e : Edge){
         case $IDENTITY          => "id"
         case INLINK(link)       => link.name
         case OUTLINK(link)      => link.name
+    }
+    let text = if(DebugDotOn()){
+        "${desc} (${e.globalId})"
+    } else {
+        "${desc}"
     }
     DrawEdgeNode(n, "e${e.id}", style, text, e.sources, e.targets)
 }
@@ -204,7 +209,7 @@ func DrawVertex(t : Target, s : Source) {
         }
         wires = if(wires == "") { "${wiretext}" } else if(wiretext == "") { "${wires}" } else { "${wires}, ${wiretext}" }
     }
-    let text = if(DebugDotOn()) { "${t.id}|${s.id}\n${wires}" } else { wires }
+    let text = if(DebugDotOn()) { "${t.id}|${s.id} \\n ${wires}" } else { wires }
     "v${t.id}[label=\"\" xlabel=\"${text}\"]"
 }
 /**

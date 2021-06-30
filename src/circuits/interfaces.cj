@@ -34,11 +34,13 @@ external func Concat(fs : ArrayList<Hypergraph>, name!: String = ""){
     var f = fs[0].Clone()
     for(i in 1..fs.size()){
         var g = fs[i].Clone()
-        let intersections = FindIntersections(f, g)
+        WriteDotToFile(f.ToGraph(), "f")
+        WriteDotToFile(g.ToGraph(), "g")
+        let intersections = FindDivergencePoints(f, g)
         if(intersections.size() == 0){
-            f.AddNewGraph(g)
+           f.AddNewGraph(g)
         } else {
-            f = Inject(f, g, intersections)
+           f = Inject(f, g, intersections)
         }
     }
     let re = f.ToGraph()

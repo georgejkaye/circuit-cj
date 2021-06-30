@@ -114,14 +114,14 @@ class HypBuilder <: HypergraphStructure {
      * @param s The new source vertex
      */
     func AddNewSource(s : Source){
-        AddSource(s, sources, busMaps, busList, wireList)
+        AddSource(s, sources, sourceGlobalIds, busMaps, busList, wireList)
     }
     /**
      * Add a new target vertex
      * @param t The new target vertex
      */
     func AddNewTarget(t : Target){
-        AddTarget(t, targets)
+        AddTarget(t, targets, targetGlobalIds )
     }
     func AddWires(s : Source, wires : ArrayList<Wire>){
         s.AddWires(wires)
@@ -491,6 +491,21 @@ class HypBuilder <: HypergraphStructure {
         targets.removeIf({t : Target => includes(removedTargets, t)})
         inputs.removeIf({t : Target => includes(removedTargets, t)})
         outputs.removeIf({s : Source => includes(removedSources, s)})
+        // FIXME refactor
+        for(s in removedSources){
+            let removedSourceMap = sourceGlobalIds.remove(s.globalId)
+            sourceGlobalIds = MapBuilder<UInt64, Source>()
+            for((i, si) in sourceGlobalIds){
+                sourceGlobalIds.add(i, si)
+            }
+        }
+        for(t in removedTargets){
+            let removedTargetMap = targetGlobalIds.remove(t.globalId)
+            targetGlobalIds = MapBuilder<UInt64, Target>()
+            for((i, ti) in targetGlobalIds){
+                targetGlobalIds.add(i, ti)
+            }
+        }
     }
     /**
      * Detach some vertices from the edges or interface they are connected to
@@ -514,6 +529,11 @@ class HypBuilder <: HypergraphStructure {
      */
     func RemoveEdge(edge : Edge){
         edges.removeIf({e : Edge => e == edge})
+        let removedMap = edgeGlobalIds.remove(edge.globalId)
+        edgeGlobalIds = MapBuilder<UInt64, Edge>()
+        for((i, e) in edgeGlobalIds){
+            edgeGlobalIds.add(i, e)
+        }
         DetachVertices(edge.sources, edge.targets)
     }
     /** 
@@ -530,11 +550,8 @@ class HypBuilder <: HypergraphStructure {
      * @param p The predicate
      */
     func RemoveEdges(f : (Edge) -> Bool){
-        for(e in edges){
-            if(f(e)){
-                RemoveEdge(e)
-            }
-        }
+        let edgesToRemove = GetEdgesWithProperty(f)
+        RemoveEdges(edgesToRemove)
     }
     /**
      * Remove an output from the graph

@@ -50,6 +50,14 @@ external func includesPairR<T,U>(xs : ArrayList<T * U>, u : U) where U <: Equata
     }
     return false
 }
+external func includesPair<T>(xs : ArrayList<T * T>, t : T) where T <: Equatable {
+    for ((x, y) in xs){
+        if(x == t || y == t){
+            return true
+        }
+    }
+    return false
+}
 /**
  * Pretty print a list with a given string printing function
  * @param xs The arraylist to print

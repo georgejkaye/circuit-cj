@@ -148,8 +148,6 @@ class Rewriter {
         while(heads.size() != 0){
             ReattachHead(heads.removeAt(heads.size() - 1))
         }
-        print("${f}\n")
-        print("exit\n")
     }
     /**
      * Perform all local reductions in the graph, traversing from the endpoints (outputs and edges with 0 inputs)
@@ -247,7 +245,8 @@ class Rewriter {
             { e : Edge => outgoingSources.add(e.GetSource(0)) }
         )
         // We make a copy of the graph (the unfolding)
-        let g = f.ToGraph().Clone()
+        // This is a deep copy as it represents an actual physical copy of the circuit
+        let g = f.ToGraph().Clone(deep: true)
         let danglingSources = ArrayList<Source>()
         let identitiesToDelete = ArrayList<Edge>()
         g.ForEachEdgeWithProperty(
@@ -290,7 +289,6 @@ class Rewriter {
      */
     func ReattachHead(head : ArrayList<Waveform>){
         Debug("ReattachHead", "Adding any immediate values")
-        print("${f}\n")
         for(i in 0..head.size()){
             let w = head[i]
             f.AddConn(f.GetOutput(i).GetConn(), w.delay.GetSource(0))
@@ -299,16 +297,12 @@ class Rewriter {
             f.AddEdge(w.join)
             f.AddEdge(w.value)
         }
-        print("done\n")
     }
     /**
      * Perform some tidy up operations that cannot be done by the rewriter
      * a) Remove any self loops that are inaccessible from the outputs
      */
     func TidyUpGraph(){
-        Debug("TidyUpGraph", "Tidying up graph")
-        WriteDotToFile(f.ToGraph(), "beforetidy")
-        print("${f}")
         let idEdges = f.GetAllIdentityEdges()
         let removedEdges = ArrayList<Edge>()
         for(id in idEdges){
@@ -330,8 +324,5 @@ class Rewriter {
             }
         }
         f.RemoveEdges(removedEdges)
-        if(f.IsWellFormed()[0]){
-            print("wellfomred!\n")
-        }
     }
 }

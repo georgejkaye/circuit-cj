@@ -9,55 +9,46 @@ package circuits
 import debug.*
 
 /**
- * Find intersections between f and g - i.e. wires in f that also exist in g
- * @param f The first hypergraph
- * @param g The second hypergraph
- * @return A tuple of three lists representing the intersections of f and g:
- *                    - The source vertices of f that are intersections
- *                    - The source vertices of g that are intersections
- *                    - The ports of g that the intersections connect to
- */ 
-func FindIntersections(f : HypergraphStructure, g : HypergraphStructure){
-    Debug("FindIntersection", "Finding intersections between ${f.GetName()} and ${g.GetName()}")
+ * Find the points that a graph g diverges from a base graph f
+ * @param f The base graph
+ * @param g The graph to check for divergence points
+ * @return A list of pairs of sources from f and g where the two graphs diverge
+ */
+func FindDivergencePoints(f : HypergraphStructure, g : HypergraphStructure){
+    Debug("FindDivergencePoints", "Finding divergence points between '${f.GetName()}'' and '${g.GetName()}'")
+    let fids = f.GetEdgeGlobalIds()
 
-    // The list of source vertice of intersections in f and g
-    let intersections = ArrayList<Source * Source>()
-    // Traverse backwards from the outputs of g to find wires also in f
-    let visited = ArrayList<Edge>()
-    let frontier = ArrayList<Source>(GetEndpoints(g))
+    let frontier = ArrayList<Source>(g.GetOutputs())
+    let ends = g.GetEdgesWithProperty({e : Edge => e.targets.size() == 0})
 
-    let wires = ArrayList<Wire>()
-    for(s in f.GetSources()){
-        wires.addAll(s.wires)
-    }
-
-    while(frontier.size() != 0){
-        let v : Source = frontier.removeAt(0)
-        var found = false
-        if(!includesPairR(intersections, v)){
-            for(w in v.wires){
-                // Check if the wire is also in f, if so add it to the lists
-                if(!found && includes(wires, w)){                    
-                    // Add the corresponding vertex for f for this wire
-                    intersections.add((f.GetWireVertex(w), v))
-                    // We don't need to check for any more wires in this vertex now
-                    found = true
-                }
-            }
-            // If we didn't find an intersection, add the next edge to our frontier
-            if(!found){
-                let p = v.GetConn().GetPort()
-                match(p) {
-                    case EdgePort(e, i) =>
-                        if(!includes(visited, e)){
-                            frontier.addAll(e.sources)
-                        }       
-                    case InterfacePort(i) => ()
-                }
-            }
+    for(e in ends){
+        match(fids.toMap().get(e.globalId)){
+            case $None => frontier.addAll(e.sources)
+            case _ => () 
         }
     }
-    intersections
+    let divergencePoints = ArrayList<Source * Source>()
+    let encounteredEdges = ArrayList<Edge>()
+
+    while(frontier.size() != 0){
+        let s = frontier.removeAt(0)
+        match(s.GetLeftPort()){
+            case EdgePort(e, i) => 
+                let cont = match(fids.toMap().get(e.globalId)){
+                    case Some(fe) => 
+                        divergencePoints.add((fe.GetTarget(i).GetConn(), s))
+                        false
+                    case $None =>
+                        !includes(encounteredEdges, e)
+                }
+                encounteredEdges.add(e)
+                if(cont){
+                    frontier.addAll(e.sources)
+                }
+            case InterfacePort(i) => ()
+        }
+    }
+    divergencePoints
 }
 
 /**
@@ -83,113 +74,60 @@ func FindIntersections(f : HypergraphStructure, g : HypergraphStructure){
  * @return A clone of hypergraph f with a clone of g injected into it
  */
 func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * Source>){
-    Debug("Inject", "Injecting")
-    let removedEdges = ArrayList<Edge>()
-    let removedInputs = ArrayList<Target>()
-    let removedIntersections = ArrayList<Source>()
-
-    let danglingTargets = ArrayList<Target>()
-
+    Debug("Inject", "Injecting '${g.GetName()}' into '${f.GetName()}'")
+    // Find out all the edges in g that have a corresponding edge in f
+    // These are edges with the same global id
+    let fids = f.GetEdgeGlobalIds()
+    let duplicateEdges = g.GetEdgesWithProperty({e : Edge => 
+        match(fids.toMap().get(e.globalId)){
+            case Some(fe) => true
+            case $None   => false
+    }})
+    // Remove all the edges in g that have a corresponding edge in f
+    g.RemoveEdges(duplicateEdges)
+    // Some of the inputs of g may also exist in f
+    // Not necessarily all of them, e.g. g could have some additional identity at the bottom
+    let inids = f.GetTargetGlobalIds()
+    let duplicateInputs = g.GetInputsWithProperty({t : Target =>
+        match(inids.toMap().get(t.globalId)){
+            case Some(ft) => true
+            case $None   => false
+    }})
+    g.RemoveInputs(duplicateInputs)
+    // Add the remaining bits of g into f
     f.AddNewGraph(g)
-
-    // Inject each of the vertices we have recovered
+    // Create a fork for each intersection point so that we can include the content of both f and g
     for((intersectionF, intersectionG) in intersections){
-        var fork = true
-        // If the intersection point leads to a non-output endpoint of the graph, we need to be clever
-        // If it's a stub, we can just drop it as there is no benefit to forking to a stub
-        // If it's an outlink, we need to check if the other intersection point leads to the same link
-        // Therefore we need to keep track of it
-        let outlinkF = match(PortToEndpoint(intersectionF.GetPort())){
-            case Some((e, j)) =>
-                match(e.generator){
-                    // If we find a stub, then we don't need to copy it
-                    // We just hook up the source of the stub to the intersection with g
-                    case STRUCTURAL(struct) =>
-                        removedEdges.add(e)
-                        danglingTargets.add(intersectionG.GetConn())
-                        f.AddConn(intersectionF.GetConn(), intersectionG)
-                        fork = false
-                        None<Link>
-                    case OUTLINK(linkf) => Some<Link>(linkf)
-                    case _              => None<Link>
-                }
-            case $None => None<Link>
-        }
-        // If we've already decided to not fork then we immediately just take the content of g
-        if(fork) {
-            // We need to check if the intersection sources lead to endpoints
-            match(PortToEndpoint(intersectionG.GetPort())){
-                case Some((e, j)) =>
-                    match(e.generator){
-                        // Once again we can ignore stubs
-                        // This is a lot easier for g, as it is not the 'base' graph
-                        case STRUCTURAL(struct) =>
-                            removedEdges.add(e)
-                            danglingTargets.add(intersectionG.GetConn())
-                            fork = false    
-                        // If this and f also lead to an outlink, we can check them to see if they're the same
-                        // If so, there's no point in copying: we can just keep the link from f and ignore this one
-                        case OUTLINK(linkg) =>
-                            match(outlinkF){
-                                case Some(linkf) =>
-                                    if(linkf == linkg) {
-                                        removedEdges.add(e)
-                                        danglingTargets.add(intersectionG.GetConn())
-                                        fork = false
-                                    }
-                                case $None => ()
-                            }   
-                        case _ => ()
-                    }
-                case $None => ()
-            }
-            // If we are still satified that a fork is truly required, go for it
-            if(fork){
-                // Make a new fork
-                let fork = f.CreateEdge(FORK)
-                // The source of the fork is the 'intersection point'
-                // We add any wires from the two intersections
-                f.AddWires(fork.GetSource(0), intersectionF.wires)
-                f.AddWires(fork.GetSource(0), intersectionG.wires)
-                // The left of the intersection from g will be left danglings
-                danglingTargets.add(intersectionG.GetConn())
-                // Hook the fork up to everything
-                f.AddConn(intersectionF.GetConn(), fork.GetSource(0))
-                f.AddConn(fork.GetTarget(0), intersectionF)
-                f.AddConn(fork.GetTarget(1), intersectionG)
-                // Refresh the wires in the intersection points
-                // We don't want to duplicate the intersected wires
-                f.RefreshWires(intersectionF)
-                f.RefreshWires(intersectionG)
-            }
-        }
+        PerformInjection(f, intersectionF, intersectionG)
     }
-    // Functions to use when traversing the graph to find the dangling elements
-    // Track any dangling edges
-    let edgeAction = { e : Edge, t : Target =>
-            if(!(includes(removedEdges, e))){
-                removedEdges.add(e)
-                true
-            } else {
-                false
-            }
-    }
-    // Track any dangling inputs
-    let inputAction = { t : Target , i : Int64 => 
-        removedInputs.add(t)
-    }
-    // Find all the bits of g that have been left dangling
-    for(t in danglingTargets){
-        TraverseLeft(t, edgeAction, inputAction)
-    }
-    // Remove any dangling edges
-    for(edge in removedEdges){
-        f.RemoveEdge(edge)
-    }
-    // Remove any dangling inputs
-    f.RemoveInputs(removedInputs)
     // We're done!
     f
+}
+/**
+ * For a source vertex from f and g, create a fork edge with targets that connect to them
+ * The source of this fork edge will be the 'left' of f
+ * @param f The 'base' hyp builder to perform the injection in
+ * @param sf The intersection vertex of f
+ * @param sg The intersection vertex of g
+ */
+func PerformInjection(f : HypBuilder, sf : Source, sg : Source){
+    // Make note of the target from f we are about to disconnect
+    let danglingTarget = sg.GetConn()
+    // Make a new fork
+    let fork = f.CreateEdge(FORK)
+    // The source of the fork is the 'intersection point'
+    // We add any wires from the two intersections
+    f.AddWires(fork.GetSource(0), sf.wires)
+    f.AddWires(fork.GetSource(0), sg.wires)
+    // Hook the fork up to everything
+    f.AddConn(sf.GetConn(), fork.GetSource(0))
+    f.AddConn(fork.GetTarget(0), sf)
+    f.AddConn(fork.GetTarget(1), sg)
+    // Refresh the wires in the intersection points
+    // We don't want to duplicate the intersected wires
+    f.RefreshWires(sf)
+    f.RefreshWires(sg)
+    danglingTarget
 }
 
 /**

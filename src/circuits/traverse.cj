@@ -46,12 +46,36 @@ func TraverseLeft(s : Source, edgeAction : (Edge, Target) -> Bool, inputAction :
 }
 /**
  * Traverse through a graph leftwards from a given target
- * @param s The source to start traversing from
+ * @param t The target to start traversing from
  * @param edgeAction The action to take at each edge: takes the current edge and the incoming target as argument, and returns
                      a bool dictating if traversal should continue or halt
  * @param inputAction The action to take at each reached input: takes the input vertex and its index in the inputs list and returns unit
  */
 func TraverseLeft(t : Target, edgeAction : (Edge, Target) -> Bool, inputAction : (Target, Int64) -> Unit){
+    TraverseLeft(t, 
+        {e : Edge, t : Target => 
+            let b = edgeAction(e,t)
+            {s : Source => b}
+        }, inputAction)
+}
+/**
+ * Traverse through a graph leftwards from a given source
+ * @param s The source to start traversing from
+ * @param edgeAction The action to take at each edge: takes the current edge and the incoming target as argument, and returns
+                     a function that takes a source and returns if it should be explored
+ * @param inputAction The action to take at each reached input: takes the input vertex and its index in the inputs list and returns unit
+ */
+func TraverseLeft(s : Source, edgeAction : (Edge, Target) -> ((Source) -> Bool), inputAction : (Target, Int64) -> Unit){
+    TraverseLeft(s.GetConn(), edgeAction, inputAction)
+}
+/**
+ * Traverse through a graph leftwards from a given target
+ * @param s The source to start traversing from
+ * @param edgeAction The action to take at each edge: takes the current edge and the incoming target as argument, and returns
+                     a function that takes a source and returns if it should be explored
+ * @param inputAction The action to take at each reached input: takes the input vertex and its index in the inputs list and returns unit
+ */
+func TraverseLeft(t : Target, edgeAction : (Edge, Target) -> ((Source) -> Bool), inputAction : (Target, Int64) -> Unit){
     let frontier = ArrayList<Target>([t])
     let visitedSources = ArrayList<Source>()
     let visitedTargets = ArrayList<Target>()
@@ -66,8 +90,8 @@ func TraverseLeft(t : Target, edgeAction : (Edge, Target) -> Bool, inputAction :
                 if(!includes(visitedEdges, e)){
                     visitedEdges.add(e)
                     let cont = edgeAction(e, t)
-                    if(cont){
-                        for(s in e.sources){
+                    for(s in e.sources){
+                        if(cont(s)){
                             visitedSources.add(s)
                             frontier.add(s.GetConn())
                         }
@@ -99,21 +123,23 @@ func TraverseRight(t : Target, edgeAction : (Edge, Source) -> Bool, outputAction
 
     while(frontier.size() != 0){
         let t = frontier.removeAt(0)
-        let s = t.GetConn()
-        visitedSources.add(s)
-        visitedTargets.add(t)
-        match(s.GetPort()){
-            case EdgePort(e, i) =>
-                if(!includes(visitedEdges, e)){
-                    visitedEdges.add(e)
-                    let cont = edgeAction(e, s)
-                    if(cont){
-                        frontier.addAll(e.targets)
+        if(t.HasConn()){
+            let s = t.GetConn()
+            visitedSources.add(s)
+            visitedTargets.add(t)
+            match(s.GetPort()){
+                case EdgePort(e, i) =>
+                    if(!includes(visitedEdges, e)){
+                        visitedEdges.add(e)
+                        let cont = edgeAction(e, s)
+                        if(cont){
+                            frontier.addAll(e.targets)
+                        }
                     }
-                }
-            case InterfacePort(i) =>
-                visitedInputs.add(t)
-                outputAction(s, i)
+                case InterfacePort(i) =>
+                    visitedInputs.add(t)
+                    outputAction(s, i)
+            }
         }
     }
     (visitedEdges, visitedSources, visitedTargets, visitedInputs)

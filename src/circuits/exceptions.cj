@@ -73,6 +73,7 @@ class BadHypergraphException <: Exception {
             case IncorrectSourceAssignment(s, p) => throw IncorrectPortException("Wellformedness", h, s, p)
             case DuplicateTarget(t)              => throw DuplicateVertexException("Wellformedness", h, t)
             case DuplicateSource(s)              => throw DuplicateVertexException("Wellformedness", h, s)
+            case DuplicateEdgeGlobalId(i)        => throw DuplicateEdgeGlobalIdException("Wellformedness", h, i)
             case ConnectionNotInGraph(v1,v2)     => throw BadConnectionException("Wellformedness", h, v1, v2)
             case EdgeNotInGraph(v, e)            => throw BadEdgeException("Wellformedness", h, v, e)
             case IncorrectDomain(e, n)           => throw BadDomainException("Wellformedness", n, Dom(e.generator))
@@ -103,10 +104,10 @@ class IncorrectPortException <: Exception {
 }
 class MissingConnectionException <: Exception {
     init(function : String, h : HypergraphStructure, v : Vertex) {
-        ErrorMsg(function, "No connection found for vertex ${v.id}")
+        ErrorMsg(function, "No connection found for ${v}")
     }
     init(function : String, v : Vertex) {
-        ErrorMsg(function, "No connection found for vertex ${v.id}")
+        ErrorMsg(function, "No connection found for ${v}")
     }
 }
 class BadConnectionException <: Exception {
@@ -127,7 +128,11 @@ class DuplicateVertexException <: Exception {
         ErrorMsg(function, "The source ${s.id} is the source of multiple edges")
     }
 }
-
+class DuplicateEdgeGlobalIdException <: Exception {
+    init(function : String, h : HypergraphStructure, id : UInt64){
+        ErrorMsg(function, "The edge global id ${id} is used multiple times in the graph")
+    }
+}
 class VertexNotInGraphException <: Exception {
     init(function : String, v : Vertex){
         ErrorMsg(function, "Vertex ${v.id} is not in the graph")
