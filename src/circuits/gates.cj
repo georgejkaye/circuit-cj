@@ -521,21 +521,22 @@ external func Mux(width!: Int64 = 1, label!: String = "", elem!: Int64 = -1, nam
     }
     let wires = ArrayList<Wire>()
     let hb = if(elem < 0) { HypBuilder(muxInputs, width, label) } else { HypBuilder(muxInputs, width, label, elem) }
-    var currentC = hb.GetInputs()[muxInputs - 1]
+    var currentC = hb.GetInput(0)
     if(width > 1){
         for(i in 0..width-1){
             // Go from bottom to top
-            let j = width - i - 1
+            let j = i + 1
             // Create a fork to split the control signal
             let fork = hb.CreateEdge(FORK, [currentC])
             // Create the mux edge
-            let mux = hb.CreateEdge(MUX, [hb.GetInputs()[j], hb.GetInputs()[j + width], fork.GetTarget(1)], [hb.GetOutputs()[j]])
+            let mux = hb.CreateEdge(MUX, [fork.GetTarget(1), hb.GetInput(j), hb.GetInput(j + width)], [hb.GetOutput(j - 1)])
             // Assign the control wire for the next iteration
             currentC = fork.GetTarget(0)
         }
     }
     // Create the final mux edge
-    let mux = hb.CreateEdge(MUX, [hb.GetInput(0), hb.GetInputs()[width], currentC], [hb.GetOutput(0)])
+    let mux = hb.CreateEdge(MUX, [currentC, hb.GetInput(width), hb.GetInput(2 * width)], [hb.GetOutput(width - 1)])
+    print("${hb}\n")
     let res = hb.ToGraph()
     match(input){
         case Some(f) => Seq(f, res)
@@ -555,7 +556,7 @@ external func Mux(label!: String = "", elem!: Int64 = -1, name!: String = "", lo
             f
         case $None   => Identity(1)
     }
-    let f = Concat([low,high,z])
+    let f = Concat([z,low,high])
     Mux(width: high.GetN(), label: label, elem: elem, name: name, input: f)
 }
 

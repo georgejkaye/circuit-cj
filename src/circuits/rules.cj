@@ -352,16 +352,16 @@ let orPassthrough = PassthroughGateRewriteRule("OR false", OR, FALSE)
 let joinUnit = PassthroughGateRewriteRule("join unit", JOIN, BOTTOM)
 
 /* The indices of the multiplexer inputs */
-let muxTrue = 1
-let muxFalse = 0
-let muxControl = 2
+let muxTrue = 2
+let muxFalse = 1
+let muxControl = 0
 /* Evaluate a multiplexer */
 let muxEval = RewriteRule(
     "Mux eval",
     EXACTLY(MUX),
     {e : Edge => NthArgumentIsValue(e, muxControl)},
     {e : Edge, hb : HypBuilder, payload : Int64 =>
-        let control = e.sources[muxControl].GetLeftEdge()
+        let control = e.GetSource(muxControl).GetLeftEdge()
         let (acc, rej) = match(control.GetValue()){
             case $TRUE => (muxTrue, muxFalse)
             case $FALSE => (muxFalse, muxTrue)
@@ -374,9 +374,9 @@ let muxEval = RewriteRule(
 
         let nextSources = ArrayList<Source>()
 
-        let (fstSource, sndSource) = 
+        let (trueSource, falseSource) = 
             if(acc != -1){
-                if(acc == 0) {
+                if(acc == muxTrue) {
                     (outputSource, stubSource)
                 } else {
                     (stubSource, outputSource)
@@ -392,12 +392,13 @@ let muxEval = RewriteRule(
                 (stubSource, stubSource2)
             }
         // Connect the original inputs appropriately
-        hb.AddConn(e.GetSource(0).GetConn(), fstSource)
-        hb.AddConn(e.GetSource(1).GetConn(), sndSource)
+        hb.AddConn(e.GetSource(muxTrue).GetConn(), trueSource)
+        hb.AddConn(e.GetSource(muxFalse).GetConn(), falseSource)
         // Remove the multiplexer edge
         hb.RemoveEdge(e)
         hb.RemoveEdge(control)
-        nextSources.addAll([fstSource, sndSource])
+        nextSources.addAll([trueSource, falseSource])
+        print("${hb}\n")
         nextSources
     }
 )

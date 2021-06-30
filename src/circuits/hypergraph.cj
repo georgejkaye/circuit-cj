@@ -855,130 +855,19 @@ func main(){
 
     SetDotDir("dot")
 
-    let a = UnsignedValueFromInt(2, width: 4)
-    let b = UnsignedValueFromInt(5, width: 4)
-
-    let circ = If(ifArg: Equals(a : a, b : b), thenArg: BlackBox("F", 1, 2), elseArg: BlackBox("G", 1, 2))
-    WriteDotToFile(circ, "circ", resolve: true)
+    let circ = IfTest()
+    WriteDotToFile(circ, "circ")
 
     let rw = circ.GetRewriter()
     rw.RunCycle()
     WriteDotToFile(rw.GetGraph(), "red")
 
-    //let circ = serial_multiplier_bit()
-
-    //let wf = InfiniteWaveform(4, width: 2)
-    //WriteDotToFile(wf, "wf")
-
-
-    // let link_link = NewLink(width: width)
-    // let prev_sum = InLink(link: link_link)
-    // let x = Input(width: width)
-    // let sum = Plus(a: prev_sum, b: x)
-    // let circ = FeedbackReg(link: link_link, input: Some(sum), initial: 0)
-    
-
-   
-    // // TODO have to use Some to avoid segfault here
-    
-    // let link = Link()
-    // let circ = FeedbackReg(link: link_link, input: AndGate(), initial: 0)
-    // let circ2 = Feedback(link: link_link, )
-
-    // WriteDotToFile(circ, "circuit", resolve: true)
-    
-
-
-
-    // let wf = WaveformFromList([0,1], width: width)
-    // let applied = wf + circ
-    // WriteDotToFile(applied, "applied", resolve: true)
-
-    // let x = Input()
-    // let c = Input()
-    // let link = NewLink(width: 1)
-    // let mux1 = Mux(low: x, high: InLink(link: link), sel: c)
-    // let f = BlackBox("F", 1, 1, input: Some(mux1))
-    // let mux2 = Mux(low: f, high: x, sel: c)
-    // let g = BlackBox("G", 1, 1, input: Some(mux2))
-    // let fb = Feedback(link: link, input: g)
-    // let circ = Mux(high: f, low: fb, sel: c)
-
-    // let width = 2
-    // let circ = Accumulator(width: width, initial: 0)
-    // WriteDotToFile(circ, "circ", resolve: true)
-
-    // let wf = WaveformFromList([1,2], width: width)
-    // let applied = wf + circ
-    // WriteDotToFile(applied, "applied", resolve: true)
-
-    // let rw = applied.GetRewriter()
-    // rw.RunCycle()
-    // WriteDotToFile(rw.GetGraph(), "cycle1")
-    // rw.RunCycle()
-    // WriteDotToFile(rw.GetGraph(), "cycle2")
-
-    // let app1 = True() * True() + circ
-    // let app2 = True() * False() + circ
-
-    // WriteDotToFile(app1, "applied1", resolve: true)
-    // WriteDotToFile(app2, "applied2", resolve: true)
-
-    // let rw1 = app1.GetRewriter()
-    // rw1.RunCycle()
-    // WriteDotToFile(rw1.GetGraph(), "cycle1")
-
-    // let rw2 = app2.GetRewriter()
-    // rw2.RunCycle()
-    // WriteDotToFile(rw2.GetGraph(), "cycle2")
-
-    //rw1.RunCycle()
-    //WriteDotToFile(rw1.GetGraph(), "cycle2")
-
-    //rw.RunCycle()
-    //WriteDotToFile(rw.GetGraph(), "cycle-2")
-
-    // let reg = WaveformFromList([1,0,1], width: 1)
-    // WriteDotToFile(reg, "wf", resolve: true)
-
-    // let c = Input(label: "c")
-    // let x = Input(label: "x")
-
-    // let link = NewLink(width: 1, name: "fb")
-    // let mux1 = Mux(a: x, b: InLink(link: link), s: c)
-    // let f = BlackBox("F", 1, 1, input: Some(mux1))
-    // let mux2 = Mux(a: f, b: x, s: c)
-    // let g = BlackBox("G", 1, 1, input: Some(mux2))
-    // let fb = Feedback(link: link, input: g)
-    // let circ = Mux(a: f, b: fb, s: c)
-
-    // WriteDotToFile(circ, "circ")
-
-    // let app1 = True() * False() + circ
-    // let app2 = True() * True() + circ
-
-    // WriteDotToFile(app1, "applied1", resolve: true)
-    // WriteDotToFile(app2, "applied2", resolve: true)
-
-    // let rw1 = app1.GetRewriter()
-    // rw1.RunCycle()
-    // WriteDotToFile(rw1.GetGraph(), "red1", resolve: true)
-    // let rw2 = app2.GetRewriter()
-    // rw2.RunCycle()
-    // WriteDotToFile(rw2.GetGraph(), "red2", resolve: true)
-
-    // let circ = serial_multiplier_bit(width: 2)
-    // WriteDotToFile(circ, "mult")
-    // let a = WaveformFromList([1], width: 2)
-    // let b = WaveformFromList([2], width: 2)
-
-    // let applied = a * b + circ
-
-    // let rw = applied.GetRewriter()
-    // rw.RunCycle()
-    // WriteDotToFile(rw.GetGraph(), "red")
-
     0   
+}
+
+func Fibonacci(n : Int64){ 
+    
+
 }
 
 func CyclicCombinational(){
@@ -991,6 +880,12 @@ func CyclicCombinational(){
     let g = BlackBox("G", 1, 1, input: Some(mux2))
     let fb = Feedback(link: link, input: g)
     Mux(high: f, low: fb, sel: c)
+}
+
+func IfTest(){
+    let a = UnsignedValueFromInt(2, width: 4)
+    let b = UnsignedValueFromInt(5, width: 4)
+    If(ifArg: Equals(a : a, b : b), thenArg: BlackBox("F", 1, 2), elseArg: BlackBox("G", 1, 2))
 }
 
 func partial_product(a!: Hypergraph, b0!: Hypergraph){
