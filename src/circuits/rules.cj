@@ -327,7 +327,7 @@ let orEval = GateRewriteRule("OR eval", orTable)
 let nandEval = GateRewriteRule("NAND eval", nandTable)
 let norEval = GateRewriteRule("NOR eval", norTable)
 let xorEval = GateRewriteRule("XOR eval", xorTable)
-let xnorEval = GateRewriteRule("XNOR eval", andTable)
+let xnorEval = GateRewriteRule("XNOR eval", xnorTable)
 
 /**
  * Enhanced gate evaluation rules

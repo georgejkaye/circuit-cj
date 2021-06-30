@@ -16,7 +16,7 @@ func CreateEquals(width!: Int64) : HypBuilder {
         HypBuilder()  
     } else if (width == 1) {
         let hb = HypBuilder(2,1)
-        let and = hb.CreateEdge(AND)
+        let and = hb.CreateEdge(XNOR)
         hb.AddConn(hb.GetInput(0), and.GetSource(0))
         hb.AddConn(hb.GetInput(1), and.GetSource(1))
         hb.AddConn(and.GetTarget(0), hb.GetOutput(0))
@@ -31,8 +31,8 @@ func CreateEquals(width!: Int64) : HypBuilder {
             hb.AddConn(hb.GetInput(i + width), head.GetInput(i + (width - 1)).GetConn())
         }
         hb.AddEdges(head.GetEdges())
-        // And the width'th bits of the input
-        let and1 = hb.CreateEdge(AND)
+        // We XNOR the width'th bits of the input
+        let and1 = hb.CreateEdge(XNOR)
         hb.AddConn(hb.GetInput(width - 1), and1.GetSource(0))
         hb.AddConn(hb.GetInput((2 * width) - 1), and1.GetSource(1))
         // And the result of this computation with the result of the subcomputation
@@ -69,6 +69,10 @@ external func Equals(a!: Hypergraph, b!: Hypergraph){
     let eq = Equals(width: a.GetN())
     let input = Concat([a,b])
     input + eq
+}
+
+func Comparator(width: Int64){
+    BlackBox("Comp", width * 2, 3)
 }
 
 external func If(width!: Int64){

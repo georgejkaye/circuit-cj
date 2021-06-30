@@ -536,7 +536,6 @@ external func Mux(width!: Int64 = 1, label!: String = "", elem!: Int64 = -1, nam
     }
     // Create the final mux edge
     let mux = hb.CreateEdge(MUX, [currentC, hb.GetInput(width), hb.GetInput(2 * width)], [hb.GetOutput(width - 1)])
-    print("${hb}\n")
     let res = hb.ToGraph()
     match(input){
         case Some(f) => Seq(f, res)

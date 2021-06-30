@@ -139,6 +139,7 @@ class Rewriter {
         RunLocal()
         // Unfold the rest of the circuit
         Unfold()  
+        WriteDotToFile(f.ToGraph(), "unfolded")
         // Tidy up the resulting circuit
         RunLocal() 
         // There may be loops that are inaccessible from the outputs
@@ -281,6 +282,7 @@ class Rewriter {
             f.AddConn(e.GetSource(0).GetConn(), e.GetTarget(0).GetConn())
             f.RemoveEdge(e)
         }
+        print("done\n")
     }
     /**
      * Reattach a list of waveform heads to the graph
