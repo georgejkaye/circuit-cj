@@ -12,7 +12,7 @@ func running_sum(first!: Hypergraph, sum!: Hypergraph, a!: Hypergraph, b0!: Hype
     let rhs = partial_product(a: a, b0: b0)
     let a = UnsignedExtend(lhs)
     let b = UnsignedExtend(rhs)
-    Plus(a: a, b: b)
+    Plus(a, b)
 }
 
 func running_sum_loop(first!: Hypergraph, a!: Hypergraph, b0!: Hypergraph){

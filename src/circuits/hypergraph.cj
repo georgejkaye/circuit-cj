@@ -855,8 +855,8 @@ func main(){
 
     SetDotDir("dot")
 
-    let circ = IfTest()
-    WriteDotToFile(circ, "circ")
+    let circ = Fibonacci(5, width: 4)
+    //WriteDotToFile(circ, "circ")
 
     let rw = circ.GetRewriter()
     rw.RunCycle()
@@ -865,9 +865,14 @@ func main(){
     0   
 }
 
-func Fibonacci(n : Int64){ 
-    
-
+func Fibonacci(n : Int64, width!: Int64) : Hypergraph {
+    if(n == 0){
+        UnsignedValueFromInt(0, width: width)
+    } else if (n == 1) {
+        UnsignedValueFromInt(1, width: width)
+    } else {
+        Plus(Fibonacci(n - 1, width: width), Fibonacci(n - 2, width: width))
+    }
 }
 
 func CyclicCombinational(){
@@ -897,7 +902,7 @@ func running_sum(first!: Hypergraph, sum!: Hypergraph, a!: Hypergraph, b0!: Hype
     let rhs = partial_product(a: a, b0: b0)
     let a = UnsignedExtend(lhs)
     let b = UnsignedExtend(rhs)
-    Plus(a: a, b: b)
+    Plus(a, b)
 }
 
 func running_sum_loop(first!: Hypergraph, a!: Hypergraph, b0!: Hypergraph){
@@ -939,6 +944,6 @@ func Accumulator(width!: Int64, initial!: Int64){
     let link = NewLink(width: width)
     let prev_sum = InLink(link: link)
     let x = Input(width: width)
-    let sum = Plus(a: prev_sum, b: x)
+    let sum = Plus(prev_sum, x)
     FeedbackReg(link: link, input: Some(sum), initial: initial)
 }

@@ -398,7 +398,6 @@ let muxEval = RewriteRule(
         hb.RemoveEdge(e)
         hb.RemoveEdge(control)
         nextSources.addAll([trueSource, falseSource])
-        print("${hb}\n")
         nextSources
     }
 )

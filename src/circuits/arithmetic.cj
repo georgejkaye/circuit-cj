@@ -223,18 +223,15 @@ external func Adder(width!: Int64, sum!: String = "", cout!: String = "", name!:
  * @param name  The name of the new circuit
  * @return The fresh half adder
  */
-external func Adder(width!: Int64, a!: Hypergraph, b!: Hypergraph, cin!: Hypergraph = Zero(width: 1), sum!: String = "", cout!: String = "", name!: String = "") : Hypergraph {
-    Debug("Adder", "Making n-bit adder of width ${width} with inputs a='${a.GetName()}', b='${b.GetName()}', cin='${cin.GetName()}'")
-    if(a.GetN() != width){
-        throw BadInputGraphException("Adder", "a", width, a.GetName(), a.GetN())
-    }
-    if(b.GetN() != width){
-        throw BadInputGraphException("Adder", "b", width, b.GetName(), b.GetN())
+external func Adder(a: Hypergraph, b: Hypergraph, cin!: Hypergraph = Zero(width: 1), sum!: String = "", cout!: String = "", name!: String = "") : Hypergraph {
+    Debug("Adder", "Making n-bit adder with inputs a='${a.GetName()}', b='${b.GetName()}', cin='${cin.GetName()}'")
+    if(a.GetN() != b.GetN()){
+        throw DifferentLengthArgumentsException("Adder", a, b)
     }
     if(cin.GetN() != 1){
         throw BadInputGraphException("Adder", "cin", 1, cin.GetName(), cin.GetN())
     }
-    Seq(Concat([a,b,cin]), Adder(width: width, sum: sum, cout: cout), name: name)
+    Seq(Concat([a,b,cin]), Adder(width: a.GetN(), sum: sum, cout: cout), name: name)
 }
 /**
  * Create a fresh plus circuit of arbitrary width
@@ -261,12 +258,12 @@ external func Plus(width!: Int64, label!: String = "", name!: String = "") : Hyp
  * @param name The name of the new circuit
  * @return The new plus circuit
  */
-external func Plus(a!: Hypergraph, b!: Hypergraph, label!: String = "", name!: String = "") : Hypergraph {
+external func Plus(a: Hypergraph, b: Hypergraph, label!: String = "") : Hypergraph {
     Debug("Plus", "Making plus with inputs a='${a.GetName()}' and b='${b.GetName()}'")
     if(a.GetN() != b.GetN()){
         throw BusesNotSameSizeException("Plus", a.GetN(), b.GetN())
     }
     let plus = Plus(width: a.GetN(), label: label)
-    Seq(Concat([a,b]), plus, name: name)
+    Seq(Concat([a,b]), plus)
 }
 

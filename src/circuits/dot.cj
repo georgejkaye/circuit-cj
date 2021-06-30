@@ -272,7 +272,6 @@ external func DotGraph(f : Hypergraph, resolve : Bool){
     let output = DrawEdgeNode(1, "eo", interfaceStyle, "outputs", f.GetOutputs(), ArrayList<Target>())
     let outputgraph = DrawSubgraph(1, maxSubgraphOptions, output)
     edges = "${edges}\n${outputgraph}"
-
     "${declaration}\n${graphOptions}\n\n${vertexComment}\n${vertexNodeOptions}\n${vertices}\n\n${edgeComment}\n${edgeNodeOptions}\n${edges}\n\n${connsComment}\n${conns}\n}"
 }
 /**
