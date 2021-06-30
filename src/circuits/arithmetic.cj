@@ -269,3 +269,4 @@ external func Plus(a!: Hypergraph, b!: Hypergraph, label!: String = "", name!: S
     let plus = Plus(width: a.GetN(), label: label)
     Seq(Concat([a,b]), plus, name: name)
 }
+

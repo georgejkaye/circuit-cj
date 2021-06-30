@@ -141,7 +141,6 @@ class Rewriter {
         Unfold()  
         // Tidy up the resulting circuit
         RunLocal() 
-        WriteDotToFile(f.ToGraph(), "reduced")
         // There may be loops that are inaccessible from the outputs
         TidyUpGraph()
         // If we have one, reattach the head

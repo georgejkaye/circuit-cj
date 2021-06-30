@@ -855,6 +855,16 @@ func main(){
 
     SetDotDir("dot")
 
+    let a = UnsignedValueFromInt(2, width: 4)
+    let b = UnsignedValueFromInt(5, width: 4)
+
+    let circ = If(ifArg: Equals(a : a, b : b), thenArg: BlackBox("F", 1, 2), elseArg: BlackBox("G", 1, 2))
+    WriteDotToFile(circ, "circ", resolve: true)
+
+    let rw = circ.GetRewriter()
+    rw.RunCycle()
+    WriteDotToFile(rw.GetGraph(), "red")
+
     //let circ = serial_multiplier_bit()
 
     //let wf = InfiniteWaveform(4, width: 2)
@@ -957,16 +967,16 @@ func main(){
     // rw2.RunCycle()
     // WriteDotToFile(rw2.GetGraph(), "red2", resolve: true)
 
-    let circ = serial_multiplier_bit(width: 2)
-    WriteDotToFile(circ, "mult")
-    let a = WaveformFromList([1], width: 2)
-    let b = WaveformFromList([2], width: 2)
+    // let circ = serial_multiplier_bit(width: 2)
+    // WriteDotToFile(circ, "mult")
+    // let a = WaveformFromList([1], width: 2)
+    // let b = WaveformFromList([2], width: 2)
 
-    let applied = a * b + circ
+    // let applied = a * b + circ
 
-    let rw = applied.GetRewriter()
-    rw.RunCycle()
-    WriteDotToFile(rw.GetGraph(), "red")
+    // let rw = applied.GetRewriter()
+    // rw.RunCycle()
+    // WriteDotToFile(rw.GetGraph(), "red")
 
     0   
 }
@@ -984,11 +994,11 @@ func CyclicCombinational(){
 }
 
 func partial_product(a!: Hypergraph, b0!: Hypergraph){
-    Mux(width: a.GetN(), sel: b0, high: a, low: Zero(width: a.GetN()))
+    Mux(sel: b0, high: a, low: Zero(width: a.GetN()))
 }
 
 func running_sum(first!: Hypergraph, sum!: Hypergraph, a!: Hypergraph, b0!: Hypergraph){
-    let lhs = Mux(width: sum.GetN(), sel: first, high: Zero(width: a.GetN()), low: sum)
+    let lhs = Mux(sel: first, high: Zero(width: a.GetN()), low: sum)
     let rhs = partial_product(a: a, b0: b0)
     let a = UnsignedExtend(lhs)
     let b = UnsignedExtend(rhs)

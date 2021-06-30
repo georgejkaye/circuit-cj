@@ -543,12 +543,9 @@ external func Mux(width!: Int64 = 1, label!: String = "", elem!: Int64 = -1, nam
     }
 }
 
-external func Mux(width!: Int64 = 1, label!: String = "", elem!: Int64 = -1, name!: String = "", low!: Hypergraph, high!: Hypergraph, sel!: Option<Hypergraph> = None<Hypergraph>){
-    if(low.GetN() != width){
-        throw BadInputGraphException("Mux", "low", width, low.GetName(), low.GetN())
-    }
-    if(high.GetN() != width){
-        throw BadInputGraphException("Mux", "high", width, high.GetName(), high.GetN())
+external func Mux(label!: String = "", elem!: Int64 = -1, name!: String = "", low!: Hypergraph, high!: Hypergraph, sel!: Option<Hypergraph> = None<Hypergraph>){
+    if(low.GetN() != high.GetN()){
+        throw DifferentLengthArgumentsException("Mux", low, high)
     }
     let z = match(sel){
         case Some(f) =>
@@ -559,7 +556,7 @@ external func Mux(width!: Int64 = 1, label!: String = "", elem!: Int64 = -1, nam
         case $None   => Identity(1)
     }
     let f = Concat([low,high,z])
-    Mux(width: width, label: label, elem: elem, name: name, input: f)
+    Mux(width: high.GetN(), label: label, elem: elem, name: name, input: f)
 }
 
 func BlackBox(label: String, dom: Int64, cod: Int64, wires!: ArrayList<Wire> = ArrayList<Wire>(), input!: Option<Hypergraph> = None<Hypergraph>, name!: String = ""){

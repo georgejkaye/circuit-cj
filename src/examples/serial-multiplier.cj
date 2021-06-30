@@ -8,7 +8,7 @@ func partial_product(a!: Hypergraph, b0!: Hypergraph){
 }
 
 func running_sum(first!: Hypergraph, sum!: Hypergraph, a!: Hypergraph, b0!: Hypergraph){
-    let lhs = Mux(width: sum.GetN(), s: first, a: Zero(width: a.GetN()), b: sum)
+    let lhs = Mux(s: first, a: Zero(width: a.GetN()), b: sum)
     let rhs = partial_product(a: a, b0: b0)
     let a = UnsignedExtend(lhs)
     let b = UnsignedExtend(rhs)

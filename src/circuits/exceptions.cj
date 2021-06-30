@@ -220,7 +220,11 @@ class BadInputException <: Exception {
         ErrorMsg(function, "Tried to get input ${v}, but it is not an input")
     }
 }
-
+class DifferentLengthArgumentsException <: Exception {
+    init(function : String, a : Hypergraph, b : Hypergraph){
+        ErrorMsg(function, "Arguments '${a.GetName()}' and '${b.GetName()}' must have the same number of outputs")
+    }
+}
 /**
  * Port exceptions
  */

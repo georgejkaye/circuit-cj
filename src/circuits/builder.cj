@@ -146,12 +146,7 @@ class HypBuilder <: HypergraphStructure {
      */
     func AddEdge(e : Edge) {
         edges.add(e)
-        for(i in 0..e.sources.size()){
-            AddNewSource(e.sources[i])
-        }
-        for(i in 0..e.targets.size()){
-            AddNewTarget(e.targets[i])
-        }
+        AddEdge(e, sources, targets, edgeGlobalIds, sourceGlobalIds, targetGlobalIds, busMaps, busList, wireList, inlinkMap, outlinkMap)
         UpdateBuses()
     }
     /**
