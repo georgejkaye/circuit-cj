@@ -161,40 +161,63 @@ func CreateAdder(width!: Int64, bit!: Int64 = 0, sum!: String = "", cout!: Strin
          throw NotEnoughBitsException("Adder")
     }
     if(width == 1){
-        CreateFullAdder(sum: sum, cout: cout, bit: bit)
+        CreateHalfAdder(sum: sum, carry: cout, bit: bit)
     } else {
+        // let n = width - 1
+        // // Create the 'head' adder to deal with the first bit
+        // let headAdder = CreateFullAdder(sum: sum, bit: bit)
+        // // Create the 'tail' adder to deal with the rest of the bits
+        // let tailAdder = CreateAdder(width: n, sum: sum, cout: cout, bit: bit + 1)
+        // // Create the complete adder builder
+        // let completeAdder = HypBuilder()
+        // // Add all the edges from the head and the tail
+        // completeAdder.AddEdges(headAdder.GetEdges())
+        // completeAdder.AddEdges(tailAdder.GetEdges())
+        // // Put the inputs from the head and the tail in the right order
+        // // head[0] tail[0..n] head[1] tail[n..n*2] head[2]
+        // completeAdder.AddInput(headAdder.GetInput(0))
+        // for(i in 0..n){
+        //     completeAdder.AddInput(tailAdder.GetInputs()[i])
+        // }
+        // completeAdder.AddInput(headAdder.GetInput(1))
+        // for(i in 0..n){
+        //     completeAdder.AddInput(tailAdder.GetInputs()[n+i])
+        // }
+        // completeAdder.AddInput(headAdder.GetInput(2))
+        // // Put the outputs in too: sum from the head and everything from the tail
+        // completeAdder.AddOutput(headAdder.GetOutput(0))
+        // for(out in tailAdder.GetOutputs()){
+        //     completeAdder.AddOutput(out)
+        // }
+        // // Need to hook up the carry of the head to the relevant port of the tail
+        // let carryOut = headAdder.GetOutput(1).GetConn()
+        // let carryIn = tailAdder.GetInput(n * 2).GetConn()
+        // carryOut.SetConn(carryIn)
+        // // Return the complete builder
+        // completeAdder
+
         let n = width - 1
-        // Create the 'head' adder to deal with the first bit
-        let headAdder = CreateFullAdder(sum: sum, bit: bit)
-        // Create the 'tail' adder to deal with the rest of the bits
-        let tailAdder = CreateAdder(width: n, sum: sum, cout: cout, bit: bit + 1)
-        // Create the complete adder builder
+        let subAdder = CreateAdder(width: n, sum: sum, cout: cout, bit: bit + 1)
+        let bitAdder = CreateFullAdder(sum: sum, bit: bit)
+
         let completeAdder = HypBuilder()
-        // Add all the edges from the head and the tail
-        completeAdder.AddEdges(headAdder.GetEdges())
-        completeAdder.AddEdges(tailAdder.GetEdges())
-        // Put the inputs from the head and the tail in the right order
-        // head[0] tail[0..n] head[1] tail[n..n*2] head[2]
-        completeAdder.AddInput(headAdder.GetInput(0))
+        completeAdder.AddEdges(subAdder.GetEdges())
+        completeAdder.AddEdges(bitAdder.GetEdges())
+
         for(i in 0..n){
-            completeAdder.AddInput(tailAdder.GetInputs()[i])
+            completeAdder.AddInput(subAdder.GetInput(i))
+            completeAdder.AddOutput(subAdder.GetOutput(i))
         }
-        completeAdder.AddInput(headAdder.GetInput(1))
+        completeAdder.AddInput(bitAdder.GetInput(0))
         for(i in 0..n){
-            completeAdder.AddInput(tailAdder.GetInputs()[n+i])
+            completeAdder.AddInput(subAdder.GetInput(i + n))
         }
-        completeAdder.AddInput(headAdder.GetInput(2))
-        // Put the outputs in too: sum from the head and everything from the tail
-        completeAdder.AddOutput(headAdder.GetOutput(0))
-        for(out in tailAdder.GetOutputs()){
-            completeAdder.AddOutput(out)
-        }
-        // Need to hook up the carry of the head to the relevant port of the tail
-        let carryOut = headAdder.GetOutput(1).GetConn()
-        let carryIn = tailAdder.GetInput(n * 2).GetConn()
-        carryOut.SetConn(carryIn)
-        // Return the complete builder
+        completeAdder.AddInput(bitAdder.GetInput(1))
+        completeAdder.AddConn(subAdder.GetOutput(n).GetConn(), bitAdder.GetInput(2).GetConn())
+        completeAdder.AddOutput(bitAdder.GetOutput(0))
+        completeAdder.AddOutput(bitAdder.GetOutput(1))
         completeAdder
+
     }
 }
 /**
@@ -244,9 +267,7 @@ external func Adder(a: Hypergraph, b: Hypergraph, cin!: Hypergraph = Zero(width:
 external func Plus(width!: Int64, label!: String = "", name!: String = "") : Hypergraph {
     Debug("Plus", "Making plus of width ${width}")
     let adder = Adder(width: width, sum: label)
-    let inputs = Par(Identity(2 * width), InfiniteWaveform(0, width: 1, signed: false))
-    let plus = Seq(inputs, adder)
-    Drop(plus, width, name: name)
+    Drop(adder, width, name: name)
 }
 /**
  * Create a fresh plus circuit of arbitrary width and compose it to some existing circuits

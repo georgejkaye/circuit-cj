@@ -470,42 +470,42 @@ external func NotGate(label!: String = "", elem!: Int64 = -1, name!: String = ""
 external func AndGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
     OpTwoToOne(AND, label: label, elem: elem, name: name, input: input) 
 }
-external func AndGate(lhs!: Hypergraph, rhs!: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
+external func AndGate(lhs: Hypergraph, rhs: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
     OpTwoToOne(AND, label: label, elem: elem, name: name, lhs: lhs, rhs: rhs) 
 }
 
 external func OrGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
     OpTwoToOne(OR, label: label, elem: elem, name: name, input: input) 
 }
-external func OrGate(lhs!: Hypergraph, rhs!: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
+external func OrGate(lhs: Hypergraph, rhs: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
     OpTwoToOne(OR, label: label, elem: elem, name: name, lhs: lhs, rhs: rhs) 
 }
 
 external func XorGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph { 
     OpTwoToOne(XOR, label: label, elem: elem, name: name, input: input) 
 }
-external func XorGate(lhs!: Hypergraph, rhs!: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
+external func XorGate(lhs: Hypergraph, rhs: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
     OpTwoToOne(XOR, label: label, elem: elem, name: name, lhs: lhs, rhs: rhs) 
 }
 
 external func NandGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
     OpTwoToOne(NAND, label: label, elem: elem, name: name, input: input) 
 }
-external func NandGate(lhs!: Hypergraph, rhs!: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){
+external func NandGate(lhs: Hypergraph, rhs: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){
     OpTwoToOne(NAND, label: label, elem: elem, name: name, lhs: lhs, rhs: rhs) 
 }
 
 external func NorGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
     OpTwoToOne(NOR, label: label, elem: elem, name: name, input: input) 
 }
-external func NorGate(lhs!: Hypergraph, rhs!: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
+external func NorGate(lhs: Hypergraph, rhs: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
     OpTwoToOne(NOR, label: label, elem: elem, name: name, lhs: lhs, rhs: rhs) 
 }
 
 external func XnorGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
     OpTwoToOne(XNOR, label: label, elem: elem, name: name, input: input) 
 }
-external func XnorGate(lhs!: Hypergraph, rhs!: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
+external func XnorGate(lhs: Hypergraph, rhs: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
     OpTwoToOne(XNOR, label: label, elem: elem, name: name, lhs: lhs, rhs: rhs)
 }
 

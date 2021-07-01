@@ -16,13 +16,14 @@ import debug.*
  */
 func FindDivergencePoints(f : HypergraphStructure, g : HypergraphStructure){
     Debug("FindDivergencePoints", "Finding divergence points between '${f.GetName()}'' and '${g.GetName()}'")
-    let fids = f.GetEdgeGlobalIds()
+    let edgeIds = f.GetEdgeGlobalIds()
+    let targetIds = f.GetTargetGlobalIds()
 
     let frontier = ArrayList<Source>(g.GetOutputs())
     let ends = g.GetEdgesWithProperty({e : Edge => e.targets.size() == 0})
 
     for(e in ends){
-        match(fids.toMap().get(e.globalId)){
+        match(edgeIds.toMap().get(e.globalId)){
             case $None => frontier.addAll(e.sources)
             case _ => () 
         }
@@ -34,7 +35,7 @@ func FindDivergencePoints(f : HypergraphStructure, g : HypergraphStructure){
         let s = frontier.removeAt(0)
         match(s.GetLeftPort()){
             case EdgePort(e, i) => 
-                let cont = match(fids.toMap().get(e.globalId)){
+                let cont = match(edgeIds.toMap().get(e.globalId)){
                     case Some(fe) => 
                         divergencePoints.add((fe.GetTarget(i).GetConn(), s))
                         false
@@ -45,7 +46,12 @@ func FindDivergencePoints(f : HypergraphStructure, g : HypergraphStructure){
                 if(cont){
                     frontier.addAll(e.sources)
                 }
-            case InterfacePort(i) => ()
+            case InterfacePort(i) =>
+                let t = s.GetConn()
+                match(targetIds.toMap().get(t.globalId)){
+                    case Some(ft) => divergencePoints.add((ft.GetConn(), s))
+                    case $None => ()
+                }
         }
     }
     divergencePoints
@@ -77,9 +83,9 @@ func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * S
     Debug("Inject", "Injecting '${g.GetName()}' into '${f.GetName()}'")
     // Find out all the edges in g that have a corresponding edge in f
     // These are edges with the same global id
-    let fids = f.GetEdgeGlobalIds()
+    let edgeIds = f.GetEdgeGlobalIds()
     let duplicateEdges = g.GetEdgesWithProperty({e : Edge => 
-        match(fids.toMap().get(e.globalId)){
+        match(edgeIds.toMap().get(e.globalId)){
             case Some(fe) => true
             case $None   => false
     }})

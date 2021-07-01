@@ -209,7 +209,7 @@ func DrawVertex(t : Target, s : Source) {
         }
         wires = if(wires == "") { "${wiretext}" } else if(wiretext == "") { "${wires}" } else { "${wires}, ${wiretext}" }
     }
-    let text = if(DebugDotOn()) { "${t.id}|${s.id} \\n ${wires}" } else { wires }
+    let text = if(DebugDotOn()) { "${t.id}|${s.id} \\n (${t.globalId}|${s.globalId})" } else { wires }
     "v${t.id}[label=\"\" xlabel=\"${text}\"]"
 }
 /**

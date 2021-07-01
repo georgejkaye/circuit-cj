@@ -188,7 +188,7 @@ external func Par(f : Hypergraph, n : Int64, name!: String = "") : Hypergraph {
  * @return The resulting composed hypergraph h = f * f * ... * f
  */
 func ParBuilder(f : Hypergraph, n : Int64, name!: String = "") : Hypergraph {
-    let fs = ArrayList<HypBuilder>(n, {x => f.Clone()})
+    let fs = ArrayList<HypBuilder>(n, {x => f.Clone(deep: true)})
     ParBuilder(fs, name: name)
 }
 /** 

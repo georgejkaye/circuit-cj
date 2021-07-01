@@ -855,14 +855,57 @@ func main(){
 
     SetDotDir("dot")
 
-    let circ = SortingNetwork(4, 5)
+    //let circ = Adder(width: 4)
+    let circ = ALU(2)
     WriteDotToFile(circ, "circ")
 
-    let rw = circ.GetRewriter()
-    rw.RunCycle()
-    WriteDotToFile(rw.GetGraph(), "red")
+    //let applied = Plus(a, b)
+
+    //let rw = applied.GetRewriter()
+    //rw.RunCycle()
+    //WriteDotToFile(rw.GetGraph(), "red")
 
     0   
+}
+
+/**
+ * Arbitrary width ALU which
+ * instruction 0: ADD
+ * instruction 1: AND
+ */
+func ALU(width: Int64){
+
+    let inputA = Input(width: width)
+    let inputB = Input(width: width)
+    let instruction = Input()
+
+    let add = Plus(inputA, inputB)
+    let and = inputA * inputB + (AndGate() ^ width)
+
+    let ops = Concat([add, and])
+    WriteDotToFile(ops, "ops")
+
+    var switch = Empty()
+
+    let andInstruction = NotGate(input: instruction)
+    let addInstruction = instruction
+    let instructionSignals = Concat([andInstruction, addInstruction])
+
+    let opsns = ops * instructionSignals
+    WriteDotToFile(opsns, "opsns")
+
+    // Switch depending on the signal
+    for(i in 0..width){
+        switch = switch * AndGate(add[i], addInstruction)
+    }
+    for(i in 0..width){
+        switch = switch * AndGate(and[i], andInstruction)
+    }
+
+    WriteDotToFile(switch, "switch")
+
+    let or = OrGate() ^ width
+    switch + or 
 }
 
 /**
@@ -931,7 +974,7 @@ func SortingNetwork(width: Int64, inputs: Int64) : Hypergraph {
 }
 
 func SortingComparator(width: Int64){
-    BlackBox("|", 2 * width, 2 * width)
+    BlackBox("cmp", 2 * width, 2 * width)
 }
 
 func partial_product(a!: Hypergraph, b0!: Hypergraph){
