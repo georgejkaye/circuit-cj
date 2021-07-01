@@ -321,7 +321,8 @@ func PassthroughGateRewriteRule(name : String, gen : Generator, arg : Value){
  * Gate evaluation rules 
  */
 let joinEval = GateRewriteRule("join", joinTable)
-let notEval = GateRewriteRule("NOT eval", notTable)
+let notEval = GateRewriteRule("BUF eval", bufTable)
+let bufEval = GateRewriteRule("NOT eval", notTable)
 let andEval = GateRewriteRule("AND eval", andTable)
 let orEval = GateRewriteRule("OR eval", orTable)
 let nandEval = GateRewriteRule("NAND eval", nandTable)
@@ -625,6 +626,7 @@ let rewriteRules = ArrayList<RewriteRule>([
     joinFork,
     joinEval,
     notEval,
+    bufEval,
     andEval,
     orEval,
     nandEval,

@@ -856,23 +856,47 @@ func main(){
     SetDotDir("dot")
 
     let width = 4
-    let circ = ALU(width)
-    WriteDotToFile(circ, "circ")
+    
+    let circ = ALU(4)
 
-    let rw = circ.GetRewriter()
-    rw.RunCycle()
-    let tidy = rw.GetGraph()
+    func HalfAdderCombinator(){
+        let carry = AndGate()
+        let sum = XorGate()
+        let gates = sum * carry
+        Copy(2) + gates
+    }    
+
+    func HalfAdderFunctional(){
+        let a = Input()
+        let b = Input()
+        let and = AndGate(a, b)
+        let xor = XorGate(a, b)
+        Concat([and, xor])
+    }
+
+
+    let rw1 = circ.GetRewriter()
+    rw1.RunCycle()
+    let tidy = rw1.GetGraph()
+    WriteDotToFile(tidy, "circ")
 
     let a = UnsignedValueFromInt(5, width: width)
     let b = UnsignedValueFromInt(8, width: width) 
-    let c = False()
+    let c = True()
 
-    let applied = a * b * c + tidy
-    WriteDotToFile(applied, "applied")
+    let applied = a * b * c + circ
 
-    let rw1 = applied.GetRewriter()
-    rw1.RunCycle()
-    WriteDotToFile(rw1.GetGraph(), "red")
+    let rw = applied.GetRewriter()
+    rw.RunCycle()
+    WriteDotToFile(rw.GetGraph(), "red")
+
+
+    // let applied = a * b * c + tidy
+    // WriteDotToFile(applied, "applied")
+
+    //let rw1 = applied.GetRewriter()
+    //rw1.RunCycle()
+    //WriteDotToFile(rw1.GetGraph(), "red")
 
     0   
 }
@@ -882,22 +906,22 @@ func main(){
  * instruction 0: ADD
  * instruction 1: AND
  */
-func ALU(width: Int64){
 
+func ALU(width: Int64){
     let inputA = Input(width: width)
     let inputB = Input(width: width)
+    // We only have two instructions so one bit is enough
     let instruction = Input()
-
+    // Library components
     let add = Plus(inputA, inputB)
     let and = And(inputA, inputB)
-    WriteDotToFile(and, "and")
-
-    // If and is desired, the signal is 0, so we need to not it
+    // Perform different operation based on instruction signal
+    // 0: Add    1: And
     let addInstruction = NotGate(input: instruction)
     let andInstruction = instruction
-
+    // Use the instruction signal to determine which of the 
+    // computations should be output
     var control = Empty()
-
     for(i in 0..width){
         control = Concat([control, AndGate(add[i], addInstruction)])
     }
@@ -905,6 +929,86 @@ func ALU(width: Int64){
         control = Concat([control, AndGate(and[i], andInstruction)])
     }
     Or(control)
+}
+
+func SimpleCPU(){
+    // Width of our buses
+    let w_inst = 16
+    let w_data = 8
+    // Clear
+    let nclr_in = Input()
+    // Clock
+    let clk_in = Input()
+    // Clock enable
+    let ce_in = Input()
+    // Signals from the decoder
+    let muxa   = NewLink(width: 1)
+    let muxb   = NewLink(width: 1)
+    let muxc   = NewLink(width: 1)
+    let en_da  = NewLink(width: 1)
+    let en_pc  = NewLink(width: 1)
+    let en_in  = NewLink(width: 1)
+    let ram_we = NewLink(width: 1)
+    let alu_s0 = NewLink(width: 1)
+    let alu_s1 = NewLink(width: 1)
+    let alu_s2 = NewLink(width: 1)
+    let alu_s3 = NewLink(width: 1)
+    let alu_s4 = NewLink(width: 1)
+    // Links from components we will build later
+    let ram = NewLink(width: w_inst)
+    let alu = NewLink(width: w_data)
+    let acc = NewLink(width: w_data)
+    // FD
+    let fd = FD(d: NotGate(input: nclr_in), c: clk)
+    // Instruction register
+    let ir = Reg(d: ram_dout, clk: clk_in, ce: en_in, clr: fd)
+    // Split signals into two buses of equal size
+    let (ir_high, ir_low) = Split(ir)
+    let (ram_high, ram_low) = Split(InLink(ram_dout))
+    // Program counter
+    let pc = Reg(d: alu_out, clk: clk_in, ce: en_pc, clr: fd)
+    // MUXI
+    let muxi = Mux(low: InLink(acc_in), high: pc, sel: muxa)
+    // MUXD
+    let muxd = Mux(low: ram_low, high: ir_low, sel: muxb)
+    // ALU
+    let alu = ALU(a: muxi, b: muxd, alu_s0: alu_s0, alu_s0: alu_s1, alu_s0: alu_s2, alu_s0: alu_s3, alu_s0: alu_s4)
+    let alu_z = Lsbs(alu)
+    // Connect the outputs to an earlier link, but also output them
+    alu_z.LinkAndOutput(alu_out)
+    let carry = Msb(alu)
+    let zero = NorGate(alu)
+    // Accumulator
+    let acc = Reg(d : alu, clk: clk_in, ce: en_da, clr: clr_in)
+    acc.LinkAndOutput(alu)
+    // Extend the data to fit in the ram, which might be bigger
+    let cpu_do = ExtendTo(acc_out, w_inst)
+    // MUXA
+    let muxa = Mux(low: pc, high: ir_low, sel: InLink(muxc))
+    let ram = Ram(w_inst + w_data + 1 + 1, w_inst, [cpu_do, muxa, InLink(ram_we), NotGate(clk)])
+    ram.Link(ram_dout)
+    // Decoder and associated links
+    let decoder = Decoder(ir: ir_high, carry: carry, zero: zero, clk: clk_in, ce: ce_in, clr: clr_in)
+    decoder.Link(0, muxa)
+    decoder.Link(1, muxb)
+    decoder.Link(2, muxc)
+    decoder.Link(3, en_da)
+    decoder.Link(4, en_pc)
+    decoder.Link(5, en_in)
+    decoder.Link(6, ram_we)
+    decoder.Link(7, alu_s0)
+    decoder.Link(8, alu_s1)
+    decoder.Link(9, alu_s2)
+    decoder.Link(10, alu_s3)
+    decoder.Link(11, alu_s4)
+    // Flip flop for output
+    let fdce = FDCE(d: Lsb(cpu_do), ce: muxa, c: clk_in, clr: clr_in)
+    // Serial out
+    NotGate(fdce)
+}
+
+func Split(width: Int64, input: Hypergraph){
+    BlackBox(width, width, input: input)S
 }
 
 /**
@@ -956,7 +1060,6 @@ func SortingNetwork(width: Int64, inputs: Int64) : Hypergraph {
     } else {
         var circ = SortingNetwork(width, inputs - 1) * Identity(width)
         for(i in 0..inputs - 1){
-            // Go from bottom to top
             let j = inputs - i - 2
             var slice = Empty()
             for(k in 0..inputs - 1){

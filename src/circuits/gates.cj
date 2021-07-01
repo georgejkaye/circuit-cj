@@ -467,6 +467,9 @@ external func Init(n : Int64, name!: String = "", label!: String = "", input!: O
 external func NotGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
     OpOneToOne(NOT, label: label, elem: elem, name: name, input: input) 
 }
+external func Buffer(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
+    OpOneToOne(BUF, label: label, elem: elem, name: name, input: input) 
+}
 external func AndGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
     OpTwoToOne(AND, label: label, elem: elem, name: name, input: input) 
 }
@@ -575,6 +578,10 @@ func BlackBox(label: String, dom: Int64, cod: Int64, wires!: ArrayList<Wire> = A
     }
     let gen = BLACKBOX(Label(label, dom, cod))
     OpMToN(gen, wires: wires, input: input, name: name)
+}
+func BlackBox(label: String, dom: Int64, cod: Int64, wires!: ArrayList<Wire> = ArrayList<Wire>(), inputs!: ArrayList<Hypergraph>, name!: String = ""){
+    let input = Concat(inputs)
+    BlackBox(label, dom, cod, wires: wires, input: input)
 }
 
 func BinaryGateForEachBit(gate : Generator, width: Int64){
