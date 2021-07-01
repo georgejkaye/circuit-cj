@@ -435,16 +435,16 @@ let forkStubRight = RewriteRule(
 /** v ; FORK = v * v */
 let forkCopy = RewriteRule(
     "Fork",
-    EXACTLY(FORK),
-    HasValueArguments,
+    EXACTLY(FORK),                                          // This rewrite rule is for forks
+    HasValueArguments,                                      // A value is an edge 0->1 (e.g. true, false)
     {e : Edge, hb : HypBuilder, payload : Int64 =>
-        let arg = e.GetSource(0).GetLeftEdge()
-        let copy = hb.CreateEdge(VALUE(arg.GetValue()))
-        let leftCopy = e.GetTarget(0).GetConn()
-        let rightCopy = e.GetTarget(1).GetConn()
-        hb.AddConn(arg.GetTarget(0), leftCopy)
-        hb.AddConn(copy.GetTarget(0), rightCopy)
-        hb.RemoveEdge(e)
+        let arg = e.GetSource(0).GetLeftEdge()              // Get the value (on the left of the fork)
+        let copy = hb.CreateEdge(VALUE(arg.GetValue()))     // We create a new copy of this value
+        let leftCopy = e.GetTarget(0).GetConn()             
+        let rightCopy = e.GetTarget(1).GetConn()           
+        hb.AddConn(arg.GetTarget(0), leftCopy)              
+        hb.AddConn(copy.GetTarget(0), rightCopy)               
+        hb.RemoveEdge(e)                                      
         ArrayList<Source>([leftCopy, rightCopy])
     }
 )

@@ -576,3 +576,42 @@ func BlackBox(label: String, dom: Int64, cod: Int64, wires!: ArrayList<Wire> = A
     let gen = BLACKBOX(Label(label, dom, cod))
     OpMToN(gen, wires: wires, input: input, name: name)
 }
+
+func BinaryGateForEachBit(gate : Generator, width: Int64){
+    let hb = HypBuilder(2 * width, width)
+    for(i in 0..width){
+        let edge = hb.CreateEdge(gate)
+        hb.AddConn(hb.GetInput(i), edge.GetSource(0))
+        hb.AddConn(hb.GetInput(i + width), edge.GetSource(1))
+        hb.AddConn(edge.GetTarget(0), hb.GetOutput(i))
+    }
+    hb.ToGraph()
+}
+func BinaryGateForEachBitWithInput(gate : Generator, input : Hypergraph){
+    if(input.GetN() % 2 != 0){
+        throw NotEvenBitsException("ForEachBitBinary (${gate})", input)
+    }
+    let f = BinaryGateForEachBit(gate, input.GetN() / 2)
+    Seq(input, f)
+}
+func BinaryGateForEachBitWithInput(gate : Generator, lhs : Hypergraph, rhs : Hypergraph) {
+    if(lhs.GetN() != rhs.GetN()){
+        throw DifferentLengthArgumentsException("ForEachBitBinary", lhs, rhs)
+    }
+    let inputs : Hypergraph = Concat([lhs, rhs])
+    BinaryGateForEachBitWithInput(gate, inputs)
+}
+
+func And(input: Hypergraph){
+    BinaryGateForEachBitWithInput(AND, input)
+}
+func And(lhs: Hypergraph, rhs: Hypergraph){
+    BinaryGateForEachBitWithInput(AND, lhs, rhs)
+}
+
+func Or(lhs: Hypergraph, rhs: Hypergraph){
+    BinaryGateForEachBitWithInput(OR, lhs, rhs)
+}
+func Or(input: Hypergraph){
+    BinaryGateForEachBitWithInput(OR, input)
+}

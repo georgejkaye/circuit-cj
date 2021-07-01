@@ -855,15 +855,24 @@ func main(){
 
     SetDotDir("dot")
 
-    //let circ = Adder(width: 4)
-    let circ = ALU(2)
+    let width = 4
+    let circ = ALU(width)
     WriteDotToFile(circ, "circ")
 
-    //let applied = Plus(a, b)
+    let rw = circ.GetRewriter()
+    rw.RunCycle()
+    let tidy = rw.GetGraph()
 
-    //let rw = applied.GetRewriter()
-    //rw.RunCycle()
-    //WriteDotToFile(rw.GetGraph(), "red")
+    let a = UnsignedValueFromInt(5, width: width)
+    let b = UnsignedValueFromInt(8, width: width) 
+    let c = False()
+
+    let applied = a * b * c + tidy
+    WriteDotToFile(applied, "applied")
+
+    let rw1 = applied.GetRewriter()
+    rw1.RunCycle()
+    WriteDotToFile(rw1.GetGraph(), "red")
 
     0   
 }
@@ -880,32 +889,22 @@ func ALU(width: Int64){
     let instruction = Input()
 
     let add = Plus(inputA, inputB)
-    let and = inputA * inputB + (AndGate() ^ width)
+    let and = And(inputA, inputB)
+    WriteDotToFile(and, "and")
 
-    let ops = Concat([add, and])
-    WriteDotToFile(ops, "ops")
+    // If and is desired, the signal is 0, so we need to not it
+    let addInstruction = NotGate(input: instruction)
+    let andInstruction = instruction
 
-    var switch = Empty()
+    var control = Empty()
 
-    let andInstruction = NotGate(input: instruction)
-    let addInstruction = instruction
-    let instructionSignals = Concat([andInstruction, addInstruction])
-
-    let opsns = ops * instructionSignals
-    WriteDotToFile(opsns, "opsns")
-
-    // Switch depending on the signal
     for(i in 0..width){
-        switch = switch * AndGate(add[i], addInstruction)
+        control = Concat([control, AndGate(add[i], addInstruction)])
     }
     for(i in 0..width){
-        switch = switch * AndGate(and[i], andInstruction)
+        control = Concat([control, AndGate(and[i], andInstruction)])
     }
-
-    WriteDotToFile(switch, "switch")
-
-    let or = OrGate() ^ width
-    switch + or 
+    Or(control)
 }
 
 /**

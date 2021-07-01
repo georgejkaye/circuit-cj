@@ -32,6 +32,11 @@ class NegativeNumberException <: Exception {
         ErrorMsg(function, "Expected a positive number but ${number} is positive")
     }
 }
+class NotEvenBitsException <: Exception {
+    init(function : String, input : Hypergraph){
+        ErrorMsg(function, "Need an even number of bits to operate but the outputs of '${input.GetName()}' is odd")
+    }
+}
 
 /**
  * Bus exceptions 
