@@ -736,8 +736,10 @@ external class Hypergraph <: HypergraphStructure {
      * This modifies all hypergraphs containing the corresponding link: we traverse back from the current outputs of 
      * this graph and add everything that contributes to this link, effectively adding the future to these graphs
      * @param link The link to feedback to
+     * @param output If the original outputs should be preserved as well as fed back
+     * @return The graph with feedback
      */
-    func Feedback(link : Link){
+    func Feedback(link : Link, output!: Bool = false){
         Debug("Feedback", "Feeding back all outputs to ${link}")
         if(link.width != GetN()){
             throw BadCodomainException("Feedback", GetN(), link.width)
@@ -745,7 +747,20 @@ external class Hypergraph <: HypergraphStructure {
         let inEdges = ArrayList<Edge>(link.inEdges)
         let doneGraphs = ArrayList<UInt64>()
         let linked = this.Clone()
-        linked.ConnectOutputsToEdge(OUTLINK(link))
+        if(output){
+            let link = linked.CreateEdge(OUTLINK(link))
+            for(i in 0..linked.GetN()){
+                let s = linked.GetOutput(i)
+                let fork = linked.CreateEdge(FORK)
+                linked.AddConn(s.GetConn(), fork.GetSource(0))
+                linked.AddConn(fork.GetTarget(0), link.GetSource(i))
+                linked.AddConn(fork.GetTarget(1), s)
+            }
+            ()
+        } else {
+            linked.ConnectOutputsToEdge(OUTLINK(link))
+            ()
+        }
         let g = linked.ToGraph()
         for(e in inEdges){
             let f = match(e.GetHypergraph()){
@@ -762,7 +777,16 @@ external class Hypergraph <: HypergraphStructure {
         }
         g
     }
-
+    /**
+     * Feed back all outputs to a given link, but preserve the original outputs as well
+     * This corresponds to the classic iteration pattern
+     * This modifies all graphs that contain this link
+     * @param link The link to feed back to
+     * @return The graph with the feedback and outputs
+     */
+    func FeedbackAndOutput(link : Link){
+        Feedback(link, output: true)
+    }
     /**
      * Syntax sugar for sequential composition
      * @param f The lhs of the sequential composition
@@ -916,7 +940,7 @@ func main(){
     let prev_sum = NewLink(width: 4)
     let il = InLink(link: prev_sum)
     let plus = Plus(il, inp)
-    let fb = plus.Feedback(prev_sum)
+    let fb = plus.FeedbackAndOutput(prev_sum)
 
     WriteDotToFile(il, "il", resolve: false)
     WriteDotToFile(fb, "fb", resolve: false)
