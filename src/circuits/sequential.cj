@@ -352,7 +352,3 @@ external func FeedbackReg(link!: Link, label!: String = "", name!: String = "", 
         case $None   => res
     }
 }
-
-let Reg(width: Int64, d: Hypergraph, clk: Hypergraph, ce: Hypergraph, clr: Hypergraph){
-    BlackBox("register_${width}", width + 3, width)
-}
