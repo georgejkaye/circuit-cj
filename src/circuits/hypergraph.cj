@@ -10,108 +10,6 @@ package circuits
 import debug.*
 
 /**
- * Peform the necessary actions to add a target to the graph
- * @param t       The target to add
- * @param targets The list of targets
- */
-func AddTarget(t : Target, targets : ArrayList<Target>, targetGlobalIds : MapBuilder<UInt64, Target>){
-    // Add to the targets list
-    targets.add(t)
-    targetGlobalIds.add(t.globalId, t)
-}
-/**
- * Peform the necessary actions to add a source to the graph
- * @param s        The source to add
- * @param sources  The list of sources
- * @param busMaps  The map of buses to maps of wire indices to sources
- * @param busList  The list of buses
- * @param wireList The list of wires
- */
-func AddSource(s : Source, sources : ArrayList<Source>, sourceGlobalIds : MapBuilder<UInt64, Source>, busMaps : MapBuilder<Bus, MapBuilder<Int64, Source>>, busList : ArrayList<Bus>, wireList : ArrayList<Wire>){
-    // Add to the sources list
-    sources.add(s)
-    sourceGlobalIds.add(s.globalId, s)
-    // Update all the buses accordingly
-    for(wire in s.wires){
-        wireList.add(wire)
-        let bus = wire.bus
-        match(busMaps.get(bus)){
-            case Some(ws) =>
-                ws.add(wire.i, s)
-                false
-            case $None =>
-                let mb = MapBuilder<Int64, Source>()
-                mb.add(wire.i, s)
-                busMaps.add(bus, mb)
-                busList.add(bus)
-                true
-        }
-    }
-    busMaps
-}
-func AddEdge(e : Edge, sources : ArrayList<Source>, targets : ArrayList<Target>,
-             edgeGlobalIds : MapBuilder<UInt64, Edge>, sourceGlobalIds : MapBuilder<UInt64, Source>, targetGlobalIds : MapBuilder<UInt64, Target>, 
-             busMaps : MapBuilder<Bus, MapBuilder<Int64, Source>>, busList : ArrayList<Bus>, wireList : ArrayList<Wire>,
-             inlinkMap : MapBuilder<Link, ArrayList<Edge>>, outlinkMap : MapBuilder<Link, ArrayList<Edge>>
-            ){
-    edgeGlobalIds.add(e.globalId, e)
-    for(i in 0..e.sources.size()){
-        AddSource(e.sources[i], sources, sourceGlobalIds, busMaps, busList, wireList)
-    }
-    for(i in 0..e.targets.size()){
-        AddTarget(e.targets[i], targets, targetGlobalIds)
-    }
-    if(IsInlink(e.generator)){
-        UpdateLinks(e, inlinkMap)
-    }
-    if(IsOutlink(e.generator)){
-        UpdateLinks(e, outlinkMap)
-    }        
-}
-/**
- * Update the bus vertex list, making sure that any new bus vertices are in the appropriate lists
- * @param busList The list of buses
- * @param busMaps The map of buses to maps of wire indices to sourecs
- * @param busVertexMaps The map of buses to the pair of the appropriate bus map and wire list
- */
-func UpdateBusVertexList(busList : ArrayList<Bus>, busMaps : MapBuilder<Bus, MapBuilder<Int64, Source>>, busVertexMaps : MapBuilder<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>){
-    for(bus in busList){
-        match(busMaps.get(bus)){
-            case $None => ()
-            case Some(mb) =>
-                let vertexList = ArrayList<Source>()
-                let wires = bus.wires
-                for(wire in wires){
-                    match(mb.get(wire.i)){
-                        // Not all wires from a given bus may be in a graph
-                        case $None   => ()
-                        case Some(s) => let x = vertexList.add(s)
-                    }
-                }
-                let x = busVertexMaps.add(bus, (mb, vertexList))
-        }
-    }
-}
-/**
- * Update a links map
- * Throws an exception if the edge is not a link
- * @param e The link edge to add
- * @param linkMap The map to update
- */
-func UpdateLinks(e : Edge, linkMap : MapBuilder<Link, ArrayList<Edge>>){
-    let link = e.Getlink()
-    // TODO something going wrong with match
-    let es : ArrayList<Edge>
-    match(linkMap.get(link)){
-        case Some(es2) => es = es2
-        case $None =>
-            let es2 = ArrayList<Edge>()
-            linkMap.add(link, es2)
-            es = es2
-    }
-    es.add(e)
-}
-/**
  * A hypergraph structure is a collection of edges, inputs, outputs and connections
  * This structure may not necessarily be a well-formed hypergraph
  */
@@ -125,22 +23,21 @@ open class HypergraphStructure <: Identifiable {
     protected var targetGlobalIds : MapBuilder<UInt64, Target>
     protected var edgeGlobalIds : MapBuilder<UInt64, Edge>
 
-    protected let sources  : ArrayList<Source>
-    protected let targets  : ArrayList<Target>
+    protected var sources  : ArrayList<Source>
+    protected var targets  : ArrayList<Target>
 
-    protected let busMaps        : MapBuilder<Bus, MapBuilder<Int64, Source>>
+    protected var busMaps        : MapBuilder<Bus, MapBuilder<Int64, Source>>
     protected var busVertexMaps  : MapBuilder<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>
-    protected let busList        : ArrayList<Bus>
-    protected let wireList       : ArrayList<Wire> 
+    protected var busList        : ArrayList<Bus>
+    protected var wireList       : ArrayList<Wire> 
 
-    protected let inlinkMap  : MapBuilder<Link, ArrayList<Edge>>
-    protected let outlinkMap : MapBuilder<Link, ArrayList<Edge>> 
+    protected var inlinkMap  : MapBuilder<Link, ArrayList<Edge>>
+    protected var outlinkMap : MapBuilder<Link, ArrayList<Edge>> 
 
     init(edges   : ArrayList<Edge>,
          inputs  : ArrayList<Target>,
          outputs : ArrayList<Source>
     )  {
-
         this.edges = edges
         this.inputs = inputs
         this.outputs = outputs
@@ -160,24 +57,138 @@ open class HypergraphStructure <: Identifiable {
         this.inlinkMap = MapBuilder<Link, ArrayList<Edge>>()
         this.outlinkMap = MapBuilder<Link, ArrayList<Edge>>()
 
+        SetUpHypergraph()
+    }
+    protected func SetUpHypergraph(){
         // Add all the inputs to the targets
         for(i in 0..inputs.size()){
-            AddTarget(inputs[i], targets, targetGlobalIds)
+            AddTarget(inputs[i]) //inputs[i], targets, targetGlobalIds)
             inputs[i].SetPort(i)
         }
         // Add all the sources and targets of edges
-        for(e in edges){
-            AddEdge(e, sources, targets, edgeGlobalIds, sourceGlobalIds, targetGlobalIds, busMaps, busList, wireList, inlinkMap, outlinkMap)
+        for(i in 0..edges.size()){
+            AddEdge(edges[i])
         }
         // Add all the outputs to the sources
         for(i in 0..outputs.size()){
-            AddSource(outputs[i], sources, sourceGlobalIds, busMaps, busList, wireList)
+            AddSource(outputs[i])
             outputs[i].SetPort(i)
         }
         // With all the buses in place, create lists containing the wires of each bus
-        UpdateBusVertexList(busList, busMaps, busVertexMaps)
+        UpdateBusVertexList()
     }
-    
+    /**
+     * Add a source to this graph and update the relevant data structures
+     * @param s The source to add
+     */
+    protected func AddSource(s : Source){
+        s.SetHypergraph(this)
+        // Add to the sources list
+        sources.add(s)
+        sourceGlobalIds.add(s.globalId, s)
+        // Update all the buses accordingly
+        for(wire in s.wires){
+            wireList.add(wire)
+            let bus = wire.bus
+            match(busMaps.get(bus)){
+                case Some(ws) =>
+                    ws.add(wire.i, s)
+                    false
+                case $None =>
+                    let mb = MapBuilder<Int64, Source>()
+                    mb.add(wire.i, s)
+                    busMaps.add(bus, mb)
+                    busList.add(bus)
+                    true
+            }
+        }
+    }
+    /**
+     * Add a target to this graph and update the relevant data structures
+     * @param t The target to add
+     */
+    protected func AddTarget(t : Target){
+        t.SetHypergraph(this)
+        targets.add(t)
+        targetGlobalIds.add(t.globalId, t)
+    }
+    /**
+     * Add an edge and its sources and targets to this graph and update the relevant data structures
+     * @param e The edge to add
+     */
+    protected func AddEdge(e : Edge){
+        e.SetHypergraph(this)
+        edgeGlobalIds.add(e.globalId, e)
+        for(i in 0..e.sources.size()){
+            AddSource(e.sources[i])
+        }
+        for(i in 0..e.targets.size()){
+            AddTarget(e.targets[i])
+        }
+        if(IsInlink(e.generator)){
+
+            UpdateInLinks(e)
+        }
+        if(IsOutlink(e.generator)){
+            UpdateOutLinks(e)
+        } 
+    }
+    /**
+     * Update the structures involving buses
+     */
+    protected func UpdateBusVertexList(){
+        for(bus in busList){
+            match(busMaps.get(bus)){
+                case $None => ()
+                case Some(mb) =>
+                    let vertexList = ArrayList<Source>()
+                    let wires = bus.wires
+                    for(wire in wires){
+                        match(mb.get(wire.i)){
+                            // Not all wires from a given bus may be in a graph
+                            case $None   => ()
+                            case Some(s) => let x = vertexList.add(s)
+                        }
+                    }
+                    let x = busVertexMaps.add(bus, (mb, vertexList))
+            }
+        }
+    }
+    /** 
+     * Update the inlinks map with the link of a new edge
+     * Assumes the edge is a link edge
+     * @param e The edge
+     */
+    protected func UpdateInLinks(e : Edge){
+        UpdateLinks(e, inlinkMap)
+    }
+    /** 
+     * Update the outlinks map with the link of a new edge
+     * Assumes the edge is a link edge
+     * @param e The edge
+     */
+    protected func UpdateOutLinks(e : Edge){
+        UpdateLinks(e, outlinkMap)
+    }
+    /** 
+     * Update a given links map with the link of a new edge
+     * Assumes the edge is a link edge
+     * @param e The edge
+     */
+    protected func UpdateLinks(e : Edge, linkMap : MapBuilder<Link, ArrayList<Edge>>){
+        let link = e.Getlink()
+        // TODO something going wrong with match
+        let es : ArrayList<Edge>
+        match(linkMap.get(link)){
+            case Some(es2) => es = es2
+            case $None =>
+                let es2 = ArrayList<Edge>()
+                linkMap.add(link, es2)
+                es = es2
+        }
+        es.add(e)
+    }
+
     func GetM() { inputs.size() }
     func GetN() { outputs.size() }
     func GetInputsWithProperty(p : (Target) -> Bool){
@@ -628,6 +639,20 @@ external class Hypergraph <: HypergraphStructure {
      * @return the name
      */
     override func GetName() { name }
+    func Overwrite(hb : HypBuilder){
+        edges = ArrayList<Edge>()
+        inputs = ArrayList<Target>()
+        outputs = ArrayList<Source>()
+        sources = ArrayList<Source>()
+        targets = ArrayList<Target>()
+        sourceGlobalIds = MapBuilder<UInt64, Source>()
+        targetGlobalIds = MapBuilder<UInt64, Target>()
+        edgeGlobalIds = MapBuilder<UInt64, Edge>()
+        edges.addAll(hb.GetEdges())
+        inputs.addAll(hb.GetInputs())
+        outputs.addAll(hb.GetOutputs())
+        SetUpHypergraph()
+    }
     /**
      * Create a deep clone of this hypergraph for future manipulation
      * @return A HypBuilder with deep copies of all elements in this hypergraph
@@ -706,6 +731,38 @@ external class Hypergraph <: HypergraphStructure {
     func Tr(n : Int64){
         Trace(this, n)
     }
+    /**
+     * Feed back all outputs to a given link
+     * This modifies all hypergraphs containing the corresponding link: we traverse back from the current outputs of 
+     * this graph and add everything that contributes to this link, effectively adding the future to these graphs
+     * @param link The link to feedback to
+     */
+    func Feedback(link : Link){
+        Debug("Feedback", "Feeding back all outputs to ${link}")
+        if(link.width != GetN()){
+            throw BadCodomainException("Feedback", GetN(), link.width)
+        }
+        let inEdges = ArrayList<Edge>(link.inEdges)
+        let doneGraphs = ArrayList<UInt64>()
+        let linked = this.Clone()
+        linked.ConnectOutputsToEdge(OUTLINK(link))
+        let g = linked.ToGraph()
+        for(e in inEdges){
+            let f = match(e.GetHypergraph()){
+                case f : Hypergraph => f
+                case _              => break
+            }
+            if(!includes(doneGraphs, f.GetId())){
+                doneGraphs.add(f.GetId())
+                // We need to add everything the links depend on to the original graph
+                let newf = AddMissingGraph(f.Clone(), g.Clone())
+                // Add in the new bits to the original f
+                f.Overwrite(newf)
+            }
+        }
+        g
+    }
+
     /**
      * Syntax sugar for sequential composition
      * @param f The lhs of the sequential composition
@@ -853,5 +910,18 @@ func CloneTarget(cr : Cloner, t : Target){
 
 func main(){
     SetDotDir("dot")
+
+    let inp = Input(width: 4)
+
+    let prev_sum = NewLink(width: 4)
+    let il = InLink(link: prev_sum)
+    let plus = Plus(il, inp)
+    let fb = plus.Feedback(prev_sum)
+
+    WriteDotToFile(il, "il", resolve: false)
+    WriteDotToFile(fb, "fb", resolve: false)
+    WriteDotToFile(plus, "plus", resolve: false)
+
+
     0   
 }

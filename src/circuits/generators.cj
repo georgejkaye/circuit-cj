@@ -93,6 +93,8 @@ extend Label <: Equatable {
 class Link <: Identifiable {
     let name : String
     let width : Int64
+    let inEdges : ArrayList<Edge> = ArrayList<Edge>()
+    let outEdges : ArrayList<Edge> = ArrayList<Edge>()
     init(name : String, width : Int64) {
         this.name = if(name == ""){
             "ls${this.id}"
@@ -105,6 +107,13 @@ class Link <: Identifiable {
         this.name = "ls${this.id}"
         this.width = width
     }
+    func AddInLinkEdge(e : Edge){
+        inEdges.add(e)
+    }
+    func AddOutLinkEdge(e : Edge){
+        outEdges.add(e)
+    }
+    
 }
 extend Link <: Equatable {
     operator func ==(rhs : Link){
@@ -294,6 +303,17 @@ func IsOutlink(gen : Generator){
         case OUTLINK(link) => true
         case _ => false
     }
+}
+/**
+ * Assuming that a generator is a link, get the link object
+ * @param gen The generator
+ */
+func GetLink(gen : Generator){
+   match(gen){
+       case INLINK(link) => link
+       case OUTLINK(link) => link
+       case _ => throw BadGeneratorException("GetLink", gen)
+   } 
 }
 /**
  * Check if a given generator is a value

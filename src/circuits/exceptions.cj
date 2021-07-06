@@ -314,3 +314,8 @@ class BadGeneratorException <: Exception {
         ErrorMsg(function, "Generator ${gen} is not handled here")
     }
 }
+class NoAssociatedHypergraphException <: Exception {
+    init(function : String, elem : HypergraphElement){
+        ErrorMsg(function, "Element ${elem} does not have an associated hypergraph")
+    }
+}

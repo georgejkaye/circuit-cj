@@ -175,3 +175,16 @@ func Extract(f : HypBuilder, buses : ArrayList<String>, name!: String = "") : Hy
     }
     f.ToGraph(name)
 }
+
+/**
+ * Expand f with all parts from g that it does not have 
+ * @param f The hypergraph that we are expanding
+ * @param g The hypergraph that we are adding bits from
+ */
+func AddMissingGraph(f : HypBuilder, g : HypBuilder){
+    let intersections = FindDivergencePoints(f, g)
+    let outputs = ArrayList<Source>(g.GetOutputs())
+    let hb = Inject(f, g, intersections)
+    hb.ConnectEachOutputToEdge(outputs, STUB)
+    hb
+}

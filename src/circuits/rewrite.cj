@@ -281,7 +281,6 @@ class Rewriter {
             f.AddConn(e.GetSource(0).GetConn(), e.GetTarget(0).GetConn())
             f.RemoveEdge(e)
         }
-        print("done\n")
     }
     /**
      * Reattach a list of waveform heads to the graph
@@ -293,9 +292,9 @@ class Rewriter {
             let w = head[i]
             f.AddConn(f.GetOutput(i).GetConn(), w.delay.GetSource(0))
             f.AddConn(head[i].join.GetTarget(0), f.GetOutput(i))
-            f.AddEdge(w.delay)
-            f.AddEdge(w.join)
-            f.AddEdge(w.value)
+            f.AddNewEdge(w.delay)
+            f.AddNewEdge(w.join)
+            f.AddNewEdge(w.value)
         }
     }
     /**

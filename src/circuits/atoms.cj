@@ -59,10 +59,30 @@ extend Atom <: Equatable {
 func AtomListToString(xs : ArrayList<Atom>){
     PrintList(xs, {x : Atom => "${x.id}"})
 }
+
+/** 
+ * Class of elements that may have an associated hypergraph
+ */
+abstract class HypergraphElement <: Atom {
+    var hypergraph : Option<HypergraphStructure> = None<HypergraphStructure>
+    func SetHypergraph(f : HypergraphStructure){
+        this.hypergraph = Some(f)
+    }
+    func RemoveHypergraph(){
+        this.hypergraph = None<HypergraphStructure>
+    }
+    func GetHypergraph() : HypergraphStructure {
+        match(hypergraph){
+            case Some(f) => f
+            case $None   => throw NoAssociatedHypergraphException("GetHypergraph", this)
+        }
+    }
+}
+
 /**
  * Base vertex class 
  */
-abstract class Vertex <: Atom {
+abstract class Vertex <: HypergraphElement {
     private var port : Option<Port> = None<Port>
     func SetPort(p : Port){
         this.port = Some<Port>(p)
@@ -275,7 +295,7 @@ func TargetListToString(xs : ArrayList<Target>){
 /**
  * Edges have an associated generator, and lists of sources and targets
  */
-external open class Edge <: Atom {
+external open class Edge <: HypergraphElement {
     let generator : Generator
     let sources : ArrayList<Source>
     let targets : ArrayList<Target>
@@ -298,6 +318,14 @@ external open class Edge <: Atom {
         }
         for(i in 0..Cod(gen)){
             targets[i].SetPort(EdgePort(this, i))
+        }
+        if(IsInlink(gen)){
+            let link = GetLink(gen)
+            link.AddInLinkEdge(this)
+        }
+        if(IsOutlink(gen)){
+            let link = GetLink(gen)
+            link.AddOutLinkEdge(this)
         }
     }
     init(gen : Generator, sources : ArrayList<Source>, targets : ArrayList<Target>){
