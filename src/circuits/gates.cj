@@ -583,6 +583,9 @@ func BlackBox(label: String, dom: Int64, cod: Int64, wires!: ArrayList<Wire> = A
     let input = Concat(inputs)
     BlackBox(label, dom, cod, wires: wires, input: Some(input))
 }
+func BlackBox(label : String, dom : Int64, cod : Int64, inputs : List<Hypergraph>){
+    BlackBox(label, dom, cod, inputs: ArrayList<Hypergraph>(inputs))
+}
 
 func BinaryGateForEachBit(gate : Generator, width: Int64){
     let hb = HypBuilder(2 * width, width)
@@ -621,4 +624,9 @@ func Or(lhs: Hypergraph, rhs: Hypergraph){
 }
 func Or(input: Hypergraph){
     BinaryGateForEachBitWithInput(OR, input)
+}
+
+func Split(input: Hypergraph){
+    let splitPoint = input.GetN() / 2
+    (DropUntil(input, splitPoint), DropFrom(input, splitPoint))
 }

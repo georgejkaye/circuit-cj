@@ -276,7 +276,7 @@ external func OutLink(link!: Link, name!: String = "") : Hypergraph {
  * @param name The name to give this circuit
  * @return The in link
  */
-external func InLink(link!: Link, label!: String = "", name!:String = "") : Hypergraph { 
+external func InLink(link: Link, label!: String = "", name!:String = "") : Hypergraph { 
     Debug("InLink", "Creating in link for link ${link.name}")
     let wires = ArrayList<Wire>(link.width, {i : Int64 => NewWire(label, i)})
     OpMToN(INLINK(link), wires: wires, name: name) 

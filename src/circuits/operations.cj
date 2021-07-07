@@ -359,3 +359,38 @@ external func Drop(f : Hypergraph, n : Int64, name!: String = ""){
     hb.ConnectOutputsToEdge(ArrayList<Int64>([n]), STUB)
     hb.ToGraph()
 }
+/**
+ * Drop all the outputs after a given index
+ * @param f The hypergraph
+ * @param n The output (inclusive) from where to start dropping
+ * @return The hypergraph with all the outputs 8..n dropped
+ */
+external func DropFrom(f : Hypergraph, n : Int64){
+    Debug("DropFrom", "Dropping ports ${n}-${f.GetN()-1} from ${f.GetName()} : ${f.GetM()} -> ${f.GetN()}")
+    if(n < 0 || n >= f.GetN()){
+        throw TypeMismatchException("DropFrom", f, n)
+    }
+    let hb = f.Clone()
+    for(i in n..f.GetN()){
+        hb.ConnectOutputToEdge(n, STUB)
+    }
+    hb.ToGraph()
+}
+/**
+ * Drop all the outputs until a given index
+ * @param f The hypergraph
+ * @param n The output (exclusive) until when the outputs are dropped
+ * @return The hypergraph with all the outputs 0..n dropped
+ */
+external func DropUntil(f : Hypergraph, n : Int64){
+    Debug("DropFrom", "Dropping ports 0-${n-1} from ${f.GetName()} : ${f.GetM()} -> ${f.GetN()}")
+    if(n < 0 || n >= f.GetN()){
+        throw TypeMismatchException("DropUntil", f, n)
+    }
+    let hb = f.Clone()
+    for(i in 0..n){
+        hb.ConnectOutputToEdge(0, STUB)
+    }
+    hb.ToGraph()
+
+}

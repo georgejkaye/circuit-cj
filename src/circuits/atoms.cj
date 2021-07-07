@@ -108,6 +108,8 @@ abstract class Vertex <: HypergraphElement {
             case $None   => false
         }
     }
+    func HasConn() : Bool
+    func RemoveConn() : Unit
     func GetLeftPort() : Port
     func GetRightPort() : Port
     func GetLeftEdge(){
@@ -472,11 +474,11 @@ external open class Edge <: HypergraphElement {
      * Throws an exception if this is not a link edge
      * @return The link
      */
-    func Getlink(){
+    func GetLink(){
         match(generator){
             case INLINK(link) => link
             case OUTLINK(link) => link
-            case _ => throw NonLinkEdgeException("Getlink", this)
+            case _ => throw NonLinkEdgeException("GetLink", this)
         }
     }
     /**

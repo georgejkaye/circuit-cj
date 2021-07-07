@@ -40,6 +40,7 @@ external func Concat(fs : ArrayList<Hypergraph>, name!: String = ""){
         } else {
            f = Inject(f, g, intersections)
         }
+        WriteDotToFile(f.ToGraph(), "f", resolve: false)
     }
     let re = f.ToGraph()
     re

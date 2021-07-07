@@ -5,7 +5,7 @@ func CyclicCombinational {
     let c = Input()
     let x = Input()
     let link = NewLink(width: 1)
-    let mux1 = Mux(a: x, b: InLink(link: link), s: c)
+    let mux1 = Mux(a: x, b: InLink(link), s: c)
     let f = BlackBox("F", 1, 1, input: mux1)
     let mux2 = Mux(a: f, b: x, s: c)
     let g = BlackBox("G", 1, 1, input: mux2)

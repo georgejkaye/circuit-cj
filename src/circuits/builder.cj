@@ -605,7 +605,6 @@ class HypBuilder <: HypergraphStructure {
      * @return The new edge
      */
     func ConnectOutputsToEdge(outs : ArrayList<Int64>, gen : Generator) : Edge {
-        Debug("ConnectOutputsToEdge", "Connecting outputs ${PrintList(outs, {n : Int64 => "${n}"})} to generator ${gen}")
         if(Dom(gen) != outs.size()){
             throw BadDomainException("ConnectOutputsToEdge", outs.size(), Dom(gen))
         }
@@ -746,5 +745,18 @@ class HypBuilder <: HypergraphStructure {
             AddConn(t,s)
             AddInput(t)
         }
+    }
+    /**
+     * Inject a fork edge at a particular source vertex and join it to this source and another
+     * @param s1 The source vertex at which to inject the fork edge and connect its first target to
+     * @param s2 The source vertex to connect to the other target to
+     * @return The new fork edge
+     */
+    func InjectFork(s1 : Source, s2 : Source) {
+        let fork = CreateEdge(FORK)
+        AddConn(s1.GetConn(), fork.GetSource(0))
+        AddConn(fork.GetTarget(0), s1)
+        AddConn(fork.GetTarget(1), s2)
+        fork
     }
 }

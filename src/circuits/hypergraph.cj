@@ -176,7 +176,7 @@ open class HypergraphStructure <: Identifiable {
      * @param e The edge
      */
     protected func UpdateLinks(e : Edge, linkMap : MapBuilder<Link, ArrayList<Edge>>){
-        let link = e.Getlink()
+        let link = e.GetLink()
         // TODO something going wrong with match
         let es : ArrayList<Edge>
         match(linkMap.get(link)){
@@ -737,29 +737,44 @@ external class Hypergraph <: HypergraphStructure {
      * this graph and add everything that contributes to this link, effectively adding the future to these graphs
      * @param link The link to feedback to
      * @param output If the original outputs should be preserved as well as fed back
+     * @param index The particular index to feed back, None means all
      * @return The graph with feedback
      */
-    func Feedback(link : Link, output!: Bool = false){
+    func Feedback(link : Link, output!: Bool = false, index!: Option<Int64> = None<Int64>){
         Debug("Feedback", "Feeding back all outputs to ${link}")
-        if(link.width != GetN()){
-            throw BadCodomainException("Feedback", GetN(), link.width)
+        let width = match(index){
+            case Some(i) => 1
+            case $None   => GetN()
+        } 
+        if(link.width != width){
+            throw BadCodomainException("Feedback", GetN(), width)
         }
         let inEdges = ArrayList<Edge>(link.inEdges)
         let doneGraphs = ArrayList<UInt64>()
         let linked = this.Clone()
-        if(output){
-            let link = linked.CreateEdge(OUTLINK(link))
-            for(i in 0..linked.GetN()){
-                let s = linked.GetOutput(i)
-                let fork = linked.CreateEdge(FORK)
-                linked.AddConn(s.GetConn(), fork.GetSource(0))
-                linked.AddConn(fork.GetTarget(0), link.GetSource(i))
-                linked.AddConn(fork.GetTarget(1), s)
-            }
-            ()
-        } else {
-            linked.ConnectOutputsToEdge(OUTLINK(link))
-            ()
+        match(index){
+            case Some(i) => 
+                if(output){
+                    let link = linked.CreateEdge(OUTLINK(link))
+                    let s = linked.GetOutput(i)
+                    linked.InjectFork(s, link.GetSource(0))
+                    ()
+                } else {
+                    linked.ConnectOutputToEdge(i, OUTLINK(link))
+                    ()
+                }
+            case $None => 
+                if(output){
+                    let link = linked.CreateEdge(OUTLINK(link))
+                    for(i in 0..linked.GetN()){
+                        let s = linked.GetOutput(i)
+                        linked.InjectFork(s, link.GetSource(i))
+                    }
+                    ()
+                } else {
+                    linked.ConnectOutputsToEdge(OUTLINK(link))
+                    ()
+                }
         }
         let g = linked.ToGraph()
         for(e in inEdges){
@@ -786,6 +801,26 @@ external class Hypergraph <: HypergraphStructure {
      */
     func FeedbackAndOutput(link : Link){
         Feedback(link, output: true)
+    }
+    /**
+     * Feed back a particular output to a given link
+     * This modifies all graphs that contain this link
+     * @param i The index of the output to feed back
+     * @param link The link to feed back to
+     * @return The graph with one output fed back
+     */
+    func Feedback(i : Int64, link : Link){
+        Feedback(link, index: Some(i))
+    }
+     /**
+     * Feed back a particular output to a given link, but preserve the original output as well
+     * This corresponds to the classic iteration pattern
+     * This modifies all graphs that contain this link
+     * @param link The link to feed back to
+     * @return The graph with the feedback and outputs
+     */
+    func FeedbackAndOutput(i : Int64, link : Link){
+        Feedback(link, output: true, index: Some(i))
     }
     /**
      * Syntax sugar for sequential composition
@@ -935,17 +970,8 @@ func CloneTarget(cr : Cloner, t : Target){
 func main(){
     SetDotDir("dot")
 
-    let inp = Input(width: 4)
-
-    let prev_sum = NewLink(width: 4)
-    let il = InLink(link: prev_sum)
-    let plus = Plus(il, inp)
-    let fb = plus.FeedbackAndOutput(prev_sum)
-
-    WriteDotToFile(il, "il", resolve: false)
-    WriteDotToFile(fb, "fb", resolve: false)
-    WriteDotToFile(plus, "plus", resolve: false)
-
+    let cpu = SimpleCPU()
+    WriteDotToFile(cpu, "cpu", resolve: false)
 
     0   
 }

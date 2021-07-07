@@ -98,7 +98,7 @@ func ResolveLinks(f : HypBuilder, name!: String = "") {
     // These can be replaced with bottom
     let deadInlinks = f.GetAllInLinks()
     for(e in deadInlinks){
-        let link = e.Getlink()
+        let link = e.GetLink()
         for(i in 0..link.width){
             let bot = f.CreateEdge(VALUE(BOTTOM))
             f.AddConn(bot.GetTarget(0), e.targets[i].GetConn())

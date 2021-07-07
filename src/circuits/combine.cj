@@ -15,7 +15,6 @@ import debug.*
  * @return A list of pairs of sources from f and g where the two graphs diverge
  */
 func FindDivergencePoints(f : HypergraphStructure, g : HypergraphStructure){
-    Debug("FindDivergencePoints", "Finding divergence points between '${f.GetName()}'' and '${g.GetName()}'")
     let edgeIds = f.GetEdgeGlobalIds()
     let targetIds = f.GetTargetGlobalIds()
 
@@ -81,6 +80,10 @@ func FindDivergencePoints(f : HypergraphStructure, g : HypergraphStructure){
  */
 func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * Source>){
     Debug("Inject", "Injecting '${g.GetName()}' into '${f.GetName()}'")
+    print("${f}\n")
+    print("${g}\n")
+    WriteDotToFile(f.ToGraph(), "f", resolve: false)
+    WriteDotToFile(g.ToGraph(), "g", resolve: false)
     // Find out all the edges in g that have a corresponding edge in f
     // These are edges with the same global id
     let edgeIds = f.GetEdgeGlobalIds()
@@ -107,6 +110,9 @@ func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * S
         PerformInjection(f, intersectionF, intersectionG)
     }
     // We're done!
+    print("done\n")
+    print("${f}\n")
+    WriteDotToFile(f.ToGraph(), "fn", resolve: false)
     f
 }
 /**
