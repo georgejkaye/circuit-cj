@@ -130,10 +130,8 @@ class Rewriter {
     func RunCycle() {
         // Isolate the head(s) of the waveform
         let heads = ArrayList<ArrayList<Waveform>>()
-        var i = 0
         while(f.IsProductive()){
             heads.add(DetachHead())
-            i++
         }
         // Perform any available redexes
         RunLocal()

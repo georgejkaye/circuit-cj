@@ -80,7 +80,6 @@ func SimpleCPU(){
     let muxd = Mux(low: ram_low, high: ir_low, sel: InLink(MUXC))
     // ALU
     let alu = ALU(a: muxi, b: muxd, alu_s0: InLink(alu_s0), alu_s1: InLink(alu_s1), alu_s2: InLink(alu_s2), alu_s3: InLink(alu_s3), alu_s4: InLink(alu_s4))
-    WriteDotToFile(alu, "alu", resolve: false)
     let alu_z = Lsbs(alu)
     let carry = Msb(alu)
     // Connect the outputs to an earlier link

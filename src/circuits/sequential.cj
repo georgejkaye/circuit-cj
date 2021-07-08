@@ -155,7 +155,7 @@ func CreateInfiniteWaveform(value : Int64, width!: Int64, name!: String = "", si
     hb
 }
 
-func InfiniteWaveform(value : Int64, width!: Int64, name!: String = "", signed!: Bool = false){
+external func InfiniteWaveform(value : Int64, width!: Int64, name!: String = "", signed!: Bool = false){
     let f = CreateInfiniteWaveform(value, width: width, name: name, signed: signed)
     f.ToGraph()
 }

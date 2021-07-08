@@ -419,11 +419,16 @@ open class HypergraphStructure <: Identifiable {
      */
     func WellFormedCheck() : WellformednessStatus {
         let encounteredTargets = ArrayList<Target>()
+        let encounteredTargetGlobalIds = ArrayList<UInt64>()
         for(t in targets){
             if(includes(encounteredTargets, t)){
                 return DuplicateTarget(t)
             }
+            if(includes(encounteredTargetGlobalIds, t.globalId)){
+                return DuplicateTargetGlobalId(t.globalId)
+            }
             encounteredTargets.add(t)
+            encounteredTargetGlobalIds.add(t.globalId)
             if(!t.HasPort()){
                 return TargetNotAssociated(t)   
             }
@@ -448,11 +453,16 @@ open class HypergraphStructure <: Identifiable {
             }
         }
         let encounteredSources = ArrayList<Source>()
+        let encounteredSourceGlobalIds = ArrayList<UInt64>()
         for(s in sources){
             if(includes(encounteredSources, s)){
                 return DuplicateSource(s)
             }
+            if(includes(encounteredSourceGlobalIds, s.globalId)){
+                return DuplicateSourceGlobalId(s.globalId)
+            }
             encounteredSources.add(s)
+            encounteredSourceGlobalIds.add(s.globalId)
             if(!s.HasPort()){
                 return SourceNotAssociated(s)
             }
@@ -572,6 +582,8 @@ enum WellformednessStatus {
     | IncorrectSourceAssignment(Source, Port) // This source has been assigned to a port but in reality it is not
     | DuplicateTarget(Target)                 // This target is associated with multiple edges
     | DuplicateSource(Source)                 // This source is associated with multiple edges
+    | DuplicateTargetGlobalId(UInt64)         // This target global id is used multiple times in this graph
+    | DuplicateSourceGlobalId(UInt64)         // This source global id is used multiple times in this graph
     | DuplicateEdgeGlobalId(UInt64)           // This edge global id is used multiple times in this graph
     | ConnectionNotInGraph(Vertex, Vertex)    // The connection of the first vertex is not in the graph
     | EdgeNotInGraph(Vertex, Edge)            // This vertex is associated with an edge not in this graph
@@ -590,11 +602,14 @@ extend WellformednessStatus <: ToString {
             case IncorrectSourceAssignment(s, p) => "Incorrect source assignment of ${s} to ${p}"
             case DuplicateTarget(t)              => "Duplicated target ${t}"
             case DuplicateSource(s)              => "Duplicated source ${s}"
+            case DuplicateTargetGlobalId(i)      => "Duplicate target global id ${i}"
+            case DuplicateSourceGlobalId(i)      => "Duplicate source global id ${i}"
+            case DuplicateEdgeGlobalId(i)        => "Duplicate edge global id ${i}"
             case ConnectionNotInGraph(v1,v2)     => "Connection of ${v1} which is ${v2} not in the graph"
             case EdgeNotInGraph(v, e)            => "The edge of vertex ${v} which is ${e} not in the graph"
             case IncorrectDomain(e, n)           => "Incorrect domain of ${e}"
             case IncorrectCodomain(e, n)         => "Incorrect codomain of ${e}"
-            case _                               => "All okay"
+            case $Okay                           => "All okay"
         }
     }
 }
@@ -970,8 +985,33 @@ func CloneTarget(cr : Cloner, t : Target){
 func main(){
     SetDotDir("dot")
 
-    let cpu = SimpleCPU()
-    WriteDotToFile(cpu, "cpu", resolve: false)
+    // let circ = Delay()
+    // WriteDotToFile(circ, "delay")
+
+    // let circ2 = Register(width: 1, initial: 0)
+    // WriteDotToFile(circ2, "reg")
+
+    // let wf = WaveformFromList([0,1,2,3], width: 2)
+    // WriteDotToFile(wf, "wf")
+
+    // let iwf = InfiniteWaveform(2, width: 2)
+    // WriteDotToFile(iwf, "iwf")
+
+    //let v1 = UnsignedValueFromInt(6, width: 4)
+    //let v2 = SignedValueFromInt(-6, width: 4)
+    //WriteDotToFile(v1, "v1")
+    //WriteDotToFile(v2, "v2")
+
+    let a = Input()
+    let b = Input()
+    let sum = XorGate(a, b)
+    let carry = AndGate(a, b)
+    Concat([sum, carry])
+    //let circ = sum * carry
+    //WriteDotToFile(circ, "circ")
+
+    //let cpu = SimpleCPU()
+    //WriteDotToFile(cpu, "cpu", resolve: false)
 
     0   
 }

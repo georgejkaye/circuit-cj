@@ -14,7 +14,7 @@ import debug.*
  * @param g The graph to check for divergence points
  * @return A list of pairs of sources from f and g where the two graphs diverge
  */
-func FindDivergencePoints(f : HypergraphStructure, g : HypergraphStructure){
+func FindIntersections(f : HypergraphStructure, g : HypergraphStructure){
     let edgeIds = f.GetEdgeGlobalIds()
     let targetIds = f.GetTargetGlobalIds()
 
@@ -27,7 +27,7 @@ func FindDivergencePoints(f : HypergraphStructure, g : HypergraphStructure){
             case _ => () 
         }
     }
-    let divergencePoints = ArrayList<Source * Source>()
+    let intersections = ArrayList<Source * Source>()
     let encounteredEdges = ArrayList<Edge>()
 
     while(frontier.size() != 0){
@@ -36,7 +36,7 @@ func FindDivergencePoints(f : HypergraphStructure, g : HypergraphStructure){
             case EdgePort(e, i) => 
                 let cont = match(edgeIds.toMap().get(e.globalId)){
                     case Some(fe) => 
-                        divergencePoints.add((fe.GetTarget(i).GetConn(), s))
+                        intersections.add((fe.GetTarget(i).GetConn(), s))
                         false
                     case $None =>
                         !includes(encounteredEdges, e)
@@ -48,12 +48,12 @@ func FindDivergencePoints(f : HypergraphStructure, g : HypergraphStructure){
             case InterfacePort(i) =>
                 let t = s.GetConn()
                 match(targetIds.toMap().get(t.globalId)){
-                    case Some(ft) => divergencePoints.add((ft.GetConn(), s))
+                    case Some(ft) => intersections.add((ft.GetConn(), s))
                     case $None => ()
                 }
         }
     }
-    divergencePoints
+    intersections
 }
 
 /**
@@ -80,10 +80,6 @@ func FindDivergencePoints(f : HypergraphStructure, g : HypergraphStructure){
  */
 func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * Source>){
     Debug("Inject", "Injecting '${g.GetName()}' into '${f.GetName()}'")
-    print("${f}\n")
-    print("${g}\n")
-    WriteDotToFile(f.ToGraph(), "f", resolve: false)
-    WriteDotToFile(g.ToGraph(), "g", resolve: false)
     // Find out all the edges in g that have a corresponding edge in f
     // These are edges with the same global id
     let edgeIds = f.GetEdgeGlobalIds()
@@ -110,9 +106,6 @@ func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * S
         PerformInjection(f, intersectionF, intersectionG)
     }
     // We're done!
-    print("done\n")
-    print("${f}\n")
-    WriteDotToFile(f.ToGraph(), "fn", resolve: false)
     f
 }
 /**
@@ -188,7 +181,7 @@ func Extract(f : HypBuilder, buses : ArrayList<String>, name!: String = "") : Hy
  * @param g The hypergraph that we are adding bits from
  */
 func AddMissingGraph(f : HypBuilder, g : HypBuilder){
-    let intersections = FindDivergencePoints(f, g)
+    let intersections = FindIntersections(f, g)
     let outputs = ArrayList<Source>(g.GetOutputs())
     let hb = Inject(f, g, intersections)
     hb.ConnectEachOutputToEdge(outputs, STUB)

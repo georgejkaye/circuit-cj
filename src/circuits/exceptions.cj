@@ -78,6 +78,8 @@ class BadHypergraphException <: Exception {
             case IncorrectSourceAssignment(s, p) => throw IncorrectPortException("Wellformedness", h, s, p)
             case DuplicateTarget(t)              => throw DuplicateVertexException("Wellformedness", h, t)
             case DuplicateSource(s)              => throw DuplicateVertexException("Wellformedness", h, s)
+            case DuplicateTargetGlobalId(i)      => throw DuplicateTargetGlobalIdException("Wellformedness", h, i)
+            case DuplicateSourceGlobalId(i)      => throw DuplicateSourceGlobalIdException("Wellformedness", h, i)
             case DuplicateEdgeGlobalId(i)        => throw DuplicateEdgeGlobalIdException("Wellformedness", h, i)
             case ConnectionNotInGraph(v1,v2)     => throw BadConnectionException("Wellformedness", h, v1, v2)
             case EdgeNotInGraph(v, e)            => throw BadEdgeException("Wellformedness", h, v, e)
@@ -131,6 +133,16 @@ class DuplicateVertexException <: Exception {
     }
     init(function : String, h : HypergraphStructure, s : Source) {
         ErrorMsg(function, "The source ${s.id} is the source of multiple edges")
+    }
+}
+class DuplicateTargetGlobalIdException <: Exception {
+    init(function : String, h : HypergraphStructure, id : UInt64){
+        ErrorMsg(function, "The target global id ${id} is used multiple times in the graph")
+    }
+}
+class DuplicateSourceGlobalIdException <: Exception {
+    init(function : String, h : HypergraphStructure, id : UInt64){
+        ErrorMsg(function, "The source global id ${id} is used multiple times in the graph")
     }
 }
 class DuplicateEdgeGlobalIdException <: Exception {
