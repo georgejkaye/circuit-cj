@@ -71,10 +71,6 @@ external func Equals(a!: Hypergraph, b!: Hypergraph){
     input + eq
 }
 
-func Comparator(width: Int64){
-    BlackBox("Comp", width * 2, 3)
-}
-
 external func If(width!: Int64){
     if(width < 1){
         throw NegativeWireException("Equals")

@@ -17,6 +17,11 @@ Contains the definition of `HypBuilder`, a class for constructing hypergraphs th
 Contains definitions of buses and wires, which are used to label source vertices.
 These buses form the backbone of how users can refer to and extract linkific parts of circuits.
 
+### [`combine.cj`](combine.cj)
+
+Contains functions to combine hypergraphs.
+Notably, contains the `Concat()` method that is used frequently during the design process.
+
 ### [`exceptions.cj`](exceptions.cj)
 
 Contains exceptions for this package.
@@ -54,6 +59,13 @@ Contains functions for manipulating individual bits in buses of values.
 * `Lsb`
 * `Msbs`
 * `Lsbs`
+
+### [`control.cj`](control.cj)
+
+Contains constant circuit for control flow operations, such as if-then-else and various condition checks.
+
+* `Equals`
+* `If`
 
 ### [`dot.cj`](dot.cj)
 

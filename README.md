@@ -17,7 +17,6 @@ A script is provided to compile all the files.
 If you only want to compile the main executable (which is often desired since compiling the `circuits` package is often lengthy), you can add a `main` flag to just compile this.
 
 ```sh
-chmod +x compile.sh
 # compiles all packages, expecting a main.cj file in src/, creates executable bin/main.out
 ./compile.sh
 # compiles just the main.cj file in src/
@@ -39,6 +38,5 @@ If `run.sh` encounters an error it will terminate immediately and not draw any g
 If you still want to draw all the graphs you've generated, you can use the `dot.sh` script to generate svgs and pngs for all `.dot` files in `dot/`. 
 
 ```sh
-chmod +x dot.sh
 ./dot.sh
 ```

@@ -1,7 +1,7 @@
 /**
  * arithmetic.cj
  *
- * This file contains constant circuits that can be defined directly as hypergraphs
+ * This file contains constant arithmetic circuits that can be defined directly as hypergraphs
  * This is more efficient (although less elegant) than defining them by combining other constructs
  */
 package circuits
