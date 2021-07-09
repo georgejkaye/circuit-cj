@@ -28,13 +28,6 @@ MAIN="main"
 IFS=":"
 read -ra PATHS <<< "$CANGJIE_PATH"
 
-MAP_CAPACITY=512
-
-YELLOW="\033[1;33m"
-NC="\033[0m"
-MAP_PATH="$CJ_ROOT/stdlib/core/Map.cj"
-echo -e "${YELLOW}[WARNING]${NC} It is recommended to set DEFAULT_INITIAL_CAPACITY in $MAP_PATH to $MAP_CAPACITY in order to avoid blowing the stack when making circuits"
-
 check_package_in_path() {
     if [[ ! " ${PATHS[@]} " =~ " $1 " ]] ; then
         echo "Package $1 not found, ensure the following are in your \$CANGJIE_PATH:"
@@ -99,11 +92,7 @@ else
     MODE="$1"
 fi
 
-if [ "$MODE" == "hack" ] ; then
-    PACKAGES=("settings" "debug")
-else 
-    PACKAGES=("settings" "debug" "circuits" "examples")
-fi
+PACKAGES=("settings" "debug" "circuits" "examples")
 
 PKG_PATHS=("$MODULES_DIR/io")
 
@@ -117,7 +106,7 @@ done
 
 CURRENT_PKG=1
 
-if [ "$MODE" == "all" ] || [ "$MODE" == "hack" ] ; then 
+if [ "$MODE" == "all" ] ; then 
     rm -rf $BUILD
     rm -rf $BIN
     mkdir $BUILD
@@ -143,8 +132,5 @@ if [ "$MODE" == "main" ] ; then
     TOTAL_PKG=0
 fi
 
-if [ "$MODE" == "hack" ] ; then
-    compile_package_exec "circuits" $CURRENT_PKG $(($TOTAL_PKG+1)) false
-else
-    compile_exec $MAIN $CURRENT_PKG $(($TOTAL_PKG+1))
-fi
+# compile main executable
+compile_exec $MAIN $CURRENT_PKG $(($TOTAL_PKG+1))

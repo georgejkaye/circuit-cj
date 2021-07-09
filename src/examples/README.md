@@ -6,14 +6,14 @@ These examples will also need to be documented.
 
 ## Examples
 
+### [`accumulator.cj`](accumulator.cj)
+
+A slightly more involved example, showing how delay and feedback can be implemented.
+
 ### [`half-adder.cj`](half-adder.cj)
 
 A very basic example: a half adder.
 Defined in combinator style and functional style, to illustrate the differences between them.
-
-### [`accumulator.cj`](accumulator.cj)
-
-A slightly more involved example, showing how delay and feedback can be implemented.
 
 ### [`serial-multiplier.cj`](serial-multiplier.cj)
 

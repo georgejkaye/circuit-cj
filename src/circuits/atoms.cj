@@ -33,6 +33,12 @@ abstract class Atom <: Identifiable {
     init(){
         this.globalId = this.id
     }
+    init(globalId : Option<UInt64>){
+        this.globalId = match(globalId){
+            case Some(i) => i
+            case $None => this.id
+        }
+    }
     /**
      * Check if this atom has the same global id as another atom
      */
@@ -65,6 +71,12 @@ func AtomListToString(xs : ArrayList<Atom>){
  */
 abstract class HypergraphElement <: Atom {
     var hypergraph : Option<HypergraphStructure> = None<HypergraphStructure>
+    init(){
+        super()
+    }
+    init(globalId : Option<UInt64>){
+        super(globalId)
+    }
     func SetHypergraph(f : HypergraphStructure){
         this.hypergraph = Some(f)
     }
@@ -84,6 +96,12 @@ abstract class HypergraphElement <: Atom {
  */
 abstract class Vertex <: HypergraphElement {
     private var port : Option<Port> = None<Port>
+    init(){
+        super()
+    }
+    init(globalId : Option<UInt64>){
+        super(globalId)
+    }
     func SetPort(p : Port){
         this.port = Some<Port>(p)
     }
@@ -146,7 +164,7 @@ external class Source <: Vertex {
         this.wires = wires 
     }
     init(globalId : UInt64, wires : ArrayList<Wire>){
-        this.globalId = globalId
+        super(Some<UInt64>(globalId))
         this.conn = None<Target>
         this.wires = wires
     }
@@ -242,11 +260,11 @@ func SourceListToString(xs : ArrayList<Source>){
  */
 external class Target <: Vertex {
     private var conn : Option<Source>
-    init() {
-        this.conn = None<Source>
+    init(){
+        this(None<UInt64>)
     }
-    init(globalId : UInt64){
-        this.globalId = globalId
+    init(globalId : Option<UInt64>){
+        super(globalId)
         this.conn = None<Source>
     }
     func RemoveConn() {
@@ -302,10 +320,7 @@ external open class Edge <: HypergraphElement {
     let sources : ArrayList<Source>
     let targets : ArrayList<Target>
     init(globalId: Option<UInt64>, gen : Generator, sources : ArrayList<Source>, targets : ArrayList<Target>){
-        this.globalId = match(globalId){
-            case Some(i) => i
-            case $None   => this.id 
-        }
+        super(globalId)
         this.generator = gen
         if(sources.size() != Dom(gen)){
             throw BadDomainException("Edge", sources.size(), Dom(gen))

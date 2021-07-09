@@ -520,7 +520,7 @@ open class HypergraphStructure <: Identifiable {
         for(e in edges){
             let edgeSources = SourceListToString(e.sources)
             let edgeTargets = TargetListToString(e.targets)
-            edgeString = "${edgeString}e${e.id} - ${e.generator} ${edgeSources} ${edgeTargets}\n"
+            edgeString = "${edgeString}e${e.id} (${e.globalId}) - ${e.generator} ${edgeSources} ${edgeTargets}\n"
         }
         let outputString = PrintList(outputs, {s : Source => "${s.id}"})
         var connsRString = ""
@@ -975,43 +975,4 @@ func CloneTarget(cr : Cloner, t : Target){
     let oldConn = t.GetConn()
     newT.SetConn(cr.GetNewSource(oldConn))
     newT
-}
-/**
- * Alias for circuits
- * TODO find out why this doesn't compile
- */
-// type Circuit = Hypergraph
-
-func main(){
-    SetDotDir("dot")
-
-    // let circ = Delay()
-    // WriteDotToFile(circ, "delay")
-
-    // let circ2 = Register(width: 1, initial: 0)
-    // WriteDotToFile(circ2, "reg")
-
-    // let wf = WaveformFromList([0,1,2,3], width: 2)
-    // WriteDotToFile(wf, "wf")
-
-    // let iwf = InfiniteWaveform(2, width: 2)
-    // WriteDotToFile(iwf, "iwf")
-
-    //let v1 = UnsignedValueFromInt(6, width: 4)
-    //let v2 = SignedValueFromInt(-6, width: 4)
-    //WriteDotToFile(v1, "v1")
-    //WriteDotToFile(v2, "v2")
-
-    let a = Input()
-    let b = Input()
-    let sum = XorGate(a, b)
-    let carry = AndGate(a, b)
-    Concat([sum, carry])
-    //let circ = sum * carry
-    //WriteDotToFile(circ, "circ")
-
-    //let cpu = SimpleCPU()
-    //WriteDotToFile(cpu, "cpu", resolve: false)
-
-    0   
 }

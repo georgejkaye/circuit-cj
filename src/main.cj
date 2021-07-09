@@ -7,11 +7,12 @@ func main(){
 
     SetDotDir("dot")
     
-    let wf = WaveformFromList([3,2,6], width: 4)
+    let wf = WaveformFromList([3,2], width: 3)
     WriteDotToFile(wf, "wf")
-
-    let circ = wf + Accumulator(width: 4, initial: 1)
+    let circ = Accumulator(width: 3, initial: 1)
     WriteDotToFile(circ, "circ")
+    let applied = wf + circ
+    WriteDotToFile(applied, "applied")
     let rewriter = circ.GetRewriter()
     rewriter.RunCycle()
     WriteDotToFile(rewriter.GetGraph(), "cycle1")

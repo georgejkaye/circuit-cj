@@ -1,16 +1,16 @@
-from circuits import circuits.*
+package examples
 
-func CyclicCombinational {
+import circuits.*
+
+func CyclicCombinational() {
    
-    let c = Input()
     let x = Input()
+    let c = Input()
     let link = NewLink(width: 1)
-    let mux1 = Mux(a: x, b: InLink(link), s: c)
-    let f = BlackBox("F", 1, 1, input: mux1)
-    let mux2 = Mux(a: f, b: x, s: c)
-    let g = BlackBox("G", 1, 1, input: mux2)
+    let mux1 = Mux(low: x, high: InLink(link), sel: c)
+    let f = BlackBox("F", 1, 1, input: Some(mux1))
+    let mux2 = Mux(low: f, high: x, sel: c)
+    let g = BlackBox("G", 1, 1, input: Some(mux2))
     let fb = Feedback(link: link, input: g)
-    let circ = Mux(a: f, b: fb, s: c)
-
-
+    Mux(high: f, low: fb, sel: c)
 }

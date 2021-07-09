@@ -230,15 +230,8 @@ external func Delay(dur!: Int64 = 1, width!: Int64 = 1, label!: String = "", ele
  * @param input    The input to this register
  * @return         The new register
  */
-external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 1, label!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
+external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 1, label!: String = "", name!: String = "") : Hypergraph {
     Debug("Register", "Making regist of width ${width} with initial value ${initial} and duration ${duration}")
-    match(input){
-    case Some(f) =>
-            if(f.GetN() != width){
-                  throw BadInputGraphException("Register", "input", width, f.GetName(), f.GetN())
-            }
-        case $None => ()
-    } 
     if(duration < 0){
         throw NegativeDurationException("Register", duration)
     }
@@ -254,12 +247,11 @@ external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 1, lab
         // Join the value and the delay
         let join = hb.CreateEdge(JOIN, [value.GetTarget(0), delay.GetTarget(0)], [hb.GetOutputs()[i]])
     }
-    let reg = hb.ToGraph(name)
-    // If we have an input, compose it to the front
-    match(input){
-        case Some(f) => Seq(f, reg)
-        case $None   => reg
-    }
+    hb.ToGraph(name)
+}
+external func Register(initial!: Int64, input!: Hypergraph, duration!: Int64 = 1){
+    let reg = Register(width: input.GetN(), initial: initial, duration: duration)
+    input + reg
 }
 /**
  * Create an out link for a given link

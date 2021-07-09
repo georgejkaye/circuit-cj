@@ -562,7 +562,7 @@ external func Mux(label!: String = "", elem!: Int64 = -1, name!: String = "", lo
     Mux(width: high.GetN(), label: label, elem: elem, name: name, input: f)
 }
 
-func BlackBox(label: String, dom: Int64, cod: Int64, wires!: ArrayList<Wire> = ArrayList<Wire>(), input!: Option<Hypergraph> = None<Hypergraph>, name!: String = ""){
+external func BlackBox(label: String, dom: Int64, cod: Int64, wires!: ArrayList<Wire> = ArrayList<Wire>(), input!: Option<Hypergraph> = None<Hypergraph>, name!: String = ""){
     if(dom < 0){
         throw NegativeNumberException("BlackBox", dom)
     }
@@ -579,11 +579,11 @@ func BlackBox(label: String, dom: Int64, cod: Int64, wires!: ArrayList<Wire> = A
     let gen = BLACKBOX(Label(label, dom, cod))
     OpMToN(gen, wires: wires, input: input, name: name)
 }
-func BlackBox(label: String, dom: Int64, cod: Int64, wires!: ArrayList<Wire> = ArrayList<Wire>(), inputs!: ArrayList<Hypergraph>, name!: String = ""){
+external func BlackBox(label: String, dom: Int64, cod: Int64, wires!: ArrayList<Wire> = ArrayList<Wire>(), inputs!: ArrayList<Hypergraph>, name!: String = ""){
     let input = Concat(inputs)
     BlackBox(label, dom, cod, wires: wires, input: Some(input))
 }
-func BlackBox(label : String, dom : Int64, cod : Int64, inputs : List<Hypergraph>){
+external func BlackBox(label : String, dom : Int64, cod : Int64, inputs : List<Hypergraph>){
     BlackBox(label, dom, cod, inputs: ArrayList<Hypergraph>(inputs))
 }
 
@@ -612,21 +612,19 @@ func BinaryGateForEachBitWithInput(gate : Generator, lhs : Hypergraph, rhs : Hyp
     BinaryGateForEachBitWithInput(gate, inputs)
 }
 
-func And(input: Hypergraph){
+external func And(input: Hypergraph){
     BinaryGateForEachBitWithInput(AND, input)
 }
-func And(lhs: Hypergraph, rhs: Hypergraph){
+external func And(lhs: Hypergraph, rhs: Hypergraph){
     BinaryGateForEachBitWithInput(AND, lhs, rhs)
 }
-
-func Or(lhs: Hypergraph, rhs: Hypergraph){
+external func Or(lhs: Hypergraph, rhs: Hypergraph){
     BinaryGateForEachBitWithInput(OR, lhs, rhs)
 }
-func Or(input: Hypergraph){
+external func Or(input: Hypergraph){
     BinaryGateForEachBitWithInput(OR, input)
 }
-
-func Split(input: Hypergraph){
+external func Split(input: Hypergraph){
     let splitPoint = input.GetN() / 2
     (DropUntil(input, splitPoint), DropFrom(input, splitPoint))
 }
