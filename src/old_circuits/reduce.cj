@@ -83,7 +83,7 @@ func ResolveLinks(f : HypBuilder, name!: String = "") {
                 // Remove all the replaced in link edges
                 f.RemoveEdges(inLinkEdges)
             // There are no corresponding in links, so we can just stub these outlinks
-            case $None =>
+            case None =>
                 for(e in outLinkEdges){
                     for(s in e.sources){
                         let stub = f.CreateEdge(STUB)

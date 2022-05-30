@@ -16,34 +16,34 @@ enum Value { BOTTOM | TRUE | FALSE | TOP }
 extend Value <: ToString { 
     func toString() : String {
         match(this){
-            case $BOTTOM => "bot"
-            case $TRUE   => "t"
-            case $FALSE  => "f"
-            case $TOP    => "top"
+            case BOTTOM => "bot"
+            case TRUE   => "t"
+            case FALSE  => "f"
+            case TOP    => "top"
         }
     }
 }
 extend Value <: Equatable {
     operator func ==(rhs : Value) : Bool {
         match(this){
-            case $BOTTOM =>
+            case BOTTOM =>
                 match(rhs){
-                    case $BOTTOM => true
+                    case BOTTOM => true
                     case _ => false
                 }
-            case $TRUE => 
+            case TRUE => 
                 match(rhs){
-                    case $TOP => true
+                    case TOP => true
                     case _ => false
                 }
-            case $FALSE =>
+            case FALSE =>
                 match(rhs){
-                    case $FALSE => true
+                    case FALSE => true
                     case _ => false
                 }
-            case $TOP =>
+            case TOP =>
                 match(rhs){
-                    case $TOP => true
+                    case TOP => true
                     case _ => false
                 }
         }
@@ -53,10 +53,10 @@ extend Value <: Equatable {
 extend Value <: Hashable {
     func hashCode() : UInt64 {
         match(this) {
-            case $BOTTOM => 0
-            case $TRUE   => 1
-            case $FALSE  => 2
-            case $TOP    => 3
+            case BOTTOM => 0
+            case TRUE   => 1
+            case FALSE  => 2
+            case TOP    => 3
         }
     }
 }
@@ -67,10 +67,10 @@ extend Value <: Hashable {
  */
 func not(v : Value){
     match(v){
-        case $TOP    => TOP
-        case $BOTTOM => BOTTOM
-        case $TRUE   => FALSE
-        case $FALSE  => TRUE
+        case TOP    => TOP
+        case BOTTOM => BOTTOM
+        case TRUE   => FALSE
+        case FALSE  => TRUE
     }
 }
 /**
@@ -81,12 +81,12 @@ func not(v : Value){
  */
 func and(lhs : Value, rhs : Value){
     match(lhs){
-        case $TOP    => TOP
-        case $BOTTOM => BOTTOM
-        case $TRUE   => rhs
-        case $FALSE  => match(rhs){
-                case $TOP    => TOP
-                case $BOTTOM => BOTTOM
+        case TOP    => TOP
+        case BOTTOM => BOTTOM
+        case TRUE   => rhs
+        case FALSE  => match(rhs){
+                case TOP    => TOP
+                case BOTTOM => BOTTOM
                 case _       => FALSE
         }
     }
@@ -99,12 +99,12 @@ func and(lhs : Value, rhs : Value){
  */
 func or(lhs : Value, rhs : Value){
     match(lhs){
-        case $TOP    => TOP
-        case $BOTTOM => BOTTOM
-        case $FALSE   => rhs
-        case $TRUE  => match(rhs){
-                case $TOP    => TOP
-                case $BOTTOM => BOTTOM
+        case TOP    => TOP
+        case BOTTOM => BOTTOM
+        case FALSE   => rhs
+        case TRUE  => match(rhs){
+                case TOP    => TOP
+                case BOTTOM => BOTTOM
                 case _       => TRUE
         }
     }
@@ -117,12 +117,12 @@ func or(lhs : Value, rhs : Value){
  */
 func xor(lhs : Value, rhs : Value){
     match(lhs){
-        case $TOP    => TOP
-        case $BOTTOM => BOTTOM
-        case $FALSE   => rhs
-        case $TRUE  => match(rhs){
-                case $TOP    => TOP
-                case $BOTTOM => BOTTOM
+        case TOP    => TOP
+        case BOTTOM => BOTTOM
+        case FALSE   => rhs
+        case TRUE  => match(rhs){
+                case TOP    => TOP
+                case BOTTOM => BOTTOM
                 case v       => not(v)
         }
     }
@@ -135,16 +135,16 @@ func xor(lhs : Value, rhs : Value){
  */
 func join(lhs : Value, rhs : Value){
     match(lhs){
-        case $TOP    => TOP
-        case $BOTTOM => rhs
-        case $TRUE   => match(rhs){
-            case $TOP   => TOP
-            case $FALSE => TOP
+        case TOP    => TOP
+        case BOTTOM => rhs
+        case TRUE   => match(rhs){
+            case TOP   => TOP
+            case FALSE => TOP
             case _      => TRUE
         }
-        case $FALSE  => match(rhs){
-            case $TOP   => TOP
-            case $TRUE  => TOP
+        case FALSE  => match(rhs){
+            case TOP   => TOP
+            case TRUE  => TOP
             case _      => FALSE
         }
     }
@@ -246,7 +246,7 @@ func ValueFromInt(x : Int64, width!: Int64, signed!: Bool, label!: String = "", 
  * @param label The wire name to associate with this value
  * @param name  The name of the graph
  */
-external func SignedValueFromInt(x : Int64, width!: Int64, label!: String = "", name!: String = ""){
+public func SignedValueFromInt(x : Int64, width!: Int64, label!: String = "", name!: String = ""){
     Debug("SignedValueFromInt", "Creating signed value for ${x} of width ${width}")
     ValueFromInt(x, width: width, signed: true, name: name) 
 }
@@ -257,7 +257,7 @@ external func SignedValueFromInt(x : Int64, width!: Int64, label!: String = "", 
  * @param label The wire name to associate with this value
  * @param name  The name of the graph
  */
-external func UnsignedValueFromInt(x : Int64, width!: Int64, label!: String = "", name!: String = ""){
+public func UnsignedValueFromInt(x : Int64, width!: Int64, label!: String = "", name!: String = ""){
     Debug("UnsignedValueFromInt", "Creating unsigned value for ${x} of width ${width}")
     ValueFromInt(x, width: width, signed: false, label: label, name: name) 
 }
@@ -266,7 +266,7 @@ external func UnsignedValueFromInt(x : Int64, width!: Int64, label!: String = ""
  * @param width The width of the stack
  * @return The w-width stack of false values
  */
-external func Zero(width!: Int64 = 1, label!: String = ""){
+public func Zero(width!: Int64 = 1, label!: String = ""){
     Debug("Zero", "Creating zero value of width ${width}")
     ValueStack(FALSE, width, label: label).ToGraph()
 }
@@ -275,7 +275,7 @@ external func Zero(width!: Int64 = 1, label!: String = ""){
  * @param v The value
  * @return The extended unsigned value
  */
-external func UnsignedExtend(v: Hypergraph){
+public func UnsignedExtend(v: Hypergraph){
     let hb = v.Clone()
     let f = hb.CreateEdge(VALUE(FALSE))
     let s = hb.NewOutput()

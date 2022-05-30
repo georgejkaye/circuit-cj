@@ -80,7 +80,7 @@ class Waveform {
  * @param signed Whether the numbers should be signed
  * @return The hypbuilder for this waveform
  */
-func CreateWaveform(xs : List<Int64>, width!: Int64, signed!: Bool = false){
+func CreateWaveform(xs : Array<Int64>, width!: Int64, signed!: Bool = false){
     CreateWaveform(ArrayList<Int64>(xs), width: width, signed: signed)
 }
 /**
@@ -124,7 +124,7 @@ func CreateWaveform(xs : ArrayList<Int64>, width!: Int64, signed!: Bool = false)
  * @param name The name of the waveform
  * @return The waveform
  */
-external func WaveformFromList(xs : List<Int64>, width!: Int64, signed!: Bool = false, name!: String = ""){
+public func WaveformFromList(xs : Array<Int64>, width!: Int64, signed!: Bool = false, name!: String = ""){
     Debug("WaveformFromList", "Creating waveform from list ${PrintList(ArrayList<Int64>(xs), {i : Int64 => "${i}"})}")
     let waveform = CreateWaveform(xs, width: width, signed: signed)
     waveform.ToGraph(name)
@@ -155,7 +155,7 @@ func CreateInfiniteWaveform(value : Int64, width!: Int64, name!: String = "", si
     hb
 }
 
-external func InfiniteWaveform(value : Int64, width!: Int64, name!: String = "", signed!: Bool = false){
+public func InfiniteWaveform(value : Int64, width!: Int64, name!: String = "", signed!: Bool = false){
     let f = CreateInfiniteWaveform(value, width: width, name: name, signed: signed)
     f.ToGraph()
 }
@@ -189,7 +189,7 @@ func PrependHead(value : Int64, hb : HypBuilder, signed!: Bool = false){
  * @param name The name to associate with this link
  * @return The new link
  */
-external func NewLink(width!: Int64 = 1, name!: String = ""){
+public func NewLink(width!: Int64 = 1, name!: String = ""){
     if(width < 1){
         throw NegativeWireException("NewLink")
     }
@@ -205,7 +205,7 @@ external func NewLink(width!: Int64 = 1, name!: String = ""){
  * @param input The input to this delay construct (m->width)
  * @return The new delay construct, composed with the input if provided
  */
-external func Delay(dur!: Int64 = 1, width!: Int64 = 1, label!: String = "", elem!: Int64 = 0, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph { 
+public func Delay(dur!: Int64 = 1, width!: Int64 = 1, label!: String = "", elem!: Int64 = 0, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph { 
     Debug("Delay", "Creating delay of duration ${dur} and width ${width}")
     if(width < 1){
         throw NegativeWireException("Delay")
@@ -217,7 +217,7 @@ external func Delay(dur!: Int64 = 1, width!: Int64 = 1, label!: String = "", ele
     let res = hb.ToGraph(name)
     match(input) {
         case Some(f) => Seq(f, res)
-        case $None   => res
+        case None   => res
     }
 }
 /**
@@ -230,7 +230,7 @@ external func Delay(dur!: Int64 = 1, width!: Int64 = 1, label!: String = "", ele
  * @param input    The input to this register
  * @return         The new register
  */
-external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 1, label!: String = "", name!: String = "") : Hypergraph {
+public func Register(width!: Int64, initial!: Int64, duration!: Int64 = 1, label!: String = "", name!: String = "") : Hypergraph {
     Debug("Register", "Making regist of width ${width} with initial value ${initial} and duration ${duration}")
     if(duration < 0){
         throw NegativeDurationException("Register", duration)
@@ -249,7 +249,7 @@ external func Register(width!: Int64, initial!: Int64, duration!: Int64 = 1, lab
     }
     hb.ToGraph(name)
 }
-external func Register(initial!: Int64, input!: Hypergraph, duration!: Int64 = 1){
+public func Register(initial!: Int64, input!: Hypergraph, duration!: Int64 = 1){
     let reg = Register(width: input.GetN(), initial: initial, duration: duration)
     input + reg
 }
@@ -259,7 +259,7 @@ external func Register(initial!: Int64, input!: Hypergraph, duration!: Int64 = 1
  * @param name The name to give this circuit
  * @return The out link
  */
-external func OutLink(link!: Link, name!: String = "") : Hypergraph { 
+public func OutLink(link!: Link, name!: String = "") : Hypergraph { 
     OpMToZero(OUTLINK(link), name: name) 
 }
 /**
@@ -268,7 +268,7 @@ external func OutLink(link!: Link, name!: String = "") : Hypergraph {
  * @param name The name to give this circuit
  * @return The in link
  */
-external func InLink(link: Link, label!: String = "", name!:String = "") : Hypergraph { 
+public func InLink(link: Link, label!: String = "", name!:String = "") : Hypergraph { 
     Debug("InLink", "Creating in link for link ${link.name}")
     let wires = ArrayList<Wire>(link.width, {i : Int64 => NewWire(label, i)})
     OpMToN(INLINK(link), wires: wires, name: name) 
@@ -278,7 +278,7 @@ external func InLink(link: Link, label!: String = "", name!:String = "") : Hyper
  * @param link   The link for the loop
  * @return The fixpoint
  */
-external func CreateFeedback(link: Link, label!: String = "") : HypBuilder {
+public func CreateFeedback(link: Link, label!: String = "") : HypBuilder {
     let hb = HypBuilder(link.width, link.width, label)
     let e = hb.CreateEdge(OUTLINK(link))
     for(i in 0..link.width){
@@ -293,30 +293,30 @@ external func CreateFeedback(link: Link, label!: String = "") : HypBuilder {
  * @param name   The name to give this circuit
  * @return The fixpoint
  */
-external func Feedback(link!: Link, label!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
+public func Feedback(link!: Link, label!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
     Debug("Feedback", "Creating feedback to link ${link.name}")
     match(input){
         case Some(f) =>
             if(f.GetN() != link.width){
                 throw TypeMismatchException("Feedback", f, link.width)
             }
-        case $None => ()
+        case None => ()
     }
     let res = CreateFeedback(link, label: label).ToGraph()
     match(input){
         case Some(f) => Seq(f, res)
-        case $None   => res
+        case None   => res
     }
 }
 
-external func FeedbackReg(link!: Link, label!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>, initial!: Int64, signed!: Bool = false){
+public func FeedbackReg(link!: Link, label!: String = "", name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>, initial!: Int64, signed!: Bool = false){
     Debug("FeedbackReg", "Creating feedback to link ${link.name} with register")
     match(input){
         case Some(f) =>
             if(f.GetN() != link.width){
                 throw TypeMismatchException("Feedback", f, link.width)
             }
-        case $None => ()
+        case None => ()
     }
     let fb = CreateFeedback(link, label: label)
     let v = CreateValueFromInt(initial, width: link.width, signed: signed)
@@ -341,6 +341,6 @@ external func FeedbackReg(link!: Link, label!: String = "", name!: String = "", 
 
     match(input){
         case Some(f) => Seq(f, res)
-        case $None   => res
+        case None   => res
     }
 }

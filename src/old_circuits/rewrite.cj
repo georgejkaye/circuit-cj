@@ -56,9 +56,9 @@ class RewriteRule {
     func CanRewrite(e : Edge){
         let b = match(entryPoint){
             case EXACTLY(gen) => e.generator == gen
-            case $GATE        => e.IsGate()
-            case $DELAY       => e.IsDelay()
-            case $ANY         => true
+            case GATE        => e.IsGate()
+            case DELAY       => e.IsDelay()
+            case ANY         => true
         }
         if(b){
             canRewrite(e)
@@ -95,7 +95,7 @@ func IsWaveform(s : Source){
             let lhsArg = e.GetSource(0)
             let rhsArg = e.GetSource(1)
             IsValue(lhsArg.GetLeftPort()) && IsDelay(rhsArg.GetLeftPort())
-        case $None => false
+        case None => false
     }
 }
 
@@ -185,7 +185,7 @@ class Rewriter {
                                         rewrites++
                                         next.addAll(nexts)
                                         rewrote = true
-                                    case $None   => ()
+                                    case None   => ()
                                 }
                             }
                         }
@@ -212,7 +212,7 @@ class Rewriter {
                 case EdgePort(e, i) =>
                     match(IsWaveform(e)){
                         case Some(w) => waveforms.add(w)
-                        case $None => throw NonProductiveException("DetachHead", f)
+                        case None => throw NonProductiveException("DetachHead", f)
                     }
                 case InterfacePort(i) => throw NonProductiveException("DetachHead", f)
             }

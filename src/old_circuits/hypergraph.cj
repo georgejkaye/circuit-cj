@@ -7,6 +7,8 @@
 
 package circuits
 
+from std import collection.Map
+
 import debug.*
 
 /**
@@ -27,7 +29,7 @@ open class HypergraphStructure <: Identifiable {
     protected var targets  : ArrayList<Target>
 
     protected var busMaps        : MapBuilder<Bus, MapBuilder<Int64, Source>>
-    protected var busVertexMaps  : MapBuilder<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>
+    protected var busVertexMaps  : MapBuilder<Bus, (MapBuilder<Int64, Source>, ArrayList<Source>)>
     protected var busList        : ArrayList<Bus>
     protected var wireList       : ArrayList<Wire> 
 
@@ -52,7 +54,7 @@ open class HypergraphStructure <: Identifiable {
         this.busList = ArrayList<Bus>()
         this.wireList = ArrayList<Wire>()
         this.busMaps = MapBuilder<Bus, MapBuilder<Int64, Source>>()
-        this.busVertexMaps = MapBuilder<Bus, MapBuilder<Int64, Source> * ArrayList<Source>>()
+        this.busVertexMaps = MapBuilder<Bus, (MapBuilder<Int64, Source>, ArrayList<Source>)>()
 
         this.inlinkMap = MapBuilder<Link, ArrayList<Edge>>()
         this.outlinkMap = MapBuilder<Link, ArrayList<Edge>>()
@@ -94,7 +96,7 @@ open class HypergraphStructure <: Identifiable {
                 case Some(ws) =>
                     ws.add(wire.i, s)
                     false
-                case $None =>
+                case None =>
                     let mb = MapBuilder<Int64, Source>()
                     mb.add(wire.i, s)
                     busMaps.add(bus, mb)
@@ -139,14 +141,14 @@ open class HypergraphStructure <: Identifiable {
     protected func UpdateBusVertexList(){
         for(bus in busList){
             match(busMaps.get(bus)){
-                case $None => ()
+                case None => ()
                 case Some(mb) =>
                     let vertexList = ArrayList<Source>()
                     let wires = bus.wires
                     for(wire in wires){
                         match(mb.get(wire.i)){
                             // Not all wires from a given bus may be in a graph
-                            case $None   => ()
+                            case None   => ()
                             case Some(s) => let x = vertexList.add(s)
                         }
                     }
@@ -181,7 +183,7 @@ open class HypergraphStructure <: Identifiable {
         let es : ArrayList<Edge>
         match(linkMap.get(link)){
             case Some(es2) => es = es2
-            case $None =>
+            case None =>
                 let es2 = ArrayList<Edge>()
                 linkMap.add(link, es2)
                 es = es2
@@ -299,7 +301,7 @@ open class HypergraphStructure <: Identifiable {
     func GetWireVertex(w : Wire) { 
         match(GetWireVertexOption(w)){
             case Some(v) => v
-            case $None   => throw WireNotInGraphException("GetWireVertex", w)
+            case None   => throw WireNotInGraphException("GetWireVertex", w)
         }
     }   
     /**
@@ -325,7 +327,7 @@ open class HypergraphStructure <: Identifiable {
         let b = GetBus(b)
         match(busVertexMaps.get(b)){
             case Some(x) => return true
-            case $None   => return false
+            case None   => return false
         }
     }
     /**
@@ -336,7 +338,7 @@ open class HypergraphStructure <: Identifiable {
     func GetBusVertexMap(b : Bus){
         match(busVertexMaps.get(b)){
             case Some(vms) => vms
-            case $None => throw BusNotInGraphException("GetBusVertexMap", b)
+            case None => throw BusNotInGraphException("GetBusVertexMap", b)
         }
     }
     /**
@@ -357,7 +359,7 @@ open class HypergraphStructure <: Identifiable {
     func GetBusVertexList(b : Bus, vs : ArrayList<Source>){
         match(busVertexMaps.get(b)){
             case Some((mb, ss)) => vs.addAll(ss)
-            case $None          => throw BusNotInGraphException("GetBusVertexList", b)
+            case None          => throw BusNotInGraphException("GetBusVertexList", b)
         }
     }
     /**
@@ -508,7 +510,7 @@ open class HypergraphStructure <: Identifiable {
     func IsWellFormed(){
         let wf = WellFormedCheck()
         match(wf){
-            case $Okay => (true, wf)
+            case Okay => (true, wf)
             case _     => (false, wf)
         }
     }
@@ -609,7 +611,7 @@ extend WellformednessStatus <: ToString {
             case EdgeNotInGraph(v, e)            => "The edge of vertex ${v} which is ${e} not in the graph"
             case IncorrectDomain(e, n)           => "Incorrect domain of ${e}"
             case IncorrectCodomain(e, n)         => "Incorrect codomain of ${e}"
-            case $Okay                           => "All okay"
+            case Okay                           => "All okay"
         }
     }
 }
@@ -618,7 +620,7 @@ extend WellformednessStatus <: ToString {
  * Hypergraph definition
  * All objects of this class *must* be well-formed
  */
-external class Hypergraph <: HypergraphStructure {
+public class Hypergraph <: HypergraphStructure {
     private let name : String
    
     init(edges    : ArrayList<Edge>, 
@@ -629,9 +631,9 @@ external class Hypergraph <: HypergraphStructure {
     }
 
     init(name    : String,
-         edges   : List<Edge>, 
-         inputs  : List<Target>, 
-         outputs : List<Source>
+         edges   : Array<Edge>, 
+         inputs  : Array<Target>, 
+         outputs : Array<Source>
     ){
         this(name, ArrayList<Edge>(edges), ArrayList<Target>(inputs), ArrayList<Source>(outputs))
     }
@@ -644,7 +646,7 @@ external class Hypergraph <: HypergraphStructure {
         super(edges, inputs, outputs)
         this.name = if(name == ""){ "h${this.id}" } else { name }
         match(this.WellFormedCheck()){
-            case $Okay => () 
+            case Okay => () 
             case wf    =>
                 throw BadHypergraphException(this, wf)
         }
@@ -703,7 +705,7 @@ external class Hypergraph <: HypergraphStructure {
      * @param ns The list of indices of outputs to expose
      * @return The hypergraph with the given outputs exposed
      */
-    func Get(ns : List<Int64>){
+    func Get(ns : Array<Int64>){
         Get(this, ArrayList<Int64>(ns))
     }
     /**
@@ -759,7 +761,7 @@ external class Hypergraph <: HypergraphStructure {
         Debug("Feedback", "Feeding back all outputs to ${link}")
         let width = match(index){
             case Some(i) => 1
-            case $None   => GetN()
+            case None   => GetN()
         } 
         if(link.width != width){
             throw BadCodomainException("Feedback", GetN(), width)
@@ -778,7 +780,7 @@ external class Hypergraph <: HypergraphStructure {
                     linked.ConnectOutputToEdge(i, OUTLINK(link))
                     ()
                 }
-            case $None => 
+            case None => 
                 if(output){
                     let link = linked.CreateEdge(OUTLINK(link))
                     for(i in 0..linked.GetN()){
@@ -939,7 +941,7 @@ class Cloner {
      */
     func GetNewSource(s : Source){
         match(sourceMap.get(s)){
-            case $None => throw VertexNotInGraphException("GetNewSource", s)
+            case None => throw VertexNotInGraphException("GetNewSource", s)
             case Some(s1) => s1
         }
     }
@@ -950,7 +952,7 @@ class Cloner {
      */
     func GetNewTarget(t : Target){
         match(targetMap.get(t)){
-            case $None => throw VertexNotInGraphException("GetNewTarget", t)
+            case None => throw VertexNotInGraphException("GetNewTarget", t)
             case Some(t1) => t1
         }
     }

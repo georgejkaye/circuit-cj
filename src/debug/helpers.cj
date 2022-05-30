@@ -5,6 +5,12 @@
  */
 package debug
 
+from std import collection.ArrayList
+
+public func test(){
+    return true
+}
+
 /**
  * Generic includes function for arraylists
  * Presumably this will make its way into the standard library at some point
@@ -12,7 +18,7 @@ package debug
  * @param a  The element to search for
  * @return Whether this element is in the arraylist
  */
-external func includes<T>(xs : ArrayList<T>, a : T) where T <: Equatable {
+public func includes<T>(xs : ArrayList<T>, a : T) where T <: Equatable<T> {
     for(x in xs){
         if(x == a){
             return true
@@ -27,7 +33,7 @@ external func includes<T>(xs : ArrayList<T>, a : T) where T <: Equatable {
  * @param t  The element to search for in the first element of the pairs
  * @return Whether this element is in the arraylist
  */
-external func includesPairL<T,U>(xs : ArrayList<T * U>, t : T) where T <: Equatable {
+public func includesPairL<T,U>(xs : ArrayList<(T , U)>, t : T) where T <: Equatable<T> {
     for((x, y) in xs){
         if(x == t){
             return true
@@ -42,7 +48,7 @@ external func includesPairL<T,U>(xs : ArrayList<T * U>, t : T) where T <: Equata
  * @param u  The element to search for in the second element of the pairs
  * @return Whether this element is in the arraylist
  */
-external func includesPairR<T,U>(xs : ArrayList<T * U>, u : U) where U <: Equatable {
+public func includesPairR<T,U>(xs : ArrayList<(T , U)>, u : U) where U <: Equatable<U> {
     for((x, y) in xs){
         if(y == u){
             return true
@@ -50,7 +56,7 @@ external func includesPairR<T,U>(xs : ArrayList<T * U>, u : U) where U <: Equata
     }
     return false
 }
-external func includesPair<T>(xs : ArrayList<T * T>, t : T) where T <: Equatable {
+public func includesPair<T,U>(xs : ArrayList<(T, T)>, t : T) where T <: Equatable<T>, U <: Equatable<U> {
     for ((x, y) in xs){
         if(x == t || y == t){
             return true
@@ -64,7 +70,7 @@ external func includesPair<T>(xs : ArrayList<T * T>, t : T) where T <: Equatable
  * @param f  The function to print each element
  * @return Whether this element is in the arraylist
  */
-external func PrintList<T>(xs : ArrayList<T>, f : (T) -> String) {
+public func PrintList<T>(xs : ArrayList<T>, f : (T) -> String) {
     var str = "["
     for(x in xs){
         str = "${str} ${f(x)}"
@@ -78,7 +84,7 @@ external func PrintList<T>(xs : ArrayList<T>, f : (T) -> String) {
  * @param f  The function to print each element
  * @return Whether this element is in the arraylist
  */
-external func PrintListPairs<T,U>(xs : ArrayList<T * U>, f : (T) -> String, g : (U) -> String) {
+public func PrintListPairs<T,U>(xs : ArrayList<(T, U)>, f : (T) -> String, g : (U) -> String) where T <: ToString {
     var str = "["
     for((x, y) in xs){
         str = "${str} (${f(x)}, ${g(y)})"
@@ -92,7 +98,7 @@ external func PrintListPairs<T,U>(xs : ArrayList<T * U>, f : (T) -> String, g : 
  * @param f  The function to print each element
  * @return Whether this element is in the arraylist
  */
-external func PrintList<T>(xs : ArrayList<T>) where T <: ToString {
+public func PrintList<T>(xs : ArrayList<T>) where T <: ToString {
     var str = "["
     for(x in xs){
         str = "${str} ${x.toString()}"
@@ -106,7 +112,7 @@ external func PrintList<T>(xs : ArrayList<T>) where T <: ToString {
  * @param a  The element to search for 
  * @return The index of the first occurrence of the element in the list
  */
-external func index<T>(xs : ArrayList<T>, a : T) where T <: Equatable {
+public func index<T>(xs : ArrayList<T>, a : T) where T <: Equatable<T> {
     for(i in 0..xs.size()){
         if(xs[i] == a){
             return Some<Int64>(i)

@@ -23,11 +23,11 @@ func FindIntersections(f : HypergraphStructure, g : HypergraphStructure){
 
     for(e in ends){
         match(edgeIds.toMap().get(e.globalId)){
-            case $None => frontier.addAll(e.sources)
+            case None => frontier.addAll(e.sources)
             case _ => () 
         }
     }
-    let intersections = ArrayList<Source * Source>()
+    let intersections = ArrayList<(Source, Source)>()
     let encounteredEdges = ArrayList<Edge>()
 
     while(frontier.size() != 0){
@@ -38,7 +38,7 @@ func FindIntersections(f : HypergraphStructure, g : HypergraphStructure){
                     case Some(fe) => 
                         intersections.add((fe.GetTarget(i).GetConn(), s))
                         false
-                    case $None =>
+                    case None =>
                         !includes(encounteredEdges, e)
                 }
                 encounteredEdges.add(e)
@@ -49,7 +49,7 @@ func FindIntersections(f : HypergraphStructure, g : HypergraphStructure){
                 let t = s.GetConn()
                 match(targetIds.toMap().get(t.globalId)){
                     case Some(ft) => intersections.add((ft.GetConn(), s))
-                    case $None => ()
+                    case None => ()
                 }
         }
     }
@@ -78,7 +78,7 @@ func FindIntersections(f : HypergraphStructure, g : HypergraphStructure){
  * @param intersections The list of pairs of intersections in f and g
  * @return A clone of hypergraph f with a clone of g injected into it
  */
-func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * Source>){
+func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<(Source, Source)>){
     Debug("Inject", "Injecting '${g.GetName()}' into '${f.GetName()}'")
     // Find out all the edges in g that have a corresponding edge in f
     // These are edges with the same global id
@@ -86,7 +86,7 @@ func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * S
     let duplicateEdges = g.GetEdgesWithProperty({e : Edge => 
         match(edgeIds.toMap().get(e.globalId)){
             case Some(fe) => true
-            case $None   => false
+            case None   => false
     }})
     // Remove all the edges in g that have a corresponding edge in f
     g.RemoveEdges(duplicateEdges)
@@ -96,7 +96,7 @@ func Inject(f : HypBuilder, g : HypBuilder, intersections : ArrayList<Source * S
     let duplicateInputs = g.GetInputsWithProperty({t : Target =>
         match(inids.toMap().get(t.globalId)){
             case Some(ft) => true
-            case $None   => false
+            case None   => false
     }})
     g.RemoveInputs(duplicateInputs)
     // Add the remaining bits of g into f
@@ -162,7 +162,7 @@ func Extract(f : HypBuilder, buses : ArrayList<String>, name!: String = "") : Hy
                 f.RemoveEdge(e)
                 f.AddOutput(s)
                 ()
-            case $None =>
+            case None =>
                 let fork = f.CreateEdge(FORK)
                 f.AddConn(s.GetConn(), fork.GetSource(0))
                 f.AddConn(fork.GetTarget(0), s)

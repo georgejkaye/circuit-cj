@@ -36,7 +36,7 @@ abstract class Atom <: Identifiable {
     init(globalId : Option<UInt64>){
         this.globalId = match(globalId){
             case Some(i) => i
-            case $None => this.id
+            case None => this.id
         }
     }
     /**
@@ -86,7 +86,7 @@ abstract class HypergraphElement <: Atom {
     func GetHypergraph() : HypergraphStructure {
         match(hypergraph){
             case Some(f) => f
-            case $None   => throw NoAssociatedHypergraphException("GetHypergraph", this)
+            case None   => throw NoAssociatedHypergraphException("GetHypergraph", this)
         }
     }
 }
@@ -117,13 +117,13 @@ abstract class Vertex <: HypergraphElement {
     func GetPort(){
         match(port){
             case Some(p) => p
-            case $None   => throw NoAssociatedEdgeException("GetPort", this)
+            case None   => throw NoAssociatedEdgeException("GetPort", this)
         }
     }
     func HasPort(){
         match(port){
             case Some(p) => true
-            case $None   => false
+            case None   => false
         }
     }
     func HasConn() : Bool
@@ -147,7 +147,7 @@ abstract class Vertex <: HypergraphElement {
  * Source vertices are outwards facing ports: they are the sources of edges.
  * Sources have names so that we can reference them later and connect them to new edges
  */
-external class Source <: Vertex {
+public class Source <: Vertex {
     private var conn : Option<Target> 
     /** The wires that the vertex represents */
     let wires : ArrayList<Wire>
@@ -187,13 +187,13 @@ external class Source <: Vertex {
     func GetConn() : Target {
         match(conn){
             case Some(t) => t
-            case $None   => throw MissingConnectionException("GetConn", this)
+            case None   => throw MissingConnectionException("GetConn", this)
         }
     }
     func HasConn(){
         match(conn){
             case Some(t) => true
-            case $None   => false
+            case None   => false
         }
     }
     func GetRightPort(){
@@ -226,7 +226,7 @@ external class Source <: Vertex {
         for (wire in wires){
             let wireText = match(wire.bus.name){
                 case Some(str) => str
-                case $None     => ""
+                case None     => ""
             }
             wireString = if(wireString == "") { "${wireText}" } else { "${wireString}, ${wireText}" }
         }
@@ -246,7 +246,7 @@ func SourceListToString(xs : ArrayList<Source>){
         for(wire in s.wires){
             let wirename = match(wire.bus.name){
                 case Some(name) => "${name}[${wire.i}]"
-                case $None      => ""
+                case None      => ""
             }
             wireString = if(wirename == "") { wireString } else if(wireString == "") { "${wirename}" } else { "${wireString}, ${wirename}" }
         }
@@ -258,7 +258,7 @@ func SourceListToString(xs : ArrayList<Source>){
  * Target vertices are inwards facing ports: they are the targets of edges.
  * Target vertices currently don't have anything particularly special about them
  */
-external class Target <: Vertex {
+public class Target <: Vertex {
     private var conn : Option<Source>
     init(){
         this(None<UInt64>)
@@ -286,13 +286,13 @@ external class Target <: Vertex {
     func GetConn() : Source {
         match(conn){
             case Some(s) => s
-            case $None   => throw MissingConnectionException("GetConn", this)
+            case None   => throw MissingConnectionException("GetConn", this)
         }
     }
     func HasConn(){
         match(conn){
             case Some(s) => true
-            case $None   => false
+            case None   => false
         }
     }
     func GetRightPort(){
@@ -315,7 +315,7 @@ func TargetListToString(xs : ArrayList<Target>){
 /**
  * Edges have an associated generator, and lists of sources and targets
  */
-external open class Edge <: HypergraphElement {
+public open class Edge <: HypergraphElement {
     let generator : Generator
     let sources : ArrayList<Source>
     let targets : ArrayList<Target>
@@ -348,7 +348,7 @@ external open class Edge <: HypergraphElement {
     init(gen : Generator, sources : ArrayList<Source>, targets : ArrayList<Target>){
         this(None<UInt64>, gen, sources, targets)
     }
-    init(generator : Generator, sources : List<Source>, targets: List<Target>){
+    init(generator : Generator, sources : Array<Source>, targets: Array<Target>){
         this(generator, ArrayList<Source>(sources), ArrayList<Target>(targets))
     }
     init(generator : Generator, sources : ArrayList<Source>){
@@ -417,7 +417,7 @@ external open class Edge <: HypergraphElement {
      */
     func IsIdentity(){
         match(generator){
-            case $IDENTITY => true
+            case IDENTITY => true
             case _         => false
         }
     }
@@ -478,7 +478,7 @@ external open class Edge <: HypergraphElement {
     func IsStub(){
         match(generator){
             case STRUCTURAL(s) => match(s){
-                case $StubMorph => true
+                case StubMorph => true
                 case _ => false
             }
             case _ => false

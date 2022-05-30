@@ -14,7 +14,7 @@ import debug.*
  * @param width The width of the bus
  * @return The input circuit
  */
-external func Input(label!: String = "", width!: Int64 = 1){
+public func Input(label!: String = "", width!: Int64 = 1){
     if(width < 1){
         throw NegativeWireException("Input")
     }
@@ -29,7 +29,7 @@ external func Input(label!: String = "", width!: Int64 = 1){
  * @param name The name of the resulting hypergra
  * @return     The combined hypergraph
  */
-external func Concat(fs : ArrayList<Hypergraph>, name!: String = ""){
+public func Concat(fs : ArrayList<Hypergraph>, name!: String = ""){
     Debug("Concat", "Concatting hypergraphs")
     var f = fs[0].Clone()
     for(i in 1..fs.size()){
@@ -51,6 +51,6 @@ external func Concat(fs : ArrayList<Hypergraph>, name!: String = ""){
  * @param fs   The list of hypergraphs
  * @param name The name of the resulting hypergraph
  */
-external func Concat(fs : List<Hypergraph>, name!: String = ""){
+public func Concat(fs : Array<Hypergraph>, name!: String = ""){
     Concat(ArrayList<Hypergraph>(fs), name: name)
 }

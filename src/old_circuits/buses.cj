@@ -38,7 +38,7 @@ class Bus <: Identifiable {
     func GetName(){
         match(name){
             case Some(str) => str
-            case $None => "b${id}"
+            case None => "b${id}"
         }
     }
     /**
@@ -76,7 +76,7 @@ class Bus <: Identifiable {
     func GetString(){
         let res = match(name){
             case Some(str) => str
-            case $None      => "b${id}"
+            case None      => "b${id}"
         }
         "bus ${res}"
     }
@@ -92,9 +92,9 @@ extend Bus <: Equatable {
             case Some(str1) =>
                 match(rhs.name) {
                     case Some(str2) => str1 == str2
-                    case $None => this.id == rhs.id 
+                    case None => this.id == rhs.id 
                 }
-            case $None => this.id == rhs.id
+            case None => this.id == rhs.id
         }
     }   
     operator func !=(rhs : Bus) : Bool { !(this == rhs) }
@@ -103,7 +103,7 @@ extend Bus <: Equatable {
 //     func hashCode() : UInt64 { 
 //         match(this.name){
 //             case Some(str) => str.hashCode() * 10 + 1
-//             case $None     => this.id * 10
+//             case None     => this.id * 10
 //         }
 //      }
 // }
@@ -128,7 +128,7 @@ func GetBusOption(string: String){
 func GetBus(string : String){
     match(GetBusOption(string)){
         case Some(b) => b
-        case $None   => throw NoSuchBusException("GetBus", string)
+        case None   => throw NoSuchBusException("GetBus", string)
     }
 }
 /**
@@ -139,7 +139,7 @@ func GetBus(string : String){
 func FindBus(string : String){
     match(GetBusOption(string)){
         case Some(b) => b
-        case $None   => NewBus(string)
+        case None   => NewBus(string)
     }
 }
 /**
@@ -161,7 +161,7 @@ func NewBus(string: String) : Bus {
     } 
     let bus = match(GetBusOption(string)){
         case Some(b) => throw DuplicateBusException("NewBus", string)
-        case $None   => Bus(string)
+        case None   => Bus(string)
     }
     bus
 }
@@ -185,7 +185,7 @@ class Wire <: Atom {
     func GetString(){
         let name = match(bus.name){
             case Some(name) => name
-            case $None      => "b${bus.id}"
+            case None      => "b${bus.id}"
         }
         "${name}[${i}]"
     }
@@ -203,7 +203,7 @@ func NewWire(bus : Bus, i : Int64) : Wire {
     }
     match(bus.GetWire(i)){
         case Some(w) => throw DuplicateWireException("NewWire", bus, i)
-        case $None   => Wire(bus, i)
+        case None   => Wire(bus, i)
     }
 }
 /**
@@ -218,7 +218,7 @@ func NewWire(string : String, i : Int64) : Wire {
     let b = GetBusOption(string)
     match(b) {
         case Some(bus) => NewWire(bus, i) 
-        case $None     => NewWire(Bus(string), i)
+        case None     => NewWire(Bus(string), i)
     }
 }
 /**
@@ -231,7 +231,7 @@ func NewWire(bus : Bus){
     for(i in 0..bus.wires.size()){
         match(bus.GetWire(i)){
             case Some(w) => {}
-            case $None   => return NewWire(bus, i)
+            case None   => return NewWire(bus, i)
         }
     }
     return NewWire(bus, bus.wires.size())
@@ -247,7 +247,7 @@ func NewWire(string : String) : Wire {
     let b = GetBusOption(string)
     match(b) {
         case Some(bus) => NewWire(bus)
-        case $None     => NewWire(Bus(string), 0)
+        case None     => NewWire(Bus(string), 0)
     }
 }
 /**

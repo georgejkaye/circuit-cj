@@ -6,6 +6,8 @@
 
 package circuits
 
+from std import collection.ArrayList
+
 import debug.*
 
 /**
@@ -47,7 +49,7 @@ class HypBuilder <: HypergraphStructure {
      * @param cod   The number of outputs
      * @param wires The list of wires to assign to the outputs
      */
-    init(dom : Int64, cod : Int64, wires : List<Wire>){
+    init(dom : Int64, cod : Int64, wires : Array<Wire>){
         this(dom, cod, ArrayList<Wire>(wires))
     }
     /**
@@ -339,7 +341,7 @@ class HypBuilder <: HypergraphStructure {
      * @param sources The sources that will be assigned to this new edge
      * @return The newly made edge
      */
-    func CreateEdgeFromExisting(gen : Generator, existingSources : List<Source>) : Edge {
+    func CreateEdgeFromExisting(gen : Generator, existingSources : Array<Source>) : Edge {
         CreateEdgeFromExisting(gen, ArrayList<Source>(existingSources))
     }
     /**
@@ -364,7 +366,7 @@ class HypBuilder <: HypergraphStructure {
      * @param targets The targets that will be assigned to this new edge
      * @return The newly made edge
      */
-    func CreateEdgeFromExisting(gen : Generator, existingTargets : List<Target>) : Edge {
+    func CreateEdgeFromExisting(gen : Generator, existingTargets : Array<Target>) : Edge {
         CreateEdgeFromExisting(gen, ArrayList<Target>(existingTargets))
     }
     /**
@@ -411,7 +413,7 @@ class HypBuilder <: HypergraphStructure {
      * @param incomingConns The list of targets to connect to the new edge on the left
      * @return The newly made edge
      */
-    func CreateEdge(gen : Generator, incomingConns : List<Target>) : Edge {
+    func CreateEdge(gen : Generator, incomingConns : Array<Target>) : Edge {
         CreateEdge(gen, ArrayList<Target>(incomingConns))
     }
     /**
@@ -446,7 +448,7 @@ class HypBuilder <: HypergraphStructure {
      * @param outgoingConns The list of sources to connect to the new edge on the right
      * @return The newly made edge
      */
-    func CreateEdge(gen : Generator, incomingConns : List<Target>, outgoingConns : List<Source>) : Edge {
+    func CreateEdge(gen : Generator, incomingConns : Array<Target>, outgoingConns : Array<Source>) : Edge {
         CreateEdge(gen, ArrayList<Target>(incomingConns), ArrayList<Source>(outgoingConns))
     }
     /**
@@ -541,7 +543,7 @@ class HypBuilder <: HypergraphStructure {
         for(i in 0..outs.size()){
             match(index(outputs, outs[i])){
                 case Some(j) => RemoveOutput(j)
-                case $None   => throw BadOutputException("RemoveOutputs", outs[i])
+                case None   => throw BadOutputException("RemoveOutputs", outs[i])
             }
         }
     }
@@ -570,7 +572,7 @@ class HypBuilder <: HypergraphStructure {
         for(i in 0..ins.size()){
             match(index(inputs, ins[i])){
                 case Some(j) => RemoveInput(j)  
-                case $None   => throw BadInputException("RemoveInputs", ins[i])
+                case None   => throw BadInputException("RemoveInputs", ins[i])
             }
         }
     }

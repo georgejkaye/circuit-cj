@@ -48,7 +48,7 @@ func CreateEquals(width!: Int64) : HypBuilder {
  * @param width The width of the two inputs
  * @return The circuit for checking equality of two inputs
  */
-external func Equals(width!: Int64) : Hypergraph {
+public func Equals(width!: Int64) : Hypergraph {
     if(width < 1){
         throw NegativeWireException("Equals")
     }
@@ -62,7 +62,7 @@ external func Equals(width!: Int64) : Hypergraph {
  * @param b The second input
  * @return The composition of the inputs with an equality checking circuit
  */
-external func Equals(a!: Hypergraph, b!: Hypergraph){
+public func Equals(a!: Hypergraph, b!: Hypergraph){
     if(a.GetN() != b.GetN()){
         throw DifferentLengthArgumentsException("Equals", a, b)
     }
@@ -71,14 +71,14 @@ external func Equals(a!: Hypergraph, b!: Hypergraph){
     input + eq
 }
 
-external func If(width!: Int64){
+public func If(width!: Int64){
     if(width < 1){
         throw NegativeWireException("Equals")
     }
     Mux(width: width)
 }
 
-external func If(ifArg!: Hypergraph, thenArg!: Hypergraph, elseArg!: Hypergraph){
+public func If(ifArg!: Hypergraph, thenArg!: Hypergraph, elseArg!: Hypergraph){
     if(thenArg.GetN() != elseArg.GetN()){
         throw DifferentLengthArgumentsException("If", thenArg, elseArg)
     }

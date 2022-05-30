@@ -1,7 +1,7 @@
 package examples
 import circuits.*
 
-external func HalfAdderCombinator(){
+public func HalfAdderCombinator(){
     // We need to copy our inputs so there are versions for the AND and the XOR
     let copy = Copy(2)
     // Define the stack of the two gates
@@ -12,7 +12,7 @@ external func HalfAdderCombinator(){
     copy + gates
 }
 
-external func HalfAdderFunctional(){
+public func HalfAdderFunctional(){
     // First we declare our inputs so we have handles on them
     let a = Input()
     let b = Input()

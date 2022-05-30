@@ -41,7 +41,7 @@ func CreateHalfAdder(sum!: String = "", carry!: String = "", bit!: Int64 = 0) {
  * @param name  The name of the new circuit
  * @return The fresh half adder
  */
-external func HalfAdder(sum!: String = "", carry!: String = "", bit!: Int64 = 0, name!: String = "") : Hypergraph {
+public func HalfAdder(sum!: String = "", carry!: String = "", bit!: Int64 = 0, name!: String = "") : Hypergraph {
     Debug("HalfAdder", "Making half adder; outputs sum='${sum}', carry='${carry}'")
     let hb = CreateHalfAdder(sum: sum, carry: carry, bit: bit)
     hb.ToGraph()
@@ -56,7 +56,7 @@ external func HalfAdder(sum!: String = "", carry!: String = "", bit!: Int64 = 0,
  * @param name  The name of the new circuit
  * @return The fresh half adder
  */
-external func HalfAdder(a!: Hypergraph, b!: Hypergraph, sum!: String = "", carry!: String = "", bit!: Int64 = 0, name!: String = "") : Hypergraph {
+public func HalfAdder(a!: Hypergraph, b!: Hypergraph, sum!: String = "", carry!: String = "", bit!: Int64 = 0, name!: String = "") : Hypergraph {
     Debug("HalfAdder", "Making half adder; inputs a='${a.GetName()}' and b='${b.GetName()}'; outputs sum='${sum}', carry='${carry}'")
     if(a.GetN() != 1){
         throw BadInputGraphException("HalfAdder", "a", 1, a.GetName(), a.GetN())
@@ -119,7 +119,7 @@ func CreateFullAdder(sum!: String = "", cout!: String = "", bit!: Int64 = 0) : H
  * @param name  The name of the new circuit
  * @return The fresh full adder
  */
-external func FullAdder(sum!: String = "", cout!: String = "", bit!: Int64 = 0, name!: String = ""){
+public func FullAdder(sum!: String = "", cout!: String = "", bit!: Int64 = 0, name!: String = ""){
     Debug("FullAdder", "Making full adder; outputs sum='${sum}', cout='${cout}'")
     let hb = CreateFullAdder(sum: sum, cout: cout, bit: bit)
     hb.ToGraph()
@@ -135,7 +135,7 @@ external func FullAdder(sum!: String = "", cout!: String = "", bit!: Int64 = 0, 
  * @param name  The name of the new circuit
  * @return The fresh half adder
  */
-external func FullAdder(a!: Hypergraph, b!: Hypergraph, cin!: Hypergraph, sum!: String = "", cout!: String = "", bit!: Int64 = 0, name!: String = "") : Hypergraph {
+public func FullAdder(a!: Hypergraph, b!: Hypergraph, cin!: Hypergraph, sum!: String = "", cout!: String = "", bit!: Int64 = 0, name!: String = "") : Hypergraph {
     Debug("FullAdder", "Making full adder; inputs a='${a.GetName()}', b='${b.GetName()} and cin='${cin.GetName()}; outputs sum='${sum}', cout='${cout}'")
     if(a.GetN() != 1){
         throw BadInputGraphException("FullAdder", "a", 1, a.GetName(), a.GetN())
@@ -228,7 +228,7 @@ func CreateAdder(width!: Int64, bit!: Int64 = 0, sum!: String = "", cout!: Strin
  * @param name  The name of the fresh adder
  * @return The fresh adder
  */
-external func Adder(width!: Int64, sum!: String = "", cout!: String = "", name!: String = "") {
+public func Adder(width!: Int64, sum!: String = "", cout!: String = "", name!: String = "") {
     Debug("Adder", "Making n-bit adder of width ${width}, sum='${sum}', cout='${cout}'")
     let adderBuilder = CreateAdder(width: width, bit: 0, sum: sum, cout: cout)
     let g = adderBuilder.ToGraph(name)
@@ -246,7 +246,7 @@ external func Adder(width!: Int64, sum!: String = "", cout!: String = "", name!:
  * @param name  The name of the new circuit
  * @return The fresh half adder
  */
-external func Adder(a: Hypergraph, b: Hypergraph, cin!: Hypergraph = Zero(width: 1), sum!: String = "", cout!: String = "", name!: String = "") : Hypergraph {
+public func Adder(a: Hypergraph, b: Hypergraph, cin!: Hypergraph = Zero(width: 1), sum!: String = "", cout!: String = "", name!: String = "") : Hypergraph {
     Debug("Adder", "Making n-bit adder with inputs a='${a.GetName()}', b='${b.GetName()}', cin='${cin.GetName()}'")
     if(a.GetN() != b.GetN()){
         throw DifferentLengthArgumentsException("Adder", a, b)
@@ -264,7 +264,7 @@ external func Adder(a: Hypergraph, b: Hypergraph, cin!: Hypergraph = Zero(width:
  * @param name The name of the new circuit
  * @return The new plus circuit
  */
-external func Plus(width!: Int64, label!: String = "", name!: String = "") : Hypergraph {
+public func Plus(width!: Int64, label!: String = "", name!: String = "") : Hypergraph {
     Debug("Plus", "Making plus of width ${width}")
     let adder = Adder(width: width, sum: label)
     Drop(adder, width, name: name)
@@ -279,7 +279,7 @@ external func Plus(width!: Int64, label!: String = "", name!: String = "") : Hyp
  * @param name The name of the new circuit
  * @return The new plus circuit
  */
-external func Plus(a: Hypergraph, b: Hypergraph, label!: String = "") : Hypergraph {
+public func Plus(a: Hypergraph, b: Hypergraph, label!: String = "") : Hypergraph {
     Debug("Plus", "Making plus with inputs a='${a.GetName()}' and b='${b.GetName()}'")
     if(a.GetN() != b.GetN()){
         throw BusesNotSameSizeException("Plus", a.GetN(), b.GetN())

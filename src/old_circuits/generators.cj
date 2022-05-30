@@ -7,6 +7,8 @@
 
 package circuits
 
+from std import collection.ArrayList
+
 /**
  * Truth table class, to store the results of applying arguments to gates
  */
@@ -20,7 +22,7 @@ class TruthTable {
     /**
      * Evaluate a list of value arguments according to this truth table
      * Throws an exception if the number of arguments is incompatible with this truth table
-     * @param args The list of arguments
+    * @param args The list of arguments
      */
     func Eval(args : ArrayList<Value>){
         if(args.size() != Dom(generator)){
@@ -36,28 +38,28 @@ enum Struct { ForkMorph | JoinMorph | StubMorph }
 extend Struct <: ToString {
     func toString() : String {
         match(this){
-            case $ForkMorph => "fork"
-            case $JoinMorph => "join"
-            case $StubMorph => "stub"
+            case ForkMorph => "fork"
+            case JoinMorph => "join"
+            case StubMorph => "stub"
         }
     }
 }
 extend Struct <: Equatable {
     operator func ==(rhs: Struct){
         match(this){
-            case $ForkMorph =>
+            case ForkMorph =>
                 match(rhs) {
-                    case $ForkMorph => true
+                    case ForkMorph => true
                     case _ => false
                 }
-            case $JoinMorph =>
+            case JoinMorph =>
                 match(rhs) {
-                    case $JoinMorph => true
+                    case JoinMorph => true
                     case _ => false
                 }
-            case $StubMorph =>
+            case StubMorph =>
                 match(rhs) {
-                    case $StubMorph => true
+                    case StubMorph => true
                     case _ => false
                 }
         }
@@ -145,11 +147,11 @@ extend Generator <: ToString {
     func toString(){
         match(this){
             case VALUE(value)        => "value (${value})"
-            case STRUCTURAL(struct)  => "structural (${struct})"
+            case STRUCTURAL(struc)  => "structural (${strucc})"
             case GATE(label)         => "gate (${label.name})"
             case BLACKBOX(label)     => "black box (${label.name})"
             case DELAY(dur)          => "delay (${dur})"
-            case $IDENTITY           => "identity"
+            case IDENTITY           => "identity"
             case INLINK(link)        => "in link (${link.name} - ${link.width})"
             case OUTLINK(link)       => "out link (${link.name} - ${link.width})"
         }
@@ -184,9 +186,9 @@ extend Generator <: Equatable {
                     case DELAY(d2) => d1 == d2
                     case _ => false
                 }
-            case $IDENTITY =>
+            case IDENTITY =>
                 match(g2) {
-                    case $IDENTITY => true
+                    case IDENTITY => true
                     case _ => false
                 }
             case INLINK(s1) =>
@@ -206,19 +208,19 @@ extend Generator <: Equatable {
 /** 
  * Get the signature of a generator, the pair of its domain and codomain
  */
-func Signature(gen : Generator) : Int64 * Int64 {
+func Signature(gen : Generator) : (Int64, Int64) {
     match(gen){
         case VALUE(val)         => (0,1)
-        case STRUCTURAL(struct) =>
-            match(struct) {
-                case $ForkMorph => (1,2)
-                case $JoinMorph => (2,1)
-                case $StubMorph => (1,0)
+        case STRUCTURAL(struc) =>
+            match(struc) {
+                case ForkMorph => (1,2)
+                case JoinMorph => (2,1)
+                case StubMorph => (1,0)
             }
         case GATE(label)        => (label.dom, label.cod)
         case BLACKBOX(label)    => (label.dom, label.cod)
         case DELAY(dur)         => (1,1)
-        case $IDENTITY          => (1,1)
+        case IDENTITY          => (1,1)
         case INLINK(link)       => (0, link.width)
         case OUTLINK(link)      => (link.width, 0)
     }
@@ -241,16 +243,16 @@ func Cod(gen : Generator){
  * @param gen The generator to check for
  * @return The edge if it is the correct generator, or None otherwise.
  */
-func PortToGenerator(p : Port, gen : Generator) : Option<Edge * Int64> {
+func PortToGenerator(p : Port, gen : Generator) : Option<(Edge, Int64)> {
     match(p){
         case EdgePort(e, i) =>
             if(e.generator == gen){
-                Some<Edge * Int64>((e, i))
+                Some<(Edge, Int64)>((e, i))
             } else {
-                None<Edge * Int64>
+                None<(Edge, Int64)>
             }
         case InterfacePort(i) =>
-            None<Edge * Int64>
+            None<(Edge, Int64)>
     }
 }
 /**
@@ -262,7 +264,7 @@ func PortToGenerator(p : Port, gen : Generator) : Option<Edge * Int64> {
 func IsPortToGenerator(p : Port, gen : Generator) {
     match(PortToGenerator(p, gen)){
         case Some((e, i)) => true
-        case $None        => false
+        case None        => false
     }
 }
 /**
@@ -274,11 +276,11 @@ func PortToEndpoint(p : Port){
     match(p) {
         case EdgePort(e, i) =>
             if(Cod(e.generator) == 0){
-                Some<Edge * Int64>((e, i))
+                Some<(Edge, Int64)>((e, i))
             } else {
-                None<Edge * Int64>
+                None<(Edge, Int64)>
             }
-        case InterfacePort(i) => None<Edge * Int64>
+        case InterfacePort(i) => None<(Edge, Int64)>
 
     }
 }
@@ -353,7 +355,7 @@ func IsStub(e : Edge){
     match(e.generator){
         case STRUCTURAL(label) =>
             match(label){
-                case $StubMorph => true
+                case StubMorph => true
                 case _          => false
             }
         case _ => false

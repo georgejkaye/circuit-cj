@@ -30,7 +30,7 @@ func computed_bits(width!: Int64, bit!: Hypergraph){
     Feedback(link: link, input: bits)
 }
 
-external func serial_multiplier_bit(width!: Int64){
+public func serial_multiplier_bit(width!: Int64){
     let first = Input(width: 1)
     let a = Input(width: width)
     let b0 = Input(width: 1)

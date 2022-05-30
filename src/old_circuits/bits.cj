@@ -75,7 +75,7 @@ func ForEachBit(w : Int64, f : (Int64, HypBuilder, Source) -> Unit, label!: Stri
  * @param f the hypergraph
  * @return The hypergraph with its most significant bits [1..n-1] exposed
  */
-external func Msb(f: Hypergraph){
+public func Msb(f: Hypergraph){
     Debug("Msb", "Getting the most significant bit from ${f.GetName()}")
     match(f.GetN()){
         case 0 => throw NotEnoughBitsException("Msb")
@@ -88,7 +88,7 @@ external func Msb(f: Hypergraph){
  * @param w The width of the construct
  * @return A construct that gets the most significant bit of its inputs (bit w-1)
  */
-external func Msb(w : Int64){
+public func Msb(w : Int64){
     Debug("Msb", "Creating construct for most significant bit")
     match(w){
         case 0 => throw NotEnoughBitsException("Msb")
@@ -101,7 +101,7 @@ external func Msb(w : Int64){
  * @param f the hypergraph
  * @return The hypergraph with its most significant bits [1..n-1] exposed
  */
-external func Msbs(f: Hypergraph){
+public func Msbs(f: Hypergraph){
     Debug("Msbs", "Getting the most significant bits from ${f.GetName()}")
     match(f.GetN()){
         case 0 => throw NotEnoughBitsException("Msbs")
@@ -114,7 +114,7 @@ external func Msbs(f: Hypergraph){
  * @param w The width of the construct
  * @return A construct that takes the most significant bits of its inputs (bits 1..w-1)
  */
-external func Msbs(w: Int64){
+public func Msbs(w: Int64){
     Debug("Msbs", "Creating construct for most significant bits")
     match(w){
         case 0 => throw NotEnoughBitsException("Msbs")
@@ -127,7 +127,7 @@ external func Msbs(w: Int64){
  * @param f the hypergraph
  * @return The hypergraph with only its least significant bit exposed.
  */
-external func Lsb(f : Hypergraph){
+public func Lsb(f : Hypergraph){
     Debug("Lsb", "Getting the least significant bit from ${f.GetName()}")
     match(f.GetN()){
         case 0 => throw NotEnoughBitsException("Lsb")
@@ -140,7 +140,7 @@ external func Lsb(f : Hypergraph){
  * @param w The number of inputs to the construct
  * @return A construct that gets the least significant bit of its inputs (bit 0)
  */
-external func Lsb(w : Int64){
+public func Lsb(w : Int64){
     Debug("Lsb", "Creating construct for least significant bit")
     match(w){
         case 0 => throw NotEnoughBitsException("Lsb")
@@ -153,7 +153,7 @@ external func Lsb(w : Int64){
  * @param f the hypergraph
  * @return The hypergraph with its least significant bits [0..n-2] exposed
  */
-external func Lsbs(f: Hypergraph){
+public func Lsbs(f: Hypergraph){
     Debug("Lsbs", "Getting the least significant bits from ${f.GetName()}")
     match(f.GetN()){
         case 0 => throw NotEnoughBitsException("Lsbs")
@@ -166,7 +166,7 @@ external func Lsbs(f: Hypergraph){
  * @param w The number of inputs to the construct
  * @return A construct that drops the most significant bit of a w-size bus
  */
-external func Lsbs(w : Int64){
+public func Lsbs(w : Int64){
     Debug("Lsbs", "Creating construct for least significant bits")
     match(w){
         case 0 => throw NotEnoughBitsException("Lsbs")

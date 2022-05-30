@@ -22,7 +22,7 @@ func OpMToN(generator : Generator, name!: String = "", wires!: ArrayList<Wire>, 
 
     let (dom, cod) = Signature(generator)
     match(input){
-        case $None => ()
+        case None => ()
         case Some(f) =>
             if(f.GetN() != dom){
                 throw BadInputGraphException("OpMToN - ${generator}", "input", dom, f.GetName(), f.GetN())
@@ -37,7 +37,7 @@ func OpMToN(generator : Generator, name!: String = "", wires!: ArrayList<Wire>, 
     let res = hb.ToGraph()
     match(input){
         case Some(f) => Seq(f, res)
-        case $None   => res
+        case None   => res
     }
 }
 /**
@@ -153,11 +153,11 @@ func OpTwoToOne(gen : Generator, label!: String = "", elem!: Int64 = -1, name!: 
 func OpTwoToOne(gen : Generator, label!: String = "", elem!: Int64 = -1, name!: String = "", lhs!: Option<Hypergraph>, rhs!: Option<Hypergraph>){
     let lhs = match(lhs){
         case Some(f) => f
-        case $None   => Identity(1)
+        case None   => Identity(1)
     }
     let rhs = match(rhs){
         case Some(f) => f
-        case $None   => Identity(1)
+        case None   => Identity(1)
     }
     OpMToOne(gen, label: label, elem: elem, name: name, input: Concat([lhs,rhs]))
 }
@@ -186,15 +186,15 @@ func OpThreeToOne(gen : Generator, label!: String = "", elem!: Int64 = -1, name!
 func OpThreeToOne(gen : Generator, label!: String = "", elem!: Int64 = -1, name!: String = "", x!: Option<Hypergraph>, y!: Option<Hypergraph>, z!: Option<Hypergraph>){
     let x = match(x){
         case Some(f) => f
-        case $None   => Identity(1)
+        case None   => Identity(1)
     }
     let y = match(y){
         case Some(f) => f
-        case $None   => Identity(1)
+        case None   => Identity(1)
     }
     let z = match(z){
         case Some(f) => f
-        case $None   => Identity(1)
+        case None   => Identity(1)
     }
     OpMToOne(gen, label: label, elem: elem, name: name, input: Concat([x,y,z]))
 }
@@ -229,7 +229,7 @@ func OpOneToTwo(gen : Generator, label!: String = "", elem!: Int64 = -1, name!: 
  * @param elem   The element of the bus to assign to output to
  * @return A hypergraph for a bottom value
  */
-external func Bottom(label!: String = "", elem!: Int64 = -1) { 
+public func Bottom(label!: String = "", elem!: Int64 = -1) { 
     OpZeroToOne(VALUE(BOTTOM), label: label, elem: elem, name: "Bottom") 
 }
 /**
@@ -238,7 +238,7 @@ external func Bottom(label!: String = "", elem!: Int64 = -1) {
  * @param elem   The element of the bus to assign to output to
  * @return A hypergraph for a top value
  */
-external func Top(label!: String = "", elem!: Int64 = -1){
+public func Top(label!: String = "", elem!: Int64 = -1){
     OpZeroToOne(VALUE(TOP), label: label, elem: elem, name: "Top")
 }
 /**
@@ -247,7 +247,7 @@ external func Top(label!: String = "", elem!: Int64 = -1){
  * @param elem   The element of the bus to assign to output to
  * @return A hypergraph for a true value
  */
-external func True(label!: String = "", elem!: Int64 = -1) { 
+public func True(label!: String = "", elem!: Int64 = -1) { 
     OpZeroToOne(VALUE(TRUE), label: label, elem: elem, name: "True") 
 }
 /**
@@ -256,7 +256,7 @@ external func True(label!: String = "", elem!: Int64 = -1) {
  * @param elem   The element of the bus to assign to output to
  * @return A hypergraph for a false value
  */
-external func False(label!: String = "", elem!: Int64 = -1){
+public func False(label!: String = "", elem!: Int64 = -1){
     OpZeroToOne(VALUE(FALSE), label: label, elem: elem, name: "False")
 }
 /**
@@ -268,7 +268,7 @@ external func False(label!: String = "", elem!: Int64 = -1){
  * @param input   The input to the fork
  * @return A hypergraph for a fork
  */
-external func Fork(output1!: String = "", elem1!: Int64 = 0, output2!: String = "", elem2!: Int64 = 0, input!: Option<Hypergraph> = None<Hypergraph>) { 
+public func Fork(output1!: String = "", elem1!: Int64 = 0, output2!: String = "", elem2!: Int64 = 0, input!: Option<Hypergraph> = None<Hypergraph>) { 
     OpOneToTwo(FORK, output1: output1, elem1: elem1, output2: output2, elem2: elem2, name: "Fork", input: input) 
 }
 /**
@@ -278,7 +278,7 @@ external func Fork(output1!: String = "", elem1!: Int64 = 0, output2!: String = 
  * @param input  The input to the join
  * @return A hypergraph for a join
  */
-external func Join(label!: String = "", elem!: Int64 = -1,  input!: Option<Hypergraph> = None<Hypergraph>){ 
+public func Join(label!: String = "", elem!: Int64 = -1,  input!: Option<Hypergraph> = None<Hypergraph>){ 
     OpTwoToOne(JOIN, label: label, name: "Join", input: input) 
 }
 /**
@@ -289,7 +289,7 @@ external func Join(label!: String = "", elem!: Int64 = -1,  input!: Option<Hyper
  * @param rhs    The second input to the join
  * @return A hypergraph for a join
  */
-external func Join(label!: String = "", elem!: Int64 = -1, lhs!: Option<Hypergraph>, rhs!: Option<Hypergraph>){
+public func Join(label!: String = "", elem!: Int64 = -1, lhs!: Option<Hypergraph>, rhs!: Option<Hypergraph>){
     OpTwoToOne(JOIN, label: label, elem: elem, name: "Join", lhs: lhs, rhs: rhs)
 }
 /**
@@ -297,7 +297,7 @@ external func Join(label!: String = "", elem!: Int64 = -1, lhs!: Option<Hypergra
  * @param input  The input to the stub
  * @return A hypergraph for a stub
  */
-external func Stub(input!: Option<Hypergraph> = None<Hypergraph>){ 
+public func Stub(input!: Option<Hypergraph> = None<Hypergraph>){ 
     OpOneToZero(STUB, name: "Stub", input: input) 
 }
 /**
@@ -354,13 +354,13 @@ func CreateCopy(n : Int64, output1!: String = "", output2!: String = "") : HypBu
  * @param input   The input to the copy
  * @return        A hypergraph for a copy
  */
-external func Copy(n : Int64, name!: String = "", output1!: String = "", output2!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
+public func Copy(n : Int64, name!: String = "", output1!: String = "", output2!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
     match(input){
         case Some(f) =>
             if(f.GetN() != 2 * n){
                     throw BadInputGraphException("Copy", "input", n, f.GetName(), f.GetN())
             }
-        case $None   => ()
+        case None   => ()
     }
 
     NewBus(output1)
@@ -368,7 +368,7 @@ external func Copy(n : Int64, name!: String = "", output1!: String = "", output2
     let copy = CreateCopy(n, output1: output1, output2: output2).ToGraph()
     match(input){
         case Some(f) => Seq(f, copy, name: name)
-        case $None   => copy
+        case None   => copy
     }
 }
 /**
@@ -390,11 +390,11 @@ func CreateErase(n : Int64, name!: String = "") : Hypergraph {
  * @param name  The name of the resulting hypergraph
  * @return A hypergraph for a erase
  */
-external func Erase(n : Int64, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
+public func Erase(n : Int64, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
     let erase = CreateErase(n, name: name)
     match(input){
         case Some(f) => Seq(f, CreateErase(n), name: name)
-        case $None   => erase
+        case None   => erase
     }
 }
 /**
@@ -402,7 +402,7 @@ external func Erase(n : Int64, name!: String = "", input!: Option<Hypergraph> = 
  * @param n The number of wires to copy
  * @return The copy hypergraph
  */
-external func CreateMerge(n : Int64, name!: String = "", label!: String = "") : Hypergraph {
+public func CreateMerge(n : Int64, name!: String = "", label!: String = "") : Hypergraph {
     if(n < 0){
         throw NegativeWireException("CreateMerge")
     }
@@ -422,18 +422,18 @@ external func CreateMerge(n : Int64, name!: String = "", label!: String = "") : 
  * @param name   The name of the resulting hypergraph
  * @return A hypergraph for a merge
  */
-external func Merge(n : Int64, name!: String = "", label!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
+public func Merge(n : Int64, name!: String = "", label!: String = "", input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph {
     match(input){
         case Some(f) =>
             if(f.GetN() != 2 * n){
                     throw BadInputGraphException("Merge", "input", 2 * n, f.GetName(), f.GetN())
             }
-        case $None   => ()
+        case None   => ()
     }
     let merge = CreateMerge(n, name: name, label: label)
     match(input){
         case Some(f) => Seq(f, merge, name: name)
-        case $None   => merge
+        case None   => merge
     }
 }
 /**
@@ -441,7 +441,7 @@ external func Merge(n : Int64, name!: String = "", label!: String = "", input!: 
  * @param n The number of wires to init
  * @return A hypergraph for an init
  */
-external func CreateInit(n : Int64, name!: String = "", label!: String = "") : Hypergraph {
+public func CreateInit(n : Int64, name!: String = "", label!: String = "") : Hypergraph {
     if(n == 0){
         Empty(name: name)
     } else {
@@ -456,63 +456,63 @@ external func CreateInit(n : Int64, name!: String = "", label!: String = "") : H
  * @param name   The name of the resulting hypergraph
  * @return A hypergraph for a erase
  */
-external func Init(n : Int64, name!: String = "", label!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
+public func Init(n : Int64, name!: String = "", label!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
     let ini = CreateInit(n, label: label, name: name)
     match(input){
         case Some(f) => Seq(f, ini, name: name)
-        case $None   => ini
+        case None   => ini
     }
 }
 
-external func NotGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
+public func NotGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
     OpOneToOne(NOT, label: label, elem: elem, name: name, input: input) 
 }
-external func Buffer(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
+public func Buffer(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
     OpOneToOne(BUF, label: label, elem: elem, name: name, input: input) 
 }
-external func AndGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
+public func AndGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
     OpTwoToOne(AND, label: label, elem: elem, name: name, input: input) 
 }
-external func AndGate(lhs: Hypergraph, rhs: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
+public func AndGate(lhs: Hypergraph, rhs: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
     OpTwoToOne(AND, label: label, elem: elem, name: name, lhs: lhs, rhs: rhs) 
 }
 
-external func OrGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
+public func OrGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
     OpTwoToOne(OR, label: label, elem: elem, name: name, input: input) 
 }
-external func OrGate(lhs: Hypergraph, rhs: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
+public func OrGate(lhs: Hypergraph, rhs: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
     OpTwoToOne(OR, label: label, elem: elem, name: name, lhs: lhs, rhs: rhs) 
 }
 
-external func XorGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph { 
+public func XorGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) : Hypergraph { 
     OpTwoToOne(XOR, label: label, elem: elem, name: name, input: input) 
 }
-external func XorGate(lhs: Hypergraph, rhs: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
+public func XorGate(lhs: Hypergraph, rhs: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
     OpTwoToOne(XOR, label: label, elem: elem, name: name, lhs: lhs, rhs: rhs) 
 }
 
-external func NandGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
+public func NandGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
     OpTwoToOne(NAND, label: label, elem: elem, name: name, input: input) 
 }
-external func NandGate(lhs: Hypergraph, rhs: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){
+public func NandGate(lhs: Hypergraph, rhs: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){
     OpTwoToOne(NAND, label: label, elem: elem, name: name, lhs: lhs, rhs: rhs) 
 }
 
-external func NorGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
+public func NorGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
     OpTwoToOne(NOR, label: label, elem: elem, name: name, input: input) 
 }
-external func NorGate(lhs: Hypergraph, rhs: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
+public func NorGate(lhs: Hypergraph, rhs: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
     OpTwoToOne(NOR, label: label, elem: elem, name: name, lhs: lhs, rhs: rhs) 
 }
 
-external func XnorGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
+public func XnorGate(label!: String = "", elem!: Int64 = -1, name!: String = "",  input!: Option<Hypergraph> = None<Hypergraph>) { 
     OpTwoToOne(XNOR, label: label, elem: elem, name: name, input: input) 
 }
-external func XnorGate(lhs: Hypergraph, rhs: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
+public func XnorGate(lhs: Hypergraph, rhs: Hypergraph, label!: String = "", elem!: Int64 = -1, name!: String = ""){ 
     OpTwoToOne(XNOR, label: label, elem: elem, name: name, lhs: lhs, rhs: rhs)
 }
 
-external func Mux(width!: Int64 = 1, label!: String = "", elem!: Int64 = -1, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
+public func Mux(width!: Int64 = 1, label!: String = "", elem!: Int64 = -1, name!: String = "", input!: Option<Hypergraph> = None<Hypergraph>){
     Debug("Mux", "Creating mux of width ${width}")
     let muxInputs = 2 * width + 1
     match(input){
@@ -520,7 +520,7 @@ external func Mux(width!: Int64 = 1, label!: String = "", elem!: Int64 = -1, nam
             if(f.GetN() != 2 * width + 1){
                 throw BadInputGraphException("Mux", "input", muxInputs, f.GetName(), f.GetN())
             }
-        case $None => ()
+        case None => ()
     }
     let wires = ArrayList<Wire>()
     let hb = if(elem < 0) { HypBuilder(muxInputs, width, label) } else { HypBuilder(muxInputs, width, label, elem) }
@@ -542,11 +542,11 @@ external func Mux(width!: Int64 = 1, label!: String = "", elem!: Int64 = -1, nam
     let res = hb.ToGraph()
     match(input){
         case Some(f) => Seq(f, res)
-        case $None   => res
+        case None   => res
     }
 }
 
-external func Mux(label!: String = "", elem!: Int64 = -1, name!: String = "", low!: Hypergraph, high!: Hypergraph, sel!: Option<Hypergraph> = None<Hypergraph>){
+public func Mux(label!: String = "", elem!: Int64 = -1, name!: String = "", low!: Hypergraph, high!: Hypergraph, sel!: Option<Hypergraph> = None<Hypergraph>){
     if(low.GetN() != high.GetN()){
         throw DifferentLengthArgumentsException("Mux", low, high)
     }
@@ -556,13 +556,13 @@ external func Mux(label!: String = "", elem!: Int64 = -1, name!: String = "", lo
                 throw BadInputGraphException("Mux", "sel", 1, f.GetName(), f.GetN())
             }
             f
-        case $None   => Identity(1)
+        case None   => Identity(1)
     }
     let f = Concat([z,low,high])
     Mux(width: high.GetN(), label: label, elem: elem, name: name, input: f)
 }
 
-external func BlackBox(label: String, dom: Int64, cod: Int64, wires!: ArrayList<Wire> = ArrayList<Wire>(), input!: Option<Hypergraph> = None<Hypergraph>, name!: String = ""){
+public func BlackBox(label: String, dom: Int64, cod: Int64, wires!: ArrayList<Wire> = ArrayList<Wire>(), input!: Option<Hypergraph> = None<Hypergraph>, name!: String = ""){
     if(dom < 0){
         throw NegativeNumberException("BlackBox", dom)
     }
@@ -579,11 +579,11 @@ external func BlackBox(label: String, dom: Int64, cod: Int64, wires!: ArrayList<
     let gen = BLACKBOX(Label(label, dom, cod))
     OpMToN(gen, wires: wires, input: input, name: name)
 }
-external func BlackBox(label: String, dom: Int64, cod: Int64, wires!: ArrayList<Wire> = ArrayList<Wire>(), inputs!: ArrayList<Hypergraph>, name!: String = ""){
+public func BlackBox(label: String, dom: Int64, cod: Int64, wires!: ArrayList<Wire> = ArrayList<Wire>(), inputs!: ArrayList<Hypergraph>, name!: String = ""){
     let input = Concat(inputs)
     BlackBox(label, dom, cod, wires: wires, input: Some(input))
 }
-external func BlackBox(label : String, dom : Int64, cod : Int64, inputs : List<Hypergraph>){
+public func BlackBox(label : String, dom : Int64, cod : Int64, inputs : Array<Hypergraph>){
     BlackBox(label, dom, cod, inputs: ArrayList<Hypergraph>(inputs))
 }
 
@@ -612,19 +612,19 @@ func BinaryGateForEachBitWithInput(gate : Generator, lhs : Hypergraph, rhs : Hyp
     BinaryGateForEachBitWithInput(gate, inputs)
 }
 
-external func And(input: Hypergraph){
+public func And(input: Hypergraph){
     BinaryGateForEachBitWithInput(AND, input)
 }
-external func And(lhs: Hypergraph, rhs: Hypergraph){
+public func And(lhs: Hypergraph, rhs: Hypergraph){
     BinaryGateForEachBitWithInput(AND, lhs, rhs)
 }
-external func Or(lhs: Hypergraph, rhs: Hypergraph){
+public func Or(lhs: Hypergraph, rhs: Hypergraph){
     BinaryGateForEachBitWithInput(OR, lhs, rhs)
 }
-external func Or(input: Hypergraph){
+public func Or(input: Hypergraph){
     BinaryGateForEachBitWithInput(OR, input)
 }
-external func Split(input: Hypergraph){
+public func Split(input: Hypergraph){
     let splitPoint = input.GetN() / 2
     (DropUntil(input, splitPoint), DropFrom(input, splitPoint))
 }

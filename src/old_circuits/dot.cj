@@ -6,7 +6,8 @@
 
 package circuits
 
-import io.*
+from std import io.*
+
 import debug.*
 import settings.*
 
@@ -168,21 +169,21 @@ func DrawEdgeNode(n : Int64, id : String, nodeStyle : String, text : String, sou
 func DrawEdge(n : Int64, e : Edge){
     let style = match(e.generator){
         case VALUE(value)       => valueStyle
-        case STRUCTURAL(struct) => structuralStyle
+        case STRUCTURAL(struc) => structuralStyle
         case GATE(label)        => gateStyle
         case BLACKBOX(label)    => blackboxStyle
         case DELAY(dur)         => delayStyle
-        case $IDENTITY          => identityStyle
+        case IDENTITY          => identityStyle
         case INLINK(link)       => linkStyle
         case OUTLINK(link)      => linkStyle
     }
     let desc = match(e.generator){
         case VALUE(value)       => "${value}"
-        case STRUCTURAL(struct) => "${struct}"
+        case STRUCTURAL(struc) => "${struc}"
         case GATE(label)        => label.name
         case BLACKBOX(label)    => label.name
         case DELAY(dur)         => "d[${dur}]"
-        case $IDENTITY          => "id"
+        case IDENTITY          => "id"
         case INLINK(link)       => link.name
         case OUTLINK(link)      => link.name
     }
@@ -205,7 +206,7 @@ func DrawVertex(t : Target, s : Source) {
 
         let wiretext = match(wire.bus.name){
             case Some(name) => "${name}[${wire.i}]"
-            case $None      => if(DebugDotOn()) { "${wire.bus.id}[${wire.i}]" } else { "" }
+            case None      => if(DebugDotOn()) { "${wire.bus.id}[${wire.i}]" } else { "" }
         }
         wires = if(wires == "") { "${wiretext}" } else if(wiretext == "") { "${wires}" } else { "${wires}, ${wiretext}" }
     }
@@ -231,7 +232,7 @@ func DrawSubgraph(n : Int64, opt : String, text : String){
  * @param resolve  Whether or not to resolve the links in this hypergraph
  * @return The dot code for this graph
  */
-external func DotGraph(f : Hypergraph, resolve : Bool){
+public func DotGraph(f : Hypergraph, resolve : Bool){
     Debug("DotGraph", "Generating dot graph for '${f.GetName()}'")
     // If desired, resolve the links in the graph first
     let f = if(resolve){
@@ -281,7 +282,7 @@ external func DotGraph(f : Hypergraph, resolve : Bool){
  * @param file    The filename of the output
  * @param resolve Whether or not to resolve links
  */
-external func WriteDotToFile(f : Hypergraph, file : String, resolve!: Bool = true){
+public func WriteDotToFile(f : Hypergraph, file : String, resolve!: Bool = true){
     let filename = GetDotFile(file)
     Info("WriteDotToFile", "Writing dot file ${filename}")
     let dot = DotGraph(f, resolve)

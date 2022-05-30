@@ -44,7 +44,7 @@ func AllNextEdgesAre(e : Edge, gen : Generator){
     for(t in e.targets){
         match(NextEdgeIs(t, gen)){
             case Some(i) => {}
-            case $None   => return None<Int64>
+            case None   => return None<Int64>
         }
     }
     return Some<Int64>(0)
@@ -56,7 +56,7 @@ func AllPreviousEdgesAre(e : Edge, gen : Generator){
     for(s in e.sources){
         match(PreviousEdgeIs(s, gen)){
             case Some(i) => {}
-            case $None   => return None<Int64>
+            case None   => return None<Int64>
         }
     }
     return Some<Int64>(0)
@@ -93,7 +93,7 @@ func AllInputsAreConsistentWaveforms(e : Edge){
     }
     let n = match(IsWaveformArg(e.GetSource(0))){
         case Some(w) => w.delay.GetDelay()
-        case $None   => return None<Int64>
+        case None   => return None<Int64>
     }
     for(i in 1..e.sources.size()){
         match(IsWaveformArg(e.sources[i])){
@@ -101,7 +101,7 @@ func AllInputsAreConsistentWaveforms(e : Edge){
                 if(w.delay.GetDelay() != n){
                     return None<Int64>
                 }
-            case $None => return None<Int64>
+            case None => return None<Int64>
         }
     }
     return Some<Int64>(n)
@@ -119,7 +119,7 @@ func InputsOutOfPhase(e : Edge){
                     return None<Int64>
                 }
                 nonValue = true
-            case $None =>
+            case None =>
                 match(s.GetLeftPort()){
                     case EdgePort(ep, i) =>
                         if(ep.IsDelay()){
@@ -364,8 +364,8 @@ let muxEval = RewriteRule(
     {e : Edge, hb : HypBuilder, payload : Int64 =>
         let control = e.GetSource(muxControl).GetLeftEdge()
         let (acc, rej) = match(control.GetValue()){
-            case $TRUE => (muxTrue, muxFalse)
-            case $FALSE => (muxFalse, muxTrue)
+            case TRUE => (muxTrue, muxFalse)
+            case FALSE => (muxFalse, muxTrue)
             case _ => (-1,-1)
         }
         // Stub off the discarded input
@@ -594,7 +594,7 @@ let streamingEnhanced = RewriteRule(
         for(s in e.sources){
             match(IsWaveformArg(s)){
                 case Some(w) => ()
-                case $None =>
+                case None =>
                     let bot = hb.CreateEdge(VALUE(BOTTOM))
                     let join = hb.CreateEdge(JOIN)
                     if(s.GetLeftEdge().IsValue()){

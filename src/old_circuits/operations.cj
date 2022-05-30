@@ -17,7 +17,7 @@ import debug.*
  * @param name="" The name of the resulting hypergraph
  * @return The composed hypergraph h = f . g
  */
-external func Seq(f : Hypergraph, g : Hypergraph, name!: String = "") {
+public func Seq(f : Hypergraph, g : Hypergraph, name!: String = "") {
     Debug("Seq", "Composing ${f.GetName()} and ${g.GetName()} in sequence")
     SeqBuilder(f.Clone(), g.Clone(), name: name)
 }
@@ -52,7 +52,7 @@ func SeqBuilder(f : HypBuilder, g : HypBuilder, name!: String = "") : Hypergraph
  * @param fs A list of hypergraphs
  * @return The resulting composed hypergraph h = fs[0] . fs[1] . ... . fs[n-1]
  */
-external func Seq(fs : ArrayList<Hypergraph>, name!: String = "") : Hypergraph {
+public func Seq(fs : ArrayList<Hypergraph>, name!: String = "") : Hypergraph {
     if(fs.size() == 0){
         Empty()
     }
@@ -67,7 +67,7 @@ external func Seq(fs : ArrayList<Hypergraph>, name!: String = "") : Hypergraph {
  * @param fs A list of hypergraphs
  * @return The resulting composed hypergraph h = fs[0] . fs[1] . ... . fs[n-1]
  */
-external func Seq(fs : List<Hypergraph>, name!: String = "") {
+public func Seq(fs : Array<Hypergraph>, name!: String = "") {
     Seq(ArrayList<Hypergraph>(fs), name: name)
 }
 /**
@@ -95,7 +95,7 @@ func CreateIdentity(n : Int64, name!: String = "", label!: String = "") : HypBui
  * @param name  The name of the resulting hypergraph
  * @return An identity hypergraph on n
  */
-external func Identity(n : Int64, name!: String = "", label!: String = "") : Hypergraph {
+public func Identity(n : Int64, name!: String = "", label!: String = "") : Hypergraph {
     let hb = CreateIdentity(n, name: name, label: label)
     hb.ToGraph(name)
 }
@@ -105,7 +105,7 @@ external func Identity(n : Int64, name!: String = "", label!: String = "") : Hyp
  * @param name  The name of the resulting hypergraph
  * @return An identity hypergraph on n
  */
-external func Identity(name!: String = "", label!: String = "") : Hypergraph {
+public func Identity(name!: String = "", label!: String = "") : Hypergraph {
     Identity(1, name: name, label: label)
 }
 
@@ -117,7 +117,7 @@ external func Identity(name!: String = "", label!: String = "") : Hypergraph {
  * @param name="" The name of the resulting hypergraph
  * @return The composed hypergraph h = f * g
  */
-external func Par(f : Hypergraph, g : Hypergraph, name!: String = "") {
+public func Par(f : Hypergraph, g : Hypergraph, name!: String = "") {
     Debug("Par", "Composing ${f.GetName()} and ${g.GetName()} in parallel")
     ParBuilder(f.Clone(), g.Clone(), name: name)
 }
@@ -139,7 +139,7 @@ func ParBuilder(f : HypBuilder, g : HypBuilder, name!: String = "") : Hypergraph
  * @param name=""    The name to give the resulting hypergraph 
  * @return The resulting composed hypergraph h = fs[0] * fs[1] * ... * fs[n-1]
  */
-external func Par(fs : ArrayList<Hypergraph>, name!: String = "") : Hypergraph {
+public func Par(fs : ArrayList<Hypergraph>, name!: String = "") : Hypergraph {
     ParBuilder(map(fs, {f : Hypergraph => f.Clone()}))
 }
 /**
@@ -166,7 +166,7 @@ func ParBuilder(fs : ArrayList<HypBuilder>, name!: String = "") : Hypergraph {
  * @param name=""    The name to give the resulting hypergraph 
  * @return The resulting composed hypergraph h = fs[0] * fs[1] * ... * fs[n-1]
  */
-external func Par(fs : List<Hypergraph>, name!: String = "") : Hypergraph {
+public func Par(fs : Array<Hypergraph>, name!: String = "") : Hypergraph {
     Par(ArrayList<Hypergraph>(fs), name: name)
 }
 /**
@@ -176,7 +176,7 @@ external func Par(fs : List<Hypergraph>, name!: String = "") : Hypergraph {
  * @param name       The name to give the resulting hypergraph 
  * @return The resulting composed hypergraph h = f * f * ... * f
  */
-external func Par(f : Hypergraph, n : Int64, name!: String = "") : Hypergraph {
+public func Par(f : Hypergraph, n : Int64, name!: String = "") : Hypergraph {
     Debug("Par", "Composing ${n} copies of '${f.GetName()}' in parallel")
     ParBuilder(f, n, name: name)
 }
@@ -195,7 +195,7 @@ func ParBuilder(f : Hypergraph, n : Int64, name!: String = "") : Hypergraph {
  * The empty hypergraph, the unit of parallel composition
  * @param name="" The name to give the resulting hypergraph
  */
-external func Empty(name!: String = "") : Hypergraph { 
+public func Empty(name!: String = "") : Hypergraph { 
     Identity(0, name: name) 
 }
 /**
@@ -204,7 +204,7 @@ external func Empty(name!: String = "") : Hypergraph {
  * @param n The second argument of the swap
  * @param name="" The name of the resulting hypergraph
  */
-external func Symmetry(m : Int64, n : Int64, name!: String = "") : Hypergraph {
+public func Symmetry(m : Int64, n : Int64, name!: String = "") : Hypergraph {
     Debug("Symmetry", "Creating swap on ${m} and ${n}")
     if(m < 0 || n < 0){
         throw NegativeWireException("Symmetry")
@@ -224,7 +224,7 @@ external func Symmetry(m : Int64, n : Int64, name!: String = "") : Hypergraph {
  * A hypergraph that swaps two wires
  * @param name The name of the resulting hypergraph
  */
-external func Symmetry(name!: String = "") : Hypergraph {
+public func Symmetry(name!: String = "") : Hypergraph {
     Symmetry(1, 1, name: name)
 }
 /**
@@ -237,7 +237,7 @@ external func Symmetry(name!: String = "") : Hypergraph {
  * @param name="" The name of the resulting hypergraph
  * @return The traced hypergraph
  */ 
-external func Trace(f : Hypergraph, x : Int64, name!: String = ""){
+public func Trace(f : Hypergraph, x : Int64, name!: String = ""){
     Debug("Trace", "Tracing ${f.GetName()} with ${x} wires")
     if(x < 0){
         throw NegativeTraceException("Trace") 
@@ -258,7 +258,7 @@ external func Trace(f : Hypergraph, x : Int64, name!: String = ""){
  * @param f The hypergraph to trace
  * @return The traced hypergraph
  */
-external func Tr(x : Int64, f : Hypergraph){
+public func Tr(x : Int64, f : Hypergraph){
     Trace(f, x)
 }
 /**
@@ -270,7 +270,7 @@ external func Tr(x : Int64, f : Hypergraph){
  * @param name  The name of the resulting hypergraph
  * @return The hypergraph with only the nth output exposed
  */
-external func Get(f : Hypergraph, n : Int64, label! : String = "", name!: String = ""){
+public func Get(f : Hypergraph, n : Int64, label! : String = "", name!: String = ""){
     GetBuilder(f.Clone(), ArrayList<Int64>([n]), label: label, name: name)
 }
 /**
@@ -292,7 +292,7 @@ func GetBuilder(f : HypBuilder, n : Int64, label! : String = "", name!: String =
  * @param name The name of the resulting hypergraph
  * @return The hypergraph with only the given outputs exposed
  */
-external func Get(f : Hypergraph, ns : ArrayList<Int64>, label!: String = "", name!: String = ""){
+public func Get(f : Hypergraph, ns : ArrayList<Int64>, label!: String = "", name!: String = ""){
     GetBuilder(f.Clone(), ns, label: label, name: name)
 }
 func GetBuilder(f : HypBuilder, ns : ArrayList<Int64>, label!: String = "", name!: String = ""){
@@ -318,7 +318,7 @@ func GetBuilder(f : HypBuilder, ns : ArrayList<Int64>, label!: String = "", name
  * @param name The name of the resulting hypergraph
  * @return The hypergraph with only the given bus exposed
  */
-external func Get(f : Hypergraph, bus : String, name!: String = ""){
+public func Get(f : Hypergraph, bus : String, name!: String = ""){
     Debug("Get", "Getting bus ${bus} from ${f.GetName()}")
     GetBuilder(f.Clone(), bus, name: name)
 }
@@ -332,11 +332,11 @@ func GetBuilder(f : HypBuilder, bus : String, name!: String = ""){
  * @param name  The name of the resulting hypergraph
  * @return The hypergraph with only the given bus exposed
  */
-external func Get(f : Hypergraph, buses : List<String>, name!: String = ""){
+public func Get(f : Hypergraph, buses : Array<String>, name!: String = ""){
     Debug("Get", "getting buses from ${f.GetName()}")
     Extract(f.Clone(), ArrayList<String>(buses), name: name)
 }
-func Get(f : HypBuilder, buses : List<String>, name!: String = ""){
+func Get(f : HypBuilder, buses : Array<String>, name!: String = ""){
     Extract(f, ArrayList<String>(buses), name: name)
 }
 /**
@@ -346,7 +346,7 @@ func Get(f : HypBuilder, buses : List<String>, name!: String = ""){
  * @param name  The name of the resulting hypergraph
  * @return The hypergraph with only the given bus exposed
  */
-external func Drop(f : Hypergraph, n : Int64, name!: String = ""){
+public func Drop(f : Hypergraph, n : Int64, name!: String = ""){
     Debug("Drop", "Dropping ${n}th port from ${f.GetName()} : ${f.GetM()} -> ${f.GetN()}")
     if(n < 0 || n >= f.GetN()){
         throw TypeMismatchException("Drop", f, n)
@@ -365,7 +365,7 @@ external func Drop(f : Hypergraph, n : Int64, name!: String = ""){
  * @param n The output (inclusive) from where to start dropping
  * @return The hypergraph with all the outputs 8..n dropped
  */
-external func DropFrom(f : Hypergraph, n : Int64){
+public func DropFrom(f : Hypergraph, n : Int64){
     Debug("DropFrom", "Dropping ports ${n}-${f.GetN()-1} from ${f.GetName()} : ${f.GetM()} -> ${f.GetN()}")
     if(n < 0 || n >= f.GetN()){
         throw TypeMismatchException("DropFrom", f, n)
@@ -382,7 +382,7 @@ external func DropFrom(f : Hypergraph, n : Int64){
  * @param n The output (exclusive) until when the outputs are dropped
  * @return The hypergraph with all the outputs 0..n dropped
  */
-external func DropUntil(f : Hypergraph, n : Int64){
+public func DropUntil(f : Hypergraph, n : Int64){
     Debug("DropFrom", "Dropping ports 0-${n-1} from ${f.GetName()} : ${f.GetM()} -> ${f.GetN()}")
     if(n < 0 || n >= f.GetN()){
         throw TypeMismatchException("DropUntil", f, n)
