@@ -68,7 +68,7 @@ var dotDir = ""
  */
 public func SetDotDir(dir : String){
     dotDir = dir
-    print("The dot directory has been set to ${dir}")
+    println("The dot directory has been set to ${dir}")
 }
 /**
  * Get the dot output file path (relative to the project root) with extension

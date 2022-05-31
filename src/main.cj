@@ -1,10 +1,15 @@
 from circuits import settings.*
 // from debug import debug.*
+from circuits import graphs.*
+
+from std import collection.ArrayList
+
 
 main(){
 
     SetDotDir("./dot")
     print("hello!")
+
     // PrintErrorMessage("main", "oh no!")
 
     // let wf = WaveformFromList([3,2], width: 3)
