@@ -23,27 +23,32 @@ make
 
 ### Just the library
 
+To build the library in `src/`:
+
 ```sh 
 make library
 ```
 
 ### Just the scratchpad
 
+To compile an executable `main.out` from a file `src/main.cj`:
+
 ```sh
 make main
 ```
 
+### Drawing
+
+To draw all the graphs in `dot/`:
+
+```sh
+make dot
+```
+
 ### Cleaning
+
+To delete the build directory `circuits/`, the executable `main.out`, and any svgs in `dot/`:
 
 ```sh
 make clean
-```
-
-### Drawing
-
-If `run.sh` encounters an error it will terminate immediately and not draw any graphs.
-If you still want to draw all the graphs you've generated, you can use the `dot.sh` script to generate svgs and pngs for all `.dot` files in `dot/`. 
-
-```sh
-./dot.sh
 ```
