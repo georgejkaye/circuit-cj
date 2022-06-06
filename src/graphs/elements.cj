@@ -33,8 +33,8 @@ public class Element <: Identifiable & Ownable<Hypergraph> {
 
 public class Vertex <: ToString & Identifiable & Equatable<Vertex> & Ownable<Hypergraph> {
     let element : Element
-    var inEdges : ArrayList<(Edge , UInt64)> = ArrayList()
-    var outEdges : ArrayList<(Edge , UInt64)> = ArrayList()
+    var inEdges : ArrayList<(Edge , Int64)> = ArrayList()
+    var outEdges : ArrayList<(Edge , Int64)> = ArrayList()
     public init(globalId: Option<Identifier>, owner: Option<Hypergraph>){
         this.element = Element(globalId, owner)            
     
@@ -42,10 +42,10 @@ public class Vertex <: ToString & Identifiable & Equatable<Vertex> & Ownable<Hyp
     public init() {
         this(Option<Identifier>.None, Option<Hypergraph>.None)
     }
-    func AddInEdge(e : Edge, i : UInt64) : Unit {
+    func AddInEdge(e : Edge, i : Int64) : Unit {
         inEdges.add((e, i))
     }
-    func AddOutEdge(e : Edge, i : UInt64) : Unit {
+    func AddOutEdge(e : Edge, i : Int64) : Unit {
         outEdges.add((e, i))
     }
     func RemoveAllInEdge(edge : Edge) : Unit {
@@ -58,10 +58,10 @@ public class Vertex <: ToString & Identifiable & Equatable<Vertex> & Ownable<Hyp
         RemoveAllInEdge(edge)
         RemoveAllOutEdge(edge)
     }
-    func RemoveInEdge(edge : Edge, i : UInt64) : Unit {
+    func RemoveInEdge(edge : Edge, i : Int64) : Unit {
         inEdges.removeIf({e => e == (edge, i)})
     }
-    func RemoveOutEdge(edge : Edge, i : UInt64) : Unit {
+    func RemoveOutEdge(edge : Edge, i : Int64) : Unit {
         outEdges.removeIf({e => e == (edge, i)})
     }
     public func toString() : String {
@@ -90,8 +90,8 @@ public class Vertex <: ToString & Identifiable & Equatable<Vertex> & Ownable<Hyp
 public class Edge <: ToString & Identifiable & Equatable<Edge> {
     let element : Element
     let label : Label
-    var sources : HashMap<UInt64, Vertex> = HashMap()
-    var targets : HashMap<UInt64, Vertex> = HashMap()
+    var sources : HashMap<Int64, Vertex> = HashMap()
+    var targets : HashMap<Int64, Vertex> = HashMap()
     public init(globalId : Option<Identifier>, owner: Option<Hypergraph>, label : Label) {
         this.element = Element(globalId, owner)
         this.label = label
@@ -102,35 +102,56 @@ public class Edge <: ToString & Identifiable & Equatable<Edge> {
     public func GetLabel() : Label {
         this.label
     }
-    public func SetVertex(i : UInt64, newVertex : Vertex, map : HashMap<UInt64, Vertex>, exn : (Edge, UInt64, Vertex) -> Exception) : Unit {
+    public func SetVertex(i : Int64, newVertex : Vertex, map : HashMap<Int64, Vertex>, exn : (Edge, Int64, Vertex) -> Exception) : Unit {
         match (map.get(i)) {
             case Some(oldVertex) => throw exn(this, i, oldVertex)
             case None    => map.put(i, newVertex)
         }
     }
-    public func UnsafeSetVertex(i : UInt64, newVertex : Vertex, map : HashMap<UInt64, Vertex>) : Unit {
+    public func UnsafeSetVertex(i : Int64, newVertex : Vertex, map : HashMap<Int64, Vertex>) : Unit {
         map.put(i, newVertex)
     }
-    public func SetSource(i : UInt64, newVertex : Vertex) : Unit {
+    public func SetSource(i : Int64, newVertex : Vertex) : Unit {
         SetVertex(i, newVertex, this.sources, {e, i, v => SourceAlreadyExistsException("SetSource", e, i, v)})
     }
-    public func UnsafeSetSource(i : UInt64, newVertex : Vertex) : Unit {
+    public func UnsafeSetSource(i : Int64, newVertex : Vertex) : Unit {
         UnsafeSetVertex(i, newVertex, sources)
     }
-    public func SetTarget(i : UInt64, newVertex : Vertex) : Unit {
+    public func SetTarget(i : Int64, newVertex : Vertex) : Unit {
         SetVertex(i, newVertex, this.targets, {e, i, v => TargetAlreadyExistsException("SetTarget", e, i, v)})
     }
-    public func UnsafeSetTarget(i : UInt64, newVertex : Vertex) : Unit {
+    public func UnsafeSetTarget(i : Int64, newVertex : Vertex) : Unit {
         UnsafeSetVertex(i, newVertex, targets)
     }
-    public func RemoveVertex(i : UInt64, map : HashMap<UInt64, Vertex>) : Unit {
+    public func RemoveVertex(i : Int64, map : HashMap<Int64, Vertex>) : Unit {
         map.remove(i)
     }
-    public func RemoveSource(i : UInt64) : Unit {
+    public func RemoveSource(i : Int64) : Unit {
         RemoveVertex(i, sources)
     }
-    public func RemoveTarget(i : UInt64) : Unit {
+    public func RemoveTarget(i : Int64) : Unit {
         RemoveVertex(i, targets)
+    }
+    public func Typecheck() : Bool {
+        let correct_sources = this.label.GetInputs()
+        let correct_targets = this.label.GetOutputs()
+
+        if(this.sources.keys().size() != correct_sources || this.targets.keys().size() != correct_targets){
+            return false
+        }
+
+        for (i in 0..correct_sources){
+            if (!this.sources.contains(i)) {
+                return false
+            }
+        }
+        for (i in 0..correct_targets){
+            if (!this.targets.contains(i)) {
+                return false
+            }
+        }
+
+        true
     }
     public func toString() : String {
         "e${this.element.GetId()}"

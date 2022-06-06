@@ -5,10 +5,8 @@ public class Hypergraph <: ToString {
     let edges : ArrayList<Edge>
 
     public init (vertices : ArrayList<Vertex>, edges : ArrayList<Edge>){
-        
         this.vertices = vertices
         this.edges = edges
-
         for (v in this.vertices) {
             v.SetOwner(this)
         }
@@ -17,12 +15,19 @@ public class Hypergraph <: ToString {
         }
     }
 
+    public func Typecheck() : Bool {
+        for (e in this.edges) {
+            if (!e.Typecheck()){
+                return false
+            }
+        }
+        true
+    }
 
     public func toString() : String {
         let vertexString = this.vertices.toString()
         let edgeString = this.edges.toString()
         "V = ${vertexString}  E = ${edgeString}"
-
     }
 
 }

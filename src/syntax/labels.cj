@@ -10,8 +10,8 @@ package syntax
 from std import collection.ArrayList
 
 public interface InputOutput {
-    func GetInputs() : UInt64
-    func GetOutputs() : UInt64
+    func GetInputs() : Int64
+    func GetOutputs() : Int64
 }
 
 public interface Nameable {
@@ -31,10 +31,10 @@ extend Value <: ToString & Specifiable {
             case Both => "⊤"
         }
     }
-    public func GetInputs() : UInt64 {
+    public func GetInputs() : Int64 {
         0
     }
-    public func GetOutputs() : UInt64 {
+    public func GetOutputs() : Int64 {
         1
     }
     public func GetName() : String {
@@ -55,14 +55,14 @@ extend Structural <: ToString & Specifiable {
             case Stub => "stub"
         }
     }
-    public func GetInputs() : UInt64 {
+    public func GetInputs() : Int64 {
         match(this) {
             case Fork => 1
             case Join => 2
             case Stub => 1
         }
     }
-    public func GetOutputs() : UInt64 {
+    public func GetOutputs() : Int64 {
         match(this) {
             case Fork => 2
             case Join => 1
@@ -80,9 +80,9 @@ extend Structural <: ToString & Specifiable {
  */
 public class Specification <:ToString & Equatable<Specifiable> & Specifiable {
     let name : String
-    let dom : UInt64
-    let cod : UInt64
-    init(name : String, dom : UInt64, cod : UInt64) {
+    let dom : Int64
+    let cod : Int64
+    init(name : String, dom : Int64, cod : Int64) {
         this.name = name
         this.dom = dom
         this.cod = cod
@@ -99,17 +99,17 @@ public class Specification <:ToString & Equatable<Specifiable> & Specifiable {
     public func GetName() : String {
         this.name
     }
-    public func GetInputs() : UInt64 {
+    public func GetInputs() : Int64 {
         this.dom
     }
-    public func GetOutputs() : UInt64 {
+    public func GetOutputs() : Int64 {
         this.cod
     }
 }
 
 public class GateSpecification <: ToString & Equatable<Specifiable> & Specifiable {
     let spec : Specification
-    init (name : String, dom : UInt64) {
+    init (name : String, dom : Int64) {
         this.spec = Specification(name, dom, 1)
     }
     public func toString() : String {
@@ -121,10 +121,10 @@ public class GateSpecification <: ToString & Equatable<Specifiable> & Specifiabl
     public operator func !=(rhs: Specifiable) : Bool { 
         !(this == rhs) 
     }
-    public func GetInputs() : UInt64 {
+    public func GetInputs() : Int64 {
         this.spec.GetInputs()
     }
-    public func GetOutputs() : UInt64 {
+    public func GetOutputs() : Int64 {
         this.spec.GetOutputs()
     }
     public func GetName() : String {
@@ -164,7 +164,7 @@ public class LinkKey <: Identifiable & Nameable & Equatable<LinkKey> & ToString 
 public class InLinkSpecification <: Equatable<Specifiable> & ToString & Specifiable {
     let key : LinkKey
     let spec : Specification
-    init(key : LinkKey, width : UInt64) {
+    init(key : LinkKey, width : Int64) {
         this.key = key
         this.spec = Specification(key.GetName(), 0, width)
     }
@@ -180,10 +180,10 @@ public class InLinkSpecification <: Equatable<Specifiable> & ToString & Specifia
     public func GetName() : String {
         this.spec.GetName()
     }
-    public func GetInputs() : UInt64 {
+    public func GetInputs() : Int64 {
         this.spec.GetInputs()
     }
-    public func GetOutputs() : UInt64 {
+    public func GetOutputs() : Int64 {
         this.spec.GetOutputs()
     }
 }
@@ -191,7 +191,7 @@ public class InLinkSpecification <: Equatable<Specifiable> & ToString & Specifia
 public class OutLinkSpecification <: Equatable<Specification> & ToString & InputOutput {
     let key : LinkKey
     let spec : Specification
-    init(key : LinkKey, width : UInt64) {
+    init(key : LinkKey, width : Int64) {
         this.key = key
         this.spec = Specification(key.GetName(), width, 0)
     }
@@ -207,10 +207,10 @@ public class OutLinkSpecification <: Equatable<Specification> & ToString & Input
     public func GetName() : String {
         this.spec.GetName()
     }
-    public func GetInputs() : UInt64 {
+    public func GetInputs() : Int64 {
         this.spec.GetInputs()
     }
-    public func GetOutputs() : UInt64 {
+    public func GetOutputs() : Int64 {
         this.spec.GetOutputs()
     }
 }
@@ -223,7 +223,7 @@ public enum Label {
     | STRUCTURAL(Structural)  // A structural generator 
     | GATE(GateSpecification)         // A gate m -> 1
     | BLACKBOX(Specification)     // A black box with arbitrary name and codomain
-    | DELAY(UInt64)           // A delay parameterised by a duration
+    | DELAY(Int64)           // A delay parameterised by a duration
     | IDENTITY                // An identity 1 -> 1
     | INLINK(InLinkSpecification)            // An in-link 0 -> m, where wires come into the graph
     | OUTLINK(OutLinkSpecification)           // An out-link m -> 0, where wires come out of the graph
@@ -241,7 +241,7 @@ extend Label <: ToString & InputOutput {
             case OUTLINK(link)       => "out link (${link.GetName()} - ${link.GetInputs()})"
         }
     }
-    public func GetInputs() : UInt64 {
+    public func GetInputs() : Int64 {
         match(this) {
             case VALUE(value)       => 0
             case STRUCTURAL(struc)  => struc.GetInputs()
@@ -253,7 +253,7 @@ extend Label <: ToString & InputOutput {
             case OUTLINK(link)      => link.GetInputs()
         }
     }
-    public func GetOutputs() : UInt64 {
+    public func GetOutputs() : Int64 {
         match(this) {
             case VALUE(value)       => 1
             case STRUCTURAL(struc)  => struc.GetOutputs()

@@ -22,7 +22,9 @@ main(){
 
     let h = Hypergraph(vs,es)
 
-    print(h)
+    println(h)
+
+    println(if (h.Typecheck()) { "yes!" } else { "no" })
 
     return 0
 }
