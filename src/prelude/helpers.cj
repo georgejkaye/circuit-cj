@@ -120,3 +120,13 @@ public func index<T>(xs : ArrayList<T>, a : T) where T <: Equatable<T> {
     }
     return None<Int64>
 }
+
+public func fold_left<T,U>(init : U, f : (U, T) -> U,  xs : ArrayList<T>){
+    var acc = init
+    for (x in xs) {
+        acc = f(acc, x)
+    }
+    acc
+}
+
+public func 

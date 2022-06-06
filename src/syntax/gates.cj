@@ -10,22 +10,22 @@ package syntax
  * Unary gates
  */
 
-let BUF : Label = GATE(Interface("BUF", 1, 1))
-let NOT : Label = GATE(Interface("NOT", 1, 1))
+public let BUF : Label = GATE(GateSpecification("BUF", 1))
+public let NOT : Label = GATE(GateSpecification("NOT", 1))
 
 /**
  * Binary gates
  */
 
-let AND : Label = GATE(Interface("AND", 2, 1))
-let OR : Label = GATE(Interface("OR", 2, 1))
-let NAND : Label = GATE(Interface("NAND", 2, 1))
-let NOR  : Label = GATE(Interface("NOR", 2, 1))
-let XOR  : Label = GATE(Interface("XOR", 2, 1))
-let XNOR : Label = GATE(Interface("XNOR", 2, 1))
+public let AND  : Label = GATE(GateSpecification("AND", 2))
+public let OR   : Label = GATE(GateSpecification("OR", 2))
+public let NAND : Label = GATE(GateSpecification("NAND", 2))
+public let NOR  : Label = GATE(GateSpecification("NOR", 2))
+public let XOR  : Label = GATE(GateSpecification("XOR", 2))
+public let XNOR : Label = GATE(GateSpecification("XNOR", 2))
 
 /**
  * Ternary gates
  */
  
-let MUX : Label = GATE(Interface("mux", 3, 1))
+public let MUX : Label = GATE(GateSpecification("mux", 3))

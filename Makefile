@@ -31,7 +31,7 @@ all: prep $(PACKAGES) main
 
 # Make the build directory
 prep:
-	mkdir -p $(BUILD_DIR)
+	@mkdir -p $(BUILD_DIR)
 
 # Build all packages in src/
 library: prep $(PACKAGES)
@@ -52,11 +52,11 @@ clean:
 $(PACKAGES): $(BUILD_DIR)/$$@.$(MIDDLE_EXT)
 
 # Build an object file in circuits/
-$(BUILD_DIR)/%.$(MIDDLE_EXT): $$(shell python dependencies.py $(BUILD_DIR) $(SRC_DIR) $(MIDDLE_EXT) $$*)
+$(BUILD_DIR)/%.$(MIDDLE_EXT): $$(shell python dependencies.py $(BUILD_DIR) $(SRC_DIR) $(MIDDLE_EXT) $$*) $$(shell find $(SRC_DIR)/$$*/*${SRC_EXT})
 	$(CJC) $(LIB_OPT) $(PKG_OPT) $(SRC_DIR)/$* $(MOD_NAME_OPT) $(MOD_NAME) $(OUTPUT_OPT) $(MOD_NAME)/	
 
 # Build the main.out file
-$(MAIN).$(OUT_EXT): $$(shell python dependencies.py $(BUILD_DIR) $(SRC_DIR) $(MIDDLE_EXT))
+$(MAIN).$(OUT_EXT): $$(shell python dependencies.py $(BUILD_DIR) $(SRC_DIR) $(MIDDLE_EXT)) $(SRC_DIR)/$(MAIN).$(SRC_EXT)
 	$(CJC) $(LIBS) $(shell find $(BUILD_DIR)/*.$(MIDDLE_EXT)) $(SRC_DIR)/$(MAIN).$(SRC_EXT) $(OUTPUT_OPT) $(MAIN).$(OUT_EXT)
 
 # Draw a dot graph
