@@ -31,7 +31,7 @@ public class Element <: Identifiable & Ownable<Hypergraph> {
     }
 }
 
-public class Vertex <: ToString & Identifiable & Equatable<Vertex> & Ownable<Hypergraph> {
+public class Vertex <: ToString & Identifiable & Equatable<Vertex> & Ownable<Hypergraph> & Hashable {
     let element : Element
     var inEdges : ArrayList<(Edge , Int64)> = ArrayList()
     var outEdges : ArrayList<(Edge , Int64)> = ArrayList()
@@ -85,16 +85,21 @@ public class Vertex <: ToString & Identifiable & Equatable<Vertex> & Ownable<Hyp
     public func RemoveOwner() : Unit {
         this.element.RemoveOwner()
     }
+    public func hashCode() : Int64 {
+        this.element.GetId()
+    }
 }
 
-public class Edge <: ToString & Identifiable & Equatable<Edge> {
+public class Edge <: ToString & Identifiable & Equatable<Edge> & Ownable<Hypergraph> & Hashable {
     let element : Element
     let label : Label
-    var sources : HashMap<Int64, Vertex> = HashMap()
-    var targets : HashMap<Int64, Vertex> = HashMap()
+    let sources : Array<Option<Vertex>>
+    let targets : Array<Option<Vertex>>
     public init(globalId : Option<Identifier>, owner: Option<Hypergraph>, label : Label) {
         this.element = Element(globalId, owner)
         this.label = label
+        this.sources = Array<Option<Vertex>>(label.GetInputs()){ i => Option<Vertex>.None }
+        this.targets = Array<Option<Vertex>>(label.GetOutputs()){ i => Option<Vertex>.None }
     }
     public init(label : Label) {
         this(Option<Identifier>.None, Option<Hypergraph>.None, label)
@@ -102,17 +107,23 @@ public class Edge <: ToString & Identifiable & Equatable<Edge> {
     public func GetLabel() : Label {
         this.label
     }
-    public func SetVertex(i : Int64, newVertex : Vertex, map : HashMap<Int64, Vertex>, exn : (Edge, Int64, Vertex) -> Exception) : Unit {
-        match (map.get(i)) {
+    public func SetVertex(i : Int64, newVertex : Vertex, array : Array<Option<Vertex>>, exn : (Edge, Int64, Vertex) -> Exception) : Unit {
+        match (array[i]) {
             case Some(oldVertex) => throw exn(this, i, oldVertex)
-            case None    => map.put(i, newVertex)
+            case None    => array[i] = newVertex
         }
     }
-    public func UnsafeSetVertex(i : Int64, newVertex : Vertex, map : HashMap<Int64, Vertex>) : Unit {
-        map.put(i, newVertex)
+    public func UnsafeSetVertex(i : Int64, newVertex : Vertex, array : Array<Option<Vertex>>) : Unit {
+        array[i] = newVertex
     }
     public func SetSource(i : Int64, newVertex : Vertex) : Unit {
         SetVertex(i, newVertex, this.sources, {e, i, v => SourceAlreadyExistsException("SetSource", e, i, v)})
+    }
+    public func GetSource(i : Int64) : Option<Vertex> {
+        this.sources[i]
+    }
+    public func GetSources() : Array<Option<Vertex>> {
+        this.sources
     }
     public func UnsafeSetSource(i : Int64, newVertex : Vertex) : Unit {
         UnsafeSetVertex(i, newVertex, sources)
@@ -123,35 +134,20 @@ public class Edge <: ToString & Identifiable & Equatable<Edge> {
     public func UnsafeSetTarget(i : Int64, newVertex : Vertex) : Unit {
         UnsafeSetVertex(i, newVertex, targets)
     }
-    public func RemoveVertex(i : Int64, map : HashMap<Int64, Vertex>) : Unit {
-        map.remove(i)
+    public func GetTarget(i : Int64) : Option<Vertex> {
+        this.targets[i]
+    }
+    public func GetTargets() : Array<Option<Vertex>> {
+        this.targets
+    }
+    public func RemoveVertex(i : Int64, array : Array<Option<Vertex>>) : Unit {
+        array[i] = Option<Vertex>.None
     }
     public func RemoveSource(i : Int64) : Unit {
         RemoveVertex(i, sources)
     }
     public func RemoveTarget(i : Int64) : Unit {
         RemoveVertex(i, targets)
-    }
-    public func Typecheck() : Bool {
-        let correct_sources = this.label.GetInputs()
-        let correct_targets = this.label.GetOutputs()
-
-        if(this.sources.keys().size() != correct_sources || this.targets.keys().size() != correct_targets){
-            return false
-        }
-
-        for (i in 0..correct_sources){
-            if (!this.sources.contains(i)) {
-                return false
-            }
-        }
-        for (i in 0..correct_targets){
-            if (!this.targets.contains(i)) {
-                return false
-            }
-        }
-
-        true
     }
     public func toString() : String {
         "e${this.element.GetId()}"
@@ -173,5 +169,8 @@ public class Edge <: ToString & Identifiable & Equatable<Edge> {
     }
     public func RemoveOwner() : Unit {
         this.element.RemoveOwner()
+    }
+    public func hashCode() : Int64 {
+        this.element.GetId()
     }
 }

@@ -13,3 +13,14 @@ class TargetAlreadyExistsException <: Exception {
         ErrorMsg(function, "Edge ${e} already has a target ${i}, namely ${v}")
     }
 }
+
+class InputsNotInHypergraphException <: Exception {
+    init(function : String, h : Hypergraph) {
+        ErrorMsg(function, "Not all inputs of ${h} are vertices in ${h}")
+    }
+}
+class OutputsNotInHypergraphException <: Exception {
+    init(function : String, h : Hypergraph) {
+        ErrorMsg(function, "Not all outputs of ${h} are vertices in ${h}")
+    }
+}
