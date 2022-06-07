@@ -129,18 +129,30 @@ public func fold_left<T,U>(f : (U, T) -> U, initial : U,  xs : Iterable<T>) : U 
     acc
 } 
 
-public func fold_left_n<T,U>(f : (U, T, Int64) -> U, initial : U, xs : Array<T>) : U {
+public func foldi_left<T,U>(f : (U, T, Int64) -> U, initial : U, xs : Array<T>) : U {
     var acc = initial
-    for (i in 0..xs.size()) {
-        acc = f(acc, xs[i], i)
+    var i = 0
+    for (x in xs) {
+        acc = f(acc, x, i)
+        i++
     }
     acc
 } 
 
-public func fold_left_n<T,U>(f : (U, T, Int64) -> U, initial : U, xs : ArrayList<T>) : U {
-    var acc = initial
-    for (i in 0..xs.size()) {
-        acc = f(acc, xs[i], i)
+public func map<T,U>(f : (T) -> U, xs : Iterable<T>) : ArrayList<U> {
+    let acc = ArrayList<U>()
+    for (x in xs){
+        acc.append(f(x))
     }
     acc
-} 
+}
+
+public func mapi<T,U>(f : (T, Int64) -> U, xs : Iterable<T>) : ArrayList<U> {
+    let acc = ArrayList<U>()
+    var i = 0
+    for (x in xs){
+        acc.append(f(x, i))
+        i++
+    }
+    acc
+}

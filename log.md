@@ -14,4 +14,5 @@
 ## 2022-06-07
 
 * Finish wellformedness checker
-* Implement operations on new style hypergraphs
+* Implement {composition,tensor,trace} on new style hypergraphs
+* Recreate dot generation for hypergraphs

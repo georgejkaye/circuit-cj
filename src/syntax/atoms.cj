@@ -51,7 +51,7 @@ public class Atom <: Identifiable {
     public func GetId() {
         this.uniqueId.GetId()
     }
-    public func GetGlobalID() {
+    public func GetGlobalId() {
         this.globalId.GetId()
     }
 }

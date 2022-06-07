@@ -53,3 +53,9 @@ class NotEnoughOutputsException <: Exception {
         ErrorMsg(function, "Needed ${n} outputs but ${h.GetName()} only has ${h.GetOutputs()}")
     }
 }
+
+class CouldNotOpenFileException <: Exception {
+    init(function : String, file : String) {
+        ErrorMsg(function, "Could not open file ${file}")
+    }
+}

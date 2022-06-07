@@ -61,7 +61,6 @@ $(MAIN).$(OUT_EXT): $$(shell python dependencies.py $(BUILD_DIR) $(SRC_DIR) $(MI
 
 # Draw a dot graph
 $(DOT_DIR)/%.svg: $(DOT_DIR)/%
-	echo $*
 	dot -Tsvg $(DOT_DIR)/$* -O
 
 test:

@@ -20,6 +20,9 @@ public class Element <: Identifiable & Ownable<Hypergraph> {
     public func GetId() : Int64 {
         this.atom.GetId()
     }
+    public func GetGlobalId() : Int64 {
+        this.atom.GetGlobalId()
+    }
     public func GetOwner() {
         this.owner
     }
@@ -86,6 +89,9 @@ public class Vertex <: ToString & Identifiable & Equatable<Vertex> & Ownable<Hyp
     }
     public func GetId() : Int64 {
         this.element.GetId()
+    }
+    public func GetGlobalId() : Int64 {
+        this.element.GetGlobalId()
     }
     public operator func ==(right: Vertex) : Bool {
         this.GetId() == right.GetId()
@@ -191,6 +197,9 @@ public class Edge <: ToString & Identifiable & Equatable<Edge> & Ownable<Hypergr
     }
     public func GetId() : Int64 {
         this.element.GetId()
+    }
+    public func GetGlobalId() : Int64 {
+        this.element.GetGlobalId()
     }
     public operator func ==(right: Edge) : Bool {
         this.GetId() == right.GetId()

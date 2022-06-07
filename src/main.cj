@@ -1,10 +1,15 @@
 from circuits import graphs.*
 from circuits import syntax.*
 
+from circuits import prelude.*
+from circuits import settings.*
+
 from std import collection.ArrayList
 from std import collection.HashSet
 
 main(){
+
+    SetDotDir("dot")
 
     let v1 = Vertex()
     let v2 = Vertex()
@@ -30,7 +35,7 @@ main(){
 
     let f = Hypergraph(vs,es,inputs,outputs)
 
-    println(f)
+    // println(f)
 
     let v4 = Vertex()
     let v5 = Vertex()
@@ -40,6 +45,8 @@ main(){
     e3.SetSource(0, v4)
     e3.SetTarget(0, v5)
 
+    WriteDotToFile(f, "example")
+
     let g = Hypergraph(
         HashSet<Vertex>([v4,v5]),
         HashSet<Edge>([e3]),
@@ -47,11 +54,14 @@ main(){
         ArrayList<Vertex>([v5])
     )
 
-    // println(g)
+    println(g)
+    WriteDotToFile(g, "example")
 
-    let h = Trace(f,1)
+    let h = Trace(Seq(f, g), 1)
 
     println(h)
+    WriteDotToFile(h, "example")
+
 
     return 0
 }

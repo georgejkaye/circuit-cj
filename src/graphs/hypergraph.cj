@@ -144,7 +144,7 @@ public class Hypergraph <: Identifiable & ToString & InputOutput & Nameable{
                     name : String,
                     array: Array<Option<Vertex>>
                 ){
-                    fold_left_n(
+                    foldi_left(
                         { acc : String , v : Option<Vertex>, i : Int64 => 
                             let str = match(v) {
                                 case None => "-"
