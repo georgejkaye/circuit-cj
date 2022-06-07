@@ -30,16 +30,20 @@ extend WellformednessIssue <: ToString {
 public class Hypergraph <: Identifiable & ToString & InputOutput & Nameable{
     
     let uniqueId : Identifier = Identifier()
+    let name : String
     let vertices : HashSet<Vertex>
     let edges : HashSet<Edge>
     let inputs : ArrayList<Vertex>
     let outputs : ArrayList<Vertex>
+
+    var active : Bool = true
 
     public init (vertices : HashSet<Vertex>, edges : HashSet<Edge>, inputs: ArrayList<Vertex>, outputs: ArrayList<Vertex>){
         this.vertices = vertices
         this.edges = edges
         this.inputs = inputs
         this.outputs = outputs
+        this.name = "h${this.uniqueId}"
 
         for (v in this.vertices) {
             v.SetOwner(this)
@@ -49,11 +53,34 @@ public class Hypergraph <: Identifiable & ToString & InputOutput & Nameable{
         }
     }
 
+    public func IsActive() : Bool {
+        this.active
+    }
+    public func Deactivate() : Unit {
+        this.active = false
+        for (e in edges) {
+            e.RemoveOwner()
+        }
+        for (v in vertices) {
+            v.RemoveOwner()
+        }
+    }
+    public func GetEdges() : HashSet<Edge> {
+        this.edges
+    }
+    public func GetVertices() : HashSet<Vertex> {
+        this.vertices
+    }
+    public func GetInputVertices() : ArrayList<Vertex> {
+        this.inputs
+    }
+    public func GetOutputVertices() :  ArrayList<Vertex> {
+        this.outputs
+    }
     public func IsWellFormed() : Bool {
         let issues = this.WellFormednessCheck()
         issues.size() == 0
     }
-
     public func WellFormednessCheck() : ArrayList<WellformednessIssue> {
 
         let issues = ArrayList<WellformednessIssue>()
@@ -117,20 +144,20 @@ public class Hypergraph <: Identifiable & ToString & InputOutput & Nameable{
                     name : String,
                     array: Array<Option<Vertex>>
                 ){
-                    fold_left(
-                        { acc : String , i : Int64 => 
-                            let v = match(array[i]) {
+                    fold_left_n(
+                        { acc : String , v : Option<Vertex>, i : Int64 => 
+                            let str = match(v) {
                                 case None => "-"
-                                case Some(v) => "${v}"
+                                case Some(v1) => "${v1}"
                             }
                             let acc = if (acc == "") {
                                 ""
                             } else {
                                 "${acc}  "
                             }
-                            "${acc}${name}(${e},${i}) = ${v}"},
+                            "${acc}${name}(${e},${i}) = ${str}"},
                         "",
-                        0..array.size()
+                        array
                     )
                 }
                 let sources = EdgeVertexString("s", e.GetSources())

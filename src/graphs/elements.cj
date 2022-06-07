@@ -24,6 +24,10 @@ public class Element <: Identifiable & Ownable<Hypergraph> {
         this.owner
     }
     public func SetOwner(h : Hypergraph) {
+        match (this.owner) {
+            case None => this.owner = Some(h)
+            case Some(o) => throw AlreadyOwnedException("SetOwner", this, o, h)
+        }
         this.owner = Some(h)
     }
     public func RemoveOwner() {
@@ -41,6 +45,12 @@ public class Vertex <: ToString & Identifiable & Equatable<Vertex> & Ownable<Hyp
     }
     public init() {
         this(Option<Identifier>.None, Option<Hypergraph>.None)
+    }
+    func GetInEdges() : ArrayList<(Edge, Int64)> {
+        this.inEdges
+    }
+    func GetOutEdges() : ArrayList<(Edge, Int64)> {
+        this.outEdges
     }
     func AddInEdge(e : Edge, i : Int64) : Unit {
         inEdges.add((e, i))
@@ -107,17 +117,31 @@ public class Edge <: ToString & Identifiable & Equatable<Edge> & Ownable<Hypergr
     public func GetLabel() : Label {
         this.label
     }
-    public func SetVertex(i : Int64, newVertex : Vertex, array : Array<Option<Vertex>>, exn : (Edge, Int64, Vertex) -> Exception) : Unit {
+    func SetVertex(
+        i : Int64, 
+        newVertex : Vertex, 
+        array : Array<Option<Vertex>>, 
+        exn : (Edge, Int64, Vertex) -> Exception,
+        vertexFn : (Vertex) -> Unit
+    ) : Unit {
         match (array[i]) {
             case Some(oldVertex) => throw exn(this, i, oldVertex)
-            case None    => array[i] = newVertex
+            case None    => 
+                array[i] = newVertex
+                vertexFn(newVertex)
         }
     }
-    public func UnsafeSetVertex(i : Int64, newVertex : Vertex, array : Array<Option<Vertex>>) : Unit {
-        array[i] = newVertex
+    func RemoveVertex(i : Int64, array : Array<Option<Vertex>>) : Unit {
+        array[i] = Option<Vertex>.None
     }
     public func SetSource(i : Int64, newVertex : Vertex) : Unit {
-        SetVertex(i, newVertex, this.sources, {e, i, v => SourceAlreadyExistsException("SetSource", e, i, v)})
+        SetVertex(
+            i,
+            newVertex,
+            this.sources,
+            {e, i, v => SourceAlreadyExistsException("SetSource", e, i, v)},
+            { v => v.AddOutEdge(this, i) }
+        )
     }
     public func GetSource(i : Int64) : Option<Vertex> {
         this.sources[i]
@@ -125,14 +149,22 @@ public class Edge <: ToString & Identifiable & Equatable<Edge> & Ownable<Hypergr
     public func GetSources() : Array<Option<Vertex>> {
         this.sources
     }
-    public func UnsafeSetSource(i : Int64, newVertex : Vertex) : Unit {
-        UnsafeSetVertex(i, newVertex, sources)
+    public func RemoveSource(i : Int64) : Unit {
+        RemoveVertex(i, sources)
     }
+    public func RemoveAndSetSource(i : Int64, newVertex : Vertex) : Unit {
+        RemoveSource(i)
+        SetSource(i, newVertex)
+    }
+
     public func SetTarget(i : Int64, newVertex : Vertex) : Unit {
-        SetVertex(i, newVertex, this.targets, {e, i, v => TargetAlreadyExistsException("SetTarget", e, i, v)})
-    }
-    public func UnsafeSetTarget(i : Int64, newVertex : Vertex) : Unit {
-        UnsafeSetVertex(i, newVertex, targets)
+        SetVertex(
+            i,
+            newVertex,
+            this.targets,
+            {e, i, v => TargetAlreadyExistsException("SetTarget", e, i, v)},
+            {v => v.AddInEdge(this, i)}
+        )
     }
     public func GetTarget(i : Int64) : Option<Vertex> {
         this.targets[i]
@@ -140,14 +172,12 @@ public class Edge <: ToString & Identifiable & Equatable<Edge> & Ownable<Hypergr
     public func GetTargets() : Array<Option<Vertex>> {
         this.targets
     }
-    public func RemoveVertex(i : Int64, array : Array<Option<Vertex>>) : Unit {
-        array[i] = Option<Vertex>.None
-    }
-    public func RemoveSource(i : Int64) : Unit {
-        RemoveVertex(i, sources)
-    }
     public func RemoveTarget(i : Int64) : Unit {
         RemoveVertex(i, targets)
+    }
+    public func RemoveAndSetTarget(i : Int64, newVertex : Vertex) : Unit {
+        RemoveTarget(i)
+        SetTarget(i, newVertex)
     }
     public func toString() : String {
         "e${this.element.GetId()}"

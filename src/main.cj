@@ -28,13 +28,30 @@ main(){
     let inputs = ArrayList<Vertex>([v1])
     let outputs = ArrayList<Vertex>([v3])
 
-    let h = Hypergraph(vs,es,inputs,outputs)
+    let f = Hypergraph(vs,es,inputs,outputs)
+
+    println(f)
+
+    let v4 = Vertex()
+    let v5 = Vertex()
+
+    let e3 = Edge(NOT)
+
+    e3.SetSource(0, v4)
+    e3.SetTarget(0, v5)
+
+    let g = Hypergraph(
+        HashSet<Vertex>([v4,v5]),
+        HashSet<Edge>([e3]),
+        ArrayList<Vertex>([v4]),
+        ArrayList<Vertex>([v5])
+    )
+
+    println(g)
+
+    let h = Seq(f,g)
 
     println(h)
-
-    let check = h.WellFormednessCheck()
-
-    println("${check}")
 
     return 0
 }

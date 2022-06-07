@@ -128,3 +128,19 @@ public func fold_left<T,U>(f : (U, T) -> U, initial : U,  xs : Iterable<T>) : U 
     }
     acc
 } 
+
+public func fold_left_n<T,U>(f : (U, T, Int64) -> U, initial : U, xs : Array<T>) : U {
+    var acc = initial
+    for (i in 0..xs.size()) {
+        acc = f(acc, xs[i], i)
+    }
+    acc
+} 
+
+public func fold_left_n<T,U>(f : (U, T, Int64) -> U, initial : U, xs : ArrayList<T>) : U {
+    var acc = initial
+    for (i in 0..xs.size()) {
+        acc = f(acc, xs[i], i)
+    }
+    acc
+} 
