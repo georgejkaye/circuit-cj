@@ -47,9 +47,9 @@ main(){
         ArrayList<Vertex>([v5])
     )
 
-    println(g)
+    // println(g)
 
-    let h = Par(f,g)
+    let h = Trace(f,1)
 
     println(h)
 

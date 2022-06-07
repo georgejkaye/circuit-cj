@@ -39,6 +39,7 @@ public class Vertex <: ToString & Identifiable & Equatable<Vertex> & Ownable<Hyp
     let element : Element
     var inEdges : ArrayList<(Edge , Int64)> = ArrayList()
     var outEdges : ArrayList<(Edge , Int64)> = ArrayList()
+    var feedback : Int64 = 0
     public init(globalId: Option<Identifier>, owner: Option<Hypergraph>){
         this.element = Element(globalId, owner)            
     
@@ -73,6 +74,12 @@ public class Vertex <: ToString & Identifiable & Equatable<Vertex> & Ownable<Hyp
     }
     func RemoveOutEdge(edge : Edge, i : Int64) : Unit {
         outEdges.removeIf({e => e == (edge, i)})
+    }
+    func IncrementFeedback() : Unit {
+        this.feedback++
+    }
+    func DecrementFeedback() : Unit {
+        this.feedback--
     }
     public func toString() : String {
         "v${this.element.GetId()}"

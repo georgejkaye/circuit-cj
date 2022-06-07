@@ -35,3 +35,21 @@ class OutputInputMismatchException <: Exception {
         ErrorMsg(function, "The outputs of hypergraph ${f.GetName()} (${f.GetOutputs()} do not match the inputs of hypergraph ${g.GetName()} (${g.GetOutputs()})")
     }
 }
+
+class NegativeTraceException <: Exception {
+    init(function : String, n : Int64) {
+        ErrorMsg(function, "Cannot perform a negative trace ${n}")
+    }
+}
+
+class NotEnoughInputsException <: Exception {
+    init(function : String, n : Int64, h : Hypergraph) {
+        ErrorMsg(function, "Needed ${n} inputs but ${h.GetName()} only has ${h.GetInputs()}")
+    }
+}
+
+class NotEnoughOutputsException <: Exception {
+    init(function : String, n : Int64, h : Hypergraph) {
+        ErrorMsg(function, "Needed ${n} outputs but ${h.GetName()} only has ${h.GetOutputs()}")
+    }
+}
