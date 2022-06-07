@@ -32,7 +32,9 @@ main(){
 
     println(h)
 
-    println(match (h.WellformednessCheck()) { case Okay => "yes" case _ => "no" })
+    let check = h.WellFormednessCheck()
+
+    println("${check}")
 
     return 0
 }

@@ -1,18 +1,30 @@
 package graphs
 
+import prelude.*
+
 from std import collection.HashSet
 from std import collection.ArrayList
 
-public enum WellformednessStatus {
-    | Okay
-    | InputNotInGraph(Vertex)
-    | OutputNotInGraph(Vertex)
+public enum WellformednessIssue {
+    | InputNotInGraph(Int64, Vertex)
+    | OutputNotInGraph(Int64, Vertex)
     | SourceNotAssigned(Edge, Int64)
     | TargetNotAssigned(Edge, Int64)
     | SourceNotInGraph(Edge, Int64, Vertex)
     | TargetNotInGraph(Edge, Int64, Vertex)
-    | IncorrectDomain(Edge)
-    | IncorrectCodomain(Edge)
+}
+
+extend WellformednessIssue <: ToString {
+    public func toString() : String {
+        match(this) {
+            case InputNotInGraph(i, v) => "Input ${i} (${v}) not in this graph"
+            case OutputNotInGraph(i, v) => "Output ${i} (${v}) not in this graph"
+            case SourceNotAssigned(e, i) => "Source ${i} of edge ${e} is unassigned"
+            case TargetNotAssigned(e, i) => "Target ${i} of edge ${e} is empty"
+            case SourceNotInGraph(e, i, v) => "Source ${i} of edge ${e} (${v}) is not in this graph"
+            case TargetNotInGraph(e, i, v) => "Target ${i} of edge ${e} (${v}) is not in this graph"
+        }
+    }
 }
 
 public class Hypergraph <: Identifiable & ToString & InputOutput & Nameable{
@@ -35,73 +47,105 @@ public class Hypergraph <: Identifiable & ToString & InputOutput & Nameable{
         for (e in this.edges) {
             e.SetOwner(this)
         }
-        if (!vertices.containsAll(inputs)) {
-            throw InputsNotInHypergraphException("Hypergraph", this)
-        }
-        if (!vertices.containsAll(outputs)) {
-            throw OutputsNotInHypergraphException("Hypergraph", this)
-        }
     }
 
-    public func WellformednessCheck() : WellformednessStatus {
+    public func IsWellFormed() : Bool {
+        let issues = this.WellFormednessCheck()
+        issues.size() == 0
+    }
+
+    public func WellFormednessCheck() : ArrayList<WellformednessIssue> {
+
+        let issues = ArrayList<WellformednessIssue>()
 
         func EdgeVertexCheck(
             e : Edge,
             array : Array<Option<Vertex>>,
-            notAssigned : (Edge, Int64) -> WellformednessStatus, 
-            notPresent : (Edge, Int64, Vertex) -> WellformednessStatus
-        ) : WellformednessStatus {
+            notAssigned : (Edge, Int64) -> WellformednessIssue, 
+            notPresent : (Edge, Int64, Vertex) -> WellformednessIssue
+        ){
             for (i in 0..array.size()) {
                 let vOpt : Option<Vertex> = array[i]
-                let status : WellformednessStatus = match(vOpt) {
-                    case None    => notAssigned(e, i)
-                    case Some(v) => Okay
+                match(vOpt) {
+                    case None    => issues.add(notAssigned(e, i))
+                    case Some(v) =>
                         if (!this.vertices.contains(v)) {
-                            notPresent(e, i, v)
-                        } else {
-                            Okay
+                            issues.add(notPresent(e, i, v))
                         }
                 }
-                match (status) {
-                    case Okay => ()
-                    case v => return v
-                }
             }
-            Okay
         }
 
-
+        func InterfaceCheck(
+            list : ArrayList<Vertex>,
+            notPresent : (Int64, Vertex) -> WellformednessIssue
+        ){
+            for (i in 0..list.size()) {
+                let v = list[i]
+                if (!vertices.contains(v)){
+                    issues.add(notPresent(i,v))
+                }
+            }
+        }
         for (e in this.edges) {
-            let sourceCheck = EdgeVertexCheck(
+            EdgeVertexCheck(
                 e, 
                 e.GetSources(), 
                 { e, i => SourceNotAssigned(e,i) }, 
                 { e, i, v => SourceNotInGraph(e,i,v)}
             )
-            match(sourceCheck) {
-                case Okay => ()
-                case v => return v
-            }
-            let targetCheck = EdgeVertexCheck(
+            EdgeVertexCheck(
                 e, 
                 e.GetTargets(), 
                 { e, i => TargetNotAssigned(e,i) },
                 { e, i, v => TargetNotInGraph(e,i,v) }
             )
-            match(targetCheck) {
-                case Okay => ()
-                case v => return v
-            }
-            
         }
-        Okay
+        InterfaceCheck(this.inputs, { i, v => InputNotInGraph(i, v) })
+        InterfaceCheck(this.outputs, { i, v => OutputNotInGraph(i, v) })
+
+        issues
     }
     public func toString() : String {
         let vertexString = this.vertices.toString()
         let edgeString = this.edges.toString()
         let inputString = this.inputs.toString()
         let outputString = this.outputs.toString()
-        "V = ${vertexString}  E = ${edgeString}  in = ${inputString}  out = ${outputString}"
+        let sourceTargetString = fold_left(
+            { acc : String , e : Edge => 
+                func EdgeVertexString (
+                    name : String,
+                    array: Array<Option<Vertex>>
+                ){
+                    fold_left(
+                        { acc : String , i : Int64 => 
+                            let v = match(array[i]) {
+                                case None => "-"
+                                case Some(v) => "${v}"
+                            }
+                            let acc = if (acc == "") {
+                                ""
+                            } else {
+                                "${acc}  "
+                            }
+                            "${acc}${name}(${e},${i}) = ${v}"},
+                        "",
+                        0..array.size()
+                    )
+                }
+                let sources = EdgeVertexString("s", e.GetSources())
+                let targets = EdgeVertexString("t", e.GetTargets())
+                let edgeVertexString = "${sources}  ${targets}"
+                if (acc == "") {
+                    "${edgeVertexString}"
+                } else {
+                    "${acc}\n${edgeVertexString}"
+                }
+            },
+            "",
+            this.edges
+        )
+        "V = ${vertexString}\nE = ${edgeString}\nin = ${inputString}\nout = ${outputString}\n${sourceTargetString}"
     }
     public func GetId() : Int64 {
         this.uniqueId.GetId()

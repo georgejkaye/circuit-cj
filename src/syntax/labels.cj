@@ -229,7 +229,7 @@ public enum Label {
     | OUTLINK(OutLinkSpecification)           // An out-link m -> 0, where wires come out of the graph
 }
 extend Label <: ToString & InputOutput {
-    public func toString(){
+    public func toString() : String {
         match(this){
             case VALUE(value)        => "value (${value})"
             case STRUCTURAL(struc)  =>  "structural (${struc})"
