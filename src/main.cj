@@ -49,7 +49,7 @@ main(){
 
     println(g)
 
-    let h = Seq(f,g)
+    let h = Par(f,g)
 
     println(h)
 
