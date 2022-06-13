@@ -20,3 +20,7 @@
 ## 2022-06-13
 
 * Fix trace
+* Implement compressors
+* Change framework slightly so that users have handles on *vertices* rather than graphs (a la hardcaml)
+* Implement values
+* Implement gates

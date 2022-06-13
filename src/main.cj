@@ -12,8 +12,13 @@ main(){
     SetDotDir("dot")
     SetDebugDot(false)
 
-    let values = SignedValueFromInt(-72, 8)
-    WriteDotToFile(values, "values")
+    let t = TrueSignal()
+    let f = FalseSignal()
+
+    let and = AndGate(t, f)
+
+    let circuit = MakeCircuit([], [and])
+    WriteDotToFile(circuit, "values")
 
     return 0
 }

@@ -2,6 +2,7 @@ package graphs
 
 import debug.*
 import settings.*
+import prelude.*
 
 from std import io.*
 
@@ -280,18 +281,22 @@ func DrawConnections(e : Edge) : ArrayList<(String, IndentInstruction)> {
     sourceString
 }
 
-func DrawInterfaceConnections(list : ArrayList<Vertex>, vertexFirst : Bool) : ArrayList<(String, IndentInstruction)> {
+func DrawInterfaceConnections(list : Array<Option<Vertex>>, vertexFirst : Bool) : ArrayList<(String, IndentInstruction)> {
     mapi(
-        { v : Vertex, i : Int64 =>
-            let vText = "v${v.GetId()}"
-            let str = if(vertexFirst) {
-                let eText = "output:w${i}:w"
-                "${vText} -- ${eText}"
-            } else {
-                let eText = "input:e${i}:e"
-                "${eText} -- ${vText}"
+        { opt : Option<Vertex>, i : Int64 =>
+            match(opt) {
+                case None => ("", Preserve)
+                case Some(v) =>
+                    let vText = "v${v.GetId()}"
+                    let str = if(vertexFirst) {
+                        let eText = "output:w${i}:w"
+                        "${vText} -- ${eText}"
+                    } else {
+                        let eText = "input:e${i}:e"
+                        "${eText} -- ${vText}"
+                    }
+                    (str, Preserve)
             }
-            (str, Preserve)
         },
         list
     )
@@ -306,7 +311,7 @@ func DrawSubgraph(opt : Array<(String, String)>, content : ArrayList<(String, In
     subgraph
 }
 
-public func DotGraph(f : Hypergraph) {
+public func DotGraph(f : InterfacedHypergraph) {
     let vertexContent = ArrayList<(String, IndentInstruction)>()
     let edgeContent = ArrayList<(String, IndentInstruction)>()
     let connectionContent = ArrayList<(String, IndentInstruction)>()
@@ -330,16 +335,10 @@ public func DotGraph(f : Hypergraph) {
     let vertexOptionsString = DrawOptions("node", vertexNodeOpts)
     let edgeOptionsString = DrawOptions("node", edgeNodeOpts)
 
-    let input = DrawEdgeNode("input", interfaceStyle, "inputs", [], map(
-        { v : Vertex => Some(v) },
-        f.GetInputVertices()
-    ).toArray())
+    let input = DrawEdgeNode("input", interfaceStyle, "inputs", [], f.GetInputVertices())
     let inputContent = DrawSubgraph(minSubgraphOpts, input)
     let inputConnections = DrawInterfaceConnections(f.GetInputVertices(), false)
-    let output = DrawEdgeNode("output", interfaceStyle, "outputs", map(
-        { v : Vertex => Some(v) },
-        f.GetOutputVertices()
-    ).toArray(), [])
+    let output = DrawEdgeNode("output", interfaceStyle, "outputs", f.GetOutputVertices(), [])
     let outputContent = DrawSubgraph(maxSubgraphOpts, output)
     let outputConnections = DrawInterfaceConnections(f.GetOutputVertices(), true)
 
@@ -392,7 +391,7 @@ public func ConvertStringIndentListToString(list : ArrayList<(String, IndentInst
     output
 }
 
-public func WriteDotToFile(f : Hypergraph, file : String){
+public func WriteDotToFile(f : InterfacedHypergraph, file : String){
     let filename = GetDotFile(file)
     Info("WriteDotToFile", "Writing dot file ${filename}")
     let dot = DotGraph(f)
@@ -405,9 +404,4 @@ public func WriteDotToFile(f : Hypergraph, file : String){
         fs.close()
         throw CouldNotOpenFileException("WriteDotToFile", filename)
     }
-}
-
-public func WriteDotToFile(v : Vertex, file : String) {
-    let f = v.GetOwner().getOrThrow({ => NotOwnedException("WriteDotToFile", v)})
-    WriteDotToFile(f, file)
 }

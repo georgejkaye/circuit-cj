@@ -11,7 +11,7 @@ import debug.*
 /**
  * Create a hypergraph for a given operation
  * @param m         The inputs of the operation
- * @param n         The outputs of the operation
+ * @param n         The outputs of tpexcephe operation
  * @param generator The generator that corresponds to this operation
  * @param name      The name to give the resulting hypergraph
  * @return A hypergraph corresponding to this operation

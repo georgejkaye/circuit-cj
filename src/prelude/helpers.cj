@@ -150,7 +150,11 @@ public func foldi_left<T,U>(f : (U, T, Int64) -> U, initial : U, xs : Iterable<T
     acc
 } 
 
-public func map<T,U>(f : (T) -> U, xs : Iterable<T>) : ArrayList<U> {
+public func map<T,U>(f : (T) -> U, xs : Array<T>) : Array<U> {
+    Array<U>(xs.size(), { i : Int64 => f(xs[i]) })
+}
+
+public func map<T,U>(f : (T) -> U, xs : ArrayList<T>) : ArrayList<U> {
     let acc = ArrayList<U>()
     for (x in xs){
         acc.append(f(x))

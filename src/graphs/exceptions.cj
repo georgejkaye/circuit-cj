@@ -2,12 +2,6 @@ package graphs
 
 import debug.*
 
-class NotOwnedException<T,U> <: Exception where T <: Ownable<U> & ToString {
-    init(function : String, t : T){
-        ErrorMsg(function, "${t} needs an owner but doesn't have one")
-    } 
-}
-
 class AlreadyOwnedException<T> <: Exception where T <: ToString {
     init(function : String, t : T, h1 : Hypergraph, h2 : Hypergraph) {
         ErrorMsg(function, "Element ${t} already has an owner ${h1.GetName()}, so it can't be owned by ${h2.GetName()}")
@@ -27,17 +21,17 @@ class TargetAlreadyExistsException <: Exception {
 }
 
 class InputsNotInHypergraphException <: Exception {
-    init(function : String, h : Hypergraph) {
+    init(function : String, h : InterfacedHypergraph) {
         ErrorMsg(function, "Not all inputs of ${h.GetName()} are vertices in ${h}")
     }
 }
 class OutputsNotInHypergraphException <: Exception {
-    init(function : String, h : Hypergraph) {
+    init(function : String, h : InterfacedHypergraph) {
         ErrorMsg(function, "Not all outputs of ${h.GetName()} are vertices in ${h}")
     }
 }
 class OutputInputMismatchException <: Exception {
-    init(function : String, f : Hypergraph, g : Hypergraph) {
+    init(function : String, f : InterfacedHypergraph, g : InterfacedHypergraph) {
         ErrorMsg(function, "The outputs of hypergraph ${f.GetName()} (${f.GetOutputs()} do not match the inputs of hypergraph ${g.GetName()} (${g.GetOutputs()})")
     }
 }
@@ -49,13 +43,13 @@ class NegativeTraceException <: Exception {
 }
 
 class NotEnoughInputsException <: Exception {
-    init(function : String, n : Int64, h : Hypergraph) {
+    init(function : String, n : Int64, h : InterfacedHypergraph) {
         ErrorMsg(function, "Needed ${n} inputs but ${h.GetName()} only has ${h.GetInputs()}")
     }
 }
 
 class NotEnoughOutputsException <: Exception {
-    init(function : String, n : Int64, h : Hypergraph) {
+    init(function : String, n : Int64, h : InterfacedHypergraph) {
         ErrorMsg(function, "Needed ${n} outputs but ${h.GetName()} only has ${h.GetOutputs()}")
     }
 }

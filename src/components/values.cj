@@ -94,7 +94,8 @@ public func ValueStack(vs : ArrayList<Value>){
     compressor.SetTarget(0, outVertex)
     edges.add(compressor)
     
-    Hypergraph(HashSet<Vertex>(vertices), HashSet<Edge>(edges), ArrayList<Vertex>(), ArrayList<Vertex>([outVertex]))
+    Hypergraph(HashSet<Vertex>(vertices), HashSet<Edge>(edges))
+    outVertex
 }
 
 public func ValueStack(vs : ArrayList<Bool>) {
@@ -108,10 +109,10 @@ public func ValueStack(vs : ArrayList<Bool>) {
 
 public func UnsignedValueFromInt(x : Int64, width: Int64) : Vertex {
     let bin = UnsignedDecToBin(x, width)
-    ValueStack(bin).GetOutputVertices()[0]
+    ValueStack(bin)
 }
 
 public func SignedValueFromInt(x : Int64, width: Int64) : Vertex {
     let bin = SignedDecToBin(x, width)
-    ValueStack(bin).GetOutputVertices()[0]
+    ValueStack(bin)
 }

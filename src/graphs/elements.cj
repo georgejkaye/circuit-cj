@@ -26,15 +26,19 @@ public abstract class Element <: Identifiable & Ownable<Hypergraph> & ToString &
     public func GetOwner() {
         this.owner
     }
-    public func SetOwner(h : Hypergraph) {
+    public open func SetOwner(h : Hypergraph) {
         match (this.owner) {
             case None => this.owner = Some(h)
             case Some(o) => throw AlreadyOwnedException("SetOwner", this, o, h)
         }
         this.owner = Some(h)
     }
-    public func RemoveOwner() {
+    public open func RemoveOwner() {
         this.owner = Option<Hypergraph>.None
+    }
+    public func RemoveAndSetOwner(f : Hypergraph) {
+        RemoveOwner()
+        SetOwner(f)
     }
     public func hashCode() : Int64 {
         this.GetId()
@@ -108,6 +112,18 @@ public class Edge <: Element & Equatable<Edge> {
     let label : Label
     let sources : Array<Option<Vertex>>
     let targets : Array<Option<Vertex>>
+    public init(label: Label, sources : Array<Option<Vertex>>, targets : Array<Option<Vertex>>){
+        super(Option<Hypergraph>.None)
+        this.label = label
+        this.sources = sources
+        this.targets = targets
+    }
+    public init(label: Label, sources : Array<Vertex>, targets : Array<Vertex>){
+        super(Option<Hypergraph>.None)
+        this.label = label
+        this.sources = map({ v : Vertex => Some(v) }, sources)
+        this.targets = map({ v : Vertex => Some(v) }, targets)
+    }
     public init(owner: Option<Hypergraph>, label : Label) {
         super(owner)
         this.label = label
@@ -119,6 +135,30 @@ public class Edge <: Element & Equatable<Edge> {
     }
     public func GetLabel() : Label {
         this.label
+    }
+    public func ForEachSourceAndTarget(f : (Vertex) -> Unit) : Unit {
+        func ForEachVertex(array : Array<Option<Vertex>>, f : (Vertex) -> Unit) : Unit {
+            for (opt in array) {
+                match (opt) {
+                    case Some(v) => f(v)
+                    case None => ()
+                }
+            }
+        }
+        ForEachVertex(this.sources, f)
+        ForEachVertex(this.targets, f)
+    }
+    public override func SetOwner(f : Hypergraph) : Unit {
+        match(this.owner) {
+            case Some(o) => super.SetOwner(f)
+            case None => 
+                this.owner = f
+                ForEachSourceAndTarget({ v => v.SetOwner(f)} )
+        }
+    }
+    public override func RemoveOwner() : Unit {
+        this.owner = Option<Hypergraph>.None
+        ForEachSourceAndTarget({ v => v.RemoveOwner() })
     }
     func SetVertex(
         i : Int64, 
