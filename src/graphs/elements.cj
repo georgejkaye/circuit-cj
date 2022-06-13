@@ -10,11 +10,11 @@ public interface Ownable<T> {
     func RemoveOwner() : Unit
 }
 
-public class Element <: Identifiable & Ownable<Hypergraph> {
+public abstract class Element <: Identifiable & Ownable<Hypergraph> & ToString & Hashable {
     let atom : Atom
     var owner : Option<Hypergraph> = None
-    public init(globalId: Option<Identifier>, owner : Option<Hypergraph>) {
-        this.atom = Atom(globalId)
+    public init(owner : Option<Hypergraph>) {
+        this.atom = Atom(Option<Identifier>.None)
         this.owner = owner
     }
     public func GetId() : Int64 {
@@ -36,19 +36,28 @@ public class Element <: Identifiable & Ownable<Hypergraph> {
     public func RemoveOwner() {
         this.owner = Option<Hypergraph>.None
     }
+    public func hashCode() : Int64 {
+        this.GetId()
+    }
 }
 
-public class Vertex <: ToString & Identifiable & Equatable<Vertex> & Ownable<Hypergraph> & Hashable {
-    let element : Element
+public class Vertex <: Element & Equatable<Vertex> {
+    let width : Int64
     var inEdges : ArrayList<(Edge , Int64)> = ArrayList()
     var outEdges : ArrayList<(Edge , Int64)> = ArrayList()
     var feedback : Int64 = 0
-    public init(globalId: Option<Identifier>, owner: Option<Hypergraph>){
-        this.element = Element(globalId, owner)            
-    
+    public init(width: Int64, owner: Option<Hypergraph>){
+        super(owner)            
+        this.width = width
+    }
+    public init(width: Int64) {
+        this(width, Option<Hypergraph>.None)
     }
     public init() {
-        this(Option<Identifier>.None, Option<Hypergraph>.None)
+        this(1)
+    }
+    func GetWidth() : Int64 {
+        this.width
     }
     func GetInEdges() : ArrayList<(Edge, Int64)> {
         this.inEdges
@@ -85,13 +94,7 @@ public class Vertex <: ToString & Identifiable & Equatable<Vertex> & Ownable<Hyp
         this.feedback--
     }
     public func toString() : String {
-        "v${this.element.GetId()}"
-    }
-    public func GetId() : Int64 {
-        this.element.GetId()
-    }
-    public func GetGlobalId() : Int64 {
-        this.element.GetGlobalId()
+        "v${this.GetId()}"
     }
     public operator func ==(right: Vertex) : Bool {
         this.GetId() == right.GetId()
@@ -99,33 +102,20 @@ public class Vertex <: ToString & Identifiable & Equatable<Vertex> & Ownable<Hyp
     public operator func !=(right : Vertex) : Bool {
         this.GetId() != right.GetId()
     }
-    public func GetOwner() : Option<Hypergraph> {
-        this.element.GetOwner()
-    }
-    public func SetOwner(owner : Hypergraph) : Unit {
-        this.element.SetOwner(owner)
-    }
-    public func RemoveOwner() : Unit {
-        this.element.RemoveOwner()
-    }
-    public func hashCode() : Int64 {
-        this.element.GetId()
-    }
 }
 
-public class Edge <: ToString & Identifiable & Equatable<Edge> & Ownable<Hypergraph> & Hashable {
-    let element : Element
+public class Edge <: Element & Equatable<Edge> {
     let label : Label
     let sources : Array<Option<Vertex>>
     let targets : Array<Option<Vertex>>
-    public init(globalId : Option<Identifier>, owner: Option<Hypergraph>, label : Label) {
-        this.element = Element(globalId, owner)
+    public init(owner: Option<Hypergraph>, label : Label) {
+        super(owner)
         this.label = label
         this.sources = Array<Option<Vertex>>(label.GetInputs()){ i => Option<Vertex>.None }
         this.targets = Array<Option<Vertex>>(label.GetOutputs()){ i => Option<Vertex>.None }
     }
     public init(label : Label) {
-        this(Option<Identifier>.None, Option<Hypergraph>.None, label)
+        this(Option<Hypergraph>.None, label)
     }
     public func GetLabel() : Label {
         this.label
@@ -193,30 +183,12 @@ public class Edge <: ToString & Identifiable & Equatable<Edge> & Ownable<Hypergr
         SetTarget(i, newVertex)
     }
     public func toString() : String {
-        "e${this.element.GetId()}"
-    }
-    public func GetId() : Int64 {
-        this.element.GetId()
-    }
-    public func GetGlobalId() : Int64 {
-        this.element.GetGlobalId()
+        "e${this.GetId()}"
     }
     public operator func ==(right: Edge) : Bool {
         this.GetId() == right.GetId()
     }
     public operator func !=(right : Edge) : Bool {
         this.GetId() != right.GetId()
-    } 
-    public func GetOwner() : Option<Hypergraph> {
-        this.element.GetOwner()
-    }
-    public func SetOwner(owner : Hypergraph) : Unit {
-        this.element.SetOwner(owner)
-    }
-    public func RemoveOwner() : Unit {
-        this.element.RemoveOwner()
-    }
-    public func hashCode() : Int64 {
-        this.element.GetId()
     }
 }

@@ -10,7 +10,7 @@ from std import collection.HashSet
 main(){
 
     SetDotDir("dot")
-    SetDebugDot(true)
+    SetDebugDot(false)
 
     let values = SignedValueFromInt(-72, 8)
     WriteDotToFile(values, "values")

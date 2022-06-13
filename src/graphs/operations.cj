@@ -94,8 +94,6 @@ public func Trace(f : Hypergraph, x : Int64) {
         fInputs.remove(0)
         let output = fOutputs[0]
         fOutputs.remove(0)
-        println(input)
-        println(output)
         let (mergedVertex, removedVertex) = MergeVertices(input, output)
         for (j in 0..fInputs.size()) {
             if (fInputs[j] == removedVertex) {

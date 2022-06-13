@@ -2,9 +2,15 @@ package graphs
 
 import debug.*
 
-class AlreadyOwnedException <: Exception {
-    init(function : String, e : Element, h1 : Hypergraph, h2 : Hypergraph) {
-        ErrorMsg(function, "Element ${e.GetId()} already has an owner ${h1.GetName()}, so it can't be owned by ${h2.GetName()}")
+class NotOwnedException<T,U> <: Exception where T <: Ownable<U> & ToString {
+    init(function : String, t : T){
+        ErrorMsg(function, "${t} needs an owner but doesn't have one")
+    } 
+}
+
+class AlreadyOwnedException<T> <: Exception where T <: ToString {
+    init(function : String, t : T, h1 : Hypergraph, h2 : Hypergraph) {
+        ErrorMsg(function, "Element ${t} already has an owner ${h1.GetName()}, so it can't be owned by ${h2.GetName()}")
     } 
 }
 

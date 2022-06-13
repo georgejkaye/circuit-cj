@@ -32,17 +32,19 @@ let graphOpts = [
 let edgeNodeOpts = [
     ("shape", "plaintext"),
     ("fillcolor", "white"),
-    ("fixedsize", "false")
+    ("fixedsize", "false"),
+    ("fontcolor", "black")
 ]
 let vertexNodeOpts = [
     ("shape", "circle"),
     ("style", "filled"),
     ("fillcolor", "black"),
     ("height", "0.15"),
-    ("fixedsize", "true")
+    ("fixedsize", "true"),
+    ("fontcolor", "white")
 ]
-let portHeight = 10
-let portWidth = 10
+let portHeight = 5
+let portWidth = 5
 
 func bgColour(colour : String) : (String, String) {
     ("bgcolor", colour)
@@ -51,13 +53,16 @@ func bgColour(colour : String) : (String, String) {
 let interfaceStyle = [
     bgColour("gray")
 ]
+let compressorStyle = [
+    bgColour("red")
+]
 let identityStyle = [
     bgColour("gray")
 ]
 let linkStyle = [
     bgColour("red")
 ]
-public let gateStyle = [
+let gateStyle = [
     bgColour("cyan")
 ]
 let structuralStyle = [
@@ -210,13 +215,14 @@ public func DrawEdgeNode(
 func DrawEdge(e : Edge) {
     let (style, label) = match(e.GetLabel()){
         case VALUE(value)       => (valueStyle      , "${value}")
+        case COMPRESSOR(i,j)    => (compressorStyle , if (i < j) { "◁" } else { "▷" })
         case STRUCTURAL(struc)  => (structuralStyle , "${struc}") 
         case GATE(spec)         => (gateStyle       , spec.GetName())
         case BLACKBOX(spec)     => (blackboxStyle   , spec.GetName())
         case DELAY(dur)         => (delayStyle      , "")
         case IDENTITY           => (identityStyle   , "id")
         case INLINK(link)       => (linkStyle       , link.GetName())
-        case OUTLINK(link)       => (linkStyle       , link.GetName())
+        case OUTLINK(link)      => (linkStyle       , link.GetName())
     }
     let text = label
     DrawEdgeNode("e${e.GetId()}", style, text, e.GetSources(), e.GetTargets())
@@ -245,7 +251,7 @@ func DrawVertex(v : Vertex) : (String, IndentInstruction) {
     } else {
         ""
     }
-    DrawOptions("v${v.GetId()}", [("label", ""), ("xlabel", text)])
+    DrawOptions("v${v.GetId()}", [("label", "${v.GetWidth()}"), ("xlabel", text)])
 }
 
 func DrawConnections(e : Edge) : ArrayList<(String, IndentInstruction)> {
@@ -399,4 +405,9 @@ public func WriteDotToFile(f : Hypergraph, file : String){
         fs.close()
         throw CouldNotOpenFileException("WriteDotToFile", filename)
     }
+}
+
+public func WriteDotToFile(v : Vertex, file : String) {
+    let f = v.GetOwner().getOrThrow({ => NotOwnedException("WriteDotToFile", v)})
+    WriteDotToFile(f, file)
 }

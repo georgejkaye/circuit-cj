@@ -14,8 +14,7 @@ def main(build_dir, src_dir, middle_ext, object):
     output = ' '.join([os.path.join(build_dir, f"{dep['packageName']}.{middle_ext}") for dep in dependencies])
     print(output)
 
-if __name__ == "__main__":
-    
+if __name__ == "__main__":    
     if(len(sys.argv) < 4):
         print(f"usage: python {sys.argv[0]} <build directory> <source directory> <object file extension> <object to scan (leave blank for main)>")
         print("")
@@ -23,11 +22,9 @@ if __name__ == "__main__":
         print(f"    python {sys.argv[0]} circuits/ src/ o         # Find dependencies of main file") 
         print("")
         exit(1)
-
     # If no package specified, scan main package
     if len(sys.argv) < 5:
         object = ""
     else:
         object = sys.argv[4]
-    
     main(sys.argv[1], sys.argv[2], sys.argv[3], object)

@@ -46,7 +46,6 @@ func UnsignedDecToBin(x : Int64, w : Int64) : ArrayList<Bool> {
 }
 
 func AddOne(x : ArrayList<Bool>) : Unit {
-    print(x.size())
     for (i in 0..(x.size()-1)) {
         let j = x.size() - 1 - i
         if (x[j]) {
@@ -76,16 +75,26 @@ public func ValueStack(vs : ArrayList<Value>){
         { v : Value => Edge(VALUE(v))},
         vs
     )
+    let compressor = Edge(COMPRESSOR(vs.size(), 1)) 
     let vertices = map(
         { v : Value => Vertex() },
         vs
     )
     let x : Unit = foldi_left(
-        { acc : Unit, e : Edge , i : Int64 => e.SetTarget(0, vertices[i])},
+        { acc : Unit, e : Edge , i : Int64 => 
+            let v = vertices[i]
+            e.SetTarget(0, v)
+            compressor.SetSource(i, v)    
+        },
         (),
         edges
     )
-    Hypergraph(HashSet<Vertex>(vertices), HashSet<Edge>(edges), ArrayList<Vertex>(), vertices)
+    let outVertex = Vertex(vs.size())
+    vertices.add(outVertex)
+    compressor.SetTarget(0, outVertex)
+    edges.add(compressor)
+    
+    Hypergraph(HashSet<Vertex>(vertices), HashSet<Edge>(edges), ArrayList<Vertex>(), ArrayList<Vertex>([outVertex]))
 }
 
 public func ValueStack(vs : ArrayList<Bool>) {
@@ -97,12 +106,12 @@ public func ValueStack(vs : ArrayList<Bool>) {
     )
 }
 
-public func UnsignedValueFromInt(x : Int64, width: Int64) : Hypergraph {
+public func UnsignedValueFromInt(x : Int64, width: Int64) : Vertex {
     let bin = UnsignedDecToBin(x, width)
-    ValueStack(bin)
+    ValueStack(bin).GetOutputVertices()[0]
 }
 
-public func SignedValueFromInt(x : Int64, width: Int64) : Hypergraph {
+public func SignedValueFromInt(x : Int64, width: Int64) : Vertex {
     let bin = SignedDecToBin(x, width)
-    ValueStack(bin)
+    ValueStack(bin).GetOutputVertices()[0]
 }

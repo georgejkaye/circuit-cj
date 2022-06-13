@@ -7,6 +7,8 @@
 
 package syntax
 
+import prelude.*
+
 from std import collection.ArrayList
 
 public interface InputOutput {
@@ -40,6 +42,10 @@ extend Value <: ToString & Specifiable {
     public func GetName() : String {
         this.toString()
     }
+}
+
+public func BitString(bits : ArrayList<Value>){
+    fold_left({acc : String, v : Value => "${acc}${v}"}, "", bits)
 }
 
 /**
@@ -219,31 +225,34 @@ public class OutLinkSpecification <: Equatable<Specification> & ToString & Input
  * Enum for the different types of generators
  */
 public enum Label { 
-    | VALUE(Value)            // A value 0 -> 1
-    | STRUCTURAL(Structural)  // A structural generator 
+    | VALUE(Value)                    // A value 0 -> n
+    | COMPRESSOR(Int64, Int64)        // A (de)compressor for translating between wire representations
+    | STRUCTURAL(Structural)          // A structural generator 
     | GATE(GateSpecification)         // A gate m -> 1
-    | BLACKBOX(Specification)     // A black box with arbitrary name and codomain
-    | DELAY(Int64)           // A delay parameterised by a duration
-    | IDENTITY                // An identity 1 -> 1
-    | INLINK(InLinkSpecification)            // An in-link 0 -> m, where wires come into the graph
-    | OUTLINK(OutLinkSpecification)           // An out-link m -> 0, where wires come out of the graph
+    | BLACKBOX(Specification)         // A black box with arbitrary name and codomain
+    | DELAY(Int64)                    // A delay parameterised by a duration
+    | IDENTITY                        // An identity 1 -> 1
+    | INLINK(InLinkSpecification)     // An in-link 0 -> m, where wires come into the graph
+    | OUTLINK(OutLinkSpecification)   // An out-link m -> 0, where wires come out of the graph
 }
 extend Label <: ToString & InputOutput & Nameable {
     public func toString() : String {
         match(this){
-            case VALUE(value)        => "value (${value})"
-            case STRUCTURAL(struc)  =>  "structural (${struc})"
+            case VALUE(value)       => "value (${value})"
+            case COMPRESSOR(m,n)    => "compressor ${m} to ${n}"
+            case STRUCTURAL(struc)  => "structural (${struc})"
             case GATE(spec)         => "gate (${spec.GetName()})"
             case BLACKBOX(spec)     => "black box (${spec.GetName()})"
-            case DELAY(dur)          => "delay (${dur})"
-            case IDENTITY           =>  "identity"
-            case INLINK(link)        => "in link (${link.GetName()} - ${link.GetOutputs()})"
-            case OUTLINK(link)       => "out link (${link.GetName()} - ${link.GetInputs()})"
+            case DELAY(dur)         => "delay (${dur})"
+            case IDENTITY           => "identity"
+            case INLINK(link)       => "in link (${link.GetName()} - ${link.GetOutputs()})"
+            case OUTLINK(link)      => "out link (${link.GetName()} - ${link.GetInputs()})"
         }
     }
     public func GetInputs() : Int64 {
         match(this) {
             case VALUE(value)       => 0
+            case COMPRESSOR(m,n)    => m
             case STRUCTURAL(struc)  => struc.GetInputs()
             case GATE(spec)         => spec.GetInputs() 
             case BLACKBOX(spec)     => spec.GetInputs()
@@ -255,7 +264,8 @@ extend Label <: ToString & InputOutput & Nameable {
     }
     public func GetOutputs() : Int64 {
         match(this) {
-            case VALUE(value)       => 1
+            case VALUE(values)      => 1
+            case COMPRESSOR(m,n)    => n
             case STRUCTURAL(struc)  => struc.GetOutputs()
             case GATE(spec)         => spec.GetOutputs() 
             case BLACKBOX(spec)     => spec.GetOutputs()
@@ -268,6 +278,7 @@ extend Label <: ToString & InputOutput & Nameable {
     public func GetName() : String {
         match(this) {
             case VALUE(value)       => value.toString()
+            case COMPRESSOR(m,n)    => "compressor m to n"
             case STRUCTURAL(struc)  => struc.toString()
             case GATE(spec)         => spec.GetName() 
             case BLACKBOX(spec)     => spec.GetName()
