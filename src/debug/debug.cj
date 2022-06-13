@@ -5,7 +5,31 @@
  */
 package debug
 
-import settings.*
+/**
+ * Debug settings
+ */
+
+/** Whether the debug messages are printed */
+var debugMessages = true
+/**
+ * Toggle the debug messages on and off
+ */
+public func ToggleDebugMessages(){
+    debugMessages = !debugMessages
+}
+/**
+ * Set if the debug messages are on or off
+ * @param b Whether the debug messages are on or off
+ */
+public func SetDebugMessages(b : Bool){
+    debugMessages = b
+}
+/**
+ * Check if the debug messages are on
+ */
+public func DebugMessagesOn(){
+    debugMessages
+}
 
 enum MessageType{ DEBUG | ERROR | WARNING | INFO }
 extend MessageType <: ToString {

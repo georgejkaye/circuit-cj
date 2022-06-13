@@ -218,11 +218,7 @@ func DrawEdge(e : Edge) {
         case INLINK(link)       => (linkStyle       , link.GetName())
         case OUTLINK(link)       => (linkStyle       , link.GetName())
     }
-    let text = if(DebugDotOn()){
-        "${label} (${e.GetGlobalId()})"
-    } else {
-        "${label}"
-    }
+    let text = label
     DrawEdgeNode("e${e.GetId()}", style, text, e.GetSources(), e.GetTargets())
 }
 
@@ -245,7 +241,7 @@ func DrawOptions(selector : String, opts : Array<(String, String)>) : (String, I
 
 func DrawVertex(v : Vertex) : (String, IndentInstruction) {
     let text = if(DebugDotOn()){
-        "${v.GetId()} (${v.GetGlobalId()})"
+        "${v.GetId()}"
     } else {
         ""
     }

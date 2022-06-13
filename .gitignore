@@ -11,4 +11,4 @@ dot/
 *.cjo
 *.o
 *.cj.o
-errors.txt
+*txt

@@ -1,6 +1,11 @@
 package graphs
 
-func MergeVertices(v : Vertex, w : Vertex) : Unit {
+/**
+ * Merge two vertices together, such that any edges that had either vertex
+ * as a source or target is updated with the merged vertex
+ * @return A tuple (merged vertex, removed vertex)
+ */
+func MergeVertices(v : Vertex, w : Vertex) : (Vertex, Vertex) {
     func SetVertices(edges : ArrayList<(Edge , Int64)>, fn : (Edge, Vertex, Int64) -> Unit) : Unit {
         for (ei in edges) {
             let (e, i) = ei
@@ -9,6 +14,7 @@ func MergeVertices(v : Vertex, w : Vertex) : Unit {
     }
     SetVertices(w.GetInEdges(), { e , v, i => e.RemoveAndSetTarget(i, v)})
     SetVertices(w.GetOutEdges(), { e , v, i => e.RemoveAndSetSource(i, v)})
+    (v, w)
 }
 
 public func Seq(f : Hypergraph, g : Hypergraph) : Hypergraph {
@@ -71,10 +77,10 @@ public func Trace(f : Hypergraph, x : Int64) {
     if (x < 0) {
         throw NegativeTraceException("Trace", x)
     }
-    if (x < f.GetInputs()) {
+    if (f.GetInputs() < x) {
         throw NotEnoughInputsException("Trace", x, f)
     }
-    if (x < f.GetOutputs()) {
+    if (f.GetOutputs() < x) {
         throw NotEnoughOutputsException("Trace", x, f)
     }
     f.Deactivate()
@@ -83,10 +89,25 @@ public func Trace(f : Hypergraph, x : Int64) {
     let fOutputs = f.GetOutputVertices()
     let fVertices = f.GetVertices()
     for (i in 0..x) {
-        let input = fInputs.remove(0)
-        let output = fOutputs.remove(0)
-        MergeVertices(input, output)
-        fVertices.removeIf({ v => v == output })
+        // HACK .remove() might not return the right element
+        let input = fInputs[0]
+        fInputs.remove(0)
+        let output = fOutputs[0]
+        fOutputs.remove(0)
+        println(input)
+        println(output)
+        let (mergedVertex, removedVertex) = MergeVertices(input, output)
+        for (j in 0..fInputs.size()) {
+            if (fInputs[j] == removedVertex) {
+                fInputs[j] = mergedVertex
+            }
+        }
+        for (j in 0..fOutputs.size()) {
+            if (fOutputs[j] == removedVertex) {
+                fOutputs[j] = mergedVertex
+            }
+        }
+        fVertices.removeIf({ v => v == removedVertex })
     }
     Hypergraph(fVertices, fEdges, fInputs, fOutputs)
 }

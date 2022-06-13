@@ -16,3 +16,7 @@
 * Finish wellformedness checker
 * Implement {composition,tensor,trace} on new style hypergraphs
 * Recreate dot generation for hypergraphs
+
+## 2022-06-13
+
+* Fix trace

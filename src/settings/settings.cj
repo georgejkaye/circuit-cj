@@ -6,31 +6,7 @@
 
 package settings
 
-/**
- * Debug settings
- */
-
-/** Whether the debug messages are printed */
-var debugMessages = true
-/**
- * Toggle the debug messages on and off
- */
-public func ToggleDebugMessages(){
-    debugMessages = !debugMessages
-}
-/**
- * Set if the debug messages are on or off
- * @param b Whether the debug messages are on or off
- */
-public func SetDebugMessages(b : Bool){
-    debugMessages = b
-}
-/**
- * Check if the debug messages are on
- */
-public func DebugMessagesOn(){
-    debugMessages
-}
+import debug.*
 
 /** 
  * Dot settings 
@@ -41,17 +17,24 @@ public let tab = "  "
 
 /* Whether to display debug information on the dot graph */
 var debugDot = false
+
+func DebugDotInfo(){
+    Info("ToggleDebugDot", "Dot debug information has been toggled ${if(debugDot) { "on" } else { "off" }}")
+}
+
 /**
  * Toggle the debug dot on and off
  */
 public func ToggleDebugDot(){
     debugDot = !debugDot
+    DebugDotInfo()
 }
 /**
  * Set if the generated dot should contain debug information
  */
 public func SetDebugDot(b : Bool){
     debugDot = b
+    DebugDotInfo()
 }
 /**
  * Check if debug dot information should be printed
@@ -68,7 +51,7 @@ var dotDir = ""
  */
 public func SetDotDir(dir : String){
     dotDir = dir
-    println("The dot directory has been set to ${dir}")
+    Info("SetDotDir", "The dot directory has been set to ${dir}")
 }
 /**
  * Get the dot output file path (relative to the project root) with extension
