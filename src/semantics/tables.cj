@@ -1,12 +1,14 @@
 package semantics
 
+import syntax.*
+
 /**
  * Truth table class, to store the results of applying arguments to gates
  */
 class TruthTable {
-    let generator : Generator
+    let generator : Label
     let table : (ArrayList<Value>) -> Value
-    init(generator : Generator, table : (ArrayList<Value>) -> Value) {
+    init(generator : Label, table : (ArrayList<Value>) -> Value) {
         this.generator = generator
         this.table = table
     }
@@ -16,8 +18,8 @@ class TruthTable {
     * @param args The list of arguments
      */
     func Eval(args : ArrayList<Value>){
-        if(args.size() != Dom(generator)){
-            throw BadDomainException("Eval", args.size(), Dom(generator))
+        if(args.size() != generator.GetInputs()){
+            throw BadDomainException("Eval", generator, args.size(), generator.GetInputs())
         }
         table(args)
     }

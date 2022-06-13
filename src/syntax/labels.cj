@@ -21,14 +21,14 @@ public interface Nameable {
 public interface Specifiable <: Nameable & InputOutput {
 }
 
-public enum Value { None | False | True | Both }
+public enum Value { Bottom | False | True | Top }
 extend Value <: ToString & Specifiable {
     public func toString() : String {
         match(this) {
-            case None => "⊥"
+            case Bottom => "⊥"
             case False => "f"
             case True => "t"
-            case Both => "⊤"
+            case Top => "⊤"
         }
     }
     public func GetInputs() : Int64 {
@@ -228,7 +228,7 @@ public enum Label {
     | INLINK(InLinkSpecification)            // An in-link 0 -> m, where wires come into the graph
     | OUTLINK(OutLinkSpecification)           // An out-link m -> 0, where wires come out of the graph
 }
-extend Label <: ToString & InputOutput {
+extend Label <: ToString & InputOutput & Nameable {
     public func toString() : String {
         match(this){
             case VALUE(value)        => "value (${value})"
@@ -263,6 +263,18 @@ extend Label <: ToString & InputOutput {
             case IDENTITY           => 1
             case INLINK(link)       => link.GetOutputs()
             case OUTLINK(link)      => 0
+        }
+    }
+    public func GetName() : String {
+        match(this) {
+            case VALUE(value)       => value.toString()
+            case STRUCTURAL(struc)  => struc.toString()
+            case GATE(spec)         => spec.GetName() 
+            case BLACKBOX(spec)     => spec.GetName()
+            case DELAY(dur)         => "delay ${dur}"
+            case IDENTITY           => "id"
+            case INLINK(link)       => link.toString()
+            case OUTLINK(link)      => link.toString()
         }
     }
 }

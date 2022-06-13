@@ -4,7 +4,6 @@ import json
 import os
 
 def main(build_dir, src_dir, middle_ext, object):
-
     package_dir = os.path.join(src_dir, f"{object}")
     # Scan the package for its dependencies
     p = subprocess.Popen(["cjc", "--scan-dependency", "--package", package_dir, "--module-name", "circuits"], stdout=subprocess.PIPE)

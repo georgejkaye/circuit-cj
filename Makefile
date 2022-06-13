@@ -53,6 +53,7 @@ $(PACKAGES): $(BUILD_DIR)/$$@.$(MIDDLE_EXT)
 
 # Build an object file in circuits/
 $(BUILD_DIR)/%.$(MIDDLE_EXT): $$(shell python dependencies.py $(BUILD_DIR) $(SRC_DIR) $(MIDDLE_EXT) $$*) $$(shell find $(SRC_DIR)/$$*/*${SRC_EXT})
+	@echo "Building $*"
 	$(CJC) $(LIB_OPT) $(PKG_OPT) $(SRC_DIR)/$* $(MOD_NAME_OPT) $(MOD_NAME) $(OUTPUT_OPT) $(MOD_NAME)/	
 
 # Build the main.out file
@@ -62,6 +63,9 @@ $(MAIN).$(OUT_EXT): $$(shell python dependencies.py $(BUILD_DIR) $(SRC_DIR) $(MI
 # Draw a dot graph
 $(DOT_DIR)/%.svg: $(DOT_DIR)/%
 	dot -Tsvg $(DOT_DIR)/$* -O
+
+# $(BUILD_DIR)/%.$(MIDDLE_EXT): $$(shell python dependencies.py $(BUILD_DIR) $(SRC_DIR) $(MIDDLE_EXT) $$*)
+# 	$(CJC) $(LIB_OPT) $(PKG_OPT) $(SRC_DIR)/$* $(MOD_NAME_OPT) $(MOD_NAME) $(OUTPUT_OPT) $(MOD_NAME)/	
 
 test:
 	echo $(DOTS_SVGS)

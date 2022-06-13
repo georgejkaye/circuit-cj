@@ -6,6 +6,7 @@
 package prelude
 
 from std import collection.ArrayList
+from std import math.*
 
 public func test(){
     return true
@@ -139,6 +140,16 @@ public func foldi_left<T,U>(f : (U, T, Int64) -> U, initial : U, xs : Array<T>) 
     acc
 } 
 
+public func foldi_left<T,U>(f : (U, T, Int64) -> U, initial : U, xs : Iterable<T>) : U {
+    var acc = initial
+    var i = 0
+    for (x in xs) {
+        acc = f(acc, x, i)
+        i++
+    }
+    acc
+} 
+
 public func map<T,U>(f : (T) -> U, xs : Iterable<T>) : ArrayList<U> {
     let acc = ArrayList<U>()
     for (x in xs){
@@ -155,4 +166,19 @@ public func mapi<T,U>(f : (T, Int64) -> U, xs : Iterable<T>) : ArrayList<U> {
         i++
     }
     acc
+}
+
+// This exists in bigint, but should probably be in the main math library
+public func log2Ceil(n: Int64): Int64 {
+    unsafe { return Int64(ceil(log2(Float64(n)))) }
+}
+
+public func xorBool(a : Bool, b : Bool) : Bool {
+    if (a && b) {
+        false
+    } else if (a || b) {
+        true
+    } else {
+        false
+    }
 }
