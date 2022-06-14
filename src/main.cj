@@ -22,8 +22,9 @@ main(){
     let adderSpec = Specification("adder", [width, width], [width])
     let adder = BlackBox(adderSpec, [reg, input])[0]
 
+    Feedback(adder, fb)
 
-    let circuit = MakeCircuit([fb, input], [adder, adder])
+    let circuit = MakeCircuit([input], [adder])
     WriteDotToFile(circuit, "circuit")
 
     return 0

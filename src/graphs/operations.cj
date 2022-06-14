@@ -1,21 +1,20 @@
 package graphs
 
-// /**
-//  * Merge two vertices together, such that any edges that had either vertex
-//  * as a source or target is updated with the merged vertex
-//  * @return A tuple (merged vertex, removed vertex)
-//  */
-// func MergeVertices(v : Vertex, w : Vertex) : (Vertex, Vertex) {
-//     func SetVertices(edges : ArrayList<(Edge , Int64)>, fn : (Edge, Vertex, Int64) -> Unit) : Unit {
-//         for (ei in edges) {
-//             let (e, i) = ei
-//             fn(e, v, i)
-//         }
-//     }
-//     SetVertices(w.GetInEdges(), { e , v, i => e.RemoveAndSetTarget(i, v)})
-//     SetVertices(w.GetOutEdges(), { e , v, i => e.RemoveAndSetSource(i, v)})
-//     (v, w)
-// }
+/**
+ * Merge two vertices together, such that any edges that had either vertex
+ * as a source or target is updated with the merged vertex
+ * @return A tuple (merged vertex, removed vertex)
+ */
+public func MergeVertices(v : Wire, w : Wire) : Unit {
+    let vertex = w.GetVertex()
+    v.GetVertex().AddAllInEdges(vertex.GetInEdges())
+    v.GetVertex().AddAllOutEdges(vertex.GetOutEdges())
+    w.SetVertex(v.GetVertex())
+    match(vertex.GetOwner()) {
+        case None => ()
+        case Some(g) => g.RemoveVertex(vertex)
+    }
+}
 
 // public func Seq(f : InterfacedHypergraph, g : InterfacedHypergraph) : InterfacedHypergraph {
 //     if (f.GetOutputs() != g.GetInputs()){

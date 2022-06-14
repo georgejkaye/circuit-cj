@@ -1,9 +1,9 @@
 package components
 
-public func MakeWire(width!: Int64 = 1) : Vertex {
+public func MakeWire(width!: Int64 = 1) : Wire {
     let vertex = Vertex(width)
     let f = Hypergraph(HashSet<Vertex>([ vertex ]), HashSet<Edge>())
-    vertex
+    Wire(vertex)
 }
 
 public func Split(v : Vertex, l : Int64, r : Int64) : (Vertex, Vertex) {

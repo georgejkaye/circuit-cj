@@ -31,3 +31,9 @@ public class IncompatibleWidthException <: Exception {
         ErrorMsg(function, "Tried to split ${v} into (${l},${r}) but it is only of width ${v.GetWidth()}")
     }
 }
+
+public class NotDanglingWireException <: Exception {
+    init(function : String, w : Wire) {
+        ErrorMsg(function, "Tried to use ${w} as a feedback wire but it has connected in-edges")
+    }
+}

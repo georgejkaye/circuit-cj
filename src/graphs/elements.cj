@@ -13,9 +13,8 @@ public interface Ownable<T> {
 public abstract class Element <: Identifiable & Ownable<Hypergraph> & ToString & Hashable {
     let atom : Atom
     var owner : Option<Hypergraph> = None
-    public init(owner : Option<Hypergraph>) {
+    public init() {
         this.atom = Atom(Option<Identifier>.None)
-        this.owner = owner
     }
     public func GetId() : Int64 {
         this.atom.GetId()
@@ -27,10 +26,6 @@ public abstract class Element <: Identifiable & Ownable<Hypergraph> & ToString &
         this.owner
     }
     public open func SetOwner(h : Hypergraph) {
-        match (this.owner) {
-            case None => this.owner = Some(h)
-            case Some(o) => throw AlreadyOwnedException("SetOwner", this, o, h)
-        }
         this.owner = Some(h)
     }
     public open func RemoveOwner() {
@@ -45,17 +40,46 @@ public abstract class Element <: Identifiable & Ownable<Hypergraph> & ToString &
     }
 }
 
+public class Wire <: Identifiable & ToString {
+    let id : Identifier = Identifier()
+    var vertex : Vertex
+    public init(v : Vertex) {
+        this.vertex = v
+    }
+    public func GetVertex() : Vertex {
+        this.vertex
+    }
+    public func SetVertex(v : Vertex) : Unit {
+        match(this.vertex.GetOwner()) {
+            case None => ()
+            case Some(h) => 
+                h.RemoveVertex(this.vertex)
+                h.AddVertex(v)
+        }
+        for ((e, i) in this.vertex.GetInEdges()) {
+            e.SetTarget(i, v)
+        }
+        for ((e, i) in this.vertex.GetOutEdges()) {
+            e.SetSource(i, v)
+        }
+        this.vertex = v
+    }
+    public func GetId() : Int64 {
+        this.id.GetId()
+    }
+    public func toString() : String {
+        "wire ${this.id} (pointing at ${this.vertex})"
+    }
+}
+
 public class Vertex <: Element & Equatable<Vertex> {
     let width : Int64
     var inEdges : ArrayList<(Edge , Int64)> = ArrayList()
     var outEdges : ArrayList<(Edge , Int64)> = ArrayList()
     var feedback : Int64 = 0
-    public init(width: Int64, owner: Option<Hypergraph>){
-        super(owner)            
-        this.width = width
-    }
-    public init(width: Int64) {
-        this(width, Option<Hypergraph>.None)
+    public init(width: Int64){         
+        this.width = width    
+        this.owner = Some(Hypergraph(HashSet<Vertex>([this]), HashSet<Edge>()))
     }
     public init() {
         this(1)
@@ -63,17 +87,23 @@ public class Vertex <: Element & Equatable<Vertex> {
     public func GetWidth() : Int64 {
         this.width
     }
-    func GetInEdges() : ArrayList<(Edge, Int64)> {
+    public func GetInEdges() : ArrayList<(Edge, Int64)> {
         this.inEdges
     }
-    func GetOutEdges() : ArrayList<(Edge, Int64)> {
+    public func GetOutEdges() : ArrayList<(Edge, Int64)> {
         this.outEdges
     }
     func AddInEdge(e : Edge, i : Int64) : Unit {
         inEdges.add((e, i))
     }
+    func AddAllInEdges(es : ArrayList<(Edge, Int64)>) {
+        inEdges.addAll(es)
+    }
     func AddOutEdge(e : Edge, i : Int64) : Unit {
         outEdges.add((e, i))
+    }
+    func AddAllOutEdges(es : ArrayList<(Edge, Int64)>) {
+        outEdges.addAll(es)
     }
     func RemoveAllInEdge(edge : Edge) : Unit {
         inEdges.removeIf({e => e[0] == edge})
@@ -133,23 +163,34 @@ public class Edge <: Element & Equatable<Edge> {
     let sources : Array<Vertex>
     let targets : Array<Vertex>
     public init(label: Label, sources : Array<Vertex>, targets : Array<Int64>){
-        super(Option<Hypergraph>.None)
         CheckLabelCompatibility(label, map({v : Vertex => v.GetWidth()}, sources), targets)
         this.label = label
         this.sources = sources
         this.targets = map({ i : Int64 => Vertex(i) }, targets)
         let graph = CombineGraphs(sources)
         graph.AddEdge(this)
+        ForEachSource({ v : Vertex, i : Int64 => v.AddOutEdge(this, i)})
+        ForEachTarget({ v : Vertex, i : Int64 => v.AddInEdge(this, i)})
+    }
+    public init(label : Label, sources : Array<Wire>, targets : Array<Int64>){
+        this(label, map({ w : Wire => w.GetVertex() }, sources), targets)
     }
     public func GetLabel() : Label {
         this.label
     }
-    public func ForEachSourceAndTarget(f : (Vertex) -> Unit) : Unit {
-        func ForEachVertex(array : Array<Vertex>, f : (Vertex) -> Unit) : Unit {
-            for (v in array) {
-                    f(v)
-            }
+    
+    func ForEachVertex(array : Array<Vertex>, f : (Vertex, Int64) -> Unit) : Unit {
+        for (i in 0..array.size()) {
+            f(array[i], i)
         }
+    }
+    public func ForEachSource(f : (Vertex, Int64) -> Unit) : Unit {
+        ForEachVertex(this.sources, f)
+    }
+    public func ForEachTarget(f : (Vertex, Int64) -> Unit) : Unit {
+        ForEachVertex(this.targets, f)
+    }
+    public func ForEachSourceAndTarget(f : (Vertex, Int64) -> Unit) : Unit {
         ForEachVertex(this.sources, f)
         ForEachVertex(this.targets, f)
     }
@@ -158,12 +199,12 @@ public class Edge <: Element & Equatable<Edge> {
             case Some(o) => super.SetOwner(f)
             case None => 
                 this.owner = f
-                ForEachSourceAndTarget({ v => v.SetOwner(f)} )
+                ForEachSourceAndTarget({ v, i => v.SetOwner(f)} )
         }
     }
     public override func RemoveOwner() : Unit {
         this.owner = Option<Hypergraph>.None
-        ForEachSourceAndTarget({ v => v.RemoveOwner() })
+        ForEachSourceAndTarget({ v, i => v.RemoveOwner() })
     }
     func SetVertex(
         i : Int64, 

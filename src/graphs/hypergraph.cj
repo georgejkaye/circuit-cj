@@ -70,11 +70,17 @@ public class Hypergraph <: Identifiable & ToString & Nameable & Equatable<Hyperg
     }
     public func AddEdge(e : Edge) : Unit {
         this.edges.put(e)
-        e.ForEachSourceAndTarget({ v : Vertex => this.vertices.put(v)})
+        e.ForEachSourceAndTarget({ v : Vertex, i : Int64 => this.vertices.put(v)})
         e.RemoveAndSetOwner(this)
     }
     public func GetVertices() : HashSet<Vertex> {
         this.vertices
+    }
+    public func AddVertex(v : Vertex) : Unit {
+        this.vertices.put(v)
+    }
+    public func RemoveVertex(v : Vertex) : Unit {
+        this.vertices.remove(v)
     }
     public func IsWellFormed() : Bool {
         let issues = this.WellFormednessCheck()
@@ -109,6 +115,10 @@ public class Hypergraph <: Identifiable & ToString & Nameable & Equatable<Hyperg
             )
         }
         issues
+    }
+    public func ReplaceVertex(v : Vertex, w : Vertex) : Unit {
+        this.vertices.remove(v)
+        this.vertices.put(w)
     }
     public func toString() : String {
         let vertexString = this.vertices.toString()
@@ -190,6 +200,9 @@ public func CombineGraphs(vs : Array<Vertex>) : Hypergraph {
     }
     Hypergraph(vertices, edges)
 }
+public func CombineGraphs(ws : Array<Wire>) : Hypergraph {
+    CombineGraphs(map({ w : Wire => w.GetVertex() }, ws))
+}
 
 public class InterfacedHypergraph <: Identifiable & ToString & Nameable & InputOutput & Equatable<InterfacedHypergraph> {
 
@@ -202,6 +215,9 @@ public class InterfacedHypergraph <: Identifiable & ToString & Nameable & InputO
         this.f = f
         this.inputs = inputs
         this.outputs = outputs
+    }
+    public init(f : Hypergraph, inputs : Array<Wire>, outputs : Array<Wire>){
+        this(f, map({ w : Wire => w.GetVertex() }, inputs), map({ w : Wire => w.GetVertex() }, outputs))
     }
     public func GetId() : Int64 {
         this.uniqueId.GetId()
