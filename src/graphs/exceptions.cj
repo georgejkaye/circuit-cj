@@ -36,6 +36,12 @@ class OutputInputMismatchException <: Exception {
     }
 }
 
+class IncompatibleLabelException <: Exception {
+    init(function : String, label : Label, sources : Array<Int64>, targets : Array<Int64>){
+        ErrorMsg(function, "Tried to construct an edge using label ${label} type ${label.GetInputPorts()} → ${label.GetOutputPorts()} but given vertices of types ${sources} → ${targets}")
+    }
+}
+
 class NegativeTraceException <: Exception {
     init(function : String, n : Int64) {
         ErrorMsg(function, "Cannot perform a negative trace ${n}")
@@ -59,3 +65,4 @@ class CouldNotOpenFileException <: Exception {
         ErrorMsg(function, "Could not open file ${file}")
     }
 }
+

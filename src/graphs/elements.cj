@@ -60,7 +60,7 @@ public class Vertex <: Element & Equatable<Vertex> {
     public init() {
         this(1)
     }
-    func GetWidth() : Int64 {
+    public func GetWidth() : Int64 {
         this.width
     }
     func GetInEdges() : ArrayList<(Edge, Int64)> {
@@ -108,41 +108,44 @@ public class Vertex <: Element & Equatable<Vertex> {
     }
 }
 
+public func CheckLabelCompatibility(label : Label, inputs: Array<Int64>, outputs: Array<Int64>) : Unit{
+    func CheckCompatibility(desired : Array<Int64>, actual : Array<Int64>) : Bool {
+        if (desired.size() != actual.size()) {
+            return false
+        }
+        for (i in 0..actual.size()) {
+            if (desired[i] != actual[i]){
+                return false
+            }
+        }
+        return true
+    }
+    let inputCheck = CheckCompatibility(label.GetInputPorts(), inputs)
+    let outputCheck = CheckCompatibility(label.GetOutputPorts(), outputs)
+
+    if (!inputCheck || !outputCheck) {
+        throw IncompatibleLabelException("CheckLabelCompatibility", label, inputs, outputs)
+    }
+}
+
 public class Edge <: Element & Equatable<Edge> {
     let label : Label
-    let sources : Array<Option<Vertex>>
-    let targets : Array<Option<Vertex>>
-    public init(label: Label, sources : Array<Option<Vertex>>, targets : Array<Option<Vertex>>){
+    let sources : Array<Vertex>
+    let targets : Array<Vertex>
+    public init(label: Label, sources : Array<Vertex>, targets : Array<Vertex>){
         super(Option<Hypergraph>.None)
+        CheckLabelCompatibility(label, map({v : Vertex => v.GetWidth()}, sources), map({v : Vertex => v.GetWidth()}, targets))
         this.label = label
         this.sources = sources
         this.targets = targets
-    }
-    public init(label: Label, sources : Array<Vertex>, targets : Array<Vertex>){
-        super(Option<Hypergraph>.None)
-        this.label = label
-        this.sources = map({ v : Vertex => Some(v) }, sources)
-        this.targets = map({ v : Vertex => Some(v) }, targets)
-    }
-    public init(owner: Option<Hypergraph>, label : Label) {
-        super(owner)
-        this.label = label
-        this.sources = Array<Option<Vertex>>(label.GetInputs()){ i => Option<Vertex>.None }
-        this.targets = Array<Option<Vertex>>(label.GetOutputs()){ i => Option<Vertex>.None }
-    }
-    public init(label : Label) {
-        this(Option<Hypergraph>.None, label)
     }
     public func GetLabel() : Label {
         this.label
     }
     public func ForEachSourceAndTarget(f : (Vertex) -> Unit) : Unit {
-        func ForEachVertex(array : Array<Option<Vertex>>, f : (Vertex) -> Unit) : Unit {
-            for (opt in array) {
-                match (opt) {
-                    case Some(v) => f(v)
-                    case None => ()
-                }
+        func ForEachVertex(array : Array<Vertex>, f : (Vertex) -> Unit) : Unit {
+            for (v in array) {
+                    f(v)
             }
         }
         ForEachVertex(this.sources, f)
@@ -163,64 +166,45 @@ public class Edge <: Element & Equatable<Edge> {
     func SetVertex(
         i : Int64, 
         newVertex : Vertex, 
-        array : Array<Option<Vertex>>, 
-        exn : (Edge, Int64, Vertex) -> Exception,
+        array : Array<Vertex>, 
         vertexFn : (Vertex) -> Unit
     ) : Unit {
-        match (array[i]) {
-            case Some(oldVertex) => throw exn(this, i, oldVertex)
-            case None    => 
-                array[i] = newVertex
-                vertexFn(newVertex)
-        }
-    }
-    func RemoveVertex(i : Int64, array : Array<Option<Vertex>>) : Unit {
-        array[i] = Option<Vertex>.None
+            array[i] = newVertex
+            vertexFn(newVertex)
     }
     public func SetSource(i : Int64, newVertex : Vertex) : Unit {
         SetVertex(
             i,
             newVertex,
             this.sources,
-            {e, i, v => SourceAlreadyExistsException("SetSource", e, i, v)},
             { v => v.AddOutEdge(this, i) }
         )
     }
-    public func GetSource(i : Int64) : Option<Vertex> {
-        this.sources[i]
-    }
-    public func GetSources() : Array<Option<Vertex>> {
-        this.sources
-    }
-    public func RemoveSource(i : Int64) : Unit {
-        RemoveVertex(i, sources)
-    }
-    public func RemoveAndSetSource(i : Int64, newVertex : Vertex) : Unit {
-        RemoveSource(i)
-        SetSource(i, newVertex)
-    }
-
     public func SetTarget(i : Int64, newVertex : Vertex) : Unit {
         SetVertex(
             i,
             newVertex,
             this.targets,
-            {e, i, v => TargetAlreadyExistsException("SetTarget", e, i, v)},
             {v => v.AddInEdge(this, i)}
         )
     }
-    public func GetTarget(i : Int64) : Option<Vertex> {
+    public func GetSource(i : Int64) : Vertex {
+        this.sources[i]
+    }
+    public func GetSources() : Array<Vertex> {
+        this.sources
+    }
+    public func GetSourcePorts() : Int64 {
+        this.sources.size()
+    }
+    public func GetTarget(i : Int64) : Vertex {
         this.targets[i]
     }
-    public func GetTargets() : Array<Option<Vertex>> {
+    public func GetTargets() : Array<Vertex> {
         this.targets
     }
-    public func RemoveTarget(i : Int64) : Unit {
-        RemoveVertex(i, targets)
-    }
-    public func RemoveAndSetTarget(i : Int64, newVertex : Vertex) : Unit {
-        RemoveTarget(i)
-        SetTarget(i, newVertex)
+    public func GetTargetPorts() : Int64 {
+        this.targets.size()
     }
     public func toString() : String {
         "e${this.GetId()}"

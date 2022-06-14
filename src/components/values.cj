@@ -24,7 +24,7 @@ func PadFront(xs : ArrayList<Bool>, width: Int64) : Unit {
  * @param w      The width of the resulting list
  * @param x      The decimal number to convert
  */
-func UnsignedDecToBin(x : Int64, w : Int64) : ArrayList<Bool> {
+func UnsignedDecToBin(x : Int64, w : Int64) : Array<Bool> {
     if(x < 0){
         throw NegativeNumberException("DecToBin", x)
     }
@@ -33,7 +33,7 @@ func UnsignedDecToBin(x : Int64, w : Int64) : ArrayList<Bool> {
         throw NotEnoughBitsException("UnsignedDecToBin", x, w, required)
     }
     // Set up the list
-    let bin = ArrayList<Bool>(w, {x : Int64 => false})
+    let bin = Array<Bool>(w, {x : Int64 => false})
     var num = x
     // Divide by two w times, setting the remainder to the ith bit of the list
     // If we run out of w before we run out of list, the msbs will be ignored
@@ -45,7 +45,7 @@ func UnsignedDecToBin(x : Int64, w : Int64) : ArrayList<Bool> {
     return bin
 }
 
-func AddOne(x : ArrayList<Bool>) : Unit {
+func AddOne(x : Array<Bool>) : Unit {
     for (i in 0..(x.size()-1)) {
         let j = x.size() - 1 - i
         if (x[j]) {
@@ -57,62 +57,36 @@ func AddOne(x : ArrayList<Bool>) : Unit {
     }
 }
 
-func Invert(x : ArrayList<Bool>) : Unit {
+func Invert(x : Array<Bool>) : Unit {
     for (i in 0..(x.size())){
         x[i] = !x[i]
     }
 }
 
-func SignedDecToBin(x : Int64, w : Int64) : ArrayList<Bool> {
+func SignedDecToBin(x : Int64, w : Int64) : Array<Bool> {
     let bin = UnsignedDecToBin(abs(x), w)
     Invert(bin)
     AddOne(bin)
     bin
 }
 
-public func ValueStack(vs : ArrayList<Value>){
-    let edges = map(
-        { v : Value => Edge(VALUE(v))},
-        vs
-    )
-    let compressor = Edge(COMPRESSOR(vs.size(), 1)) 
-    let vertices = map(
-        { v : Value => Vertex() },
-        vs
-    )
-    let x : Unit = foldi_left(
-        { acc : Unit, e : Edge , i : Int64 => 
-            let v = vertices[i]
-            e.SetTarget(0, v)
-            compressor.SetSource(i, v)    
-        },
-        (),
-        edges
-    )
-    let outVertex = Vertex(vs.size())
-    vertices.add(outVertex)
-    compressor.SetTarget(0, outVertex)
-    edges.add(compressor)
-    
-    Hypergraph(HashSet<Vertex>(vertices), HashSet<Edge>(edges))
-    outVertex
+public func MakeValue(vs : Array<Value>) : Vertex {
+    let vertex = Vertex(vs.size())
+    let value = Edge(VALUE(vs), [], [vertex])
+    let baseGraph = Hypergraph(HashSet<Vertex>([vertex]), HashSet<Edge>([value]))
+    vertex
 }
 
-public func ValueStack(vs : ArrayList<Bool>) {
-    ValueStack(
-        map(
-            { b : Bool => if (b) { True } else { False } },
-            vs
-        )
-    )
+public func MakeValue(vs : Array<Bool>) {
+    MakeValue(map({ b : Bool => if(b){ True } else { False }}, vs))
 }
 
 public func UnsignedValueFromInt(x : Int64, width: Int64) : Vertex {
     let bin = UnsignedDecToBin(x, width)
-    ValueStack(bin)
+    MakeValue(bin)
 }
 
 public func SignedValueFromInt(x : Int64, width: Int64) : Vertex {
     let bin = SignedDecToBin(x, width)
-    ValueStack(bin)
+    MakeValue(bin)
 }

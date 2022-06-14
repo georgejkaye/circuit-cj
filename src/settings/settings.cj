@@ -43,6 +43,20 @@ public func DebugDotOn(){
     debugDot
 }
 
+public enum NumberRepresentation {
+    | BIN
+    | DEC
+}
+
+var dotNumberRepresentation = BIN
+public func GetDotNumberRepresentation() : NumberRepresentation {
+    dotNumberRepresentation
+}
+
+public func SetDotNumberRepresentation(rep : NumberRepresentation) : Unit {
+    dotNumberRepresentation = rep
+}
+
 /* The director the dot files are put in */
 var dotDir = ""  
 /**

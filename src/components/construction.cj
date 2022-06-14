@@ -2,12 +2,6 @@ package components
 
 import graphs.*
 
-func MakeWire(width: Int64) : Vertex {
-    let vertex = Vertex(width)
-    let f = Hypergraph(HashSet<Vertex>([ vertex ]), HashSet<Edge>())
-    vertex
-}
-
 func CombineGraphs(vs : Array<Vertex>) : Hypergraph {
     let owners = ArrayList<Hypergraph>()
     for (v in vs) {
@@ -26,7 +20,6 @@ func CombineGraphs(vs : Array<Vertex>) : Hypergraph {
 
     for (owner in owners) {
         let currentVertices = owner.GetVertices()
-        println(currentVertices)
         let currentEdges = owner.GetEdges()
         for(v in currentVertices) {
             v.RemoveOwner()
@@ -37,7 +30,6 @@ func CombineGraphs(vs : Array<Vertex>) : Hypergraph {
         }
         edges.putAll(currentEdges)
     }
-    println(vertices)
     Hypergraph(vertices, edges)
 }
 

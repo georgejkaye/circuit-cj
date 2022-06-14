@@ -22,12 +22,18 @@ public class IncompatibleInputsException <: Exception {
 
 public class IncompatibleLabelInterfaceException <: Exception {
     init(function : String, label : Label, inputs : Int64, outputs : Int64) {
-        ErrorMsg(function, "Label ${label} has type ${label.GetInputs()} → ${label.GetOutputs()}, but ${inputs} → ${outputs} was expected")
+        ErrorMsg(function, "Label ${label} has type ${label.GetInputPorts()} → ${label.GetOutputPorts()}, but ${inputs} → ${outputs} was expected")
     }
 }
 
-class NotOwnedException<T,U> <: Exception where T <: Ownable<U> & ToString {
+public class NotOwnedException<T,U> <: Exception where T <: Ownable<U> & ToString {
     init(function : String, t : T){
         ErrorMsg(function, "${t} needs an owner but doesn't have one")
     } 
+}
+
+public class IncompatibleWidthException <: Exception {
+    init(function : String, v : Vertex, l : Int64, r : Int64) {
+        ErrorMsg(function, "Tried to split ${v} into (${l},${r}) but it is only of width ${v.GetWidth()}")
+    }
 }

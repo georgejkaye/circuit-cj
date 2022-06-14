@@ -40,7 +40,7 @@ let vertexNodeOpts = [
     ("shape", "circle"),
     ("style", "filled"),
     ("fillcolor", "black"),
-    ("height", "0.15"),
+    ("height", "0.25"),
     ("fixedsize", "true"),
     ("fontcolor", "white")
 ]
@@ -150,7 +150,7 @@ func MakeElem(tag : String, options : Array<(String, String)>, content: Option<A
 
 }
 
-func EdgeVerticesToTable(vs : Array<Option<Vertex>>, id : String) : ArrayList<(String, IndentInstruction)> {
+func EdgeVerticesToTable(vs : Array<Vertex>, id : String) : ArrayList<(String, IndentInstruction)> {
     let content = ArrayList<(String, IndentInstruction)>()
     for (i in 0..vs.size()) {
         let td = MakeElem("td", [
@@ -169,11 +169,11 @@ public func DrawEdgeNode(
     id : String, 
     nodeStyle : Array<(String, String)>, 
     text : String, 
-    sources : Array<Option<Vertex>>, 
-    targets : Array<Option<Vertex>>
+    sources : Array<Vertex>, 
+    targets : Array<Vertex>
 ) : ArrayList<(String, IndentInstruction)> {
 
-    func DrawVertexTable(array : Array<Option<Vertex>>, id : String) : ArrayList<(String, IndentInstruction)> {
+    func DrawVertexTable(array : Array<Vertex>, id : String) : ArrayList<(String, IndentInstruction)> {
         let content = ArrayList<(String, IndentInstruction)>()
         if (array.size() != 0) {
             let table = EdgeVerticesToTable(array, id)
@@ -215,12 +215,13 @@ public func DrawEdgeNode(
 
 func DrawEdge(e : Edge) {
     let (style, label) = match(e.GetLabel()){
-        case VALUE(value)       => (valueStyle      , "${value}")
-        case COMPRESSOR(i,j)    => (compressorStyle , if (i < j) { "◁" } else { "▷" })
+        case VALUE(values)      => (valueStyle      , PrintValue(values, GetDotNumberRepresentation()))
+        case COMPRESSOR(i,j)    => (compressorStyle , "▷")
+        case DECOMPRESSOR(i,j)  => (compressorStyle , "◁")
         case STRUCTURAL(struc)  => (structuralStyle , "${struc}") 
         case GATE(spec)         => (gateStyle       , spec.GetName())
         case BLACKBOX(spec)     => (blackboxStyle   , spec.GetName())
-        case DELAY(dur)         => (delayStyle      , "")
+        case DELAY(dur, width)  => (delayStyle      , "")
         case IDENTITY           => (identityStyle   , "id")
         case INLINK(link)       => (linkStyle       , link.GetName())
         case OUTLINK(link)      => (linkStyle       , link.GetName())
@@ -256,19 +257,15 @@ func DrawVertex(v : Vertex) : (String, IndentInstruction) {
 }
 
 func DrawConnections(e : Edge) : ArrayList<(String, IndentInstruction)> {
-    func DrawConnectionsForArray(array : Array<Option<Vertex>>, port : String, vertexFirst : Bool) : ArrayList<(String, IndentInstruction)> {
+    func DrawConnectionsForArray(array : Array<Vertex>, port : String, vertexFirst : Bool) : ArrayList<(String, IndentInstruction)> {
         mapi(
-            { vOpt : Option<Vertex>, i : Int64 => 
-                let str = match(vOpt) {
-                    case None => ""
-                    case Some(v) => 
-                        let vText = "v${v.GetId()}"
-                        let eText =  "e${e.GetId()}:${port}${i}:${port}"
-                        if(vertexFirst) {
-                            "${vText}:e -- ${eText}"
-                        } else {
-                            "${eText} -- ${vText}:w"
-                        }
+            { v : Vertex, i : Int64 =>  
+                let vText = "v${v.GetId()}"
+                let eText =  "e${e.GetId()}:${port}${i}:${port}"
+                let str = if(vertexFirst) {
+                    "${vText}:e -- ${eText}"
+                } else {
+                    "${eText} -- ${vText}:w"
                 }
                 (str, Preserve)
             },
@@ -281,22 +278,18 @@ func DrawConnections(e : Edge) : ArrayList<(String, IndentInstruction)> {
     sourceString
 }
 
-func DrawInterfaceConnections(list : Array<Option<Vertex>>, vertexFirst : Bool) : ArrayList<(String, IndentInstruction)> {
+func DrawInterfaceConnections(list : Array<Vertex>, vertexFirst : Bool) : ArrayList<(String, IndentInstruction)> {
     mapi(
-        { opt : Option<Vertex>, i : Int64 =>
-            match(opt) {
-                case None => ("", Preserve)
-                case Some(v) =>
-                    let vText = "v${v.GetId()}"
-                    let str = if(vertexFirst) {
-                        let eText = "output:w${i}:w"
-                        "${vText} -- ${eText}"
-                    } else {
-                        let eText = "input:e${i}:e"
-                        "${eText} -- ${vText}"
-                    }
-                    (str, Preserve)
+        { v : Vertex, i : Int64 =>
+            let vText = "v${v.GetId()}"
+            let str = if(vertexFirst) {
+                let eText = "output:w${i}:w"
+                "${vText} -- ${eText}"
+            } else {
+                let eText = "input:e${i}:e"
+                "${eText} -- ${vText}"
             }
+            (str, Preserve)
         },
         list
     )

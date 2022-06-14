@@ -86,18 +86,13 @@ public class Hypergraph <: Identifiable & ToString & Nameable & Equatable<Hyperg
 
         func EdgeVertexCheck(
             e : Edge,
-            array : Array<Option<Vertex>>,
-            notAssigned : (Edge, Int64) -> WellformednessIssue, 
+            array : Array<Vertex>,
             notPresent : (Edge, Int64, Vertex) -> WellformednessIssue
         ){
             for (i in 0..array.size()) {
-                let vOpt : Option<Vertex> = array[i]
-                match(vOpt) {
-                    case None    => issues.add(notAssigned(e, i))
-                    case Some(v) =>
-                        if (!this.vertices.contains(v)) {
-                            issues.add(notPresent(e, i, v))
-                        }
+                let v = array[i]
+                if (!this.vertices.contains(v)) {
+                    issues.add(notPresent(e, i, v))
                 }
             }
         }
@@ -105,13 +100,11 @@ public class Hypergraph <: Identifiable & ToString & Nameable & Equatable<Hyperg
             EdgeVertexCheck(
                 e, 
                 e.GetSources(), 
-                { e, i => SourceNotAssigned(e,i) }, 
                 { e, i, v => SourceNotInGraph(e,i,v)}
             )
             EdgeVertexCheck(
                 e, 
                 e.GetTargets(), 
-                { e, i => TargetNotAssigned(e,i) },
                 { e, i, v => TargetNotInGraph(e,i,v) }
             )
         }
@@ -124,14 +117,11 @@ public class Hypergraph <: Identifiable & ToString & Nameable & Equatable<Hyperg
             { acc : String , e : Edge => 
                 func EdgeVertexString (
                     name : String,
-                    array: Array<Option<Vertex>>
+                    array: Array<Vertex>
                 ){
                     foldi_left(
-                        { acc : String , v : Option<Vertex>, i : Int64 => 
-                            let str = match(v) {
-                                case None => "-"
-                                case Some(v1) => "${v1}"
-                            }
+                        { acc : String , v : Vertex, i : Int64 => 
+                            let str = "${v}"
                             let acc = if (acc == "") {
                                 ""
                             } else {
@@ -174,20 +164,13 @@ public class InterfacedHypergraph <: Identifiable & ToString & Nameable & InputO
 
     let uniqueId : Identifier = Identifier()
     let f : Hypergraph
-    let inputs : Array<Option<Vertex>>
-    let outputs : Array<Option<Vertex>>
+    let inputs : Array<Vertex>
+    let outputs : Array<Vertex>
 
-    public init(f : Hypergraph, inputs : Array<Option<Vertex>>, outputs: Array<Option<Vertex>>){
+    public init(f : Hypergraph, inputs : Array<Vertex>, outputs: Array<Vertex>){
         this.f = f
         this.inputs = inputs
         this.outputs = outputs
-    }
-    public init(f : Hypergraph, inputs : Array<Vertex>, outputs : Array<Vertex>){
-        this(
-            f,
-            map({ v : Vertex => Some(v) }, inputs),
-            map({ v : Vertex => Some(v) }, outputs)
-        )
     }
     public func GetId() : Int64 {
         this.uniqueId.GetId()
@@ -198,10 +181,10 @@ public class InterfacedHypergraph <: Identifiable & ToString & Nameable & InputO
     public func GetEdges() : HashSet<Edge> {
         this.f.GetEdges()
     }
-    public func GetInputVertices() : Array<Option<Vertex>> {
+    public func GetInputVertices() : Array<Vertex> {
         this.inputs
     }
-    public func GetOutputVertices() : Array<Option<Vertex>> {
+    public func GetOutputVertices() : Array<Vertex> {
         this.outputs
     }
     public func GetInputs() : Int64 {
@@ -225,22 +208,18 @@ public class InterfacedHypergraph <: Identifiable & ToString & Nameable & InputO
         let issues = f.WellFormednessCheck()
 
         func InterfaceCheck(
-            list : Array<Option<Vertex>>,
-            notAssigned : (Int64) -> WellformednessIssue,
+            array : Array<Vertex>,
             notPresent : (Int64, Vertex) -> WellformednessIssue
         ) : Unit {
-            for (i in 0..list.size()) {
-                match (list[i]) {
-                    case None => issues.add(notAssigned(i))
-                    case Some(v) =>
-                        if (!f.GetVertices().contains(v)){
-                            issues.add(notPresent(i, v))
-                        }
+            for (i in 0..array.size()) {
+                let v = array[i]
+                if (!f.GetVertices().contains(v)){
+                    issues.add(notPresent(i, v))
                 }
             }
         }
-        InterfaceCheck(this.inputs, { i => InputNotAssigned(i) }, { i, v => InputNotInGraph(i, v) })
-        InterfaceCheck(this.outputs, {i => InputNotAssigned(i) }, { i, v => OutputNotInGraph(i, v) })
+        InterfaceCheck(this.inputs, { i, v => InputNotInGraph(i, v) })
+        InterfaceCheck(this.outputs, { i, v => OutputNotInGraph(i, v) })
 
         issues
     }

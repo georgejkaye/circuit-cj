@@ -1,8 +1,7 @@
 /**
- * generators.cj
+ * labels.cj
  *
  * This file contains the definition of generators (in the free categorical sense)
- * and also defines preset generators for the user
  */
 
 package syntax
@@ -20,32 +19,45 @@ public interface Nameable {
     func GetName() : String
 }
 
-public interface Specifiable <: Nameable & InputOutput {
+public interface Typeable {
+    func GetInputPorts() : Array<Int64>
+    func GetOutputPorts() : Array<Int64>
+}
+
+public interface Specifiable <: Nameable & Typeable {
 }
 
 public enum Value { Bottom | False | True | Top }
-extend Value <: ToString & Specifiable {
+extend Value <: ToString {
     public func toString() : String {
         match(this) {
             case Bottom => "⊥"
-            case False => "f"
-            case True => "t"
+            case False => "0"
+            case True => "1"
             case Top => "⊤"
         }
     }
-    public func GetInputs() : Int64 {
-        0
-    }
-    public func GetOutputs() : Int64 {
-        1
-    }
-    public func GetName() : String {
-        this.toString()
-    }
 }
 
-public func BitString(bits : ArrayList<Value>){
+public func BitString(bits : Array<Value>) : String {
     fold_left({acc : String, v : Value => "${acc}${v}"}, "", bits)
+}
+
+public func PrintValue(vs : Array<Value>, rep : NumberRepresentation) : String {
+    match(rep) {
+        case BIN => BitString(vs)
+        case DEC =>
+            var x = 0
+            for (i in 0..vs.size()) {
+                match(vs[i]){
+                    case Bottom => return BitString(vs)
+                    case True   => x += 2**(vs.size() - 1 - i)
+                    case False  => ()
+                    case Top    => return BitString(vs)
+                }
+            }
+            "${x}"
+    }
 }
 
 /**
@@ -53,7 +65,7 @@ public func BitString(bits : ArrayList<Value>){
  */
 
 public enum Structural { Fork | Join | Stub }
-extend Structural <: ToString & Specifiable {
+extend Structural <: ToString & InputOutput {
     public func toString() : String {
         match(this) {
             case Fork => "fork"
@@ -86,9 +98,9 @@ extend Structural <: ToString & Specifiable {
  */
 public class Specification <:ToString & Equatable<Specifiable> & Specifiable {
     let name : String
-    let dom : Int64
-    let cod : Int64
-    init(name : String, dom : Int64, cod : Int64) {
+    let dom : Array<Int64>
+    let cod : Array<Int64>
+    init(name : String, dom : Array<Int64>, cod : Array<Int64>) {
         this.name = name
         this.dom = dom
         this.cod = cod
@@ -97,7 +109,7 @@ public class Specification <:ToString & Equatable<Specifiable> & Specifiable {
         "${name} : ${dom} → ${cod}" 
     }
     public operator func ==(rhs: Specifiable) : Bool {
-        this.name == rhs.GetName() && this.dom == rhs.GetInputs() && this.cod == rhs.GetOutputs()
+        this.name == rhs.GetName() && this.dom == rhs.GetInputPorts() && this.cod == rhs.GetOutputPorts()
     }
     public operator func !=(rhs: Specifiable) : Bool { 
         !(this == rhs) 
@@ -105,10 +117,10 @@ public class Specification <:ToString & Equatable<Specifiable> & Specifiable {
     public func GetName() : String {
         this.name
     }
-    public func GetInputs() : Int64 {
+    public func GetInputPorts() : Array<Int64> {
         this.dom
     }
-    public func GetOutputs() : Int64 {
+    public func GetOutputPorts() : Array<Int64> {
         this.cod
     }
 }
@@ -116,7 +128,7 @@ public class Specification <:ToString & Equatable<Specifiable> & Specifiable {
 public class GateSpecification <: ToString & Equatable<Specifiable> & Specifiable {
     let spec : Specification
     init (name : String, dom : Int64) {
-        this.spec = Specification(name, dom, 1)
+        this.spec = Specification(name, Array<Int64>(dom, { i : Int64 => 1 }), [1])
     }
     public func toString() : String {
         this.spec.toString()
@@ -127,11 +139,11 @@ public class GateSpecification <: ToString & Equatable<Specifiable> & Specifiabl
     public operator func !=(rhs: Specifiable) : Bool { 
         !(this == rhs) 
     }
-    public func GetInputs() : Int64 {
-        this.spec.GetInputs()
+    public func GetInputPorts() : Array<Int64> {
+        this.spec.GetInputPorts()
     }
-    public func GetOutputs() : Int64 {
-        this.spec.GetOutputs()
+    public func GetOutputPorts() : Array<Int64> {
+        this.spec.GetOutputPorts()
     }
     public func GetName() : String {
         this.spec.GetName()
@@ -172,7 +184,7 @@ public class InLinkSpecification <: Equatable<Specifiable> & ToString & Specifia
     let spec : Specification
     init(key : LinkKey, width : Int64) {
         this.key = key
-        this.spec = Specification(key.GetName(), 0, width)
+        this.spec = Specification(key.GetName(), [], [width])
     }
     public operator func ==(rhs : Specifiable) : Bool {
         this.spec == rhs
@@ -181,16 +193,16 @@ public class InLinkSpecification <: Equatable<Specifiable> & ToString & Specifia
         !(this == rhs)
     }
     public func toString() : String {
-        "In link - ${this.spec.GetName()} width ${this.spec.GetOutputs()}"
+        "In link - ${this.spec.GetName()} width ${this.spec.GetOutputPorts()}"
     }
     public func GetName() : String {
         this.spec.GetName()
     }
-    public func GetInputs() : Int64 {
-        this.spec.GetInputs()
+    public func GetInputPorts() : Array<Int64> {
+        this.spec.GetInputPorts()
     }
-    public func GetOutputs() : Int64 {
-        this.spec.GetOutputs()
+    public func GetOutputPorts() : Array<Int64> {
+        this.spec.GetOutputPorts()
     }
 }
 
@@ -199,7 +211,7 @@ public class OutLinkSpecification <: Equatable<Specification> & ToString & Input
     let spec : Specification
     init(key : LinkKey, width : Int64) {
         this.key = key
-        this.spec = Specification(key.GetName(), width, 0)
+        this.spec = Specification(key.GetName(), [width], [])
     }
     public operator func ==(rhs : Specification) : Bool {
         this.spec == rhs
@@ -208,16 +220,22 @@ public class OutLinkSpecification <: Equatable<Specification> & ToString & Input
         !(this == rhs)
     }
     public func toString() : String {
-        "Out link - ${this.spec.GetName()} width ${this.spec.GetInputs()}"
+        "Out link - ${this.spec.GetName()} width ${this.spec.GetInputPorts()}"
     }
     public func GetName() : String {
         this.spec.GetName()
     }
+    public func GetInputPorts() : Array<Int64> {
+        this.spec.GetInputPorts()
+    }
+    public func GetOutputPorts() : Array<Int64> {
+        this.spec.GetOutputPorts()
+    }
     public func GetInputs() : Int64 {
-        this.spec.GetInputs()
+        this.spec.GetInputPorts()[0]
     }
     public func GetOutputs() : Int64 {
-        this.spec.GetOutputs()
+        this.spec.GetOutputPorts()[0]
     }
 }
 
@@ -225,64 +243,69 @@ public class OutLinkSpecification <: Equatable<Specification> & ToString & Input
  * Enum for the different types of generators
  */
 public enum Label { 
-    | VALUE(Value)                    // A value 0 -> n
-    | COMPRESSOR(Int64, Int64)        // A (de)compressor for translating between wire representations
+    | VALUE(Array<Value>)             // A value 0 -> n
+    | COMPRESSOR(Int64, Int64)        // A compressor transforms two wires m, n into one wire m+n
+    | DECOMPRESSOR(Int64, Int64)      // A decompressor transforms one wire m+n into two wires m,n
     | STRUCTURAL(Structural)          // A structural generator 
     | GATE(GateSpecification)         // A gate m -> 1
     | BLACKBOX(Specification)         // A black box with arbitrary name and codomain
-    | DELAY(Int64)                    // A delay parameterised by a duration
+    | DELAY(Int64, Int64)             // A delay parameterised by a duration and a width
     | IDENTITY                        // An identity 1 -> 1
     | INLINK(InLinkSpecification)     // An in-link 0 -> m, where wires come into the graph
     | OUTLINK(OutLinkSpecification)   // An out-link m -> 0, where wires come out of the graph
 }
-extend Label <: ToString & InputOutput & Nameable {
+extend Label <: ToString & Nameable {
     public func toString() : String {
         match(this){
-            case VALUE(value)       => "value (${value})"
-            case COMPRESSOR(m,n)    => "compressor ${m} to ${n}"
+            case VALUE(values)      => "value (${values})"
+            case COMPRESSOR(m,n)    => "compressor ${m}, ${n} to ${m+n}"
+            case DECOMPRESSOR(m,n)  => "decompressor ${m+n} to ${m}, ${n}"
             case STRUCTURAL(struc)  => "structural (${struc})"
             case GATE(spec)         => "gate (${spec.GetName()})"
             case BLACKBOX(spec)     => "black box (${spec.GetName()})"
-            case DELAY(dur)         => "delay (${dur})"
+            case DELAY(dur, width)  => "delay (${dur}) width ${width}"
             case IDENTITY           => "identity"
-            case INLINK(link)       => "in link (${link.GetName()} - ${link.GetOutputs()})"
-            case OUTLINK(link)      => "out link (${link.GetName()} - ${link.GetInputs()})"
+            case INLINK(link)       => "in link (${link.GetName()} - ${link.GetOutputPorts()[0]})"
+            case OUTLINK(link)      => "out link (${link.GetName()} - ${link.GetInputPorts()[0]})"
         }
     }
-    public func GetInputs() : Int64 {
+    public func GetInputPorts() : Array<Int64> {
         match(this) {
-            case VALUE(value)       => 0
-            case COMPRESSOR(m,n)    => m
-            case STRUCTURAL(struc)  => struc.GetInputs()
-            case GATE(spec)         => spec.GetInputs() 
-            case BLACKBOX(spec)     => spec.GetInputs()
-            case DELAY(dur)         => 1 
-            case IDENTITY           => 1
-            case INLINK(link)       => 0
-            case OUTLINK(link)      => link.GetInputs()
+            case VALUE(values)       => []
+            case COMPRESSOR(m,n)    => [m, n]
+            case DECOMPRESSOR(m,n)  => [m+ n]
+            case STRUCTURAL(struc)  => [struc.GetInputs()]
+            case GATE(spec)         => spec.GetInputPorts() 
+            case BLACKBOX(spec)     => spec.GetInputPorts()
+            case DELAY(dur, width)  => [width] 
+            case IDENTITY           => [1]
+            case INLINK(link)       => []
+            case OUTLINK(link)      => link.GetInputPorts()
         }
     }
-    public func GetOutputs() : Int64 {
+    public func GetOutputPorts() : Array<Int64> {
         match(this) {
-            case VALUE(values)      => 1
-            case COMPRESSOR(m,n)    => n
-            case STRUCTURAL(struc)  => struc.GetOutputs()
-            case GATE(spec)         => spec.GetOutputs() 
-            case BLACKBOX(spec)     => spec.GetOutputs()
-            case DELAY(dur)         => 1 
-            case IDENTITY           => 1
-            case INLINK(link)       => link.GetOutputs()
-            case OUTLINK(link)      => 0
+            case VALUE(values)      => [values.size()]
+            case COMPRESSOR(m,n)    => [m + n]
+            case DECOMPRESSOR(m,n)  => [m, n]
+            case STRUCTURAL(struc)  => [struc.GetOutputs()]
+            case GATE(spec)         => spec.GetOutputPorts() 
+            case BLACKBOX(spec)     => spec.GetOutputPorts()
+            case DELAY(dur, width)  => [width]
+            case IDENTITY           => [1]
+            case INLINK(link)       => link.GetOutputPorts()
+            case OUTLINK(link)      => []
         }
     }
     public func GetName() : String {
         match(this) {
             case VALUE(value)       => value.toString()
-            case COMPRESSOR(m,n)    => "compressor m to n"
+            case COMPRESSOR(m,n)    => "compressor on m+n"
+            case DECOMPRESSOR(m,n)  => "decompressor on m+n"
             case STRUCTURAL(struc)  => struc.toString()
             case GATE(spec)         => spec.GetName() 
             case BLACKBOX(spec)     => spec.GetName()
-            case DELAY(dur)         => "delay ${dur}"
+            case DELAY(dur, width)  => "delay ${dur} width ${width}"
             case IDENTITY           => "id"
             case INLINK(link)       => link.toString()
             case OUTLINK(link)      => link.toString()
