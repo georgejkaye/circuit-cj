@@ -29,3 +29,5 @@
 
 - Generalise so that vertices represent bundles of wires rather than single wire
 - Implement sequential components (delay and trace)
+- Add intermediate 'wire end' object to ensure users can't get handles on discarded vertices
+- Start to bring examples into the new circuit design framework

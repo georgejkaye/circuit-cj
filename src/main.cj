@@ -15,6 +15,9 @@ main(){
     SetDebugDot(false)
     SetDotNumberRepresentation(DEC)
 
+    let adder = HalfAdder()
+    WriteDotToFile(adder, "adder")
+
     let circuit = Accumulator(width: 8, initial: 23)
     WriteDotToFile(circuit, "circuit")
 
