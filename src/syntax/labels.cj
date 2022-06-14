@@ -100,7 +100,7 @@ public class Specification <:ToString & Equatable<Specifiable> & Specifiable {
     let name : String
     let dom : Array<Int64>
     let cod : Array<Int64>
-    init(name : String, dom : Array<Int64>, cod : Array<Int64>) {
+    public init(name : String, dom : Array<Int64>, cod : Array<Int64>) {
         this.name = name
         this.dom = dom
         this.cod = cod
@@ -246,7 +246,7 @@ public enum Label {
     | VALUE(Array<Value>)             // A value 0 -> n
     | COMPRESSOR(Int64, Int64)        // A compressor transforms two wires m, n into one wire m+n
     | DECOMPRESSOR(Int64, Int64)      // A decompressor transforms one wire m+n into two wires m,n
-    | STRUCTURAL(Structural)          // A structural generator 
+    | JOIN(Int64)                     // Join two wires together
     | GATE(GateSpecification)         // A gate m -> 1
     | BLACKBOX(Specification)         // A black box with arbitrary name and codomain
     | DELAY(Int64, Int64)             // A delay parameterised by a duration and a width
@@ -260,7 +260,7 @@ extend Label <: ToString & Nameable {
             case VALUE(values)      => "value (${values})"
             case COMPRESSOR(m,n)    => "compressor ${m}, ${n} to ${m+n}"
             case DECOMPRESSOR(m,n)  => "decompressor ${m+n} to ${m}, ${n}"
-            case STRUCTURAL(struc)  => "structural (${struc})"
+            case JOIN(width)        => "join ${width}"
             case GATE(spec)         => "gate (${spec.GetName()})"
             case BLACKBOX(spec)     => "black box (${spec.GetName()})"
             case DELAY(dur, width)  => "delay (${dur}) width ${width}"
@@ -271,10 +271,10 @@ extend Label <: ToString & Nameable {
     }
     public func GetInputPorts() : Array<Int64> {
         match(this) {
-            case VALUE(values)       => []
+            case VALUE(values)      => []
             case COMPRESSOR(m,n)    => [m, n]
             case DECOMPRESSOR(m,n)  => [m+ n]
-            case STRUCTURAL(struc)  => [struc.GetInputs()]
+            case JOIN(width)        => [width,width]
             case GATE(spec)         => spec.GetInputPorts() 
             case BLACKBOX(spec)     => spec.GetInputPorts()
             case DELAY(dur, width)  => [width] 
@@ -288,7 +288,7 @@ extend Label <: ToString & Nameable {
             case VALUE(values)      => [values.size()]
             case COMPRESSOR(m,n)    => [m + n]
             case DECOMPRESSOR(m,n)  => [m, n]
-            case STRUCTURAL(struc)  => [struc.GetOutputs()]
+            case JOIN(width)        => [width]
             case GATE(spec)         => spec.GetOutputPorts() 
             case BLACKBOX(spec)     => spec.GetOutputPorts()
             case DELAY(dur, width)  => [width]
@@ -302,7 +302,7 @@ extend Label <: ToString & Nameable {
             case VALUE(value)       => value.toString()
             case COMPRESSOR(m,n)    => "compressor on m+n"
             case DECOMPRESSOR(m,n)  => "decompressor on m+n"
-            case STRUCTURAL(struc)  => struc.toString()
+            case JOIN(width)        => "join ${width}"
             case GATE(spec)         => spec.GetName() 
             case BLACKBOX(spec)     => spec.GetName()
             case DELAY(dur, width)  => "delay ${dur} width ${width}"

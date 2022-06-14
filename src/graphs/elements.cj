@@ -132,12 +132,14 @@ public class Edge <: Element & Equatable<Edge> {
     let label : Label
     let sources : Array<Vertex>
     let targets : Array<Vertex>
-    public init(label: Label, sources : Array<Vertex>, targets : Array<Vertex>){
+    public init(label: Label, sources : Array<Vertex>, targets : Array<Int64>){
         super(Option<Hypergraph>.None)
-        CheckLabelCompatibility(label, map({v : Vertex => v.GetWidth()}, sources), map({v : Vertex => v.GetWidth()}, targets))
+        CheckLabelCompatibility(label, map({v : Vertex => v.GetWidth()}, sources), targets)
         this.label = label
         this.sources = sources
-        this.targets = targets
+        this.targets = map({ i : Int64 => Vertex(i) }, targets)
+        let graph = CombineGraphs(sources)
+        graph.AddEdge(this)
     }
     public func GetLabel() : Label {
         this.label

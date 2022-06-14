@@ -66,3 +66,9 @@ class CouldNotOpenFileException <: Exception {
     }
 }
 
+public class NotOwnedException<T,U> <: Exception where T <: Ownable<U> & ToString {
+    init(function : String, t : T){
+        ErrorMsg(function, "${t} needs an owner but doesn't have one")
+    } 
+}
+

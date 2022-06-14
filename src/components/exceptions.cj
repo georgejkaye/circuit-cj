@@ -26,12 +26,6 @@ public class IncompatibleLabelInterfaceException <: Exception {
     }
 }
 
-public class NotOwnedException<T,U> <: Exception where T <: Ownable<U> & ToString {
-    init(function : String, t : T){
-        ErrorMsg(function, "${t} needs an owner but doesn't have one")
-    } 
-}
-
 public class IncompatibleWidthException <: Exception {
     init(function : String, v : Vertex, l : Int64, r : Int64) {
         ErrorMsg(function, "Tried to split ${v} into (${l},${r}) but it is only of width ${v.GetWidth()}")

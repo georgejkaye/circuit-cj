@@ -4,11 +4,8 @@ import graphs.*
 
 func OpMToN(label : Label, inputs: Array<Vertex>, outputs : Array<Int64>) : Array<Vertex> {
     CheckLabelCompatibility(label, map({ v : Vertex => v.GetWidth() }, inputs), outputs)
-    let baseGraph = CombineGraphs(inputs)
-    let outputVertices = map({ i : Int64 => Vertex(i) }, label.GetOutputPorts())
-    let edge = Edge(label, inputs, outputVertices)
-    baseGraph.AddEdge(edge)
-    outputVertices
+    let edge = Edge(label, inputs, outputs)
+    edge.GetTargets()
 }
 
 func OpZeroToOne(label : Label) : Vertex {
@@ -50,4 +47,8 @@ public func TrueSignal() : Vertex {
 
 public func FalseSignal() : Vertex {
     OpZeroToOne(FALSE)
+}
+
+public func BlackBox(spec : Specification, inputs: Array<Vertex>) : Array<Vertex> {
+    OpMToN(BLACKBOX(spec), inputs, spec.GetOutputPorts())
 }

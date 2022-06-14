@@ -71,10 +71,8 @@ func SignedDecToBin(x : Int64, w : Int64) : Array<Bool> {
 }
 
 public func MakeValue(vs : Array<Value>) : Vertex {
-    let vertex = Vertex(vs.size())
-    let value = Edge(VALUE(vs), [], [vertex])
-    let baseGraph = Hypergraph(HashSet<Vertex>([vertex]), HashSet<Edge>([value]))
-    vertex
+    let value = Edge(VALUE(vs), [], [vs.size()])
+    value.GetTarget(0)
 }
 
 public func MakeValue(vs : Array<Bool>) {

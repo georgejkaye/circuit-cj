@@ -160,6 +160,37 @@ public class Hypergraph <: Identifiable & ToString & Nameable & Equatable<Hyperg
     }
 }
 
+public func CombineGraphs(vs : Array<Vertex>) : Hypergraph {
+    let owners = ArrayList<Hypergraph>()
+    for (v in vs) {
+        let owner = v.GetOwner()
+        match(owner) {
+            case None => throw NotOwnedException("CombineGraphs", v)
+            case Some(o) => 
+                if (!owners.contains(o)) {
+                    owners.add(o)
+                }
+        }
+    }
+
+    let vertices = HashSet<Vertex>()
+    let edges = HashSet<Edge>()
+
+    for (owner in owners) {
+        let currentVertices = owner.GetVertices()
+        let currentEdges = owner.GetEdges()
+        for(v in currentVertices) {
+            v.RemoveOwner()
+        }
+        vertices.putAll(currentVertices)
+        for(e in currentEdges){
+            e.RemoveOwner()
+        }
+        edges.putAll(currentEdges)
+    }
+    Hypergraph(vertices, edges)
+}
+
 public class InterfacedHypergraph <: Identifiable & ToString & Nameable & InputOutput & Equatable<InterfacedHypergraph> {
 
     let uniqueId : Identifier = Identifier()
