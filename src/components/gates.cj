@@ -2,53 +2,53 @@ package components
 
 import graphs.*
 
-func OpMToN(label : Label, inputs: Array<Wire>, outputs : Array<Int64>) : Array<Wire> {
-    CheckLabelCompatibility(label, map({ w : Wire => w.GetVertex().GetWidth() }, inputs), outputs)
-    let edge = Edge(label, inputs, outputs)
-    map({ v : Vertex => Wire(v) }, edge.GetTargets())
+func OpMToN(label : Label, inputs: Array<WireEnd>, outputs : Array<Int64>) : Array<WireEnd> {
+    CheckLabelCompatibility(label, map({ w : WireEnd => w.GetVertex().GetWidth() }, inputs), outputs)
+    let edge = Edge(label, WiresToVertices(inputs), outputs)
+    map({ v : Vertex => WireEnd(v) }, edge.GetTargets())
 }
 
-func OpZeroToOne(label : Label) : Wire {
+func OpZeroToOne(label : Label) : WireEnd {
     OpMToN(label, [], [1])[0]
 }
-func OpOneToOne(label : Label, a : Wire) : Wire {
+func OpOneToOne(label : Label, a : WireEnd) : WireEnd {
     OpMToN(label, [a], [1])[0]
 }
-func OpTwoToOne(label : Label, a : Wire, b : Wire) : Wire {
+func OpTwoToOne(label : Label, a : WireEnd, b : WireEnd) : WireEnd {
     OpMToN(label, [a,b], [1])[0]
 }
 
-public func NotGate(a : Wire) : Wire {
+public func NotGate(a : WireEnd) : WireEnd {
     OpOneToOne(NOT, a)
 }
-public func AndGate(a : Wire, b : Wire) : Wire {
+public func AndGate(a : WireEnd, b : WireEnd) : WireEnd {
     OpTwoToOne(AND, a, b)
 }
-public func OrGate(a : Wire, b : Wire) : Wire {
+public func OrGate(a : WireEnd, b : WireEnd) : WireEnd {
     OpTwoToOne(OR, a, b)
 }
-public func NandGate(a : Wire, b : Wire) : Wire {
+public func NandGate(a : WireEnd, b : WireEnd) : WireEnd {
     OpTwoToOne(NAND, a, b)
 }
-public func NorGate(a : Wire, b : Wire) : Wire {
+public func NorGate(a : WireEnd, b : WireEnd) : WireEnd {
     OpTwoToOne(NOR, a, b)
 }
-public func XorGate(a : Wire, b : Wire) : Wire {
+public func XorGate(a : WireEnd, b : WireEnd) : WireEnd {
     OpTwoToOne(XOR, a, b)
 }
-public func XnorGate(a : Wire, b : Wire) : Wire {
+public func XnorGate(a : WireEnd, b : WireEnd) : WireEnd {
     OpTwoToOne(XNOR, a, b)
 }
 
 
-public func TrueSignal() : Wire {
+public func TrueSignal() : WireEnd {
     OpZeroToOne(TRUE)
 }
 
-public func FalseSignal() : Wire {
+public func FalseSignal() : WireEnd {
     OpZeroToOne(FALSE)
 }
 
-public func BlackBox(spec : Specification, inputs: Array<Wire>) : Array<Wire> {
+public func BlackBox(spec : Specification, inputs: Array<WireEnd>) : Array<WireEnd> {
     OpMToN(BLACKBOX(spec), inputs, spec.GetOutputPorts())
 }

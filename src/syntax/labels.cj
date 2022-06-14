@@ -43,17 +43,42 @@ public func BitString(bits : Array<Value>) : String {
     fold_left({acc : String, v : Value => "${acc}${v}"}, "", bits)
 }
 
-public func PrintValue(vs : Array<Value>, rep : NumberRepresentation) : String {
+public func PrintValue(vs : Array<Value>, signed : Bool, rep : NumberRepresentation) : String {
     match(rep) {
         case BIN => BitString(vs)
         case DEC =>
             var x = 0
-            for (i in 0..vs.size()) {
-                match(vs[i]){
+            if (signed) {
+                let negative = match(vs[0]) {
                     case Bottom => return BitString(vs)
-                    case True   => x += 2**(vs.size() - 1 - i)
-                    case False  => ()
-                    case Top    => return BitString(vs)
+                    case True => true
+                    case False => false
+                    case Top => return BitString(vs)
+                }
+                for (i in 0..vs.size()) {
+                    var carry = true
+                    match(vs[vs.size() - i - 1]) {
+                        case Bottom => return BitString(vs)
+                        case True => 
+                            if(!carry) {
+                                x += 2**i
+                            }
+                        case False => 
+                            if(carry) {
+                                x += 2**i
+                                carry = false
+                            }
+                        case Top => return BitString(vs)
+                    }
+                }
+            } else {
+                for (i in 0..vs.size()) {
+                    match(vs[i]) {
+                        case Bottom => return BitString(vs)
+                        case True   => x += 2**(vs.size() - 1 - i)
+                        case False  => ()
+                        case Top    => return BitString(vs)
+                    }
                 }
             }
             "${x}"
@@ -243,7 +268,7 @@ public class OutLinkSpecification <: Equatable<Specification> & ToString & Input
  * Enum for the different types of generators
  */
 public enum Label { 
-    | VALUE(Array<Value>)             // A value 0 -> n
+    | VALUE(Array<Value>, Bool)       // A value 0 -> n, which could be signed or unsigned
     | COMPRESSOR(Int64, Int64)        // A compressor transforms two wires m, n into one wire m+n
     | DECOMPRESSOR(Int64, Int64)      // A decompressor transforms one wire m+n into two wires m,n
     | JOIN(Int64)                     // Join two wires together
@@ -257,49 +282,49 @@ public enum Label {
 extend Label <: ToString & Nameable {
     public func toString() : String {
         match(this){
-            case VALUE(values)      => "value (${values})"
-            case COMPRESSOR(m,n)    => "compressor ${m}, ${n} to ${m+n}"
-            case DECOMPRESSOR(m,n)  => "decompressor ${m+n} to ${m}, ${n}"
-            case JOIN(width)        => "join ${width}"
-            case GATE(spec)         => "gate (${spec.GetName()})"
-            case BLACKBOX(spec)     => "black box (${spec.GetName()})"
-            case DELAY(dur, width)  => "delay (${dur}) width ${width}"
-            case IDENTITY           => "identity"
-            case INLINK(link)       => "in link (${link.GetName()} - ${link.GetOutputPorts()[0]})"
-            case OUTLINK(link)      => "out link (${link.GetName()} - ${link.GetInputPorts()[0]})"
+            case VALUE(values, signed)  => "value (${values}), ${if(!signed){"un"}}signed"
+            case COMPRESSOR(m,n)        => "compressor ${m}, ${n} to ${m+n}"
+            case DECOMPRESSOR(m,n)      => "decompressor ${m+n} to ${m}, ${n}"
+            case JOIN(width)            => "join ${width}"
+            case GATE(spec)             => "gate (${spec.GetName()})"
+            case BLACKBOX(spec)         => "black box (${spec.GetName()})"
+            case DELAY(dur, width)      => "delay (${dur}) width ${width}"
+            case IDENTITY               => "identity"
+            case INLINK(link)           => "in link (${link.GetName()} - ${link.GetOutputPorts()[0]})"
+            case OUTLINK(link)          => "out link (${link.GetName()} - ${link.GetInputPorts()[0]})"
         }
     }
     public func GetInputPorts() : Array<Int64> {
         match(this) {
-            case VALUE(values)      => []
-            case COMPRESSOR(m,n)    => [m, n]
-            case DECOMPRESSOR(m,n)  => [m+ n]
-            case JOIN(width)        => [width,width]
-            case GATE(spec)         => spec.GetInputPorts() 
-            case BLACKBOX(spec)     => spec.GetInputPorts()
-            case DELAY(dur, width)  => [width] 
-            case IDENTITY           => [1]
-            case INLINK(link)       => []
-            case OUTLINK(link)      => link.GetInputPorts()
+            case VALUE(values,signed)   => []
+            case COMPRESSOR(m,n)        => [m, n]
+            case DECOMPRESSOR(m,n)      => [m+ n]
+            case JOIN(width)            => [width,width]
+            case GATE(spec)             => spec.GetInputPorts() 
+            case BLACKBOX(spec)         => spec.GetInputPorts()
+            case DELAY(dur, width)      => [width] 
+            case IDENTITY               => [1]
+            case INLINK(link)           => []
+            case OUTLINK(link)          => link.GetInputPorts()
         }
     }
     public func GetOutputPorts() : Array<Int64> {
         match(this) {
-            case VALUE(values)      => [values.size()]
-            case COMPRESSOR(m,n)    => [m + n]
-            case DECOMPRESSOR(m,n)  => [m, n]
-            case JOIN(width)        => [width]
-            case GATE(spec)         => spec.GetOutputPorts() 
-            case BLACKBOX(spec)     => spec.GetOutputPorts()
-            case DELAY(dur, width)  => [width]
-            case IDENTITY           => [1]
-            case INLINK(link)       => link.GetOutputPorts()
-            case OUTLINK(link)      => []
+            case VALUE(values,signed)   => [values.size()]
+            case COMPRESSOR(m,n)        => [m + n]
+            case DECOMPRESSOR(m,n)      => [m, n]
+            case JOIN(width)            => [width]
+            case GATE(spec)             => spec.GetOutputPorts() 
+            case BLACKBOX(spec)         => spec.GetOutputPorts()
+            case DELAY(dur, width)      => [width]
+            case IDENTITY               => [1]
+            case INLINK(link)           => link.GetOutputPorts()
+            case OUTLINK(link)          => []
         }
     }
     public func GetName() : String {
         match(this) {
-            case VALUE(value)       => value.toString()
+            case VALUE(value,bool)  => value.toString()
             case COMPRESSOR(m,n)    => "compressor on m+n"
             case DECOMPRESSOR(m,n)  => "decompressor on m+n"
             case JOIN(width)        => "join ${width}"

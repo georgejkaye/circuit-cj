@@ -40,38 +40,6 @@ public abstract class Element <: Identifiable & Ownable<Hypergraph> & ToString &
     }
 }
 
-public class Wire <: Identifiable & ToString {
-    let id : Identifier = Identifier()
-    var vertex : Vertex
-    public init(v : Vertex) {
-        this.vertex = v
-    }
-    public func GetVertex() : Vertex {
-        this.vertex
-    }
-    public func SetVertex(v : Vertex) : Unit {
-        match(this.vertex.GetOwner()) {
-            case None => ()
-            case Some(h) => 
-                h.RemoveVertex(this.vertex)
-                h.AddVertex(v)
-        }
-        for ((e, i) in this.vertex.GetInEdges()) {
-            e.SetTarget(i, v)
-        }
-        for ((e, i) in this.vertex.GetOutEdges()) {
-            e.SetSource(i, v)
-        }
-        this.vertex = v
-    }
-    public func GetId() : Int64 {
-        this.id.GetId()
-    }
-    public func toString() : String {
-        "wire ${this.id} (pointing at ${this.vertex})"
-    }
-}
-
 public class Vertex <: Element & Equatable<Vertex> {
     let width : Int64
     var inEdges : ArrayList<(Edge , Int64)> = ArrayList()
@@ -93,16 +61,16 @@ public class Vertex <: Element & Equatable<Vertex> {
     public func GetOutEdges() : ArrayList<(Edge, Int64)> {
         this.outEdges
     }
-    func AddInEdge(e : Edge, i : Int64) : Unit {
+    public func AddInEdge(e : Edge, i : Int64) : Unit {
         inEdges.add((e, i))
     }
-    func AddAllInEdges(es : ArrayList<(Edge, Int64)>) {
+    public func AddAllInEdges(es : ArrayList<(Edge, Int64)>) {
         inEdges.addAll(es)
     }
-    func AddOutEdge(e : Edge, i : Int64) : Unit {
+    public func AddOutEdge(e : Edge, i : Int64) : Unit {
         outEdges.add((e, i))
     }
-    func AddAllOutEdges(es : ArrayList<(Edge, Int64)>) {
+    public func AddAllOutEdges(es : ArrayList<(Edge, Int64)>) {
         outEdges.addAll(es)
     }
     func RemoveAllInEdge(edge : Edge) : Unit {
@@ -171,9 +139,6 @@ public class Edge <: Element & Equatable<Edge> {
         graph.AddEdge(this)
         ForEachSource({ v : Vertex, i : Int64 => v.AddOutEdge(this, i)})
         ForEachTarget({ v : Vertex, i : Int64 => v.AddInEdge(this, i)})
-    }
-    public init(label : Label, sources : Array<Wire>, targets : Array<Int64>){
-        this(label, map({ w : Wire => w.GetVertex() }, sources), targets)
     }
     public func GetLabel() : Label {
         this.label

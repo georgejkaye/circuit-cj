@@ -33,7 +33,7 @@ public class IncompatibleWidthException <: Exception {
 }
 
 public class NotDanglingWireException <: Exception {
-    init(function : String, w : Wire) {
+    init(function : String, w : WireEnd) {
         ErrorMsg(function, "Tried to use ${w} as a feedback wire but it has connected in-edges")
     }
 }

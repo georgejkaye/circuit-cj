@@ -200,10 +200,6 @@ public func CombineGraphs(vs : Array<Vertex>) : Hypergraph {
     }
     Hypergraph(vertices, edges)
 }
-public func CombineGraphs(ws : Array<Wire>) : Hypergraph {
-    CombineGraphs(map({ w : Wire => w.GetVertex() }, ws))
-}
-
 public class InterfacedHypergraph <: Identifiable & ToString & Nameable & InputOutput & Equatable<InterfacedHypergraph> {
 
     let uniqueId : Identifier = Identifier()
@@ -215,9 +211,6 @@ public class InterfacedHypergraph <: Identifiable & ToString & Nameable & InputO
         this.f = f
         this.inputs = inputs
         this.outputs = outputs
-    }
-    public init(f : Hypergraph, inputs : Array<Wire>, outputs : Array<Wire>){
-        this(f, map({ w : Wire => w.GetVertex() }, inputs), map({ w : Wire => w.GetVertex() }, outputs))
     }
     public func GetId() : Int64 {
         this.uniqueId.GetId()

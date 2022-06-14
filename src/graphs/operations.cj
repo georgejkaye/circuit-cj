@@ -1,21 +1,5 @@
 package graphs
 
-/**
- * Merge two vertices together, such that any edges that had either vertex
- * as a source or target is updated with the merged vertex
- * @return A tuple (merged vertex, removed vertex)
- */
-public func MergeVertices(v : Wire, w : Wire) : Unit {
-    let vertex = w.GetVertex()
-    v.GetVertex().AddAllInEdges(vertex.GetInEdges())
-    v.GetVertex().AddAllOutEdges(vertex.GetOutEdges())
-    w.SetVertex(v.GetVertex())
-    match(vertex.GetOwner()) {
-        case None => ()
-        case Some(g) => g.RemoveVertex(vertex)
-    }
-}
-
 // public func Seq(f : InterfacedHypergraph, g : InterfacedHypergraph) : InterfacedHypergraph {
 //     if (f.GetOutputs() != g.GetInputs()){
 //         throw OutputInputMismatchException("Seq", f, g)

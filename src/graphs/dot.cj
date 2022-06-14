@@ -215,16 +215,16 @@ public func DrawEdgeNode(
 
 func DrawEdge(e : Edge) {
     let (style, label) = match(e.GetLabel()){
-        case VALUE(values)      => (valueStyle      , PrintValue(values, GetDotNumberRepresentation()))
-        case COMPRESSOR(i,j)    => (compressorStyle , "▷")
-        case DECOMPRESSOR(i,j)  => (compressorStyle , "◁")
-        case JOIN(width)        => (structuralStyle , "∇") 
-        case GATE(spec)         => (gateStyle       , spec.GetName())
-        case BLACKBOX(spec)     => (blackboxStyle   , spec.GetName())
-        case DELAY(dur, width)  => (delayStyle      , "${dur}")
-        case IDENTITY           => (identityStyle   , "id")
-        case INLINK(link)       => (linkStyle       , link.GetName())
-        case OUTLINK(link)      => (linkStyle       , link.GetName())
+        case VALUE(values, signed)  => (valueStyle      , PrintValue(values, signed, GetDotNumberRepresentation()))
+        case COMPRESSOR(i,j)        => (compressorStyle , "▷")
+        case DECOMPRESSOR(i,j)      => (compressorStyle , "◁")
+        case JOIN(width)            => (structuralStyle , "∇") 
+        case GATE(spec)             => (gateStyle       , spec.GetName())
+        case BLACKBOX(spec)         => (blackboxStyle   , spec.GetName())
+        case DELAY(dur, width)      => (delayStyle      , "${dur}")
+        case IDENTITY               => (identityStyle   , "id")
+        case INLINK(link)           => (linkStyle       , link.GetName())
+        case OUTLINK(link)          => (linkStyle       , link.GetName())
     }
     let text = label
     DrawEdgeNode("e${e.GetId()}", style, text, e.GetSources(), e.GetTargets())

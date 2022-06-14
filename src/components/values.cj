@@ -70,22 +70,22 @@ func SignedDecToBin(x : Int64, w : Int64) : Array<Bool> {
     bin
 }
 
-public func MakeValue(vs : Array<Value>) : Wire {
+public func MakeValue(vs : Array<Value>, signed : Bool) : WireEnd {
     let empty = Array<Vertex>()
-    let value = Edge(VALUE(vs), empty, [vs.size()])
-    Wire(value.GetTarget(0))
+    let value = Edge(VALUE(vs, signed), empty, [vs.size()])
+    WireEnd(value.GetTarget(0))
 }
 
-public func MakeValue(vs : Array<Bool>) {
-    MakeValue(map({ b : Bool => if(b){ True } else { False }}, vs))
+public func MakeValue(vs : Array<Bool>, signed : Bool) {
+    MakeValue(map({ b : Bool => if(b){ True } else { False }}, vs), signed)
 }
 
-public func UnsignedValueFromInt(x : Int64, width: Int64) : Wire {
+public func UnsignedValueFromInt(x : Int64, width: Int64) : WireEnd {
     let bin = UnsignedDecToBin(x, width)
-    MakeValue(bin)
+    MakeValue(bin, false)
 }
 
-public func SignedValueFromInt(x : Int64, width: Int64) : Wire {
+public func SignedValueFromInt(x : Int64, width: Int64) : WireEnd {
     let bin = SignedDecToBin(x, width)
-    MakeValue(bin)
+    MakeValue(bin, true)
 }
