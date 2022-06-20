@@ -31,3 +31,8 @@
 - Implement sequential components (delay and trace)
 - Add intermediate 'wire end' object to ensure users can't get handles on discarded vertices
 - Start to bring examples into the new circuit design framework
+
+# 2022-06-20
+
+- Implement pasting in subcircuits
+- Add useful constructs (e.g. extracting bits from bundles)

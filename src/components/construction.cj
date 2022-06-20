@@ -8,3 +8,7 @@ public func MakeCircuit(inputs : Array<WireEnd>, outputs : Array<WireEnd>) : Int
     let graph = CombineGraphs(interfaceVertices.toArray())
     InterfacedHypergraph(graph, WiresToVertices(inputs), WiresToVertices(outputs))
 }
+
+// public func Subcircuit(circuit : InterfacedHypergraph, inputs : Array<WireEnd>) : Array<WireEnd> {
+
+// }

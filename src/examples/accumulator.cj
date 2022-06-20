@@ -11,5 +11,5 @@ public func Accumulator(width!: Int64, initial!: Int64){
     let reg = SimpleRegister(initial: initial, signed: false, input: prev)
     let add = Adder(reg, input)
     Feedback(add, prev)
-    MakeCircuit([input], [add])
+    MakeCircuit([input], [add, add])
 }

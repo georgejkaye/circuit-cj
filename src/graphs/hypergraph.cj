@@ -2,8 +2,9 @@ package graphs
 
 import prelude.*
 
-from std import collection.HashSet
 from std import collection.ArrayList
+from std import collection.HashMap
+from std import collection.HashSet
 
 public enum WellformednessIssue {
     | InputNotAssigned(Int64)
@@ -168,6 +169,26 @@ public class Hypergraph <: Identifiable & ToString & Nameable & Equatable<Hyperg
     public operator func !=(right : Hypergraph) : Bool {
         this.GetId() != right.GetId()
     }
+    public func Clone() : (Hypergraph, HashMap<Vertex,Vertex>, HashMap<Edge,Edge>) {
+        let newVertices = HashSet<Vertex>()
+        let vertexMap = HashMap<Vertex,Vertex>()
+        let newEdges = HashSet<Edge>()
+        let edgeMap = HashMap<Edge,Edge>()
+
+        for (vertex in this.vertices) {
+            let newVertex = Vertex(vertex.GetWidth())
+            newVertices.put(newVertex)
+            vertexMap.put(vertex, newVertex)
+        }
+        for (edge in this.edges) {
+            let newSources = map({ v : Vertex => unsafeGet(vertexMap, v)}, edge.GetSources())
+            let newTargets = map({ v : Vertex => unsafeGet(vertexMap, v)}, edge.GetTargets())
+            let newEdge = Edge(edge.GetLabel(), newSources, newTargets)
+            newEdges.put(newEdge)
+            edgeMap.put(edge, newEdge)
+        }
+        (Hypergraph(newVertices, newEdges), vertexMap, edgeMap)
+    }
 }
 
 public func CombineGraphs(vs : Array<Vertex>) : Hypergraph {
@@ -200,6 +221,12 @@ public func CombineGraphs(vs : Array<Vertex>) : Hypergraph {
     }
     Hypergraph(vertices, edges)
 }
+
+/**
+    A hypergraph with an interface. Represents a complete circuit with inputs
+    and outputs. Interfaced hypergraphs are *immutable* and their elements are
+    cloned on creation so that users cannot inadvertently modify their structure
+ */
 public class InterfacedHypergraph <: Identifiable & ToString & Nameable & InputOutput & Equatable<InterfacedHypergraph> {
 
     let uniqueId : Identifier = Identifier()
@@ -208,9 +235,15 @@ public class InterfacedHypergraph <: Identifiable & ToString & Nameable & InputO
     let outputs : Array<Vertex>
 
     public init(f : Hypergraph, inputs : Array<Vertex>, outputs: Array<Vertex>){
-        this.f = f
-        this.inputs = inputs
-        this.outputs = outputs
+        let (newF, vertexMap, edgeMap) = f.Clone()
+        this.f = newF
+
+        func translateVertices(vs : Array<Vertex>, exn : ((Vertex) -> Exception)) : Array<Vertex> {
+            map({v : Vertex => unsafeGet(vertexMap, v, exn)}, vs)
+        }
+
+        this.inputs = translateVertices(inputs, { v : Vertex => InputNotInHypergraphException("InterfacedHypergraph", f, v)})
+        this.outputs = translateVertices(outputs, { v : Vertex => OutputNotInHypergraphException("InterfacedHypergraph", f, v)})
     }
     public func GetId() : Int64 {
         this.uniqueId.GetId()

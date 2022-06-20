@@ -20,6 +20,18 @@ class TargetAlreadyExistsException <: Exception {
     }
 }
 
+class InputNotInHypergraphException <: Exception {
+    init(function : String, f : Hypergraph, v : Vertex) {
+        ErrorMsg(function, "Tried to set ${v} as an input of ${f.GetName()} but it is not present")
+    }
+}
+
+class OutputNotInHypergraphException <: Exception {
+    init(function : String, f : Hypergraph, v : Vertex) {
+        ErrorMsg(function, "Tried to set ${v} as an output of ${f.GetName()} but it is not present")
+    }
+}
+
 class InputsNotInHypergraphException <: Exception {
     init(function : String, h : InterfacedHypergraph) {
         ErrorMsg(function, "Not all inputs of ${h.GetName()} are vertices in ${h}")

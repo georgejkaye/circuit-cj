@@ -12,7 +12,7 @@ from std import collection.HashSet
 main(){
 
     SetDotDir("dot")
-    SetDebugDot(false)
+    SetDebugDot(true)
     SetDotNumberRepresentation(DEC)
 
     let adder = HalfAdder()

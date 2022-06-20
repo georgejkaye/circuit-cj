@@ -7,6 +7,7 @@ package prelude
 
 from std import collection.ArrayList
 from std import math.*
+from std import collection.HashMap
 
 public func test(){
     return true
@@ -185,4 +186,15 @@ public func xorBool(a : Bool, b : Bool) : Bool {
     } else {
         false
     }
+}
+
+public func unsafeGet<T,U>(map : HashMap<T,U>, key: T, exn : ((T)
+ -> Exception)) : U where T <: Equatable<T> & Hashable {
+    match (map.get(key)) {
+        case Some(v) => v
+        case None => throw exn(key)
+    }
+}
+public func unsafeGet<T,U>(map : HashMap<T,U>, key: T) : U where T <: Equatable<T> & Hashable {
+    unsafeGet<T,U>(map, key, { k : T => throw NoAssociatedValueException("unsafeGet")})
 }
