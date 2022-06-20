@@ -80,12 +80,12 @@ public func MakeValue(vs : Array<Bool>, signed : Bool) {
     MakeValue(map({ b : Bool => if(b){ True } else { False }}, vs), signed)
 }
 
-public func UnsignedValueFromInt(x : Int64, width: Int64) : WireEnd {
+public func UnsignedValueFromInt(x : Int64, width!: Int64) : WireEnd {
     let bin = UnsignedDecToBin(x, width)
     MakeValue(bin, false)
 }
 
-public func SignedValueFromInt(x : Int64, width: Int64) : WireEnd {
+public func SignedValueFromInt(x : Int64, width!: Int64) : WireEnd {
     let bin = SignedDecToBin(x, width)
     MakeValue(bin, true)
 }

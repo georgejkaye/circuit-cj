@@ -9,9 +9,9 @@ public func Delay (duration : Int64, input: WireEnd) : WireEnd {
 public func SimpleRegister(initial! : Int64, signed! : Bool, input! : WireEnd) : WireEnd {
     let width = input.GetVertex().GetWidth()
     let value = if (signed) {
-        SignedValueFromInt(initial, width)
+        SignedValueFromInt(initial, width: width)
     } else {
-        UnsignedValueFromInt(initial, width)
+        UnsignedValueFromInt(initial, width: width)
     }
     let delay = Delay(1, input)
     let edge = Edge(JOIN(width), [value.GetVertex(), delay.GetVertex()], [width])

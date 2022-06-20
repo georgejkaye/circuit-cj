@@ -15,21 +15,12 @@ main(){
     SetDebugDot(true)
     SetDotNumberRepresentation(DEC)
 
-    let input1 = Wire(8)
-    let input2 = Wire(8)
-    let adder = Adder(input1, input2)
+    let value = UnsignedValueFromInt(23, width: 8)
 
-    let acc = Accumulator(width: 8, initial: 23)
+    let (lsb,msbs) = LsbAndMsbs(value)
 
-
-    let after_acc = Subcircuit(acc, [adder])
-    let circuit1 = MakeCircuit([input1, input2], after_acc.toArray())
-    WriteDotToFile(circuit1, "circuit1")
-
-    let after_acc_2 = Subcircuit(acc, after_acc.toArray())
-    after_acc_2.add(input2)
-    let circuit = MakeCircuit([input1, input2], after_acc_2.toArray())
-    WriteDotToFile(circuit, "circuit2")
+    let circuit = MakeCircuit([], [lsb, msbs])
+    WriteDotToFile(circuit, "circuit")
 
     return 0
 }

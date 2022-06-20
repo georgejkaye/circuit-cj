@@ -28,3 +28,8 @@ class IncompatibleInputsException <: Exception {
         ErrorMsg(function, "Tried to give ${inputs} as input type but ${f.GetName()} needs ${f.GetInputType()}")
     }
 }
+class InsufficientWidthException <: Exception {
+    init(function : String, w : WireEnd, i : Int64) {
+        ErrorMsg(function, "${w} has width ${w.GetVertex().GetWidth()} but ${i} was required")
+    }
+}
