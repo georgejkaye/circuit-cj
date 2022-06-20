@@ -1,5 +1,6 @@
 package arithmetic
 
+import graphs.*
 import components.*
 import debug.*
 

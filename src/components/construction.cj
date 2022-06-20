@@ -6,7 +6,9 @@ public func MakeCircuit(inputs : Array<WireEnd>, outputs : Array<WireEnd>) : Int
     let interfaceVertices = ArrayList<WireEnd>(inputs)
     interfaceVertices.addAll(outputs)
     let graph = CombineGraphs(interfaceVertices.toArray())
-    InterfacedHypergraph(graph, WiresToVertices(inputs), WiresToVertices(outputs))
+
+    let (newF, newInputs, newOutputs) = CloneWithInterfaces(graph, map({ w : WireEnd => w.GetVertex() }, inputs), map({ w : WireEnd => w.GetVertex() }, outputs))
+    InterfacedHypergraph(newF, newInputs, newOutputs)
 }
 
 // public func Subcircuit(circuit : InterfacedHypergraph, inputs : Array<WireEnd>) : Array<WireEnd> {

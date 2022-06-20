@@ -1,32 +1,51 @@
 package graphs
 
-// public func Seq(f : InterfacedHypergraph, g : InterfacedHypergraph) : InterfacedHypergraph {
-//     if (f.GetOutputs() != g.GetInputs()){
-//         throw OutputInputMismatchException("Seq", f, g)
-//     }
+func MergeVertices(v : Vertex, w : Vertex) : Unit {
+    
+    let wInEdges = w.GetInEdges()
+    let wOutEdges = w.GetOutEdges() 
+    
+    v.AddAllInEdges(w.GetInEdges())
+    v.AddAllOutEdges(w.GetOutEdges())
 
-//     let fVertices = f.GetVertices()
-//     let gVertices = g.GetVertices()
+    for ((e, i) in wInEdges) {
+        e.SetTarget(i, v)
+    }
+    for ((e, i) in wOutEdges) {
+        e.SetSource(i, v)
+    }
 
-//     let fInputs = f.GetInputVertices()
-//     let fOutputs = f.GetOutputVertices()
-//     let gInputs = g.GetInputVertices()
-//     let gOutputs = g.GetOutputVertices()
+    match(w.GetOwner()) {
+        case None => ()
+        case Some(g) => g.RemoveVertex(w)
+    }
+}
 
-//     for (i in 0..f.GetOutputs()){
-//         MergeVertices(fOutputs[i], gInputs[i])
-//     }
+public func Seq(f : InterfacedHypergraph, g : InterfacedHypergraph) : InterfacedHypergraph {
+    if (f.GetOutputs() != g.GetInputs()){
+        throw OutputInputMismatchException("Seq", f, g)
+    }
 
-//     gVertices.removeAll(g.GetInputVertices())
+    let (newF, newFInputs, newFOutputs) = CloneWithInterfaces(f)
+    let (newG, newGInputs, newGOutputs) = CloneWithInterfaces(g)
 
-//     let fEdges = f.GetEdges()
-//     let gEdges = g.GetEdges()
+    for (i in 0..f.GetOutputs()){
+        MergeVertices(newFOutputs[i], newGInputs[i])
+    }
 
-//     fVertices.putAll(gVertices)
-//     fEdges.putAll(gEdges)
+    let fVertices = newF.GetVertices()
+    let gVertices = newG.GetVertices()
 
-//     InterfacedHypergraph(fVertices, fEdges, fInputs, gOutputs)
-// }
+    gVertices.removeAll(newGInputs)
+
+    let vertices = fVertices
+    vertices.putAll(gVertices)
+    let edges = newF.GetEdges()
+    edges.putAll(newG.GetEdges())
+
+    let newGraph = Hypergraph(vertices, edges)
+    InterfacedHypergraph(newGraph, newFInputs, newGOutputs)
+}
 
 // public func Par(f : InterfacedHypergraph, g : InterfacedHypergraph) : InterfacedHypergraph {
 

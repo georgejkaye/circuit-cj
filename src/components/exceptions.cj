@@ -25,13 +25,6 @@ public class IncompatibleLabelInterfaceException <: Exception {
         ErrorMsg(function, "Label ${label} has type ${label.GetInputPorts()} → ${label.GetOutputPorts()}, but ${inputs} → ${outputs} was expected")
     }
 }
-
-public class IncompatibleWidthException <: Exception {
-    init(function : String, v : Vertex, l : Int64, r : Int64) {
-        ErrorMsg(function, "Tried to split ${v} into (${l},${r}) but it is only of width ${v.GetWidth()}")
-    }
-}
-
 public class NotDanglingWireException <: Exception {
     init(function : String, w : WireEnd) {
         ErrorMsg(function, "Tried to use ${w} as a feedback wire but it has connected in-edges")

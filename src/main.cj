@@ -18,8 +18,13 @@ main(){
     let adder = HalfAdder()
     WriteDotToFile(adder, "adder")
 
-    let circuit = Accumulator(width: 8, initial: 23)
-    WriteDotToFile(circuit, "circuit")
+    let circuit1 = Accumulator(width: 8, initial: 23)
+    WriteDotToFile(circuit1, "circuit")
+    // let circuit2 = Accumulator(width: 8, initial: 15)
+
+
+    let newCircuit = Seq(circuit1, circuit1)
+    WriteDotToFile(newCircuit, "circuit2")
 
     return 0
 }

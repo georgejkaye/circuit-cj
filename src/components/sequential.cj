@@ -22,5 +22,5 @@ public func Feedback(outgoing : WireEnd, incoming : WireEnd) : Unit {
     if (incoming.GetVertex().GetInEdges().size() != 0) {
         throw NotDanglingWireException("Feedback", incoming)
     }
-    MergeVertices(outgoing, incoming)
+    MergeWires(outgoing, incoming)
 }
