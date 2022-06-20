@@ -15,7 +15,7 @@ public class NegativeNumberException <: Exception {
 }
 public class IncompatibleLabelInterfaceException <: Exception {
     init(function : String, label : Label, inputs : Int64, outputs : Int64) {
-        ErrorMsg(function, "Label ${label} has type ${label.GetInputPorts()} → ${label.GetOutputPorts()}, but ${inputs} → ${outputs} was expected")
+        ErrorMsg(function, "Label ${label} has type ${label.GetInputType()} → ${label.GetOutputType()}, but ${inputs} → ${outputs} was expected")
     }
 }
 public class NotDanglingWireException <: Exception {
@@ -31,5 +31,10 @@ class IncompatibleInputsException <: Exception {
 class InsufficientWidthException <: Exception {
     init(function : String, w : WireEnd, i : Int64) {
         ErrorMsg(function, "${w} has width ${w.GetVertex().GetWidth()} but ${i} was required")
+    }
+}
+class WiresNotAllSameWidthException <: Exception {
+    init(function : String, i : Int64, w : WireEnd) {
+        ErrorMsg(function, "Trying to apply a gate for each of ${i} bits but ${w} has width ${w.GetVertex().GetWidth()}")
     }
 }

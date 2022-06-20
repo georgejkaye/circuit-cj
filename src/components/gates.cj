@@ -8,47 +8,92 @@ func OpMToN(label : Label, inputs: Array<WireEnd>, outputs : Array<Int64>) : Arr
     map({ v : Vertex => WireEnd(v) }, edge.GetTargets())
 }
 
+func OpMToOne(label: Label, inputs : Array<WireEnd>) {
+    OpMToN(label, inputs, [1])[0]
+}
+
 func OpZeroToOne(label : Label) : WireEnd {
-    OpMToN(label, [], [1])[0]
+    OpMToOne(label, [])
 }
 func OpOneToOne(label : Label, a : WireEnd) : WireEnd {
-    OpMToN(label, [a], [1])[0]
+    OpMToOne(label, [a])
 }
 func OpTwoToOne(label : Label, a : WireEnd, b : WireEnd) : WireEnd {
-    OpMToN(label, [a,b], [1])[0]
+    OpMToOne(label, [a,b])
+}
+public func ForEachBit(ws : Array<WireEnd>, gate : (Array<WireEnd>) -> Array<WireEnd>) {
+    if (ws.size() == 0) {
+        return Array<WireEnd>()
+    }
+    let inputs = ws.size()
+    let width = ws[0].GetVertex().GetWidth()
+    for (w in ws){
+        if (width != w.GetVertex().GetWidth()){
+            throw WiresNotAllSameWidthException("ForEachBit", width, w)
+        }
+    }
+    let splitOutputs = Array<Array<WireEnd>>(inputs) {
+        i : Int64 => Split(ws[i], Array<Int64>(width){ j : Int64 => 1 })
+    }
+    let gateOutputs = Array<Array<WireEnd>>(width) {
+        i : Int64 =>
+            let currentInputs = 
+                Array<WireEnd>(splitOutputs.size()){j : Int64 => splitOutputs[j][i]}
+            gate(currentInputs)
+    }
+    Array<WireEnd>(gateOutputs[0].size()) {
+        i : Int64 =>
+             let currentOutputs = Array<WireEnd>(gateOutputs.size()){
+                j : Int64 => gateOutputs[j][i]
+            }
+            Combine(currentOutputs)
+    }
+}
+public func ForEachBitMToOne(ws : Array<WireEnd>, gate : (Array<WireEnd>) -> WireEnd) : WireEnd {
+    ForEachBit(ws, { ws : Array<WireEnd> => [gate(ws)] })[0]
+}
+public func ForEachBitOneToOne(a : WireEnd, gate : (WireEnd) -> WireEnd) : WireEnd {
+    ForEachBitMToOne([a], { ws : Array<WireEnd> => gate(ws[0]) })
+}
+public func ForEachBitTwoToOne(a : WireEnd, b : WireEnd, gate : (WireEnd, WireEnd) -> WireEnd) : WireEnd {
+    ForEachBitMToOne([a, b], { ws : Array<WireEnd> => gate(ws[0], ws[1]) })
+}
+
+
+public func ForEachBitOpOneToOne(label: Label, a : WireEnd) : WireEnd {
+    ForEachBitOneToOne(a, {w : WireEnd => OpOneToOne(label, w)})
+}
+public func ForEachBitOpTwoToOne(label: Label, a : WireEnd, b : WireEnd) : WireEnd {
+    ForEachBitTwoToOne(a, b, {w : WireEnd, v : WireEnd => OpTwoToOne(label, w, v)})
 }
 
 public func NotGate(a : WireEnd) : WireEnd {
-    OpOneToOne(NOT, a)
+    ForEachBitOpOneToOne(NOT, a)
 }
 public func AndGate(a : WireEnd, b : WireEnd) : WireEnd {
-    OpTwoToOne(AND, a, b)
+    ForEachBitOpTwoToOne(AND, a, b)
 }
 public func OrGate(a : WireEnd, b : WireEnd) : WireEnd {
-    OpTwoToOne(OR, a, b)
+    ForEachBitOpTwoToOne(OR, a, b)
 }
 public func NandGate(a : WireEnd, b : WireEnd) : WireEnd {
-    OpTwoToOne(NAND, a, b)
+    ForEachBitOpTwoToOne(NAND, a, b)
 }
 public func NorGate(a : WireEnd, b : WireEnd) : WireEnd {
-    OpTwoToOne(NOR, a, b)
+    ForEachBitOpTwoToOne(NOR, a, b)
 }
 public func XorGate(a : WireEnd, b : WireEnd) : WireEnd {
-    OpTwoToOne(XOR, a, b)
+    ForEachBitOpTwoToOne(XOR, a, b)
 }
 public func XnorGate(a : WireEnd, b : WireEnd) : WireEnd {
-    OpTwoToOne(XNOR, a, b)
+    ForEachBitOpTwoToOne(XNOR, a, b)
 }
-
-
 public func TrueSignal() : WireEnd {
     OpZeroToOne(TRUE)
 }
-
 public func FalseSignal() : WireEnd {
     OpZeroToOne(FALSE)
 }
-
 public func BlackBox(spec : Specification, inputs: Array<WireEnd>) : Array<WireEnd> {
-    OpMToN(BLACKBOX(spec), inputs, spec.GetOutputPorts())
+    OpMToN(BLACKBOX(spec), inputs, spec.GetOutputType())
 }

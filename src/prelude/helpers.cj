@@ -198,3 +198,7 @@ public func unsafeGet<T,U>(map : HashMap<T,U>, key: T, exn : ((T)
 public func unsafeGet<T,U>(map : HashMap<T,U>, key: T) : U where T <: Equatable<T> & Hashable {
     unsafeGet<T,U>(map, key, { k : T => throw NoAssociatedValueException("unsafeGet")})
 }
+
+public func sum(ns : Array<Int64>) : Int64 {
+    fold_left({ acc : Int64, cur : Int64 => acc + cur}, 0, ns)
+}

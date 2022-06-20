@@ -15,11 +15,13 @@ main(){
     SetDebugDot(true)
     SetDotNumberRepresentation(DEC)
 
-    let value = UnsignedValueFromInt(23, width: 8)
+    let input1 = Wire(8)
+    let input2 = Wire(8)
 
-    let (lsb,msbs) = LsbAndMsbs(value)
-
-    let circuit = MakeCircuit([], [lsb, msbs])
+    let not = NotGate(input1)
+    let and = AndGate(input2, not)
+    
+    let circuit = MakeCircuit([input1, input2], [and])
     WriteDotToFile(circuit, "circuit")
 
     return 0

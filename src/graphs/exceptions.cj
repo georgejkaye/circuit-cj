@@ -39,7 +39,7 @@ class OutputsNotInHypergraphException <: Exception {
 }
 class IncompatibleLabelException <: Exception {
     init(function : String, label : Label, sources : Array<Int64>, targets : Array<Int64>){
-        ErrorMsg(function, "Tried to construct an edge using label ${label} type ${label.GetInputPorts()} → ${label.GetOutputPorts()} but given vertices of types ${sources} → ${targets}")
+        ErrorMsg(function, "Tried to construct an edge using label ${label} type ${label.GetInputType()} → ${label.GetOutputType()} but given vertices of types ${sources} → ${targets}")
     }
 }
 class NegativeTraceException <: Exception {
@@ -73,7 +73,7 @@ public class OutputInputMismatchException <: Exception {
     }
 }
 public class IncompatibleWidthException <: Exception {
-    public init(function : String, v : Vertex, l : Int64, r : Int64) {
-        ErrorMsg(function, "Tried to split ${v} into (${l},${r}) but it is only of width ${v.GetWidth()}")
+    public init(function : String, v : Vertex, vs : Array<Int64>) {
+        ErrorMsg(function, "Tried to split ${v} into (${vs}) but it is only of width ${v.GetWidth()}")
     }
 }

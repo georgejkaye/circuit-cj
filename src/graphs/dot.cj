@@ -216,8 +216,7 @@ public func DrawEdgeNode(
 func DrawEdge(e : Edge) {
     let (style, label) = match(e.GetLabel()){
         case VALUE(values, signed)  => (valueStyle      , PrintValue(values, signed, GetDotNumberRepresentation()))
-        case COMPRESSOR(i,j)        => (compressorStyle , "▷")
-        case DECOMPRESSOR(i,j)      => (compressorStyle , "◁")
+        case BUNDLER(ms,ns)         => (compressorStyle , if (ms.size() < ns.size()) { "◁" } else { "▷" })
         case JOIN(width)            => (structuralStyle , "∇") 
         case GATE(spec)             => (gateStyle       , spec.GetName())
         case BLACKBOX(spec)         => (blackboxStyle   , spec.GetName())

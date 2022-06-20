@@ -118,8 +118,8 @@ public func CheckLabelCompatibility(label : Label, inputs: Array<Int64>, outputs
         }
         return true
     }
-    let inputCheck = CheckCompatibility(label.GetInputPorts(), inputs)
-    let outputCheck = CheckCompatibility(label.GetOutputPorts(), outputs)
+    let inputCheck = CheckCompatibility(label.GetInputType(), inputs)
+    let outputCheck = CheckCompatibility(label.GetOutputType(), outputs)
 
     if (!inputCheck || !outputCheck) {
         throw IncompatibleLabelException("CheckLabelCompatibility", label, inputs, outputs)

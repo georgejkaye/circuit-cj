@@ -8,20 +8,20 @@ public func Wire(width : Int64) : WireEnd {
     WireEnd(vertex)
 }
 
-public func Split(w : WireEnd, l : Int64, r : Int64) : (WireEnd, WireEnd) {
+public func Split(w : WireEnd, vs : Array<Int64>) : Array<WireEnd> {
     let v = w.GetVertex()
-    if (v.GetWidth() != l + r) {
-        throw IncompatibleWidthException("Split", v, l, r)
+    if (v.GetWidth() != sum(vs)) {
+        throw IncompatibleWidthException("Split", v, vs)
     }
-    let edge = Edge(DECOMPRESSOR(l, r), [v], [l, r])
-    (WireEnd(edge.GetTarget(0)), WireEnd(edge.GetTarget(1)))
+    let edge = Edge(BUNDLER([w.GetVertex().GetWidth()], vs), [v], vs)
+    map({ v : Vertex => WireEnd(v) }, edge.GetTargets())
 }
 
-public func Combine(l : WireEnd, r : WireEnd) : WireEnd {
-    let v = l.GetVertex()
-    let w = r.GetVertex()
-    CombineGraphs([l, r])
-    let edge = Edge(COMPRESSOR(v.GetWidth(), w.GetWidth()), [v, w], [v.GetWidth() + w.GetWidth()])
+public func Combine(ws : Array<WireEnd>) : WireEnd {
+    let widths = map({ w : WireEnd => w.GetVertex().GetWidth() }, ws)
+    CombineGraphs(ws)
+    let vertices = map({ w : WireEnd => w.GetVertex()}, ws )
+    let edge = Edge(BUNDLER(widths, [sum(widths)]), vertices, [sum(widths)])
     WireEnd(edge.GetTarget(0))
 }
 
@@ -31,29 +31,27 @@ public func GetBit(w : WireEnd, i : Int64) {
         throw InsufficientWidthException("GetBit", w, i)
     }
     if (i == 0) {
-        let (l, r) = Split(w, 1, width - 1)    
-        l
+        let ws = Split(w, [1, width - 1])    
+        ws[0]
     } else if (i == width-1) {
-        let (l, r) = Split(w, width - 1, 1)
-        r
+        let ws = Split(w, [width - 1, 1])
+        ws[1]
     } else {
-        let (l1, r1) = Split(w, i - 1, width - i + 1)
-        let (l2, r2) = Split(r1, 1, width - i)
-        l2
+        let ws = Split(w, [i, 1, width - i - 1])
+        ws[1]
     }
 }
 
 public func Lsb(w : WireEnd) : WireEnd {
-    let (l,r) = Split(w, 1, w.GetVertex().GetWidth() - 1)
-    l
+    LsbAndMsbs(w)[0]
 }
 
 public func Msbs(w : WireEnd) : WireEnd {
-    let (l,r) = Split(w, 1, w.GetVertex().GetWidth() - 1)
-    r
+    LsbAndMsbs(w)[1]
 }
 
 public func LsbAndMsbs(w : WireEnd) : (WireEnd, WireEnd) {
-    Split(w, 1, w.GetVertex().GetWidth() - 1)
+    let splits = Split(w, [1, w.GetVertex().GetWidth() - 1])
+    (splits[0], splits[1])
 }
 

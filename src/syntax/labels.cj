@@ -20,8 +20,8 @@ public interface Nameable {
 }
 
 public interface Typeable {
-    func GetInputPorts() : Array<Int64>
-    func GetOutputPorts() : Array<Int64>
+    func GetInputType() : Array<Int64>
+    func GetOutputType() : Array<Int64>
 }
 
 public interface Specifiable <: Nameable & Typeable {
@@ -134,7 +134,7 @@ public class Specification <:ToString & Equatable<Specifiable> & Specifiable {
         "${name} : ${dom} → ${cod}" 
     }
     public operator func ==(rhs: Specifiable) : Bool {
-        this.name == rhs.GetName() && this.dom == rhs.GetInputPorts() && this.cod == rhs.GetOutputPorts()
+        this.name == rhs.GetName() && this.dom == rhs.GetInputType() && this.cod == rhs.GetOutputType()
     }
     public operator func !=(rhs: Specifiable) : Bool { 
         !(this == rhs) 
@@ -142,10 +142,10 @@ public class Specification <:ToString & Equatable<Specifiable> & Specifiable {
     public func GetName() : String {
         this.name
     }
-    public func GetInputPorts() : Array<Int64> {
+    public func GetInputType() : Array<Int64> {
         this.dom
     }
-    public func GetOutputPorts() : Array<Int64> {
+    public func GetOutputType() : Array<Int64> {
         this.cod
     }
 }
@@ -164,11 +164,11 @@ public class GateSpecification <: ToString & Equatable<Specifiable> & Specifiabl
     public operator func !=(rhs: Specifiable) : Bool { 
         !(this == rhs) 
     }
-    public func GetInputPorts() : Array<Int64> {
-        this.spec.GetInputPorts()
+    public func GetInputType() : Array<Int64> {
+        this.spec.GetInputType()
     }
-    public func GetOutputPorts() : Array<Int64> {
-        this.spec.GetOutputPorts()
+    public func GetOutputType() : Array<Int64> {
+        this.spec.GetOutputType()
     }
     public func GetName() : String {
         this.spec.GetName()
@@ -218,16 +218,16 @@ public class InLinkSpecification <: Equatable<Specifiable> & ToString & Specifia
         !(this == rhs)
     }
     public func toString() : String {
-        "In link - ${this.spec.GetName()} width ${this.spec.GetOutputPorts()}"
+        "In link - ${this.spec.GetName()} width ${this.spec.GetOutputType()}"
     }
     public func GetName() : String {
         this.spec.GetName()
     }
-    public func GetInputPorts() : Array<Int64> {
-        this.spec.GetInputPorts()
+    public func GetInputType() : Array<Int64> {
+        this.spec.GetInputType()
     }
-    public func GetOutputPorts() : Array<Int64> {
-        this.spec.GetOutputPorts()
+    public func GetOutputType() : Array<Int64> {
+        this.spec.GetOutputType()
     }
 }
 
@@ -245,22 +245,22 @@ public class OutLinkSpecification <: Equatable<Specification> & ToString & Input
         !(this == rhs)
     }
     public func toString() : String {
-        "Out link - ${this.spec.GetName()} width ${this.spec.GetInputPorts()}"
+        "Out link - ${this.spec.GetName()} width ${this.spec.GetInputType()}"
     }
     public func GetName() : String {
         this.spec.GetName()
     }
-    public func GetInputPorts() : Array<Int64> {
-        this.spec.GetInputPorts()
+    public func GetInputType() : Array<Int64> {
+        this.spec.GetInputType()
     }
-    public func GetOutputPorts() : Array<Int64> {
-        this.spec.GetOutputPorts()
+    public func GetOutputType() : Array<Int64> {
+        this.spec.GetOutputType()
     }
     public func GetInputs() : Int64 {
-        this.spec.GetInputPorts()[0]
+        this.spec.GetInputType()[0]
     }
     public func GetOutputs() : Int64 {
-        this.spec.GetOutputPorts()[0]
+        this.spec.GetOutputType()[0]
     }
 }
 
@@ -268,65 +268,60 @@ public class OutLinkSpecification <: Equatable<Specification> & ToString & Input
  * Enum for the different types of generators
  */
 public enum Label { 
-    | VALUE(Array<Value>, Bool)       // A value 0 -> n, which could be signed or unsigned
-    | COMPRESSOR(Int64, Int64)        // A compressor transforms two wires m, n into one wire m+n
-    | DECOMPRESSOR(Int64, Int64)      // A decompressor transforms one wire m+n into two wires m,n
-    | JOIN(Int64)                     // Join two wires together
-    | GATE(GateSpecification)         // A gate m -> 1
-    | BLACKBOX(Specification)         // A black box with arbitrary name and codomain
-    | DELAY(Int64, Int64)             // A delay parameterised by a duration and a width
-    | IDENTITY                        // An identity 1 -> 1
-    | INLINK(InLinkSpecification)     // An in-link 0 -> m, where wires come into the graph
-    | OUTLINK(OutLinkSpecification)   // An out-link m -> 0, where wires come out of the graph
+    | VALUE(Array<Value>, Bool)           // A value 0 -> n, which could be signed or unsigned
+    | BUNDLER(Array<Int64>, Array<Int64>) // A bundler changes how wires are bundled
+    | JOIN(Int64)                         // Join two wires together
+    | GATE(GateSpecification)             // A gate m -> 1
+    | BLACKBOX(Specification)             // A black box with arbitrary name and codomain
+    | DELAY(Int64, Int64)                 // A delay parameterised by a duration and a width
+    | IDENTITY                            // An identity 1 -> 1
+    | INLINK(InLinkSpecification)         // An in-link 0 -> m, where wires come into the graph
+    | OUTLINK(OutLinkSpecification)       // An out-link m -> 0, where wires come out of the graph
 }
 extend Label <: ToString & Nameable {
     public func toString() : String {
         match(this){
             case VALUE(values, signed)  => "value (${values}), ${if(!signed){"un"}}signed"
-            case COMPRESSOR(m,n)        => "compressor ${m}, ${n} to ${m+n}"
-            case DECOMPRESSOR(m,n)      => "decompressor ${m+n} to ${m}, ${n}"
+            case BUNDLER(ms,ns)         => "bundler ${ms} to ${ms}"
             case JOIN(width)            => "join ${width}"
             case GATE(spec)             => "gate (${spec.GetName()})"
             case BLACKBOX(spec)         => "black box (${spec.GetName()})"
             case DELAY(dur, width)      => "delay (${dur}) width ${width}"
             case IDENTITY               => "identity"
-            case INLINK(link)           => "in link (${link.GetName()} - ${link.GetOutputPorts()[0]})"
-            case OUTLINK(link)          => "out link (${link.GetName()} - ${link.GetInputPorts()[0]})"
+            case INLINK(link)           => "in link (${link.GetName()} - ${link.GetOutputType()[0]})"
+            case OUTLINK(link)          => "out link (${link.GetName()} - ${link.GetInputType()[0]})"
         }
     }
-    public func GetInputPorts() : Array<Int64> {
+    public func GetInputType() : Array<Int64> {
         match(this) {
             case VALUE(values,signed)   => []
-            case COMPRESSOR(m,n)        => [m, n]
-            case DECOMPRESSOR(m,n)      => [m+ n]
+            case BUNDLER(ms,ns)         => ms
             case JOIN(width)            => [width,width]
-            case GATE(spec)             => spec.GetInputPorts() 
-            case BLACKBOX(spec)         => spec.GetInputPorts()
+            case GATE(spec)             => spec.GetInputType() 
+            case BLACKBOX(spec)         => spec.GetInputType()
             case DELAY(dur, width)      => [width] 
             case IDENTITY               => [1]
             case INLINK(link)           => []
-            case OUTLINK(link)          => link.GetInputPorts()
+            case OUTLINK(link)          => link.GetInputType()
         }
     }
-    public func GetOutputPorts() : Array<Int64> {
+    public func GetOutputType() : Array<Int64> {
         match(this) {
             case VALUE(values,signed)   => [values.size()]
-            case COMPRESSOR(m,n)        => [m + n]
-            case DECOMPRESSOR(m,n)      => [m, n]
+            case BUNDLER(ms,ns)         => ns
             case JOIN(width)            => [width]
-            case GATE(spec)             => spec.GetOutputPorts() 
-            case BLACKBOX(spec)         => spec.GetOutputPorts()
+            case GATE(spec)             => spec.GetOutputType() 
+            case BLACKBOX(spec)         => spec.GetOutputType()
             case DELAY(dur, width)      => [width]
             case IDENTITY               => [1]
-            case INLINK(link)           => link.GetOutputPorts()
+            case INLINK(link)           => link.GetOutputType()
             case OUTLINK(link)          => []
         }
     }
     public func GetName() : String {
         match(this) {
             case VALUE(value,bool)  => value.toString()
-            case COMPRESSOR(m,n)    => "compressor on m+n"
-            case DECOMPRESSOR(m,n)  => "decompressor on m+n"
+            case BUNDLER(ms,ns)     => "bundler ${ms} to ${ns}"
             case JOIN(width)        => "join ${width}"
             case GATE(spec)         => spec.GetName() 
             case BLACKBOX(spec)     => spec.GetName()
