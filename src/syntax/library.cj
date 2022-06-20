@@ -19,22 +19,40 @@ public let TOP : Label = VALUE([Top], false)
  * Unary gates
  */
 
-public let BUF : Label = GATE(GateSpecification("BUF", 1))
-public let NOT : Label = GATE(GateSpecification("NOT", 1))
+public func BUF(i : Int64) : Label {
+    GATE(GateSpecification("BUF(${i})", 1, i))
+}
+public func NOT(i : Int64) : Label {
+    GATE(GateSpecification("NOT(${i})", 1, i))
+}
 
 /**
  * Binary gates
  */
 
-public let AND  : Label = GATE(GateSpecification("AND", 2))
-public let OR   : Label = GATE(GateSpecification("OR", 2))
-public let NAND : Label = GATE(GateSpecification("NAND", 2))
-public let NOR  : Label = GATE(GateSpecification("NOR", 2))
-public let XOR  : Label = GATE(GateSpecification("XOR", 2))
-public let XNOR : Label = GATE(GateSpecification("XNOR", 2))
+public func AND(i : Int64) : Label {
+    GATE(GateSpecification("AND(${i})", 2, i))
+}
+public func OR(i : Int64) : Label {
+    GATE(GateSpecification("OR(${i})", 2, i))
+}
+public func NAND(i : Int64) : Label {
+    GATE(GateSpecification("NAND(${i})", 2, i))
+}
+public func NOR(i : Int64) : Label {
+    GATE(GateSpecification("NOR(${i})", 2, i))
+}
+public func XOR(i : Int64) : Label {
+    GATE(GateSpecification("XOR(${i})", 2, i))
+}
+public func XNOR(i : Int64) : Label {
+    GATE(GateSpecification("XNOR(${i})", 2, i))
+}
 
 /**
  * Ternary gates
  */
  
-public let MUX : Label = GATE(GateSpecification("mux", 3))
+public func MUX(i : Int64) : Label {
+    GATE(GateSpecification("MUX(${i})", 3, i))
+}
