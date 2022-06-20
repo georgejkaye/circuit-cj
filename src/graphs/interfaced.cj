@@ -12,9 +12,6 @@ public func CloneWithInterfaces(f : Hypergraph, inputs: Array<Vertex>, outputs: 
 
     (newF, newInputs, newOutputs)
 }
-public func CloneWithInterfaces(f : InterfacedHypergraph) : (Hypergraph, Array<Vertex>, Array<Vertex>) {
-    CloneWithInterfaces(f.GetGraph(), f.GetInputVertices(), f.GetOutputVertices())
-}
 
 /**
     A hypergraph with an interface. Represents a complete circuit with inputs
@@ -92,5 +89,8 @@ public class InterfacedHypergraph <: Identifiable & ToString & Nameable & InputO
     }
     public operator func !=(right : InterfacedHypergraph) : Bool {
         this.GetId() != right.GetId()
+    }
+    public func Clone() : (Hypergraph, Array<Vertex>, Array<Vertex>) {
+        CloneWithInterfaces(this.f, this.inputs, this.outputs)
     }
 }

@@ -23,7 +23,7 @@ main(){
     // let circuit2 = Accumulator(width: 8, initial: 15)
 
 
-    let newCircuit = Par(circuit1, circuit1)
+    let newCircuit = Trace(circuit1, 1)
     WriteDotToFile(newCircuit, "circuit2")
 
     return 0

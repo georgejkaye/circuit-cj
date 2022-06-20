@@ -1,6 +1,6 @@
 package graphs
 
-func MergeVertices(v : Vertex, w : Vertex) : Unit {
+func MergeVertices(v : Vertex, w : Vertex) : (Vertex, Vertex) {
     
     let wInEdges = w.GetInEdges()
     let wOutEdges = w.GetOutEdges() 
@@ -19,6 +19,7 @@ func MergeVertices(v : Vertex, w : Vertex) : Unit {
         case None => ()
         case Some(g) => g.RemoveVertex(w)
     }
+    (v, w)
 }
 
 public func Seq(f : InterfacedHypergraph, g : InterfacedHypergraph) : InterfacedHypergraph {
@@ -26,8 +27,8 @@ public func Seq(f : InterfacedHypergraph, g : InterfacedHypergraph) : Interfaced
         throw OutputInputMismatchException("Seq", f, g)
     }
 
-    let (newF, newFInputs, newFOutputs) = CloneWithInterfaces(f)
-    let (newG, newGInputs, newGOutputs) = CloneWithInterfaces(g)
+    let (newF, newFInputs, newFOutputs) = f.Clone()
+    let (newG, newGInputs, newGOutputs) = g.Clone()
 
     for (i in 0..f.GetOutputs()){
         MergeVertices(newFOutputs[i], newGInputs[i])
@@ -49,8 +50,8 @@ public func Seq(f : InterfacedHypergraph, g : InterfacedHypergraph) : Interfaced
 
 public func Par(f : InterfacedHypergraph, g : InterfacedHypergraph) : InterfacedHypergraph {
 
-    let (newF, newFInputs, newFOutputs) = CloneWithInterfaces(f)
-    let (newG, newGInputs, newGOutputs) = CloneWithInterfaces(g)
+    let (newF, newFInputs, newFOutputs) = f.Clone()
+    let (newG, newGInputs, newGOutputs) = g.Clone()
 
     let fVertices = newF.GetVertices()
     let gVertices = newG.GetVertices()
@@ -80,38 +81,45 @@ public func Par(f : InterfacedHypergraph, g : InterfacedHypergraph) : Interfaced
 
 }
 
-// public func Trace(f : InterfacedHypergraph, x : Int64) {
-//     if (x < 0) {
-//         throw NegativeTraceException("Trace", x)
-//     }
-//     if (f.GetInputs() < x) {
-//         throw NotEnoughInputsException("Trace", x, f)
-//     }
-//     if (f.GetOutputs() < x) {
-//         throw NotEnoughOutputsException("Trace", x, f)
-//     }
-//     let fInputs = f.GetInputVertices()
-//     let fEdges = f.GetEdges()
-//     let fOutputs = f.GetOutputVertices()
-//     let fVertices = f.GetVertices()
-//     for (i in 0..x) {
-//         // HACK .remove() might not return the right element
-//         let input = fInputs[0]
-//         fInputs.remove(0)
-//         let output = fOutputs[0]
-//         fOutputs.remove(0)
-//         let (mergedVertex, removedVertex) = MergeVertices(input, output)
-//         for (j in 0..fInputs.size()) {
-//             if (fInputs[j] == removedVertex) {
-//                 fInputs[j] = mergedVertex
-//             }
-//         }
-//         for (j in 0..fOutputs.size()) {
-//             if (fOutputs[j] == removedVertex) {
-//                 fOutputs[j] = mergedVertex
-//             }
-//         }
-//         fVertices.removeIf({ v => v == removedVertex })
-//     }
-//     InterfacedHypergraph(fVertices, fEdges, fInputs, fOutputs)
-// }
+public func Trace(f : InterfacedHypergraph, x : Int64) {
+    if (x < 0) {
+        throw NegativeTraceException("Trace", x)
+    }
+    if (f.GetInputs() < x) {
+        throw NotEnoughInputsException("Trace", x, f)
+    }
+    if (f.GetOutputs() < x) {
+        throw NotEnoughOutputsException("Trace", x, f)
+    }
+    let (newF, newFInputs, newFOutputs) = f.Clone()
+
+    let newVertices = newF.GetVertices()
+    let newEdges = newF.GetEdges()
+
+    let newInputs = Array<Vertex>(f.GetInputs() - x) {
+        i => newFInputs[i+x]
+    }
+    let newOutputs = Array<Vertex>(f.GetOutputs() - x) {
+        i => newFOutputs[i+x]
+    }
+
+    for (i in 0..x) {
+        // HACK .remove() might not return the right element
+        let input = newFInputs[0]
+        let output = newFOutputs[0]
+        let (mergedVertex, removedVertex) = MergeVertices(input, output)
+        for (j in 0..newInputs.size()) {
+            if (newInputs[j] == removedVertex) {
+                newInputs[j] = mergedVertex
+            }
+        }
+        for (j in 0..newOutputs.size()) {
+            if (newOutputs[j] == removedVertex) {
+                newOutputs[j] = mergedVertex
+            }
+        }
+        newVertices.removeIf({ v => v == removedVertex })
+    }
+    let newGraph = Hypergraph(newVertices, newEdges)
+    InterfacedHypergraph(newGraph, newInputs, newOutputs)
+}
