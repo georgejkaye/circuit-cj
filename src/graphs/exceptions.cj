@@ -67,9 +67,9 @@ public class NotOwnedException<T,U> <: Exception where T <: Ownable<U> & ToStrin
         ErrorMsg(function, "${t} needs an owner but doesn't have one")
     } 
 }
-class OutputInputMismatchException <: Exception {
-    init(function : String, f : InterfacedHypergraph, g : InterfacedHypergraph) {
-        ErrorMsg(function, "The outputs of hypergraph ${f.GetName()} (${f.GetOutputs()} do not match the inputs of hypergraph ${g.GetName()} (${g.GetOutputs()})")
+public class OutputInputMismatchException <: Exception {
+    public init(function : String, f : InterfacedHypergraph, g : InterfacedHypergraph) {
+        ErrorMsg(function, "The outputs of hypergraph ${f.GetName()} (${f.GetOutputType()} do not match the inputs of hypergraph ${g.GetName()} (${g.GetOutputType()})")
     }
 }
 public class IncompatibleWidthException <: Exception {

@@ -1,6 +1,6 @@
 package graphs
 
-func MergeVertices(v : Vertex, w : Vertex) : (Vertex, Vertex) {
+public func MergeVertices(v : Vertex, w : Vertex) : (Vertex, Vertex) {
     
     let wInEdges = w.GetInEdges()
     let wOutEdges = w.GetOutEdges() 
@@ -23,7 +23,7 @@ func MergeVertices(v : Vertex, w : Vertex) : (Vertex, Vertex) {
 }
 
 public func Seq(f : InterfacedHypergraph, g : InterfacedHypergraph) : InterfacedHypergraph {
-    if (f.GetOutputs() != g.GetInputs()){
+    if (f.GetOutputType() != g.GetInputType()){
         throw OutputInputMismatchException("Seq", f, g)
     }
 

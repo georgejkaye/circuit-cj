@@ -18,17 +18,21 @@ public func CloneWithInterfaces(f : Hypergraph, inputs: Array<Vertex>, outputs: 
     and outputs. Interfaced hypergraphs are *immutable* and their elements are
     cloned on creation so that users cannot inadvertently modify their structure
  */
-public class InterfacedHypergraph <: Identifiable & ToString & Nameable & InputOutput & Equatable<InterfacedHypergraph> {
+public class InterfacedHypergraph <: Identifiable & ToString & Nameable & Equatable<InterfacedHypergraph> {
 
     let uniqueId : Identifier = Identifier()
     let f : Hypergraph
     let inputs : Array<Vertex>
+    let inputType : Array<Int64>
     let outputs : Array<Vertex>
+    let outputType : Array<Int64>
 
     public init(f : Hypergraph, inputs : Array<Vertex>, outputs: Array<Vertex>){
        this.f = f
        this.inputs = inputs
+       this.inputType = map({ v : Vertex => v.GetWidth() }, inputs)
        this.outputs = outputs
+       this.outputType = map({ v : Vertex => v.GetWidth() }, outputs)
     }
     public func GetId() : Int64 {
         this.uniqueId.GetId()
@@ -48,11 +52,29 @@ public class InterfacedHypergraph <: Identifiable & ToString & Nameable & InputO
     public func GetOutputVertices() : Array<Vertex> {
         this.outputs
     }
+    public func GetInput(i : Int64) : Vertex {
+        if (i >= this.inputs.size()) {
+            throw NotEnoughInputsException("GetInput", i, this)
+        }
+        this.inputs[i]
+    }
+    public func GetOutput(i : Int64) : Vertex {
+        if (i >= this.outputs.size()) {
+            throw NotEnoughOutputsException("GetOutput", i, this)
+        }
+        this.outputs[i]
+    }
     public func GetInputs() : Int64 {
         this.inputs.size()
     }
     public func GetOutputs() : Int64 {
         this.outputs.size()
+    }
+    public func GetInputType() : Array<Int64> {
+        this.inputType
+    }
+    public func GetOutputType() : Array<Int64> {
+        this.outputType
     }
     public func GetName() : String {
         this.f.name
