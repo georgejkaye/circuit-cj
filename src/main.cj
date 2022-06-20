@@ -23,7 +23,7 @@ main(){
     // let circuit2 = Accumulator(width: 8, initial: 15)
 
 
-    let newCircuit = Seq(circuit1, circuit1)
+    let newCircuit = Par(circuit1, circuit1)
     WriteDotToFile(newCircuit, "circuit2")
 
     return 0

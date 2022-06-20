@@ -38,37 +38,47 @@ public func Seq(f : InterfacedHypergraph, g : InterfacedHypergraph) : Interfaced
 
     gVertices.removeAll(newGInputs)
 
-    let vertices = fVertices
-    vertices.putAll(gVertices)
-    let edges = newF.GetEdges()
-    edges.putAll(newG.GetEdges())
+    let newVertices = fVertices
+    newVertices.putAll(gVertices)
+    let newEdges = newF.GetEdges()
+    newEdges.putAll(newG.GetEdges())
 
-    let newGraph = Hypergraph(vertices, edges)
+    let newGraph = Hypergraph(newVertices, newEdges)
     InterfacedHypergraph(newGraph, newFInputs, newGOutputs)
 }
 
-// public func Par(f : InterfacedHypergraph, g : InterfacedHypergraph) : InterfacedHypergraph {
+public func Par(f : InterfacedHypergraph, g : InterfacedHypergraph) : InterfacedHypergraph {
 
-//     let fVertices = f.GetVertices()
-//     let gVertices = g.GetVertices()
+    let (newF, newFInputs, newFOutputs) = CloneWithInterfaces(f)
+    let (newG, newGInputs, newGOutputs) = CloneWithInterfaces(g)
 
-//     let fInputs = f.GetInputVertices()
-//     let fOutputs = f.GetOutputVertices()
-//     let gInputs = g.GetInputVertices()
-//     let gOutputs = g.GetOutputVertices()
+    let fVertices = newF.GetVertices()
+    let gVertices = newG.GetVertices()
 
-//     let fEdges = f.GetEdges()
-//     let gEdges = g.GetEdges()
+    let newVertices = fVertices
+    newVertices.putAll(gVertices)
+    let newEdges = newF.GetEdges()
+    newEdges.putAll(newG.GetEdges())
 
-//     fVertices.putAll(gVertices)
-//     fEdges.putAll(gEdges)
+    let newInputs = Array<Vertex>(f.GetInputs() + g.GetInputs()){
+        i => if(i < newFInputs.size()) {
+            newFInputs[i]
+        } else {
+            newGInputs[i - f.GetInputs()]
+        }
+    } 
+    let newOutputs = Array<Vertex>(f.GetOutputs() + g.GetOutputs()){
+        i => if(i < newFOutputs.size()) {
+            newFOutputs[i]
+        } else {
+            newGOutputs[i - f.GetInputs()]
+        }
+    } 
 
-//     fInputs.addAll(gInputs)
-//     fOutputs.addAll(gOutputs)
+    let newGraph = Hypergraph(newVertices, newEdges)
+    InterfacedHypergraph(newGraph, newInputs, newOutputs)
 
-//     InterfacedHypergraph(fVertices, fEdges, fInputs, fOutputs)
-
-// }
+}
 
 // public func Trace(f : InterfacedHypergraph, x : Int64) {
 //     if (x < 0) {
