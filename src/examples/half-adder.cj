@@ -1,3 +1,10 @@
+/**
+ * half-adder.cj
+ *
+ * A half-adder, one of the most simple combinational
+ * combinational one can design.
+ */
+
 package examples
 
 import components.*

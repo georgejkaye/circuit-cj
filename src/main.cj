@@ -13,11 +13,8 @@ main(){
     SetDebugDot(false)
     SetDotNumberRepresentation(DEC)
 
-    let a = Wire(8)
-    let b = Wire(8)
-
-    let mult = SerialMultiplierBit(2)
-    WriteDotToFile(mult, "mult")
+    let alu = ALU(2)
+    WriteDotToFile(alu, "alu")
 
     return 0
 }

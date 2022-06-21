@@ -75,25 +75,73 @@ public func ForEachBitOpTwoToOne(label: Label, a : WireEnd, b : WireEnd) : WireE
 }
 
 public func NotGate(a : WireEnd) : WireEnd {
-    OpOneToOne(NOT(a.GetWidth()), a)
+    OpOneToOne(NOT(2, a.GetWidth()), a)
 }
 public func AndGate(a : WireEnd, b : WireEnd) : WireEnd {
-    OpTwoToOne(AND(a.GetWidth()), a, b)
+    OpTwoToOne(AND(2, a.GetWidth()), a, b)
 }
+public func AndGate(w : WireEnd) : WireEnd {
+    AndGate([w])
+} 
+public func AndGate(ws : Array<WireEnd>) : WireEnd {
+    AssertNonEmpty(ws)
+    let width = ws[0].GetWidth()
+    OpMToOne(AND(ws.size(), ws[0].GetWidth()), ws, width)
+}
+public func OrGate(w : WireEnd) : WireEnd {
+    OrGate([w])
+} 
 public func OrGate(a : WireEnd, b : WireEnd) : WireEnd {
-    OpTwoToOne(OR(a.GetWidth()), a, b)
+    OpTwoToOne(OR(2, a.GetWidth()), a, b)
 }
+public func OrGate(ws : Array<WireEnd>) : WireEnd {
+    AssertNonEmpty(ws)
+    let width = ws[0].GetWidth()
+    OpMToOne(OR(ws.size(), ws[0].GetWidth()), ws, width)
+}
+public func NandGate(w : WireEnd) : WireEnd {
+    NandGate([w])
+} 
 public func NandGate(a : WireEnd, b : WireEnd) : WireEnd {
-    OpTwoToOne(NAND(a.GetWidth()), a, b)
+    OpTwoToOne(NAND(2, a.GetWidth()), a, b)
 }
+public func NandGate(ws : Array<WireEnd>) : WireEnd {
+    AssertNonEmpty(ws)
+    let width = ws[0].GetWidth()
+    OpMToOne(NAND(ws.size(), ws[0].GetWidth()), ws, width)
+}
+public func NorGate(w : WireEnd) : WireEnd {
+    NorGate([w])
+} 
 public func NorGate(a : WireEnd, b : WireEnd) : WireEnd {
-    OpTwoToOne(NOR(a.GetWidth()), a, b)
+    OpTwoToOne(NOR(2, a.GetWidth()), a, b)
 }
+public func NorGate(ws : Array<WireEnd>) : WireEnd {
+    AssertNonEmpty(ws)
+    let width = ws[0].GetWidth()
+    OpMToOne(NOR(ws.size(), ws[0].GetWidth()), ws, width)
+}
+public func XOrGate(w : WireEnd) : WireEnd {
+    XorGate([w])
+} 
 public func XorGate(a : WireEnd, b : WireEnd) : WireEnd {
-    OpTwoToOne(XOR(a.GetWidth()), a, b)
+    OpTwoToOne(XOR(2, a.GetWidth()), a, b)
 }
+public func XorGate(ws : Array<WireEnd>) : WireEnd {
+    AssertNonEmpty(ws)
+    let width = ws[0].GetWidth()
+    OpMToOne(XOR(ws.size(), ws[0].GetWidth()), ws, width)
+}
+public func XnorGate(w : WireEnd) : WireEnd {
+    XnorGate([w])
+} 
 public func XnorGate(a : WireEnd, b : WireEnd) : WireEnd {
-    OpTwoToOne(XNOR(a.GetWidth()), a, b)
+    OpTwoToOne(XNOR(2, a.GetWidth()), a, b)
+}
+public func XnorGate(ws : Array<WireEnd>) : WireEnd {
+    AssertNonEmpty(ws)
+    let width = ws[0].GetWidth()
+    OpMToOne(XNOR(ws.size(), ws[0].GetWidth()), ws, width)
 }
 public func Signal(v : Value) : WireEnd {
     match(v) {

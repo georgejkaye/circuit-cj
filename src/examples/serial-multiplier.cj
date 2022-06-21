@@ -14,12 +14,13 @@ func PartialProduct(a : WireEnd, b0: WireEnd) : WireEnd {
     Mux(sel: b0, high: a, low: ConstantZero(a.GetWidth()))
 }
 
-func RunningSum(first : WireEnd, sum: WireEnd, a: WireEnd, b0: WireEnd) : WireEnd {
-    let lhs = Mux(sel: first, high: sum, low: ConstantZero(a.GetWidth()))
+func RunningSum(first : WireEnd, prev_sum: WireEnd, a: WireEnd, b0: WireEnd) : WireEnd {
+    let lhs = Mux(sel: first, high: prev_sum, low: ConstantZero(a.GetWidth()))
     let rhs = PartialProduct(a, b0)
     let a = UnsignedExtend(lhs)
     let b = UnsignedExtend(rhs)
-    RippleAdder(a, b)
+    let (sum, carry) = Plus(a, b)
+    sum
 }
 
 func RunningSumLoop(first: WireEnd, a : WireEnd, b0 : WireEnd) : (WireEnd, WireEnd) {

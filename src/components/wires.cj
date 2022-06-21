@@ -100,8 +100,22 @@ public func Lsb(w : WireEnd) : WireEnd {
 public func Msbs(w : WireEnd) : WireEnd {
     LsbAndMsbs(w)[1]
 }
+public func Msb(w : WireEnd) : WireEnd {
+    LsbsAndMsb(w)[1]
+}
+public func Lsbs(w : WireEnd) : WireEnd {
+    LsbsAndMsb(w)[0]
+}
 
 public func LsbAndMsbs(w : WireEnd) : (WireEnd, WireEnd) {
     let splits = Split(w, [1, w.GetWidth() - 1])
     (splits[0], splits[1])
+}
+public func LsbsAndMsb(w : WireEnd) : (WireEnd, WireEnd) {
+    let splits = Split(w, [w.GetWidth() - 1, 1])
+    (splits[0], splits[1])
+}
+
+public func Copy(a : WireEnd, w : Int64) : WireEnd {
+    Combine(Array<WireEnd>(w){ i : Int64 => a })
 }

@@ -2,6 +2,12 @@ package components
 
 import debug.*
 
+func AssertNonEmpty<T>(array : Array<T>) {
+    if(array.size() == 0) {
+        throw NoWiresException()
+    }
+}
+
 public class NotEnoughBitsException <: Exception {
     init(function: String, attempted : Int64, actual : Int64, required : Int64) {
         ErrorMsg(function, "Attempted to represent ${attempted} in ${actual} bits, but ${required} are required")
@@ -36,5 +42,10 @@ class IncompatibleWidthException <: Exception {
 class WiresNotAllSameWidthException <: Exception {
     init(function : String, i : Int64, w : WireEnd) {
         ErrorMsg(function, "Trying to apply a gate for each of ${i} bits but ${w} has width ${w.GetWidth()}")
+    }
+}
+class NoWiresException <: Exception {
+    init() {
+        ErrorMsg("", "No wires to do anything with")
     }
 }
