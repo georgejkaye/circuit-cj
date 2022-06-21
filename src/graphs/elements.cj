@@ -11,16 +11,13 @@ public interface Ownable<T> {
 }
 
 public abstract class Element <: Identifiable & Ownable<Hypergraph> & ToString & Hashable {
-    let atom : Atom
+    let id : Identifiable
     var owner : Option<Hypergraph> = None
     public init() {
-        this.atom = Atom(Option<Identifier>.None)
+        this.id = Identifier()
     }
     public func GetId() : Int64 {
-        this.atom.GetId()
-    }
-    public func GetGlobalId() : Int64 {
-        this.atom.GetGlobalId()
+        this.id.GetId()
     }
     public func GetOwner() {
         this.owner

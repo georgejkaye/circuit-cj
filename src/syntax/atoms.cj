@@ -32,26 +32,3 @@ public class Identifier <: Identifiable & Hashable & Equatable<Identifier> & ToS
         this.id
     }
 }
-
-/**
- * An atom can be identified in two ways
- *
- * - by its unique id
- * - by some 'global id' specifying the identity of what this atom represents
- */
-public class Atom <: Identifiable {
-    let uniqueId : Identifier
-    let globalId : Identifier
-
-    public init(globalId : Option<Identifier>)
-    {
-        this.uniqueId = Identifier()
-        this.globalId = globalId.getOrDefault({ => Identifier()})
-    }
-    public func GetId() {
-        this.uniqueId.GetId()
-    }
-    public func GetGlobalId() {
-        this.globalId.GetId()
-    }
-}

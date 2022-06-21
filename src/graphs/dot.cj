@@ -57,12 +57,6 @@ let interfaceStyle = [
 let compressorStyle = [
     bgColour("red")
 ]
-let identityStyle = [
-    bgColour("gray")
-]
-let linkStyle = [
-    bgColour("red")
-]
 let gateStyle = [
     bgColour("cyan")
 ]
@@ -221,9 +215,6 @@ func DrawEdge(e : Edge) {
         case GATE(spec)             => (gateStyle       , spec.GetName())
         case BLACKBOX(spec)         => (blackboxStyle   , spec.GetName())
         case DELAY(dur, width)      => (delayStyle      , "${dur}")
-        case IDENTITY               => (identityStyle   , "id")
-        case INLINK(link)           => (linkStyle       , link.GetName())
-        case OUTLINK(link)          => (linkStyle       , link.GetName())
     }
     let text = label
     DrawEdgeNode("e${e.GetId()}", style, text, e.GetSources(), e.GetTargets())
