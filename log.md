@@ -35,4 +35,17 @@
 # 2022-06-20
 
 - Implement pasting in subcircuits
+- Reimplement operations on interfaced circuits (composition, tensor, trace)
 - Add useful constructs (e.g. extracting bits from bundles)
+- Implement n-ary logic gates
+- Implement 'for each bit' constructor
+
+# 2022-06-21
+
+- Ripple adder
+- Examples!
+  - Serial multiplier
+  - Sorting network
+  - Fibonacci
+  - ALU
+  - CPU

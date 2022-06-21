@@ -8,18 +8,18 @@ func OpMToN(label : Label, inputs: Array<WireEnd>, outputs : Array<Int64>) : Arr
     map({ v : Vertex => WireEnd(v) }, edge.GetTargets())
 }
 
-func OpMToOne(label: Label, inputs : Array<WireEnd>) {
-    OpMToN(label, inputs, [inputs[0].GetVertex().GetWidth()])[0]
+func OpMToOne(label: Label, inputs : Array<WireEnd>, output : Int64) {
+    OpMToN(label, inputs, [output])[0]
 }
 
 func OpZeroToOne(label : Label) : WireEnd {
-    OpMToOne(label, [])
+    OpMToOne(label, [], 1)
 }
 func OpOneToOne(label : Label, a : WireEnd) : WireEnd {
-    OpMToOne(label, [a])
+    OpMToOne(label, [a], a.GetVertex().GetWidth())
 }
 func OpTwoToOne(label : Label, a : WireEnd, b : WireEnd) : WireEnd {
-    OpMToOne(label, [a,b])
+    OpMToOne(label, [a,b], a.GetVertex().GetWidth())
 }
 public func ForEachBit(ws : Array<WireEnd>, gate : (Array<WireEnd>) -> Array<WireEnd>) {
     if (ws.size() == 0) {

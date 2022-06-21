@@ -15,17 +15,8 @@ main(){
     SetDebugDot(false)
     SetDotNumberRepresentation(DEC)
 
-    let input1 = Wire(8)
-    let input2 = Wire(8)
-
-    let acc = Accumulator(initial: 24, width: 8)
-
-    let not = NotGate(input1)
-    let acced = Subcircuit(acc, [not])
-    let and = AndGate(input2, acced[0])
-    
-    let circuit = MakeCircuit([input1, input2], [and])
-    WriteDotToFile(circuit, "circuit")
+    let circuit = Accumulator(width: 2, initial: 0)
+    WriteDotToFile(circuit, "accumulator")
 
     return 0
 }

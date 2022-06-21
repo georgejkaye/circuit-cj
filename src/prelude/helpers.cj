@@ -156,7 +156,7 @@ public func map<T,U>(f : (T) -> U, xs : Array<T>) : Array<U> {
 }
 
 public func map<T,U>(f : (T) -> U, xs : ArrayList<T>) : ArrayList<U> {
-    let acc = ArrayList<U>()
+    let acc = ArrayList<U>(xs.size())
     for (x in xs){
         acc.append(f(x))
     }
@@ -171,6 +171,28 @@ public func mapi<T,U>(f : (T, Int64) -> U, xs : Iterable<T>) : ArrayList<U> {
         i++
     }
     acc
+}
+
+public func map_acc<T,U,V>(f : (T, V) -> (U, V), xs : Array<T>, initial : V) : ArrayList<U> {
+    let acc = ArrayList<U>(xs.size())
+    var helper = initial
+    for (x in xs) {
+        let (t, v) = f(x, helper)
+        helper = v
+        acc.append(t)
+    }
+    acc
+}
+
+public func map_acc_2<T,U,V,W>(f : (T, U, V) -> (W, V), xs : Array<T>, ys : Array<U>, initial : V) : Array<W> {
+    let acc = ArrayList<W>(xs.size()) 
+    var helper = initial
+    for (i in 0..xs.size()) {
+        let (w, v) = f(xs[i], ys[i], helper)
+        acc.append(w)
+        helper = v
+    }
+    acc.toArray()
 }
 
 // This exists in bigint, but should probably be in the main math library
