@@ -1,6 +1,7 @@
 package components
 
 import graphs.*
+import syntax.*
 
 func OpMToN(label : Label, inputs: Array<WireEnd>, outputs : Array<Int64>) : Array<WireEnd> {
     CheckLabelCompatibility(label, map({ w : WireEnd => w.GetVertex().GetWidth() }, inputs), outputs)
@@ -88,11 +89,25 @@ public func XorGate(a : WireEnd, b : WireEnd) : WireEnd {
 public func XnorGate(a : WireEnd, b : WireEnd) : WireEnd {
     OpTwoToOne(XNOR(a.GetVertex().GetWidth()), a, b)
 }
-public func TrueSignal() : WireEnd {
-    OpZeroToOne(TRUE)
+public func Signal(v : Value) : WireEnd {
+    match(v) {
+        case Bottom => BottomSignal()
+        case False => FalseSignal()
+        case True => TrueSignal()
+        case Top => TopSignal()
+    }
+}
+public func BottomSignal() : WireEnd {
+    OpZeroToOne(BOTTOM)
 }
 public func FalseSignal() : WireEnd {
     OpZeroToOne(FALSE)
+}
+public func TrueSignal() : WireEnd {
+    OpZeroToOne(TRUE)
+}
+public func TopSignal() : WireEnd {
+    OpZeroToOne(TOP)
 }
 public func BlackBox(spec : Specification, inputs: Array<WireEnd>) : Array<WireEnd> {
     OpMToN(BLACKBOX(spec), inputs, spec.GetOutputType())

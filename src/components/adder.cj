@@ -1,24 +1,23 @@
-package arithmetic
+package components
 
 import prelude.*
-import components.*
 import syntax.*
 
 public func Adder(a : WireEnd, b : WireEnd) : WireEnd {
-    if (a.GetVertex().GetWidth() != b.GetVertex().GetWidth()) {
-        throw InputsNotSameWidthException("Adder", a, b)
-    }
     let width = a.GetVertex().GetWidth()
+    if (width != b.GetVertex().GetWidth()) {
+        throw WiresNotAllSameWidthException("Adder", width, b)
+    }
     let adderSpec = Specification("adder", [width, width], [width])
     BlackBox(adderSpec, [a, b])[0]
 }
 
 public func HalfAdder(a : WireEnd, b : WireEnd) : (WireEnd, WireEnd) {
     if (a.GetVertex().GetWidth() != 1){
-        throw OneBitOperationException("HalfAdder", a)
+        throw IncompatibleWidthException("HalfAdder", a, 1)
     }
     if (b.GetVertex().GetWidth() != 1){
-        throw OneBitOperationException("HalfAdder", b)
+        throw IncompatibleWidthException("HalfAdder", b, 1)
     }
     let s = XorGate(a, b)
     let c = AndGate(a, b)
@@ -27,13 +26,13 @@ public func HalfAdder(a : WireEnd, b : WireEnd) : (WireEnd, WireEnd) {
 
 public func FullAdder(a : WireEnd, b : WireEnd, cin : WireEnd) : (WireEnd, WireEnd) {
     if (a.GetVertex().GetWidth() != 1){
-        throw OneBitOperationException("HalfAdder", a)
+        throw IncompatibleWidthException("HalfAdder", a, 1)
     }
     if (b.GetVertex().GetWidth() != 1){
-        throw OneBitOperationException("HalfAdder", b)
+        throw IncompatibleWidthException("HalfAdder", b, 1)
     }
     if (cin.GetVertex().GetWidth() != 1){
-        throw OneBitOperationException("HalfAdder", cin)
+        throw IncompatibleWidthException("HalfAdder", cin, 1)
     }
     let xor = XorGate(a, b)
     let s = XorGate(xor, cin)
@@ -46,7 +45,7 @@ public func FullAdder(a : WireEnd, b : WireEnd, cin : WireEnd) : (WireEnd, WireE
 public func RippleAdder(a : WireEnd, b: WireEnd) : WireEnd {
     let width = a.GetVertex().GetWidth()
     if (width != b.GetVertex().GetWidth()) {
-        throw InputsNotSameWidthException("RippleAdder", a, b)
+        throw WiresNotAllSameWidthException("RippleAdder", width, b)
     }
     let splitA = Split(a, Array<Int64>(width){ i : Int64 => 1 })
     let splitB = Split(b, Array<Int64>(width){ i : Int64 => 1 })
@@ -58,7 +57,7 @@ public func RippleAdder(a : WireEnd, b: WireEnd) : WireEnd {
         },
         splitA,
         splitB,
-        FalseSignal()
+        InfiniteWaveform(False)
     )
     Combine(added)
 }

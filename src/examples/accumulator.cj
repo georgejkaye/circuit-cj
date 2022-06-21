@@ -3,7 +3,6 @@ package examples
 import debug.*
 
 import components.*
-import arithmetic.*
 
 public func Accumulator(width!: Int64, initial!: Int64){
     let input = Wire(width)

@@ -1,9 +1,7 @@
-from circuits import graphs.*
-from circuits import syntax.*
-from circuits import prelude.*
 from circuits import settings.*
+from circuits import syntax.*
+from circuits import graphs.WriteDotToFile
 from circuits import components.*
-from circuits import arithmetic.*
 from circuits import examples.*
 
 from std import collection.ArrayList
@@ -15,8 +13,12 @@ main(){
     SetDebugDot(false)
     SetDotNumberRepresentation(DEC)
 
-    let circuit = Accumulator(width: 2, initial: 0)
-    WriteDotToFile(circuit, "accumulator")
+    let a = Wire(8)
+    let b = Wire(8)
+
+    let adder = RippleAdder(a, b)
+    let circuit = MakeCircuit([a,b], [adder])
+    WriteDotToFile(circuit, "adder")
 
     return 0
 }

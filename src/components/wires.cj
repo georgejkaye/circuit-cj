@@ -11,7 +11,7 @@ public func Wire(width : Int64) : WireEnd {
 public func Split(w : WireEnd, vs : Array<Int64>) : Array<WireEnd> {
     let v = w.GetVertex()
     if (v.GetWidth() != sum(vs)) {
-        throw IncompatibleWidthException("Split", v, vs)
+        throw IncompatibleWidthException("Split", w, sum(vs))
     }
     let edge = Edge(BUNDLER([w.GetVertex().GetWidth()], vs), [v], vs)
     map({ v : Vertex => WireEnd(v) }, edge.GetTargets())
@@ -28,7 +28,7 @@ public func Combine(ws : Array<WireEnd>) : WireEnd {
 public func GetBit(w : WireEnd, i : Int64) {
     let width = w.GetVertex().GetWidth()
     if (width < i) {
-        throw InsufficientWidthException("GetBit", w, i)
+        throw IncompatibleWidthException("GetBit", w, i)
     }
     if (i == 0) {
         let ws = Split(w, [1, width - 1])    
