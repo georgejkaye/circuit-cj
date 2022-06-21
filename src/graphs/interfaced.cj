@@ -15,11 +15,9 @@ public func CloneWithInterfaces(f : Hypergraph, inputs: Array<Vertex>, outputs: 
 
 /**
     A hypergraph with an interface. Represents a complete circuit with inputs
-    and outputs. Interfaced hypergraphs are *immutable* and their elements are
-    cloned on creation so that users cannot inadvertently modify their structure
+    and outputs. Interfaced hypergraphs are *immutable*.
  */
 public class InterfacedHypergraph <: Identifiable & ToString & Nameable & Equatable<InterfacedHypergraph> {
-
     let uniqueId : Identifier = Identifier()
     let f : Hypergraph
     let inputs : Array<Vertex>

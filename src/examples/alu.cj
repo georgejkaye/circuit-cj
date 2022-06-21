@@ -25,7 +25,7 @@ func FullAdder(a : WireEnd, b : WireEnd, c : WireEnd) {
 func MultibitFullAdder(a : WireEnd, b : WireEnd, c : WireEnd) {
     ForEachBit(
         [a, b],
-        { ws, c => FullAdder(ws[0], ws[1], c)},
+        { ws : Array<WireEnd>, c : WireEnd => FullAdder(ws[0], ws[1], c)},
         c
     )
 }
@@ -67,8 +67,8 @@ public func ALU(w : Int64){
     let and = AndGate(a, b)
     let or = OrGate(a, b)
     let (addSub, overflow, carry) = AddSub(a, b, c1)
-    let mux1 = Mux(sel: c0, low: and, high: or)
-    let mux2 = Mux(sel: c1, low: mux1, high: addSub)
+    let mux1 = Mux2(sel: c0, low: and, high: or)
+    let mux2 = Mux2(sel: c1, low: mux1, high: addSub)
 
     let result = mux2
     let zero = NotGate(OrGate(result))

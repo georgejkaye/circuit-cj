@@ -38,7 +38,7 @@ public func Subcircuit(circuit : InterfacedHypergraph, inputs : Array<WireEnd>) 
 
 }
 
-public func ForEachBit(ws : Array<WireEnd>, f : (Array<WireEnd>, WireEnd) -> (WireEnd, WireEnd), initial : WireEnd) : (WireEnd, WireEnd) {
+public func ForEachBit<T>(ws : Array<WireEnd>, f : (Array<WireEnd>, T) -> (WireEnd, T), initial : T) : (WireEnd, T) {
     let inputs = ws.size()
     if (inputs == 0) {
         throw NoWiresException()
@@ -57,4 +57,11 @@ public func ForEachBit(ws : Array<WireEnd>, f : (Array<WireEnd>, WireEnd) -> (Wi
     }
     let outputWire = Combine(outputs.toArray())
     (outputWire, aux)
+}
+public func ForEachBit(ws : Array<WireEnd>, f : (Array<WireEnd>) -> WireEnd) : WireEnd {
+    ForEachBit(
+        ws,
+        {ws : Array<WireEnd> , v : Unit => (f(ws), ()) },
+        ()
+    )[0]
 }

@@ -22,13 +22,21 @@ public func MergeVertices(v : Vertex, w : Vertex) : (Vertex, Vertex) {
     (v, w)
 }
 
-public func Seq(f : InterfacedHypergraph, g : InterfacedHypergraph) : InterfacedHypergraph {
+func CloneOrRetain(f : InterfacedHypergraph, clone : Bool) : (Hypergraph, Array<Vertex>, Array<Vertex>) {
+    if(clone) {
+        f.Clone()
+    } else {
+        (f.GetGraph(), f.GetInputVertices(), f.GetOutputVertices())
+    }
+}
+
+func Seq(f : InterfacedHypergraph, g : InterfacedHypergraph, clone : Bool) : InterfacedHypergraph {
     if (f.GetOutputType() != g.GetInputType()){
         throw OutputInputMismatchException("Seq", f, g)
     }
 
-    let (newF, newFInputs, newFOutputs) = f.Clone()
-    let (newG, newGInputs, newGOutputs) = g.Clone()
+    let (newF, newFInputs, newFOutputs) = CloneOrRetain(f, clone)
+    let (newG, newGInputs, newGOutputs) = CloneOrRetain(g, clone)
 
     for (i in 0..f.GetOutputs()){
         MergeVertices(newFOutputs[i], newGInputs[i])
@@ -48,10 +56,14 @@ public func Seq(f : InterfacedHypergraph, g : InterfacedHypergraph) : Interfaced
     InterfacedHypergraph(newGraph, newFInputs, newGOutputs)
 }
 
-public func Par(f : InterfacedHypergraph, g : InterfacedHypergraph) : InterfacedHypergraph {
+public func Seq(f : InterfacedHypergraph, g : InterfacedHypergraph) : InterfacedHypergraph {
+    Seq(f, g, true)
+}
 
-    let (newF, newFInputs, newFOutputs) = f.Clone()
-    let (newG, newGInputs, newGOutputs) = g.Clone()
+func Par(f : InterfacedHypergraph, g : InterfacedHypergraph, clone : Bool) : InterfacedHypergraph {
+
+    let (newF, newFInputs, newFOutputs) = CloneOrRetain(f, clone)
+    let (newG, newGInputs, newGOutputs) = CloneOrRetain(g, clone)
 
     let fVertices = newF.GetVertices()
     let gVertices = newG.GetVertices()
@@ -81,7 +93,11 @@ public func Par(f : InterfacedHypergraph, g : InterfacedHypergraph) : Interfaced
 
 }
 
-public func Trace(f : InterfacedHypergraph, x : Int64) {
+public func Par(f : InterfacedHypergraph, g : InterfacedHypergraph) : InterfacedHypergraph {
+    Par(f, g, true)
+}
+
+func Trace(f : InterfacedHypergraph, x : Int64, clone : Bool) {
     if (x < 0) {
         throw NegativeTraceException("Trace", x)
     }
@@ -91,7 +107,7 @@ public func Trace(f : InterfacedHypergraph, x : Int64) {
     if (f.GetOutputs() < x) {
         throw NotEnoughOutputsException("Trace", x, f)
     }
-    let (newF, newFInputs, newFOutputs) = f.Clone()
+    let (newF, newFInputs, newFOutputs) = CloneOrRetain(f, clone)
 
     let newVertices = newF.GetVertices()
     let newEdges = newF.GetEdges()
@@ -122,4 +138,8 @@ public func Trace(f : InterfacedHypergraph, x : Int64) {
     }
     let newGraph = Hypergraph(newVertices, newEdges)
     InterfacedHypergraph(newGraph, newInputs, newOutputs)
+}
+
+public func Trace(f : InterfacedHypergraph, x : Int64) : InterfacedHypergraph {
+    Trace(f, x, true)
 }

@@ -44,6 +44,11 @@ class WiresNotAllSameWidthException <: Exception {
         ErrorMsg(function, "Trying to apply a gate for each of ${i} bits but ${w} has width ${w.GetWidth()}")
     }
 }
+class WiresNotSameWidthException <: Exception {
+    init(w : WireEnd, v : WireEnd) {
+        ErrorMsg("", "Wires ${w} (${w.GetWidth()} bits) and ${v} (${w.GetWidth()} bits) are not the same width")
+    }
+}
 class NoWiresException <: Exception {
     init() {
         ErrorMsg("", "No wires to do anything with")

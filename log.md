@@ -43,9 +43,16 @@
 # 2022-06-21
 
 - Ripple adder
-- Examples!
+- Examples
   - Serial multiplier
-  - Sorting network
-  - Fibonacci
   - ALU
+- Start implementing
+
+# 2022-06-27
+
+- Finish implementing hierarchical hypergraphs
+  - Adjust dot generation to expand 'macros'
+- Examples
   - CPU
+  - Fibonacci
+  - Sorting network
