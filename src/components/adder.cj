@@ -4,8 +4,8 @@ import prelude.*
 import syntax.*
 
 public func Adder(a : WireEnd, b : WireEnd) : WireEnd {
-    let width = a.GetVertex().GetWidth()
-    if (width != b.GetVertex().GetWidth()) {
+    let width = a.GetWidth()
+    if (width != b.GetWidth()) {
         throw WiresNotAllSameWidthException("Adder", width, b)
     }
     let adderSpec = Specification("adder", [width, width], [width])
@@ -13,10 +13,10 @@ public func Adder(a : WireEnd, b : WireEnd) : WireEnd {
 }
 
 public func HalfAdder(a : WireEnd, b : WireEnd) : (WireEnd, WireEnd) {
-    if (a.GetVertex().GetWidth() != 1){
+    if (a.GetWidth() != 1){
         throw IncompatibleWidthException("HalfAdder", a, 1)
     }
-    if (b.GetVertex().GetWidth() != 1){
+    if (b.GetWidth() != 1){
         throw IncompatibleWidthException("HalfAdder", b, 1)
     }
     let s = XorGate(a, b)
@@ -25,13 +25,13 @@ public func HalfAdder(a : WireEnd, b : WireEnd) : (WireEnd, WireEnd) {
 }
 
 public func FullAdder(a : WireEnd, b : WireEnd, cin : WireEnd) : (WireEnd, WireEnd) {
-    if (a.GetVertex().GetWidth() != 1){
+    if (a.GetWidth() != 1){
         throw IncompatibleWidthException("HalfAdder", a, 1)
     }
-    if (b.GetVertex().GetWidth() != 1){
+    if (b.GetWidth() != 1){
         throw IncompatibleWidthException("HalfAdder", b, 1)
     }
-    if (cin.GetVertex().GetWidth() != 1){
+    if (cin.GetWidth() != 1){
         throw IncompatibleWidthException("HalfAdder", cin, 1)
     }
     let xor = XorGate(a, b)
@@ -43,8 +43,8 @@ public func FullAdder(a : WireEnd, b : WireEnd, cin : WireEnd) : (WireEnd, WireE
 }
 
 public func RippleAdder(a : WireEnd, b: WireEnd) : WireEnd {
-    let width = a.GetVertex().GetWidth()
-    if (width != b.GetVertex().GetWidth()) {
+    let width = a.GetWidth()
+    if (width != b.GetWidth()) {
         throw WiresNotAllSameWidthException("RippleAdder", width, b)
     }
     let splitA = Split(a, Array<Int64>(width){ i : Int64 => 1 })

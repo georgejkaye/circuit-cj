@@ -155,6 +155,9 @@ public class GateSpecification <: ToString & Equatable<Specifiable> & Specifiabl
     init (name : String, inputs : Int64, width : Int64) {
         this.spec = Specification(name, Array<Int64>(inputs, { i : Int64 => width }), [width])
     }
+    init (name : String, inputs : Array<Int64>, width : Int64) {
+        this.spec = Specification(name, inputs, [width])
+    }
     public func toString() : String {
         this.spec.toString()
     }

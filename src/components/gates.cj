@@ -4,7 +4,7 @@ import graphs.*
 import syntax.*
 
 func OpMToN(label : Label, inputs: Array<WireEnd>, outputs : Array<Int64>) : Array<WireEnd> {
-    CheckLabelCompatibility(label, map({ w : WireEnd => w.GetVertex().GetWidth() }, inputs), outputs)
+    CheckLabelCompatibility(label, map({ w : WireEnd => w.GetWidth() }, inputs), outputs)
     let edge = Edge(label, WiresToVertices(inputs), outputs)
     map({ v : Vertex => WireEnd(v) }, edge.GetTargets())
 }
@@ -17,19 +17,25 @@ func OpZeroToOne(label : Label) : WireEnd {
     OpMToOne(label, [], 1)
 }
 func OpOneToOne(label : Label, a : WireEnd) : WireEnd {
-    OpMToOne(label, [a], a.GetVertex().GetWidth())
+    OpMToOne(label, [a], a.GetWidth())
 }
 func OpTwoToOne(label : Label, a : WireEnd, b : WireEnd) : WireEnd {
-    OpMToOne(label, [a,b], a.GetVertex().GetWidth())
+    OpMToOne(label, [a,b], a.GetWidth())
+}
+func OpThreeToOne(label : Label, a : WireEnd, b : WireEnd, c : WireEnd) : WireEnd {
+    OpMToOne(label, [a,b,c], a.GetWidth())
+}
+func OpThreeToOne(label : Label, a : WireEnd, b : WireEnd, c : WireEnd, width : Int64) : WireEnd {
+    OpMToOne(label, [a,b,c], width)
 }
 public func ForEachBit(ws : Array<WireEnd>, gate : (Array<WireEnd>) -> Array<WireEnd>) {
     if (ws.size() == 0) {
         return Array<WireEnd>()
     }
     let inputs = ws.size()
-    let width = ws[0].GetVertex().GetWidth()
+    let width = ws[0].GetWidth()
     for (w in ws){
-        if (width != w.GetVertex().GetWidth()){
+        if (width != w.GetWidth()){
             throw WiresNotAllSameWidthException("ForEachBit", width, w)
         }
     }
@@ -69,25 +75,25 @@ public func ForEachBitOpTwoToOne(label: Label, a : WireEnd, b : WireEnd) : WireE
 }
 
 public func NotGate(a : WireEnd) : WireEnd {
-    OpOneToOne(NOT(a.GetVertex().GetWidth()), a)
+    OpOneToOne(NOT(a.GetWidth()), a)
 }
 public func AndGate(a : WireEnd, b : WireEnd) : WireEnd {
-    OpTwoToOne(AND(a.GetVertex().GetWidth()), a, b)
+    OpTwoToOne(AND(a.GetWidth()), a, b)
 }
 public func OrGate(a : WireEnd, b : WireEnd) : WireEnd {
-    OpTwoToOne(OR(a.GetVertex().GetWidth()), a, b)
+    OpTwoToOne(OR(a.GetWidth()), a, b)
 }
 public func NandGate(a : WireEnd, b : WireEnd) : WireEnd {
-    OpTwoToOne(NAND(a.GetVertex().GetWidth()), a, b)
+    OpTwoToOne(NAND(a.GetWidth()), a, b)
 }
 public func NorGate(a : WireEnd, b : WireEnd) : WireEnd {
-    OpTwoToOne(NOR(a.GetVertex().GetWidth()), a, b)
+    OpTwoToOne(NOR(a.GetWidth()), a, b)
 }
 public func XorGate(a : WireEnd, b : WireEnd) : WireEnd {
-    OpTwoToOne(XOR(a.GetVertex().GetWidth()), a, b)
+    OpTwoToOne(XOR(a.GetWidth()), a, b)
 }
 public func XnorGate(a : WireEnd, b : WireEnd) : WireEnd {
-    OpTwoToOne(XNOR(a.GetVertex().GetWidth()), a, b)
+    OpTwoToOne(XNOR(a.GetWidth()), a, b)
 }
 public func Signal(v : Value) : WireEnd {
     match(v) {
@@ -111,4 +117,7 @@ public func TopSignal() : WireEnd {
 }
 public func BlackBox(spec : Specification, inputs: Array<WireEnd>) : Array<WireEnd> {
     OpMToN(BLACKBOX(spec), inputs, spec.GetOutputType())
+}
+public func Mux(sel!: WireEnd, high!: WireEnd, low!: WireEnd) : WireEnd {
+    OpThreeToOne(MUX(high.GetWidth()), sel, low, high, high.GetWidth())
 }

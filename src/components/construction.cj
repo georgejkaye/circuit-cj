@@ -12,7 +12,7 @@ public func MakeCircuit(inputs : Array<WireEnd>, outputs : Array<WireEnd>) : Int
 }
 
 public func Subcircuit(circuit : InterfacedHypergraph, inputs : Array<WireEnd>) : ArrayList<WireEnd> {
-    let inputType = map({w : WireEnd => w.GetVertex().GetWidth() }, inputs)
+    let inputType = map({w : WireEnd => w.GetWidth() }, inputs)
 
     if (inputType != circuit.GetInputType()){
         throw IncompatibleInputsException("Subcircuit", inputType, circuit)

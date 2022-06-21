@@ -89,3 +89,18 @@ public func SignedValueFromInt(x : Int64, width!: Int64) : WireEnd {
     let bin = SignedDecToBin(x, width)
     MakeValue(bin, true)
 }
+
+public func Zero(width: Int64) {
+    let values = Array<Value>(width){ i : Int64 => False }
+    MakeValue(values, false)
+}
+
+public func ConstantZero(width: Int64) {
+    let value = Zero(width)
+    InfiniteWaveform(value)
+}
+
+public func UnsignedExtend(w : WireEnd) {
+    let value = InfiniteWaveform(False)
+    Combine([value, w])
+}

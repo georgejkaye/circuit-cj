@@ -30,11 +30,11 @@ class IncompatibleInputsException <: Exception {
 }
 class IncompatibleWidthException <: Exception {
     init(function : String, w : WireEnd, i : Int64) {
-        ErrorMsg(function, "${w} has width ${w.GetVertex().GetWidth()} but ${i} was required")
+        ErrorMsg(function, "${w} has width ${w.GetWidth()} but ${i} was required")
     }
 }
 class WiresNotAllSameWidthException <: Exception {
     init(function : String, i : Int64, w : WireEnd) {
-        ErrorMsg(function, "Trying to apply a gate for each of ${i} bits but ${w} has width ${w.GetVertex().GetWidth()}")
+        ErrorMsg(function, "Trying to apply a gate for each of ${i} bits but ${w} has width ${w.GetWidth()}")
     }
 }
