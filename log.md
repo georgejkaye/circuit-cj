@@ -51,8 +51,12 @@
 # 2022-06-27
 
 - Finish implementing hierarchical hypergraphs
-  - Adjust dot generation to expand 'macros'
-- Examples
-  - CPU
-  - Fibonacci
-  - Sorting network
+- Modify how subcircuits are used
+- Gates for thicker width wires are now implemented as subcircuits
+- Multiplexers are now implemented as subcircuits
+
+# 2022-06-28
+
+- Fix composite logic gate labels
+- Add option to expand dot graphs to show implementation of subcircuits
+- Complete CPU example

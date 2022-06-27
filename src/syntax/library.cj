@@ -15,23 +15,61 @@ public let FALSE : Label = VALUE([False], false)
 public let TRUE : Label = VALUE([True], false)
 public let TOP : Label = VALUE([Top], false)
 
+func MakeGateLabel(name : String, m : Int64, w : Int64, defaultInputs : Int64) {
+    let spec = Specification("${name}${m}_${w}", Array<Int64>(m){ i : Int64 => w }, [w])
+    if (m == defaultInputs && w == 1){
+        PRIMITIVE(spec)
+    } else {
+        COMPOSITE(spec)
+    }
+}
+
 /**
  * Unary gates
  */
 
-public let BUF : Label = PRIMITIVE(GateSpecification("BUF", 1))
-public let NOT : Label = PRIMITIVE(GateSpecification("NOT", 1))
+func MakeUnaryGateLabel(name : String, m : Int64, w : Int64) : Label {
+    MakeGateLabel(name, m, w, 1)
+}
+
+public func BUF(w : Int64) : Label {
+    MakeUnaryGateLabel("BUF", 1, w)
+}
+public func NOT(w : Int64) : Label {
+    MakeUnaryGateLabel("NOT", 1, w)
+}
 
 /**
  * Binary gates
+ *
+ * Each gate has two parameters:
+ * - how many wires it takes as inputs
+ * - the width of each wire
  */
 
-public let AND  : Label = PRIMITIVE(GateSpecification("AND", 2))
-public let OR   : Label = PRIMITIVE(GateSpecification("OR", 2))
-public let NAND : Label = PRIMITIVE(GateSpecification("NAND", 2))
-public let NOR  : Label = PRIMITIVE(GateSpecification("NOR", 2))
-public let XOR  : Label = PRIMITIVE(GateSpecification("XOR", 2))
-public let XNOR : Label = PRIMITIVE(GateSpecification("XNOR", 2))
+func MakeBinaryGateLabel(name : String, m : Int64, w : Int64) : Label {
+    MakeGateLabel(name, m, w, 2)
+}
+
+public func AND(m : Int64, w : Int64) : Label {
+    MakeBinaryGateLabel("AND", m, w)
+}
+public func OR(m : Int64, w : Int64) : Label {
+    MakeBinaryGateLabel("OR", m, w)
+}
+public func NAND(m : Int64, w : Int64) : Label {
+    MakeBinaryGateLabel("NAND", m, w)
+}
+public func NOR(m : Int64, w : Int64) : Label {
+    MakeBinaryGateLabel("NOR", m, w)
+}
+public func XOR(m : Int64, w : Int64) : Label {
+    MakeBinaryGateLabel("XOR", m, w)
+}
+public func XNOR(m : Int64, w : Int64) : Label {
+    MakeBinaryGateLabel("XNOR", m, w)
+}
+
 
 /**
  * Composite specifications

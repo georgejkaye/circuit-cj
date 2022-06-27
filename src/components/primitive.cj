@@ -48,7 +48,7 @@ public func TopSignal() : Wire {
  */
 
 public func NotGate(a : Wire) : Wire {
-    UnaryGate(NOT, a)
+    UnaryGate(NOT(1), a)
 }
 
 /**
@@ -56,20 +56,20 @@ public func NotGate(a : Wire) : Wire {
  */
 
 public func AndGate(a : Wire, b : Wire) : Wire {
-    BinaryGate(AND, a, b)
+    BinaryGate(AND(2,1), a, b)
 }
 public func OrGate(a : Wire, b : Wire) : Wire {
-    BinaryGate(OR, a, b)
+    BinaryGate(OR(2,1), a, b)
 }
 public func NandGate(a : Wire, b : Wire) : Wire {
-    BinaryGate(NAND, a, b)
+    BinaryGate(NAND(2,1), a, b)
 }
 public func NorGate(a : Wire, b : Wire) : Wire {
-    BinaryGate(NOR, a, b)
+    BinaryGate(NOR(2,1), a, b)
 }
 public func XorGate(a : Wire, b : Wire) : Wire {
-    BinaryGate(XOR, a, b)
+    BinaryGate(XOR(2,1), a, b)
 }
 public func XnorGate(a : Wire, b : Wire) : Wire {
-    BinaryGate(XNOR, a, b)
+    BinaryGate(XNOR(2,1), a, b)
 }

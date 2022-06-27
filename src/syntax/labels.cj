@@ -118,35 +118,6 @@ public class Specification <: ToString & Equatable<Specifiable> & Specifiable {
     }
 }
 
-public class GateSpecification <: ToString & Equatable<Specifiable> & Specifiable {
-    let spec : Specification
-    init (name : String, inputs : Int64) {
-        this.spec = Specification(name, Array<Int64>(inputs, { i : Int64 => 1 }), [1])
-    }
-    init (name : String, inputs : Array<Int64>, width : Int64) {
-        this.spec = Specification(name, inputs, [width])
-    }
-    public func toString() : String {
-        this.spec.toString()
-    }
-    public operator func ==(rhs: Specifiable) : Bool {
-        this.spec == rhs
-    }
-    public operator func !=(rhs: Specifiable) : Bool { 
-        !(this == rhs) 
-    }
-    public func GetInputType() : Array<Int64> {
-        this.spec.GetInputType()
-    }
-    public func GetOutputType() : Array<Int64> {
-        this.spec.GetOutputType()
-    }
-    public func GetName() : String {
-        this.spec.GetName()
-    }
-}
-
-
 /**
  * Enum for the different types of generators
  */
@@ -154,7 +125,7 @@ public enum Label {
     | VALUE(Array<Value>, Bool)           // A value 0 -> n, which could be signed or unsigned
     | BUNDLER(Array<Int64>, Array<Int64>) // A bundler changes how wires are bundled
     | JOIN(Int64)                         // Join two wires together
-    | PRIMITIVE(GateSpecification)        // The simplest building blocks of circuits
+    | PRIMITIVE(Specification)        // The simplest building blocks of circuits
     | COMPOSITE(Specification)            // A composite of primitives
     | BLACKBOX(Specification)             // A black box with arbitrary name and codomain
     | DELAY(Int64, Int64)                 // A delay parameterised by a duration and a width
