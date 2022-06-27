@@ -58,5 +58,5 @@ public func XNOR(m : Int64, w : Int64) : Label {
  */
  
 public func MUX(n : Int64, w : Int64) : Label {
-    GATE(GateSpecification("mux${n}_1_${w})", [1,w,w], w))
+    GATE(GateSpecification("mux${n}_1_${w}", [1,w,w], w))
 }

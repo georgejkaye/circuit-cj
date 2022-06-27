@@ -70,22 +70,22 @@ func SignedDecToBin(x : Int64, w : Int64) : Array<Bool> {
     bin
 }
 
-public func MakeValue(vs : Array<Value>, signed : Bool) : WireEnd {
+public func MakeValue(vs : Array<Value>, signed : Bool) : Wire {
     let empty = Array<Vertex>()
     let value = Edge(VALUE(vs, signed), empty, [vs.size()])
-    WireEnd(value.GetTarget(0))
+    Wire(value.GetTarget(0))
 }
 
 public func MakeValue(vs : Array<Bool>, signed : Bool) {
     MakeValue(map({ b : Bool => if(b){ True } else { False }}, vs), signed)
 }
 
-public func UnsignedValueFromInt(x : Int64, width!: Int64) : WireEnd {
+public func UnsignedValueFromInt(x : Int64, width!: Int64) : Wire {
     let bin = UnsignedDecToBin(x, width)
     MakeValue(bin, false)
 }
 
-public func SignedValueFromInt(x : Int64, width!: Int64) : WireEnd {
+public func SignedValueFromInt(x : Int64, width!: Int64) : Wire {
     let bin = SignedDecToBin(x, width)
     MakeValue(bin, true)
 }
@@ -100,7 +100,7 @@ public func ConstantZero(width: Int64) {
     InfiniteWaveform(value)
 }
 
-public func UnsignedExtend(w : WireEnd) {
+public func UnsignedExtend(w : Wire) {
     let value = InfiniteWaveform(False)
     Combine([value, w])
 }

@@ -128,7 +128,7 @@ public class Edge <: Element & Equatable<Edge> {
     let sources : Array<Vertex>
     let targets : Array<Vertex>
     let subgraph : Option<InterfacedHypergraph>
-    public init(label: Label, sources : Array<Vertex>, targets : Array<Vertex>, subgraph : Option<InterfacedHypergraph>){
+    init(label: Label, sources : Array<Vertex>, targets : Array<Vertex>, subgraph : Option<InterfacedHypergraph>){
         CheckLabelCompatibility(label, map({v : Vertex => v.GetWidth()}, sources), map({v : Vertex => v.GetWidth() }, targets))
         this.label = label
         this.sources = sources
@@ -139,11 +139,14 @@ public class Edge <: Element & Equatable<Edge> {
         ForEachSource({ v : Vertex, i : Int64 => v.AddOutEdge(this, i)})
         ForEachTarget({ v : Vertex, i : Int64 => v.AddInEdge(this, i)})
     }
+    public init(label : Label, sources : Array<Vertex>, targets: Array<Int64>, subgraph : Option<InterfacedHypergraph> ) {
+        this(label, sources, map({ i : Int64 => Vertex(i) }, targets), subgraph)
+    }
+    public init(label : Label, sources : Array<Vertex>, targets: Array<Int64>, subgraph : InterfacedHypergraph){
+        this(label, sources, targets, Some(subgraph))
+    }
     public init(label: Label, sources : Array<Vertex>, targets : Array<Vertex>){ 
         this(label, sources, targets, None)
-    }
-    public init(label : Label, sources : Array<Vertex>, targets: Array<Int64>, subgraph : Option<InterfacedHypergraph>){
-        this(label, sources, map({ i : Int64 => Vertex(i) }, targets), subgraph)
     }
     public init(label : Label, sources : Array<Vertex>, targets: Array<Int64>) {
         this(label, sources, targets, None)
@@ -151,7 +154,9 @@ public class Edge <: Element & Equatable<Edge> {
     public func GetLabel() : Label {
         this.label
     }
-    
+    public func GetSubgraph() : Option<InterfacedHypergraph> {
+        this.subgraph
+    }
     func ForEachVertex(array : Array<Vertex>, f : (Vertex, Int64) -> Unit) : Unit {
         for (i in 0..array.size()) {
             f(array[i], i)

@@ -183,7 +183,7 @@ public class Hypergraph <: Identifiable & ToString & Nameable & Equatable<Hyperg
         for (edge in this.edges) {
             let newSources = map({ v : Vertex => unsafeGet(vertexMap, v)}, edge.GetSources())
             let newTargets = map({ v : Vertex => unsafeGet(vertexMap, v)}, edge.GetTargets())
-            let newEdge = Edge(edge.GetLabel(), newSources, newTargets)
+            let newEdge = Edge(edge.GetLabel(), newSources, newTargets, edge.GetSubgraph())
             newEdges.put(newEdge)
             edgeMap.put(edge, newEdge)
         }

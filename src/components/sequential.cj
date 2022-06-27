@@ -1,12 +1,12 @@
 package components
 
-public func Delay (duration : Int64, input: WireEnd) : WireEnd {
+public func Delay (duration : Int64, input: Wire) : Wire {
     let width = input.GetWidth()
     let edge = Edge(DELAY(duration, width), [input.GetVertex()], [width])
-    WireEnd(edge.GetTarget(0))
+    Wire(edge.GetTarget(0))
 }
 
-public func SimpleRegister(initial! : Int64, signed! : Bool, input! : WireEnd) : WireEnd {
+public func SimpleRegister(initial! : Int64, signed! : Bool, input! : Wire) : Wire {
     let width = input.GetWidth()
     let value = if (signed) {
         SignedValueFromInt(initial, width: width)
@@ -16,14 +16,14 @@ public func SimpleRegister(initial! : Int64, signed! : Bool, input! : WireEnd) :
     SimpleRegisterWithInitial(value, input)
 }
 
-func SimpleRegisterWithInitial(initial: WireEnd, input : WireEnd){
+func SimpleRegisterWithInitial(initial: Wire, input : Wire){
     let width = initial.GetWidth()
     let delay = Delay(1, input)
     let edge = Edge(JOIN(width), [initial.GetVertex(), delay.GetVertex()], [width])
-    WireEnd(edge.GetTarget(0))
+    Wire(edge.GetTarget(0))
 }
 
-public func Feedback(outgoing : WireEnd, incoming : WireEnd) : Unit {
+public func Feedback(outgoing : Wire, incoming : Wire) : Unit {
     if (incoming.GetVertex().GetInEdges().size() != 0) {
         throw NotDanglingWireException("Feedback", incoming)
     }
@@ -34,18 +34,18 @@ public func Feedback(outgoing : WireEnd, incoming : WireEnd) : Unit {
     MergeWires(outgoing, incoming)
 }
 
-public func DelayedFeedback(outgoing : WireEnd, incoming : WireEnd) : Unit {
+public func DelayedFeedback(outgoing : Wire, incoming : Wire) : Unit {
     let delay = Delay(1, outgoing)
     Feedback(delay, incoming)
 }
 
-public func InfiniteWaveform(initial : WireEnd) {
-    let input = Wire(initial.GetWidth())
+public func InfiniteWaveform(initial : Wire) {
+    let input = MakeWire(initial.GetWidth())
     let reg = SimpleRegisterWithInitial(initial, input)
     Feedback(reg, input)
     reg
 }
 
-public func InfiniteWaveform(value : Value) : WireEnd {
+public func InfiniteWaveform(value : Value) : Wire {
     InfiniteWaveform(Signal(value))
 }

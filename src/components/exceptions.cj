@@ -25,7 +25,7 @@ public class IncompatibleLabelInterfaceException <: Exception {
     }
 }
 public class NotDanglingWireException <: Exception {
-    init(function : String, w : WireEnd) {
+    init(function : String, w : Wire) {
         ErrorMsg(function, "Tried to use ${w} as a feedback wire but it has connected in-edges")
     }
 }
@@ -35,18 +35,23 @@ class IncompatibleInputsException <: Exception {
     }
 }
 class IncompatibleWidthException <: Exception {
-    init(function : String, w : WireEnd, i : Int64) {
+    init(function : String, w : Wire, i : Int64) {
         ErrorMsg(function, "${w} has width ${w.GetWidth()} but ${i} was required")
     }
 }
 class WiresNotAllSameWidthException <: Exception {
-    init(function : String, i : Int64, w : WireEnd) {
+    init(function : String, i : Int64, w : Wire) {
         ErrorMsg(function, "Trying to apply a gate for each of ${i} bits but ${w} has width ${w.GetWidth()}")
     }
 }
 class WiresNotSameWidthException <: Exception {
-    init(w : WireEnd, v : WireEnd) {
-        ErrorMsg("", "Wires ${w} (${w.GetWidth()} bits) and ${v} (${w.GetWidth()} bits) are not the same width")
+    init(w : Wire, v : Wire) {
+        ErrorMsg("", "Wires ${w} (${w.GetWidth()} bits) and ${v} (${v.GetWidth()} bits) are not the same width")
+    }
+}
+class DifferentNumberOfWiresException <: Exception {
+    init(ws : Array<Wire>, vs: Array<Wire>) {
+        ErrorMsg("", "Needed wire arrays to be the same size but they were ${ws.size()} and ${vs.size()}")
     }
 }
 class NoWiresException <: Exception {

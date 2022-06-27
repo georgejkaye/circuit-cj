@@ -5,20 +5,26 @@ package components
  * as a source or target is updated with the merged vertex
  * @return A tuple (merged vertex, removed vertex)
  */
-public func MergeWires(v : WireEnd, w : WireEnd) : Unit {  
+public func MergeWires(v : Wire, w : Wire) : Unit {  
     MergeVertices(v.GetVertex(), w.GetVertex())
     w.SetVertex(v.GetVertex())
 }
 
-public func CombineGraphs(ws : Array<WireEnd>) : Hypergraph {
-    CombineGraphs(map({ w : WireEnd => w.GetVertex() }, ws))
+public func CombineGraphs(ws : Array<Wire>) : Hypergraph {
+    CombineGraphs(map({ w : Wire => w.GetVertex() }, ws))
 }
 
-public func WiresToVertices(ws : Array<WireEnd>) : Array<Vertex> {
-    map({ w : WireEnd => w.GetVertex() }, ws)
+public func WiresToVertices(ws : Array<Wire>) : Array<Vertex> {
+    map({ w : Wire => w.GetVertex() }, ws)
+}
+public func WiresToWidths(ws : Array<Wire>) : Array<Int64> {
+    map({ w : Wire => w.GetWidth() }, ws)
+}
+public func VerticesToWires(vs : Array<Vertex>) : Array<Wire> {
+    map({ v : Vertex => Wire(v) }, vs)
 }
 
-public class WireEnd <: Identifiable & ToString {
+public class Wire <: Identifiable & ToString {
     let id : Identifier = Identifier()
     var vertex : Vertex
     public init(v : Vertex) {
@@ -49,34 +55,34 @@ public class WireEnd <: Identifiable & ToString {
         this.vertex.GetWidth()
     }
     public func toString() : String {
-        "wire ${this.id} (pointing at ${this.vertex})"
+        "w${this.id}"
     }
 }
 
-public func Wire(width : Int64) : WireEnd {
+public func MakeWire(width : Int64) : Wire {
     let vertex = Vertex(width)
     let f = Hypergraph(HashSet<Vertex>([ vertex ]), HashSet<Edge>())
-    WireEnd(vertex)
+    Wire(vertex)
 }
 
-public func Split(w : WireEnd, vs : Array<Int64>) : Array<WireEnd> {
+public func Split(w : Wire, vs : Array<Int64>) : Array<Wire> {
     let v = w.GetVertex()
     if (v.GetWidth() != sum(vs)) {
         throw IncompatibleWidthException("Split", w, sum(vs))
     }
     let edge = Edge(BUNDLER([w.GetWidth()], vs), [v], vs)
-    map({ v : Vertex => WireEnd(v) }, edge.GetTargets())
+    map({ v : Vertex => Wire(v) }, edge.GetTargets())
 }
 
-public func Combine(ws : Array<WireEnd>) : WireEnd {
-    let widths = map({ w : WireEnd => w.GetWidth() }, ws)
+public func Combine(ws : Array<Wire>) : Wire {
+    let widths = map({ w : Wire => w.GetWidth() }, ws)
     CombineGraphs(ws)
-    let vertices = map({ w : WireEnd => w.GetVertex()}, ws )
+    let vertices = map({ w : Wire => w.GetVertex()}, ws )
     let edge = Edge(BUNDLER(widths, [sum(widths)]), vertices, [sum(widths)])
-    WireEnd(edge.GetTarget(0))
+    Wire(edge.GetTarget(0))
 }
 
-public func GetBit(w : WireEnd, i : Int64) {
+public func GetBit(w : Wire, i : Int64) {
     let width = w.GetWidth()
     if (width < i) {
         throw IncompatibleWidthException("GetBit", w, i)
@@ -93,29 +99,29 @@ public func GetBit(w : WireEnd, i : Int64) {
     }
 }
 
-public func Lsb(w : WireEnd) : WireEnd {
+public func Lsb(w : Wire) : Wire {
     LsbAndMsbs(w)[0]
 }
 
-public func Msbs(w : WireEnd) : WireEnd {
+public func Msbs(w : Wire) : Wire {
     LsbAndMsbs(w)[1]
 }
-public func Msb(w : WireEnd) : WireEnd {
+public func Msb(w : Wire) : Wire {
     LsbsAndMsb(w)[1]
 }
-public func Lsbs(w : WireEnd) : WireEnd {
+public func Lsbs(w : Wire) : Wire {
     LsbsAndMsb(w)[0]
 }
 
-public func LsbAndMsbs(w : WireEnd) : (WireEnd, WireEnd) {
+public func LsbAndMsbs(w : Wire) : (Wire, Wire) {
     let splits = Split(w, [1, w.GetWidth() - 1])
     (splits[0], splits[1])
 }
-public func LsbsAndMsb(w : WireEnd) : (WireEnd, WireEnd) {
+public func LsbsAndMsb(w : Wire) : (Wire, Wire) {
     let splits = Split(w, [w.GetWidth() - 1, 1])
     (splits[0], splits[1])
 }
 
-public func Copy(a : WireEnd, w : Int64) : WireEnd {
-    Combine(Array<WireEnd>(w){ i : Int64 => a })
+public func Copy(a : Wire, w : Int64) : Wire {
+    Combine(Array<Wire>(w){ i : Int64 => a })
 }

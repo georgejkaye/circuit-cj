@@ -3,7 +3,7 @@ package components
 import prelude.*
 import syntax.*
 
-public func Adder(a : WireEnd, b : WireEnd) : WireEnd {
+public func Adder(a : Wire, b : Wire) : Wire {
     let width = a.GetWidth()
     if (width != b.GetWidth()) {
         throw WiresNotAllSameWidthException("Adder", width, b)
@@ -12,7 +12,7 @@ public func Adder(a : WireEnd, b : WireEnd) : WireEnd {
     BlackBox(adderSpec, [a, b])[0]
 }
 
-public func HalfAdder(a : WireEnd, b : WireEnd) : (WireEnd, WireEnd) {
+public func HalfAdder(a : Wire, b : Wire) : (Wire, Wire) {
     if (a.GetWidth() != 1){
         throw IncompatibleWidthException("HalfAdder", a, 1)
     }
@@ -24,7 +24,7 @@ public func HalfAdder(a : WireEnd, b : WireEnd) : (WireEnd, WireEnd) {
     (s, c)
 }
 
-public func FullAdder(a : WireEnd, b : WireEnd, cin : WireEnd) : (WireEnd, WireEnd) {
+public func FullAdder(a : Wire, b : Wire, cin : Wire) : (Wire, Wire) {
     if (a.GetWidth() != 1){
         throw IncompatibleWidthException("FullAdder", a, 1)
     }
@@ -42,26 +42,26 @@ public func FullAdder(a : WireEnd, b : WireEnd, cin : WireEnd) : (WireEnd, WireE
     (carryXor, carryOr)
 }
 
-public func RippleAdder(a : WireEnd, b: WireEnd, c : WireEnd) : (WireEnd, WireEnd) {
+public func RippleAdder(a : Wire, b: Wire, c : Wire) : (Wire, Wire) {
     let width = a.GetWidth()
     if (width != b.GetWidth()) {
         throw WiresNotAllSameWidthException("RippleAdder", width, b)
     }
     ForEachBit([a, b], {
-        ws : Array<WireEnd>, carry : WireEnd =>
+        ws : Array<Wire>, carry : Wire =>
         FullAdder(ws[0], ws[1], carry)
     }, c)
 }
-public func RippleAdderSubtractor(a : WireEnd, b : WireEnd, c : WireEnd) : (WireEnd, WireEnd) {
+public func RippleAdderSubtractor(a : Wire, b : Wire, c : Wire) : (Wire, Wire) {
     let xor = XorGate(b, c)
     RippleAdder(a, xor, c)
 }
 
 
-public func Plus(a : WireEnd, b : WireEnd) : (WireEnd, WireEnd) {
+public func Plus(a : Wire, b : Wire) : (Wire, Wire) {
     RippleAdder(a, b, InfiniteWaveform(False))
 }
-public func Subtract(a : WireEnd, b : WireEnd) : (WireEnd, WireEnd) {
+public func Subtract(a : Wire, b : Wire) : (Wire, Wire) {
     let carry = InfiniteWaveform(True)
     let xor = XorGate(b, carry)
     RippleAdder(a, b, carry)

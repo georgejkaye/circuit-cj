@@ -10,11 +10,11 @@ package examples
 
 import components.*
 
-func PartialProduct(a : WireEnd, b0: WireEnd) : WireEnd {
+func PartialProduct(a : Wire, b0: Wire) : Wire {
     Mux2(sel: b0, high: a, low: ConstantZero(a.GetWidth()))
 }
 
-func RunningSum(first : WireEnd, prev_sum: WireEnd, a: WireEnd, b0: WireEnd) : WireEnd {
+func RunningSum(first : Wire, prev_sum: Wire, a: Wire, b0: Wire) : Wire {
     let lhs = Mux2(sel: first, high: prev_sum, low: ConstantZero(a.GetWidth()))
     let rhs = PartialProduct(a, b0)
     let a = UnsignedExtend(lhs)
@@ -23,8 +23,8 @@ func RunningSum(first : WireEnd, prev_sum: WireEnd, a: WireEnd, b0: WireEnd) : W
     sum
 }
 
-func RunningSumLoop(first: WireEnd, a : WireEnd, b0 : WireEnd) : (WireEnd, WireEnd) {
-    let prev_sum = Wire(a.GetWidth())
+func RunningSumLoop(first: Wire, a : Wire, b0 : Wire) : (Wire, Wire) {
+    let prev_sum = MakeWire(a.GetWidth())
     let sum = RunningSum(first, prev_sum, a, b0)
     let (lsb, msbs) = LsbAndMsbs(sum)
     Feedback(msbs, prev_sum)
@@ -32,8 +32,8 @@ func RunningSumLoop(first: WireEnd, a : WireEnd, b0 : WireEnd) : (WireEnd, WireE
 }
 
 
-func ComputedBits(bit : WireEnd, width : Int64) : WireEnd {
-    let prev = Wire(width)
+func ComputedBits(bit : Wire, width : Int64) : Wire {
+    let prev = MakeWire(width)
     let msbs = Msbs(prev)
     let combined = Combine([bit, msbs]) 
     DelayedFeedback(combined, prev)
@@ -41,11 +41,11 @@ func ComputedBits(bit : WireEnd, width : Int64) : WireEnd {
 }
 
 public func SerialMultiplierBit(width : Int64) {
-    let first = Wire(1)
-    let a = Wire(width)
-    let b0 = Wire(1)
+    let first = MakeWire(1)
+    let a = MakeWire(width)
+    let b0 = MakeWire(1)
     let (sum, bit) = RunningSumLoop(first, a, b0)
     let computedBits = ComputedBits(bit, width)
     let output = Combine([sum, computedBits])
-    MakeCircuit([first, a, b0], [output])
+    MakeSubcircuit([first, a, b0], [output])
 }

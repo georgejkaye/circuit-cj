@@ -274,10 +274,10 @@ func DrawInterfaceConnections(list : Array<Vertex>, vertexFirst : Bool) : ArrayL
             let vText = "v${v.GetId()}"
             let str = if(vertexFirst) {
                 let eText = "output:w${i}:w"
-                "${vText} -- ${eText}"
+                "${vText}:e -- ${eText}"
             } else {
                 let eText = "input:e${i}:e"
-                "${eText} -- ${vText}"
+                "${eText} -- ${vText}:w"
             }
             (str, Preserve)
         },
