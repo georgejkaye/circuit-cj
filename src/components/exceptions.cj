@@ -28,6 +28,11 @@ class IncompatibleInputsException <: Exception {
         ErrorMsg(function, "Tried to give ${inputs} as input type but ${f.GetName()} needs ${f.GetInputType()}")
     }
 }
+class IncorrectWireInputsException <: Exception {
+    init(required : Array<Int64>, actual : Array<Wire>) {
+        ErrorMsg("", "Needed input ${required} but ${WiresToWidths(actual)} was provided")
+    }
+}
 class IncompatibleWidthException <: Exception {
     init(function : String, w : Wire, i : Int64) {
         ErrorMsg(function, "${w} has width ${w.GetWidth()} but ${i} was required")

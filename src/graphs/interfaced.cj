@@ -1,5 +1,7 @@
 package graphs
 
+import syntax.*
+
 public func CloneWithInterfaces(f : Hypergraph, inputs: Array<Vertex>, outputs: Array<Vertex>) : (Hypergraph, Array<Vertex>, Array<Vertex>) {
     let (newF, vertexMap, edgeMap) = f.Clone()
 
@@ -24,16 +26,27 @@ public class InterfacedHypergraph <: Identifiable & ToString & Nameable & Equata
     let inputType : Array<Int64>
     let outputs : Array<Vertex>
     let outputType : Array<Int64>
+    let label : Label
 
-    public init(f : Hypergraph, inputs : Array<Vertex>, outputs: Array<Vertex>){
-       this.f = f
-       this.inputs = inputs
-       this.inputType = map({ v : Vertex => v.GetWidth() }, inputs)
-       this.outputs = outputs
-       this.outputType = map({ v : Vertex => v.GetWidth() }, outputs)
+    public init(f : Hypergraph, inputs : Array<Vertex>, outputs: Array<Vertex>, name : String){
+        this.f = f
+        this.inputs = inputs
+        this.inputType = map({ v : Vertex => v.GetWidth() }, inputs)
+        this.outputs = outputs
+        this.outputType = map({ v : Vertex => v.GetWidth() }, outputs)
+        this.label = COMPOSITE(
+            Specification(
+                name,
+                this.inputType,
+                this.outputType
+            )
+        )
     }
     public func GetId() : Int64 {
         this.uniqueId.GetId()
+    }
+    public func GetLabel() : Label {
+        this.label
     }
     public func GetGraph() : Hypergraph {
         this.f
@@ -111,6 +124,10 @@ public class InterfacedHypergraph <: Identifiable & ToString & Nameable & Equata
         this.GetId() != right.GetId()
     }
     public func Clone() : (Hypergraph, Array<Vertex>, Array<Vertex>) {
-        CloneWithInterfaces(this.f, this.inputs, this.outputs)
+         CloneWithInterfaces(this.f, this.inputs, this.outputs)
+    }
+    public func CloneGraph() : InterfacedHypergraph {
+        let (newGraph, newInputs, newOutputs) = this.Clone()    
+        InterfacedHypergraph(newGraph, newInputs, newOutputs, this.label.GetName())
     }
 }

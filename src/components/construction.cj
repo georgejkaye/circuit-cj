@@ -2,65 +2,38 @@ package components
 
 import graphs.*
 
-public func MakeSubcircuit(internalInputs : Array<Wire>, internalOutputs : Array<Wire>, inputs!: Option<Array<Wire>> = None, name!: String = "") : (InterfacedHypergraph, Array<Wire>) {
+public func MakeSubcircuit(internalInputs : Array<Wire>, internalOutputs : Array<Wire>, name!: String = "") : InterfacedHypergraph {
     let interfaceVertices = ArrayList<Wire>(internalInputs)
     interfaceVertices.addAll(internalOutputs)
     let graph = CombineGraphs(interfaceVertices.toArray())
 
     let (newF, newInputs, newOutputs) = CloneWithInterfaces(graph, map({ w : Wire => w.GetVertex() }, internalInputs), map({ w : Wire => w.GetVertex() }, internalOutputs))
-    let circuit = InterfacedHypergraph(newF, newInputs, newOutputs)
+    InterfacedHypergraph(newF, newInputs, newOutputs, name)
+}
 
-    let sources = match(inputs) {
-        case None     => map({ w : Wire => Vertex(w.GetWidth()) }, internalInputs)
-        case Some(ws) => 
-                AssertWireArraysCompatible(internalInputs, ws)
-                WiresToVertices(ws)
-    }
-
-    let edge = Edge(
-        COMPOSITE(
-            Specification(
-                name,
-                WiresToWidths(internalInputs),
-                WiresToWidths(internalOutputs)
-            )
-        ),
-        sources,
-        WiresToWidths(internalOutputs),
-        circuit
+public func UseSubcircuit(circuit : InterfacedHypergraph, inputs : Array<Wire>) : Array<Wire> {
+    AssertWiresTypecheck(inputs, circuit.GetInputType())
+    let newGraph = circuit.CloneGraph()
+    MakeEdge(
+        circuit.GetLabel(),
+        inputs,
+        circuit.GetOutputType(),
+        newGraph
     )
-    (circuit, VerticesToWires(edge.GetTargets()))
 }
 
-public func MakeSubcircuit(internalInputs : Array<Wire>, internalOutputs : Array<Wire>, inputs!: Array<Wire>, name!: String = "") : (InterfacedHypergraph, Array<Wire>) {
-    MakeSubcircuit(internalInputs, internalOutputs, inputs: Some(inputs), name: name)
+public func UseSubcircuit_1(circuit : InterfacedHypergraph, inputs : Array<Wire>) : Wire {
+    UseSubcircuit(circuit, inputs)[0]
 }
 
-public func Subcircuit(circuit : InterfacedHypergraph, inputs : Array<Wire>) : ArrayList<Wire> {
-    let inputType = map({w : Wire => w.GetWidth() }, inputs)
+public func UseSubcircuit_2(circuit : InterfacedHypergraph, inputs : Array<Wire>) : (Wire, Wire) {
+    let outputs = UseSubcircuit(circuit, inputs)
+    (outputs[0], outputs[1]) 
+}
 
-    if (inputType != circuit.GetInputType()){
-        throw IncompatibleInputsException("Subcircuit", inputType, circuit)
-    }
-
-    let (newGraph, newInputs, newOutputs) = circuit.Clone()
-
-    let vertices = Array<Vertex>(inputs.size() + 1) {
-            i : Int64 => if (i < inputs.size()) {
-                inputs[i].GetVertex()
-            } else {
-                newInputs[0]
-            }  
-    }
-
-    let graph = CombineGraphs(vertices)
-
-    for(i in 0..inputs.size()) {
-        MergeVertices(inputs[i].GetVertex(), newInputs[i])
-    }
-
-    ArrayList<Wire>(newOutputs.size(), { i : Int64 => Wire(newOutputs[i])})
-
+public func UseSubcircuit_3(circuit : InterfacedHypergraph, inputs : Array<Wire>) : (Wire, Wire, Wire) {
+    let outputs = UseSubcircuit(circuit, inputs)
+    (outputs[0], outputs[1], outputs[2]) 
 }
 
 /**

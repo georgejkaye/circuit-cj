@@ -11,20 +11,20 @@ public func BlackBox(spec : Specification, inputs: Array<Wire>) : Array<Wire> {
 func BitwiseGate(gate : (Array<Wire>) -> Wire, inputs: Array<Wire>, label: Label) : Wire {
     let internalInputs = map({ w : Wire => MakeWire(w.GetWidth()) }, inputs)
     let internalOutputs = Bitwise(internalInputs, gate)
-    let (circuit, wires) = MakeSubcircuit(internalInputs, [internalOutputs], inputs: inputs, name: label.GetName())
-    wires[0]
+    let circuit = MakeSubcircuit(internalInputs, [internalOutputs], name: label.GetName())
+    UseSubcircuit(circuit, inputs)[0]
 }
 func RippleGate(gate : (Wire, Wire) -> Wire, inputs: Array<Wire>, label: Label) : Wire {
     let internalInputs = map({ w : Wire => MakeWire(w.GetWidth()) }, inputs)
     let internalOutputs = Ripple(internalInputs, gate)
-    let (circuit, wires) = MakeSubcircuit(internalInputs, [internalOutputs], inputs: inputs, name: label.GetName())
-    wires[0]
+    let circuit = MakeSubcircuit(internalInputs, [internalOutputs], name: label.GetName())
+    UseSubcircuit(circuit, inputs)[0]
 }
 func InternalRippleGate(gate : (Wire, Wire) -> Wire, inputs: Wire, label: Label) : Wire {
     let internalInputs = MakeWire(inputs.GetWidth())
     let internalOutputs = InternalRipple(internalInputs, gate)
-    let (circuit, wires) = MakeSubcircuit([internalInputs], [internalOutputs], inputs: [inputs], name: label.GetName())
-    wires[0]
+    let circuit = MakeSubcircuit([internalInputs], [internalOutputs], name: label.GetName())
+    UseSubcircuit(circuit, [inputs])[0]
 }
 
 public func Not(a : Wire) : Wire {
@@ -52,7 +52,7 @@ public func Xor(ws : Array<Wire>) : Wire {
     RippleGate({ w : Wire, v : Wire => XorGate(w, v)}, ws, XOR)
 }
 
-func Mux2_1_1(low : Wire, high : Wire, sel : Wire) : (InterfacedHypergraph, Wire) {
+func Mux2_1_1() : InterfacedHypergraph {
     let a = MakeWire(1)
     let b = MakeWire(1)
     let c = MakeWire(1)
@@ -60,13 +60,10 @@ func Mux2_1_1(low : Wire, high : Wire, sel : Wire) : (InterfacedHypergraph, Wire
         AndGate(a, NotGate(c)),
         AndGate(c, b)
     )
-    let (graph, wires) = MakeSubcircuit([c, a, b], [z], inputs: [sel, low, high], name: "Mux2_1_1")
-    (graph, wires[0])
+    MakeSubcircuit([c, a, b], [z], name: "Mux2_1_1")
 }
 
-func Mux2_1_W(low : Wire, high : Wire, sel : Wire) : (InterfacedHypergraph, Wire) {
-    AssertWireWidth(sel, 1)
-    let width = AssertWiresSameWidth(low, high)
+func Mux2_1_W(width : Int64) : InterfacedHypergraph {
     let a = MakeWire(width)
     let b = MakeWire(width)
     let c = MakeWire(1)
@@ -77,14 +74,16 @@ func Mux2_1_W(low : Wire, high : Wire, sel : Wire) : (InterfacedHypergraph, Wire
                 MUX(2, 1, 1), 
                 [c, ws[0], ws[1]], 
                 [1], 
-                Mux2_1_1(ws[0], ws[1], c)[0]
+                Mux2_1_1()
             )[0]
         }
     )
-    let (graph, wires) = MakeSubcircuit([c, a, b], [outputs], inputs: [sel, low, high], name: "Mux2_1_${width}")
-    (graph, wires[0])
+    MakeSubcircuit([c, a, b], [outputs], name: "Mux2_1_${width}")
 }
 
 public func Mux2(sel!: Wire, low!: Wire, high!: Wire) : Wire {
-    Mux2_1_W(low, high, sel)[1]
+    AssertWiresSameWidth(low, high)
+    let width = low.GetWidth()
+    let mux2 = Mux2_1_W(width)
+    UseSubcircuit(mux2, [sel, low, high])[0]
 }

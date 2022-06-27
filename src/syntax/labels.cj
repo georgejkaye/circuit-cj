@@ -89,7 +89,7 @@ public func PrintValue(vs : Array<Value>, signed : Bool, rep : NumberRepresentat
  * Interfaces have a name, domain and codomain
  * (Gates are a special case in which codomain is 1)
  */
-public class Specification <:ToString & Equatable<Specifiable> & Specifiable {
+public class Specification <: ToString & Equatable<Specifiable> & Specifiable {
     let name : String
     let dom : Array<Int64>
     let cod : Array<Int64>

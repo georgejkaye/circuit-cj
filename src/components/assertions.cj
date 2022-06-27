@@ -41,6 +41,15 @@ func AssertWireArraysCompatible(ws : Array<Wire>, vs : Array<Wire>) : Array<Int6
     }
 }
 
+func AssertWiresTypecheck(ws : Array<Wire>, ns: Array<Int64>) : Unit {
+    AssertNumberOfWires(ws, ns.size())
+    for (i in 0..(ns.size())) {
+        if(ws[i].GetWidth() != ns[i]) {
+            throw IncorrectWireInputsException(ns, ws)
+        }
+    }
+}
+
 func AssertAllWiresWidth(ws : Array<Wire>, n: Int64) : Unit {
     fold_left(
         { acc : Unit, w : Wire => AssertWireWidth(w, n)},

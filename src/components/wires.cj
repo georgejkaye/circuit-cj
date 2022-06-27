@@ -5,6 +5,10 @@ public func MakeEdge(label : Label, sources : Array<Wire>, targets: Array<Int64>
     map({v : Vertex => Wire(v) }, edge.GetTargets())
 }
 
+public func MakeEdge(label : Label, sources : Array<Int64>, targets: Array<Int64>, graph : InterfacedHypergraph) : Array<Wire> {
+    MakeEdge(label, WidthsToWires(sources), targets, Some(graph))
+}
+
 public func MakeEdge(label : Label, sources : Array<Wire>, targets: Array<Int64>, graph : InterfacedHypergraph) : Array<Wire> {
     MakeEdge(label, sources, targets, Some(graph))
 }
@@ -35,6 +39,9 @@ public func WiresToWidths(ws : Array<Wire>) : Array<Int64> {
 }
 public func VerticesToWires(vs : Array<Vertex>) : Array<Wire> {
     map({ v : Vertex => Wire(v) }, vs)
+}
+public func WidthsToWires(vs : Array<Int64>) : Array<Wire> {
+    map({ i : Int64 => Wire(Vertex(i)) }, vs)
 }
 
 public class Wire <: Identifiable & ToString {

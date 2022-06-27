@@ -53,7 +53,12 @@ func Seq(f : InterfacedHypergraph, g : InterfacedHypergraph, clone : Bool) : Int
     newEdges.putAll(newG.GetEdges())
 
     let newGraph = Hypergraph(newVertices, newEdges)
-    InterfacedHypergraph(newGraph, newFInputs, newGOutputs)
+    InterfacedHypergraph(
+        newGraph, 
+        newFInputs, 
+        newGOutputs, 
+        "${f.GetLabel().GetName()} ⨟ ${g.GetLabel().GetName()}}"
+    )
 }
 
 public func Seq(f : InterfacedHypergraph, g : InterfacedHypergraph) : InterfacedHypergraph {
@@ -89,7 +94,12 @@ func Par(f : InterfacedHypergraph, g : InterfacedHypergraph, clone : Bool) : Int
     } 
 
     let newGraph = Hypergraph(newVertices, newEdges)
-    InterfacedHypergraph(newGraph, newInputs, newOutputs)
+    InterfacedHypergraph(
+        newGraph, 
+        newInputs, 
+        newOutputs,
+        "${f.GetLabel().GetName()} ⊗ ${g.GetLabel().GetName()}}"
+    )
 
 }
 
@@ -137,7 +147,12 @@ func Trace(f : InterfacedHypergraph, x : Int64, clone : Bool) {
         newVertices.removeIf({ v => v == removedVertex })
     }
     let newGraph = Hypergraph(newVertices, newEdges)
-    InterfacedHypergraph(newGraph, newInputs, newOutputs)
+    InterfacedHypergraph(
+        newGraph, 
+        newInputs, 
+        newOutputs,
+        "Tr^{${x}}(${f.GetLabel().GetName()}"
+    )
 }
 
 public func Trace(f : InterfacedHypergraph, x : Int64) : InterfacedHypergraph {
