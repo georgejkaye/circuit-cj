@@ -2,12 +2,6 @@ package components
 
 import debug.*
 
-func AssertNonEmpty<T>(array : Array<T>) {
-    if(array.size() == 0) {
-        throw NoWiresException()
-    }
-}
-
 public class NotEnoughBitsException <: Exception {
     init(function: String, attempted : Int64, actual : Int64, required : Int64) {
         ErrorMsg(function, "Attempted to represent ${attempted} in ${actual} bits, but ${required} are required")
@@ -57,5 +51,10 @@ class DifferentNumberOfWiresException <: Exception {
 class NoWiresException <: Exception {
     init() {
         ErrorMsg("", "No wires to do anything with")
+    }
+}
+class BadNumberOfWiresException <: Exception {
+    init(ws : Array<Wire>, n : Int64) {
+        ErrorMsg("", "Required ${n} wires but given ${ws.size()}")
     }
 }

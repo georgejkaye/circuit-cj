@@ -1,5 +1,18 @@
 package components
 
+public func MakeEdge(label : Label, sources : Array<Wire>, targets: Array<Int64>, graph : Option<InterfacedHypergraph>) : Array<Wire> {
+    let edge = Edge(label, WiresToVertices(sources), targets, graph)
+    map({v : Vertex => Wire(v) }, edge.GetTargets())
+}
+
+public func MakeEdge(label : Label, sources : Array<Wire>, targets: Array<Int64>, graph : InterfacedHypergraph) : Array<Wire> {
+    MakeEdge(label, sources, targets, Some(graph))
+}
+
+public func MakeEdge(label : Label, sources : Array<Wire>, targets: Array<Int64>) : Array<Wire> {
+    MakeEdge(label, sources, targets, None)
+}
+
 /**
  * Merge two vertices together, such that any edges that had either vertex
  * as a source or target is updated with the merged vertex

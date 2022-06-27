@@ -120,8 +120,8 @@ public class Specification <:ToString & Equatable<Specifiable> & Specifiable {
 
 public class GateSpecification <: ToString & Equatable<Specifiable> & Specifiable {
     let spec : Specification
-    init (name : String, inputs : Int64, width : Int64) {
-        this.spec = Specification(name, Array<Int64>(inputs, { i : Int64 => width }), [width])
+    init (name : String, inputs : Int64) {
+        this.spec = Specification(name, Array<Int64>(inputs, { i : Int64 => 1 }), [1])
     }
     init (name : String, inputs : Array<Int64>, width : Int64) {
         this.spec = Specification(name, inputs, [width])
@@ -154,7 +154,8 @@ public enum Label {
     | VALUE(Array<Value>, Bool)           // A value 0 -> n, which could be signed or unsigned
     | BUNDLER(Array<Int64>, Array<Int64>) // A bundler changes how wires are bundled
     | JOIN(Int64)                         // Join two wires together
-    | GATE(GateSpecification)             // A gate m -> 1
+    | PRIMITIVE(GateSpecification)        // The simplest building blocks of circuits
+    | COMPOSITE(Specification)            // A composite of primitives
     | BLACKBOX(Specification)             // A black box with arbitrary name and codomain
     | DELAY(Int64, Int64)                 // A delay parameterised by a duration and a width
 }
@@ -164,7 +165,8 @@ extend Label <: ToString & Nameable {
             case VALUE(values, signed)  => "value (${values}), ${if(!signed){"un"}}signed"
             case BUNDLER(ms,ns)         => "bundler ${ms} to ${ms}"
             case JOIN(width)            => "join ${width}"
-            case GATE(spec)             => "gate (${spec.GetName()})"
+            case PRIMITIVE(spec)        => "primitive (${spec.GetName()})"
+            case COMPOSITE(spec)        => "composite (${spec.GetName()})"
             case BLACKBOX(spec)         => "black box (${spec.GetName()})"
             case DELAY(dur, width)      => "delay (${dur}) width ${width}"
         }
@@ -174,7 +176,8 @@ extend Label <: ToString & Nameable {
             case VALUE(values,signed)   => []
             case BUNDLER(ms,ns)         => ms
             case JOIN(width)            => [width,width]
-            case GATE(spec)             => spec.GetInputType() 
+            case PRIMITIVE(spec)        => spec.GetInputType() 
+            case COMPOSITE(spec)        => spec.GetInputType() 
             case BLACKBOX(spec)         => spec.GetInputType()
             case DELAY(dur, width)      => [width] 
         }
@@ -184,7 +187,8 @@ extend Label <: ToString & Nameable {
             case VALUE(values,signed)   => [values.size()]
             case BUNDLER(ms,ns)         => ns
             case JOIN(width)            => [width]
-            case GATE(spec)             => spec.GetOutputType() 
+            case PRIMITIVE(spec)        => spec.GetOutputType() 
+            case COMPOSITE(spec)        => spec.GetOutputType() 
             case BLACKBOX(spec)         => spec.GetOutputType()
             case DELAY(dur, width)      => [width]
         }
@@ -194,7 +198,8 @@ extend Label <: ToString & Nameable {
             case VALUE(value,bool)  => value.toString()
             case BUNDLER(ms,ns)     => "bundler ${ms} to ${ns}"
             case JOIN(width)        => "join ${width}"
-            case GATE(spec)         => spec.GetName() 
+            case PRIMITIVE(spec)    => spec.GetName()
+            case COMPOSITE(spec)    => spec.GetName()
             case BLACKBOX(spec)     => spec.GetName()
             case DELAY(dur, width)  => "delay ${dur} width ${width}"
         }

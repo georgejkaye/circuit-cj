@@ -57,8 +57,11 @@ let interfaceStyle = [
 let compressorStyle = [
     bgColour("red")
 ]
-let gateStyle = [
+let primitiveStyle = [
     bgColour("cyan")
+]
+let compositeStyle = [
+    bgColour("darkturquoise")
 ]
 let structuralStyle = [
     bgColour("violet"),
@@ -212,7 +215,8 @@ func DrawEdge(e : Edge) {
         case VALUE(values, signed)  => (valueStyle      , PrintValue(values, signed, GetDotNumberRepresentation()))
         case BUNDLER(ms,ns)         => (compressorStyle , if (ms.size() < ns.size()) { "◁" } else { "▷" })
         case JOIN(width)            => (structuralStyle , "∇") 
-        case GATE(spec)             => (gateStyle       , spec.GetName())
+        case PRIMITIVE(spec)        => (primitiveStyle  , spec.GetName())
+        case COMPOSITE(spec)        => (compositeStyle  , spec.GetName())
         case BLACKBOX(spec)         => (blackboxStyle   , spec.GetName())
         case DELAY(dur, width)      => (delayStyle      , "${dur}")
     }

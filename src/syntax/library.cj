@@ -19,44 +19,32 @@ public let TOP : Label = VALUE([Top], false)
  * Unary gates
  */
 
-public func BUF(m : Int64, w : Int64) : Label {
-    GATE(GateSpecification("BUF(${m},${w})", 1, w))
-}
-public func NOT(m : Int64, w : Int64) : Label {
-    GATE(GateSpecification("NOT(${m},${w})", 1, w))
-}
+public let BUF : Label = PRIMITIVE(GateSpecification("BUF", 1))
+public let NOT : Label = PRIMITIVE(GateSpecification("NOT", 1))
 
 /**
  * Binary gates
- *
- * Each gate has two parameters:
- * - how many wires it takes as inputs
- * - the width of each wire
  */
 
-public func AND(m : Int64, w : Int64) : Label {
-    GATE(GateSpecification("AND(${m},${w})", m, w))
-}
-public func OR(m : Int64, w : Int64) : Label {
-    GATE(GateSpecification("OR(${m},${w})", m, w))
-}
-public func NAND(m : Int64, w : Int64) : Label {
-    GATE(GateSpecification("NAND(${m},${w})", m, w))
-}
-public func NOR(m : Int64, w : Int64) : Label {
-    GATE(GateSpecification("NOR(${m},${w})", m, w))
-}
-public func XOR(m : Int64, w : Int64) : Label {
-    GATE(GateSpecification("XOR(${m},${w})", m, w))
-}
-public func XNOR(m : Int64, w : Int64) : Label {
-    GATE(GateSpecification("XNOR(${m},${w})", m, w))
-}
+public let AND  : Label = PRIMITIVE(GateSpecification("AND", 2))
+public let OR   : Label = PRIMITIVE(GateSpecification("OR", 2))
+public let NAND : Label = PRIMITIVE(GateSpecification("NAND", 2))
+public let NOR  : Label = PRIMITIVE(GateSpecification("NOR", 2))
+public let XOR  : Label = PRIMITIVE(GateSpecification("XOR", 2))
+public let XNOR : Label = PRIMITIVE(GateSpecification("XNOR", 2))
 
 /**
- * Ternary gates
+ * Composite specifications
  */
- 
-public func MUX(n : Int64, w : Int64) : Label {
-    GATE(GateSpecification("mux${n}_1_${w}", [1,w,w], w))
+
+public func MUX(n : Int64, c : Int64, w : Int64) : Label {
+    COMPOSITE(
+        Specification(
+            "mux${n}_${c}_${w}", 
+            Array<Int64>(n + 1){ 
+                i : Int64 => if (i == 0) { c } else { w }
+            }, 
+            [w]
+        )
+    )
 }

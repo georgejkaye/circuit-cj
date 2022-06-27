@@ -18,7 +18,7 @@ public func MakeSubcircuit(internalInputs : Array<Wire>, internalOutputs : Array
     }
 
     let edge = Edge(
-        BLACKBOX(
+        COMPOSITE(
             Specification(
                 name,
                 WiresToWidths(internalInputs),
@@ -30,6 +30,10 @@ public func MakeSubcircuit(internalInputs : Array<Wire>, internalOutputs : Array
         circuit
     )
     (circuit, VerticesToWires(edge.GetTargets()))
+}
+
+public func MakeSubcircuit(internalInputs : Array<Wire>, internalOutputs : Array<Wire>, inputs!: Array<Wire>, name!: String = "") : (InterfacedHypergraph, Array<Wire>) {
+    MakeSubcircuit(internalInputs, internalOutputs, inputs: Some(inputs), name: name)
 }
 
 public func Subcircuit(circuit : InterfacedHypergraph, inputs : Array<Wire>) : ArrayList<Wire> {
@@ -59,19 +63,25 @@ public func Subcircuit(circuit : InterfacedHypergraph, inputs : Array<Wire>) : A
 
 }
 
-public func ForEachBit<T>(ws : Array<Wire>, f : (Array<Wire>, T) -> (Wire, T), initial : T) : (Wire, T) {
-    let inputs = ws.size()
-    if (inputs == 0) {
-        throw NoWiresException()
-    }
-    let width = ws[0].GetWidth()
-    let splitWires = Array<Array<Wire>>(inputs) {
+/**
+ * Split multiple wires into their constituent bits, and perform some operation on each of them. 
+ * The operations will be applied from least significant bit to most significant bit: an auxiliary 
+ * value can be threaded between the operations if desired (e.g. a carry)
+ *
+ * @param ws      The array of wires to input
+ * @param f       The function to perform for the ith bit of each wire. Takes an axiliary value.
+ * @param initial The initial auxiliary value
+ * @return The output wire and the final aux value
+ */
+public func Bitwise<T>(ws : Array<Wire>, f : (Array<Wire>, T) -> (Wire, T), initial : T) : (Wire, T) {
+    let (size, width) = AssertWiresSameWidth(ws)
+    let splitWires = Array<Array<Wire>>(size) {
         i : Int64 => Split(ws[i], Array<Int64>(width){ j : Int64 => 1})
     }
     var aux = initial
     let outputs = ArrayList<Wire>(width)
     for (i in 0..width) {
-        let inputs = Array<Wire>(inputs){ j : Int64 => splitWires[j][i] }
+        let inputs = Array<Wire>(size){ j : Int64 => splitWires[j][i] }
         let (gate1, gate2) = f(inputs, aux)
         outputs.append(gate1)
         aux = gate2
@@ -79,10 +89,23 @@ public func ForEachBit<T>(ws : Array<Wire>, f : (Array<Wire>, T) -> (Wire, T), i
     let outputWire = Combine(outputs.toArray())
     (outputWire, aux)
 }
-public func ForEachBit(ws : Array<Wire>, f : (Array<Wire>) -> Wire) : Wire {
-    ForEachBit(
-        ws,
-        {ws : Array<Wire> , v : Unit => (f(ws), ()) },
-        ()
-    )[0]
+public func Bitwise(ws : Array<Wire>, f : (Array<Wire>) -> Wire) : Wire {
+    Bitwise(ws, {ws : Array<Wire> , v : Unit => (f(ws), ()) }, ())[0]
+}
+
+public func Ripple(ws : Array<Wire>, f : (Wire, Wire) -> (Wire)) : Wire {
+    let (size, width) = AssertWiresSameWidth(ws)
+    AssertMinNumberOfWires(ws, 2)
+    var prev = ws[0]
+    for (i in 1..size) {
+        let cur = ws[i]
+        prev = f(prev, cur)   
+    }
+    prev
+}
+
+public func InternalRipple(w : Wire, f : (Wire, Wire) -> (Wire)) : Wire {
+    let width = w.GetWidth()
+    let splitWires = Split(w, Array<Int64>(width){ i : Int64 => 1 })
+    Ripple(splitWires, f)
 }

@@ -47,7 +47,7 @@ public func RippleAdder(a : Wire, b: Wire, c : Wire) : (Wire, Wire) {
     if (width != b.GetWidth()) {
         throw WiresNotAllSameWidthException("RippleAdder", width, b)
     }
-    ForEachBit([a, b], {
+    Bitwise([a, b], {
         ws : Array<Wire>, carry : Wire =>
         FullAdder(ws[0], ws[1], carry)
     }, c)
