@@ -34,7 +34,7 @@ func MultibitFullAdder(width : Int64) {
         { ws : Array<Wire>, c : Wire => FullAdder(ws[0], ws[1], c)},
         c
     )
-    MakeSubcircuit([a, b, c], [sum, carry], name: "+${a.GetWidth()}")
+    MakeSubcircuit([a, b, c], [sum, carry], name: "+_${a.GetWidth()}")
 }
 
 /**

@@ -39,7 +39,7 @@ public func SetDebugDot(b : Bool){
 /**
  * Check if debug dot information should be printed
  */
-public func DebugDotOn(){
+public func IsDebugDot(){
     debugDot
 }
 

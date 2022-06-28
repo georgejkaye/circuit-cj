@@ -1,36 +1,24 @@
 # CircuitCJ Development Log
 
-## 2022-05-30
+# 2022-06-28
 
-- Start to construct makefile
-- Begin to refactor old code
+- Add option to expand dot graphs to show implementation of subcircuits
+- Complete CPU example
 
-## 2022-06-06
+# 2022-06-27
 
-- Complete makefile
-- Refactor to prefer composition over inheritance
-- Complete basic hypergraph class
+- Finish implementing hierarchical hypergraphs
+- Modify how subcircuits are used
+- Gates for thicker width wires are now implemented as subcircuits
+- Multiplexers are now implemented as subcircuits
 
-## 2022-06-07
+# 2022-06-21
 
-- Finish wellformedness checker
-- Implement {composition,tensor,trace} on new style hypergraphs
-- Recreate dot generation for hypergraphs
-
-## 2022-06-13
-
-- Fix trace
-- Implement compressors
-- Change framework slightly so that users have handles on _vertices_ rather than graphs (a la hardcaml)
-- Implement values
-- Implement gates
-
-## 2022-06-14
-
-- Generalise so that vertices represent bundles of wires rather than single wire
-- Implement sequential components (delay and trace)
-- Add intermediate 'wire end' object to ensure users can't get handles on discarded vertices
-- Start to bring examples into the new circuit design framework
+- Ripple adder
+- Examples
+  - Serial multiplier
+  - ALU
+- Start implementing hierarchical hypergraphs
 
 # 2022-06-20
 
@@ -40,23 +28,34 @@
 - Implement n-ary logic gates
 - Implement 'for each bit' constructor
 
-# 2022-06-21
+## 2022-06-14
 
-- Ripple adder
-- Examples
-  - Serial multiplier
-  - ALU
-- Start implementing
+- Generalise so that vertices represent bundles of wires rather than single wire
+- Implement sequential components (delay and trace)
+- Add intermediate 'wire end' object to ensure users can't get handles on discarded vertices
+- Start to bring examples into the new circuit design framework
 
-# 2022-06-27
+## 2022-06-13
 
-- Finish implementing hierarchical hypergraphs
-- Modify how subcircuits are used
-- Gates for thicker width wires are now implemented as subcircuits
-- Multiplexers are now implemented as subcircuits
+- Fix trace
+- Implement compressors
+- Change framework slightly so that users have handles on _vertices_ rather than graphs (a la hardcaml)
+- Implement values
+- Implement gates
 
-# 2022-06-28
+## 2022-06-07
 
-- Fix composite logic gate labels
-- Add option to expand dot graphs to show implementation of subcircuits
-- Complete CPU example
+- Finish wellformedness checker
+- Implement {composition,tensor,trace} on new style hypergraphs
+- Recreate dot generation for hypergraphs
+
+## 2022-06-06
+
+- Complete makefile
+- Refactor to prefer composition over inheritance
+- Complete basic hypergraph class
+
+## 2022-05-30
+
+- Start to construct makefile
+- Begin to refactor old code

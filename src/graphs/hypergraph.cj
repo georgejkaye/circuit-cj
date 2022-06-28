@@ -53,19 +53,6 @@ public class Hypergraph <: Identifiable & ToString & Nameable & Equatable<Hyperg
             e.RemoveAndSetOwner(this)
         }
     }
-
-    public func IsActive() : Bool {
-        this.active
-    }
-    public func Deactivate() : Unit {
-        this.active = false
-        for (e in edges) {
-            e.RemoveOwner()
-        }
-        for (v in vertices) {
-            v.RemoveOwner()
-        }
-    }
     public func GetEdges() : HashSet<Edge> {
         this.edges
     }

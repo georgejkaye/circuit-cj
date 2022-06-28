@@ -28,7 +28,8 @@ let tableStyle = [
     ("cellspacing", "0")
 ]
 let graphOpts = [
-    ("rankdir", "LR")
+    ("rankdir", "LR"),
+    ("bgcolor", if(IsDebugDot()) { "gray" } else { "white" })
 ]
 let edgeNodeOpts = [
     ("shape", "plaintext"),
@@ -103,7 +104,13 @@ extend IndentInstruction <: ToString {
     }
 }
 
-func MakeElem(tag : String, options : Array<(String, String)>, content: Option<ArrayList<(String, IndentInstruction)>>, inline: Bool) : ArrayList<(String, IndentInstruction)> {
+func MakeElem(
+    tag : String, 
+    options : Array<(String, String)>, 
+    elemContent: Option<ArrayList<(String, IndentInstruction)>>, 
+    inline: Bool, 
+    graphContent : ArrayList<(String, IndentInstruction)>
+) : Unit {
     let elem = ArrayList<(String, IndentInstruction)>()
     let options = fold_left(
         { acc : String , cur: (String, String) => 
@@ -127,14 +134,14 @@ func MakeElem(tag : String, options : Array<(String, String)>, content: Option<A
         Indent
     )
     let closer = ("</${tag}>", Deindent)
-    elem.add(opener)
-    match(content) {
-        case Some(c) => elem.addAll(c)
+    elem.append(opener)
+    match(elemContent) {
+        case Some(c) => elem.appendAll(c)
         case None => ()
     }
-    elem.add(closer)
+    elem.append(closer)
 
-    if (inline) {
+    let finalElem = if (inline) {
         ArrayList<(String, IndentInstruction)>([(
             fold_left (
             { acc : String, cur : (String, IndentInstruction) => "${acc}${cur[0]}"},
@@ -144,73 +151,26 @@ func MakeElem(tag : String, options : Array<(String, String)>, content: Option<A
     } else {
         elem
     }
-
+    graphContent.addAll(finalElem)
 }
 
-func EdgeVerticesToTable(vs : Array<Vertex>, id : String) : ArrayList<(String, IndentInstruction)> {
+func EdgeVerticesToTable(vs : Array<Vertex>, id : String, graphContent : ArrayList<(String, IndentInstruction)>) : Unit {
     let content = ArrayList<(String, IndentInstruction)>()
     for (i in 0..vs.size()) {
-        let td = MakeElem("td", [
+        let td = ArrayList<(String, IndentInstruction)>()
+        MakeElem("td", [
             ("height", "${portHeight}"),
             ("width", "${portWidth}"),
             ("port", "${id}${i}")
-        ], Option<ArrayList<(String, IndentInstruction)>>.None, true)
-        let tr = MakeElem("tr", [], td, true)
-        content.addAll(tr)
+        ], Option<ArrayList<(String, IndentInstruction)>>.None, true, td)
+        MakeElem("tr", [], td, true, content)
     }
-    let table = MakeElem("table", [], content, false)
-    table
+    MakeElem("table", [], content, false, graphContent)
 }
 
-public func DrawEdgeNode(
-    id : String, 
-    nodeStyle : Array<(String, String)>, 
-    text : String, 
-    sources : Array<Vertex>, 
-    targets : Array<Vertex>
-) : ArrayList<(String, IndentInstruction)> {
 
-    func DrawVertexTable(array : Array<Vertex>, id : String) : ArrayList<(String, IndentInstruction)> {
-        let content = ArrayList<(String, IndentInstruction)>()
-        if (array.size() != 0) {
-            let table = EdgeVerticesToTable(array, id)
-            let wrapped = MakeElem("td", [], table, false)
-            content.addAll(wrapped)
-        }
-        content
-    }
 
-    let sourceTable = DrawVertexTable(sources, "w")
-    let targetTable = DrawVertexTable(targets, "e")
-    let edgeText = MakeElem("td", [], ArrayList<(String, IndentInstruction)>([
-        (if(DebugDotOn()){
-            "${id}: ${text}"
-        } else {
-            text
-        }, Preserve)
-    ]), true)
-
-    let content = ArrayList<(String, IndentInstruction)>()
-    content.addAll(sourceTable)
-    content.addAll(edgeText)
-    content.addAll(targetTable)
-    
-    let subtable = MakeElem("tr", [], content, false)
-
-    let currentTableStyle = ArrayList<(String, String)>(nodeStyle)
-    currentTableStyle.addAll(tableStyle)
-
-    let table = MakeElem("table", currentTableStyle.toArray(), subtable, false)
-
-    let declaration = ("${id} [label=<", Preserve)
-    table.prepend(declaration)
-    let conclusion = (">];", Preserve)
-    table.append(conclusion)
-
-    table
-}
-
-func DrawEdge(e : Edge) {
+func DrawEdgeNode(e : Edge, content : ArrayList<(String, IndentInstruction)>) : Unit {
     let (style, label) = match(e.GetLabel()){
         case VALUE(values, signed)  => (valueStyle      , PrintValue(values, signed, GetDotNumberRepresentation()))
         case BUNDLER(ms,ns)         => (compressorStyle , if (ms.size() < ns.size()) { "◁" } else { "▷" })
@@ -220,8 +180,74 @@ func DrawEdge(e : Edge) {
         case BLACKBOX(spec)         => (blackboxStyle   , spec.GetName())
         case DELAY(dur, width)      => (delayStyle      , "${dur}")
     }
-    let text = label
-    DrawEdgeNode("e${e.GetId()}", style, text, e.GetSources(), e.GetTargets())
+    DrawEdgelikeNode("e${e.GetId()}", label, style, e.GetSources(), e.GetTargets(), content)
+}
+
+func DrawEdgelikeNode(
+    id : String, 
+    label : String, 
+    style : Array<(String, String)>,
+    sources : Array<Vertex>,
+    targets : Array<Vertex>,
+    content : ArrayList<(String, IndentInstruction)>
+) : Unit {
+    func DrawPorts(
+        array : Array<Vertex>, 
+        id : String, 
+        edgeContent : ArrayList<(String, IndentInstruction)>
+    ) : Unit {
+        if (array.size() != 0) {
+            let table = ArrayList<(String, IndentInstruction)>()
+            EdgeVerticesToTable(array, id, table)
+            MakeElem("td", [], table, false, edgeContent)
+        }
+    }
+
+    let edgeContent = ArrayList<(String, IndentInstruction)>()
+    DrawPorts(sources, "w", edgeContent)
+    MakeElem("td", [], ArrayList<(String, IndentInstruction)>([
+        (if(IsDebugDot()){
+            "${id}: ${label}"
+        } else {
+            label
+        }, Preserve)
+    ]), true, edgeContent)
+    DrawPorts(targets, "e", edgeContent)
+    
+    let subtable = ArrayList<(String, IndentInstruction)>()
+    MakeElem("tr", [], edgeContent, false, subtable)
+    let currentTableStyle = ArrayList<(String, String)>()
+    currentTableStyle.addAll(style)
+    currentTableStyle.addAll(tableStyle)
+    let table = ArrayList<(String, IndentInstruction)>()
+    MakeElem("table", currentTableStyle.toArray(), subtable, false, table)
+
+    let declaration = ("${id} [label=<", Preserve)
+    table.prepend(declaration)
+    let conclusion = (">];", Preserve)
+    table.append(conclusion)
+
+    content.addAll(table)
+}
+
+func DrawEdge(
+    e : Edge,
+    expand : Int64,
+    vertexMap : HashMap<Int64, Int64>,
+    omittedEdges : HashSet<Int64>,
+    graphContent : ArrayList<(String, IndentInstruction)>,
+    connectionContent: ArrayList<(String, IndentInstruction)>
+) : Unit {
+    if (expand != 0) {
+        match (e.GetSubgraph()) {
+            case None => DrawEdgeNode(e, graphContent)
+            case Some(g) => 
+                omittedEdges.put(e.GetId())
+                DrawSubgraphCluster(g, e, expand, vertexMap, omittedEdges, graphContent, connectionContent)
+        }
+    } else {
+        DrawEdgeNode(e, graphContent)
+    }
 }
 
 func DrawOptions(selector : String, opts : Array<(String, String)>) : (String, IndentInstruction) {
@@ -241,105 +267,187 @@ func DrawOptions(selector : String, opts : Array<(String, String)>) : (String, I
     ("${selector}[${options}]", Preserve)
 }
 
-func DrawVertex(v : Vertex) : (String, IndentInstruction) {
-    let text = if(DebugDotOn()){
-        "${v.GetId()}"
-    } else {
-        ""
+func DrawVertex(
+    v : Vertex,
+    content : ArrayList<(String, IndentInstruction)>, 
+    vertexMap : HashMap<Int64, Int64>
+) : Unit {
+    match (vertexMap.get(v.GetId())) {
+        case Some(vv) => ()
+        case None => 
+        let text = if(IsDebugDot()){
+            "${v.GetId()}"
+        } else {
+            ""
+        }
+        content.append(DrawOptions("v${v.GetId()}", [("label", "${v.GetWidth()}"), ("xlabel", text)]))
     }
-    DrawOptions("v${v.GetId()}", [("label", "${v.GetWidth()}"), ("xlabel", text)])
 }
 
-func DrawConnections(e : Edge) : ArrayList<(String, IndentInstruction)> {
-    func DrawConnectionsForArray(array : Array<Vertex>, port : String, vertexFirst : Bool) : ArrayList<(String, IndentInstruction)> {
-        mapi(
-            { v : Vertex, i : Int64 =>  
-                let vText = "v${v.GetId()}"
-                let eText =  "e${e.GetId()}:${port}${i}:${port}"
-                let str = if(vertexFirst) {
-                    "${vText}:e -- ${eText}"
-                } else {
-                    "${eText} -- ${vText}:w"
-                }
-                (str, Preserve)
-            },
-            array
-        )
-    }
-    let sourceString = DrawConnectionsForArray(e.GetSources(), "w", true)
-    let targetString = DrawConnectionsForArray(e.GetTargets(), "e", false)
-    sourceString.addAll(targetString)
-    sourceString
-}
-
-func DrawInterfaceConnections(list : Array<Vertex>, vertexFirst : Bool) : ArrayList<(String, IndentInstruction)> {
-    mapi(
-        { v : Vertex, i : Int64 =>
-            let vText = "v${v.GetId()}"
-            let str = if(vertexFirst) {
-                let eText = "output:w${i}:w"
-                "${vText}:e -- ${eText}"
-            } else {
-                let eText = "input:e${i}:e"
-                "${eText} -- ${vText}:w"
+func DrawConnections(e : Edge, vertexMap : HashMap<Int64, Int64>, omittedEdges : HashSet<Int64>, content : ArrayList<(String, IndentInstruction)>) : Unit {
+    func DrawConnectionsForArray(array : Array<Vertex>, port : String, vertexFirst : Bool) : Unit {
+        for (i in 0..array.size()) {
+            let v = array[i]
+            let id = match (vertexMap.get(v.GetId())) {
+                    case None => v.GetId()
+                    case Some(w) => w
             }
-            (str, Preserve)
-        },
-        list
-    )
+            let vText = "v${id}"
+            let eText =  "e${e.GetId()}:${port}${i}:${port}"
+            let str = DrawConnection(vText, eText, vertexFirst)
+            content.append((str, Preserve))
+        }
+    }
+    if(!omittedEdges.contains(e.GetId())){
+        DrawConnectionsForArray(e.GetSources(), "w", true)
+        DrawConnectionsForArray(e.GetTargets(), "e", false)
+    }
 }
 
-func DrawSubgraph(opt : Array<(String, String)>, content : ArrayList<(String, IndentInstruction)>) : ArrayList<(String, IndentInstruction)> {
-    let subgraph = ArrayList<(String, IndentInstruction)>([("{", Indent)])
+func DrawConnection(vText : String, eText : String, vertexFirst : Bool) {
+    if(vertexFirst) {
+
+        "${vText}:e -- ${eText}"
+    } else {
+        "${eText} -- ${vText}:w"
+    }
+}
+
+func DrawInterfaceConnections(list : Array<Vertex>, vertexFirst : Bool, content : ArrayList<(String, IndentInstruction)>) : Unit {
+    for (i in 0..list.size()){
+        let v = list[i]
+        let vText = "v${v.GetId()}"
+        let str = if (vertexFirst) {
+            let eText = "output:w${i}:w"
+            DrawConnection(vText, eText, vertexFirst)
+        } else {
+            let eText = "input:e${i}:e"
+            DrawConnection(vText, eText, vertexFirst)
+        }
+        content.append((str, Preserve))
+    }
+}
+
+func DrawSubgraph(
+    opt : Array<(String, String)>, 
+    subgraphContent : ArrayList<(String, IndentInstruction)>,
+    graphContent : ArrayList<(String, IndentInstruction)>
+) : Unit {
+    graphContent.add(("{", Indent))
     let opts = DrawOptions("graph", opt)
-    subgraph.add(opts)
-    subgraph.addAll(content)
-    subgraph.add(("}", Deindent))
-    subgraph
+    graphContent.add(opts)
+    graphContent.addAll(subgraphContent)
+    graphContent.add(("}", Deindent))
 }
 
-public func DotGraph(f : InterfacedHypergraph) {
+func DrawInterface(
+    vertices : Array<Vertex>, 
+    sink : Bool,
+    content : ArrayList<(String, IndentInstruction)>
+) : Unit {
+    let (text, opts, sources, targets) = if (sink) {
+        ("output", maxSubgraphOpts, vertices, Array<Vertex>())
+    } else {
+        ("input", minSubgraphOpts, Array<Vertex>(), vertices)
+    }
+    let subgraphContent = ArrayList<(String, IndentInstruction)>()
+    DrawEdgelikeNode(text, text, interfaceStyle, sources, targets, subgraphContent)
+    DrawSubgraph(opts, subgraphContent, content)
+    DrawInterfaceConnections(vertices, sink, content)
+
+}
+
+func DrawSubgraphCluster(
+    f : InterfacedHypergraph,
+    parent : Edge,
+    expand : Int64,
+    vertexMap : HashMap<Int64, Int64>,
+    omittedEdges : HashSet<Int64>,
+    graphContent : ArrayList<(String, IndentInstruction)>,
+    connectionContent : ArrayList<(String, IndentInstruction)>
+) : Unit {
+
+    func UpdateVertexMap(array : Array<Vertex>, getLocalVertex : (Int64) -> Vertex, getParentVertex : (Int64) -> Vertex) : Unit {
+        for (i in 0..array.size()) {
+            let localVertex = getLocalVertex(i).GetId()
+            let parentVertex = getParentVertex(i).GetId()
+            match(vertexMap.get(parentVertex)) {
+                case Some(vv) => vertexMap.put(localVertex, vv)
+                case None => vertexMap.put(localVertex, parentVertex)
+            }
+        }
+    }
+
+    let id = parent.GetId()
+    let label = parent.GetLabel()
+
+    UpdateVertexMap(f.GetInputVertices(), { i : Int64 => f.GetInput(i) }, { i : Int64 => parent.GetSource(i) })
+    UpdateVertexMap(f.GetOutputVertices(), { i : Int64 => f.GetOutput(i) }, { i : Int64 => parent.GetTarget(i) })
+
+    let opening = ("subgraph cluster${id} {", Indent)
+    let labelText = ("label=\"${label}\"", Preserve)
+    let closing = ("}", Deindent)
+
+    let subgraphContent = ArrayList<(String, IndentInstruction)>()
+    DrawHypergraph(f.GetGraph(), expand - 1, vertexMap, omittedEdges, subgraphContent, connectionContent)
+
+    graphContent.append(opening)
+    graphContent.append(labelText)
+    graphContent.addAll(subgraphContent)
+    graphContent.append(closing)
+}
+
+func DrawInterfaces(f : InterfacedHypergraph, content : ArrayList<(String, IndentInstruction)>) : Unit {
+    DrawInterface(f.GetInputVertices(), false, content)
+    DrawInterface(f.GetOutputVertices(), true, content)
+}
+
+public func DrawHypergraph(
+    f : Hypergraph, 
+    expand : Int64,
+    vertexMap : HashMap<Int64, Int64>,
+    omittedEdges : HashSet<Int64>,
+    graphContent : ArrayList<(String, IndentInstruction)>,
+    connectionContent : ArrayList<(String, IndentInstruction)>
+) : Unit {
     let vertexContent = ArrayList<(String, IndentInstruction)>()
     let edgeContent = ArrayList<(String, IndentInstruction)>()
-    let connectionContent = ArrayList<(String, IndentInstruction)>()
+    let newConnectionContent = ArrayList<(String, IndentInstruction)>()
     for(e in f.GetVertices()){
-        let vertexLine = DrawVertex(e)
-        vertexContent.add(vertexLine)
+        DrawVertex(e, vertexContent, vertexMap)
     }
     for (e in f.GetEdges()){
-        let edgeLines = DrawEdge(e)
-        edgeContent.addAll(edgeLines)
-        let connectionLines = DrawConnections(e)
-        connectionContent.addAll(connectionLines)
+        DrawEdge(e, expand,  vertexMap, omittedEdges, edgeContent, connectionContent)
+        DrawConnections(e, vertexMap, omittedEdges, connectionContent)
     }
-
-    let declaration = ("graph ${f.GetName()} {", Indent)
-    let conclusion = ("}", Deindent)
-
-    let graphContent = ArrayList<(String, IndentInstruction)>([declaration])
-    let graphOptionsString = DrawOptions("graph", graphOpts)
-
     let vertexOptionsString = DrawOptions("node", vertexNodeOpts)
     let edgeOptionsString = DrawOptions("node", edgeNodeOpts)
-
-    let input = DrawEdgeNode("input", interfaceStyle, "inputs", [], f.GetInputVertices())
-    let inputContent = DrawSubgraph(minSubgraphOpts, input)
-    let inputConnections = DrawInterfaceConnections(f.GetInputVertices(), false)
-    let output = DrawEdgeNode("output", interfaceStyle, "outputs", f.GetOutputVertices(), [])
-    let outputContent = DrawSubgraph(maxSubgraphOpts, output)
-    let outputConnections = DrawInterfaceConnections(f.GetOutputVertices(), true)
-
-    graphContent.append(graphOptionsString)
+    
+    
     graphContent.append(vertexOptionsString)
     graphContent.addAll(vertexContent)
     graphContent.append(edgeOptionsString)
-    graphContent.addAll(inputContent)
     graphContent.addAll(edgeContent)
-    graphContent.addAll(outputContent)
-    graphContent.addAll(inputConnections)
+    connectionContent.addAll(newConnectionContent)
+}
+
+public func DotGraph(f : InterfacedHypergraph, expand : Int64) : String {
+
+    let declaration = ("graph ${f.GetName()} {", Indent)    
+    let graphContent = ArrayList<(String, IndentInstruction)>([declaration])
+
+    let graphOptionsString = DrawOptions("graph", graphOpts)
+    graphContent.append(graphOptionsString)
+
+    let connectionContent = ArrayList<(String, IndentInstruction)>()
+
+    DrawHypergraph(f.GetGraph(), expand, HashMap<Int64, Int64>(), HashSet<Int64>(), graphContent, connectionContent)
     graphContent.addAll(connectionContent)
-    graphContent.addAll(outputConnections)
+    DrawInterfaces(f, graphContent)
+
+    let conclusion = ("}", Deindent)
     graphContent.append(conclusion)
+
     ConvertStringIndentListToString(graphContent)
 }
 
@@ -378,10 +486,10 @@ public func ConvertStringIndentListToString(list : ArrayList<(String, IndentInst
     output
 }
 
-public func WriteDotToFile(f : InterfacedHypergraph, file : String){
+public func WriteDotToFile(f : InterfacedHypergraph, expand : Int64, file : String){
     let filename = GetDotFile(file)
     Info("WriteDotToFile", "Writing dot file ${filename}")
-    let dot = DotGraph(f)
+    let dot = DotGraph(f, expand)
     let fs = FileStream(filename, OpenMode.ForceCreate)
     if(fs.openFile()){
         fs.write(dot)

@@ -60,7 +60,7 @@ func Mux2_1_1() : InterfacedHypergraph {
         AndGate(a, NotGate(c)),
         AndGate(c, b)
     )
-    MakeSubcircuit([c, a, b], [z], name: "Mux2_1_1")
+    MakeSubcircuit([c, a, b], [z], name: "mux2_1_1")
 }
 
 func Mux2_1_W(width : Int64) : InterfacedHypergraph {
@@ -78,7 +78,7 @@ func Mux2_1_W(width : Int64) : InterfacedHypergraph {
             )[0]
         }
     )
-    MakeSubcircuit([c, a, b], [outputs], name: "Mux2_1_${width}")
+    MakeSubcircuit([c, a, b], [outputs], name: "mux2_1_${width}")
 }
 
 public func Mux2(sel!: Wire, low!: Wire, high!: Wire) : Wire {

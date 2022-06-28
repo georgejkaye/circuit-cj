@@ -52,22 +52,22 @@ func MakeBinaryGateLabel(name : String, m : Int64, w : Int64) : Label {
 }
 
 public func AND(m : Int64, w : Int64) : Label {
-    MakeBinaryGateLabel("AND", m, w)
+    MakeBinaryGateLabel("and", m, w)
 }
 public func OR(m : Int64, w : Int64) : Label {
-    MakeBinaryGateLabel("OR", m, w)
+    MakeBinaryGateLabel("or", m, w)
 }
 public func NAND(m : Int64, w : Int64) : Label {
-    MakeBinaryGateLabel("NAND", m, w)
+    MakeBinaryGateLabel("nand", m, w)
 }
 public func NOR(m : Int64, w : Int64) : Label {
-    MakeBinaryGateLabel("NOR", m, w)
+    MakeBinaryGateLabel("nor", m, w)
 }
 public func XOR(m : Int64, w : Int64) : Label {
-    MakeBinaryGateLabel("XOR", m, w)
+    MakeBinaryGateLabel("xor", m, w)
 }
 public func XNOR(m : Int64, w : Int64) : Label {
-    MakeBinaryGateLabel("XNOR", m, w)
+    MakeBinaryGateLabel("xnor", m, w)
 }
 
 

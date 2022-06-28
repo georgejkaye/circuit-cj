@@ -14,7 +14,9 @@ main(){
     SetDotNumberRepresentation(DEC)
 
     let alu = ALU(2)
-    WriteDotToFile(alu, "alu")
+    WriteDotToFile(alu, 0, "alu")
+    WriteDotToFile(alu, 1, "alu-expand-1")
+    WriteDotToFile(alu, 2, "alu-expand-2")
 
     return 0
 }

@@ -136,9 +136,9 @@ extend Label <: ToString & Nameable {
             case VALUE(values, signed)  => "value (${values}), ${if(!signed){"un"}}signed"
             case BUNDLER(ms,ns)         => "bundler ${ms} to ${ms}"
             case JOIN(width)            => "join ${width}"
-            case PRIMITIVE(spec)        => "primitive (${spec.GetName()})"
-            case COMPOSITE(spec)        => "composite (${spec.GetName()})"
-            case BLACKBOX(spec)         => "black box (${spec.GetName()})"
+            case PRIMITIVE(spec)        => "${spec.GetName()}"
+            case COMPOSITE(spec)        => "${spec.GetName()}"
+            case BLACKBOX(spec)         => "${spec.GetName()}"
             case DELAY(dur, width)      => "delay (${dur}) width ${width}"
         }
     }
