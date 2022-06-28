@@ -23,15 +23,18 @@ public func UseSubcircuit(circuit : InterfacedHypergraph, inputs : Array<Wire>) 
 }
 
 public func UseSubcircuit_1(circuit : InterfacedHypergraph, inputs : Array<Wire>) : Wire {
+    AssertCircuitOutputs(circuit, 1)
     UseSubcircuit(circuit, inputs)[0]
 }
 
 public func UseSubcircuit_2(circuit : InterfacedHypergraph, inputs : Array<Wire>) : (Wire, Wire) {
+    AssertCircuitOutputs(circuit, 2)
     let outputs = UseSubcircuit(circuit, inputs)
     (outputs[0], outputs[1]) 
 }
 
 public func UseSubcircuit_3(circuit : InterfacedHypergraph, inputs : Array<Wire>) : (Wire, Wire, Wire) {
+    AssertCircuitOutputs(circuit, 3)
     let outputs = UseSubcircuit(circuit, inputs)
     (outputs[0], outputs[1], outputs[2]) 
 }

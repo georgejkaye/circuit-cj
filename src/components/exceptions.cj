@@ -63,3 +63,13 @@ class BadNumberOfWiresException <: Exception {
         ErrorMsg("", "Required ${n} wires but given ${ws.size()}")
     }
 }
+class IncompatibleOutputsException <: Exception {
+    init(c : InterfacedHypergraph, n : Int64) {
+        ErrorMsg("", "Wanted ${n} output wires but ${c.GetName()} has ${c.GetOutputs()}")
+    }
+}
+public class TodoException <: Exception {
+    public init(msg : String) {
+        Todo(msg)
+    }
+}

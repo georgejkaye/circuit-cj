@@ -9,60 +9,52 @@ public func Adder(a : Wire, b : Wire) : Wire {
         throw WiresNotAllSameWidthException("Adder", width, b)
     }
     let adderSpec = Specification("adder", [width, width], [width])
-    BlackBox(adderSpec, [a, b])[0]
+    BlackBox("adder", [width, width], [width], [a, b])[0]
 }
 
-public func HalfAdder(a : Wire, b : Wire) : (Wire, Wire) {
-    if (a.GetWidth() != 1){
-        throw IncompatibleWidthException("HalfAdder", a, 1)
-    }
-    if (b.GetWidth() != 1){
-        throw IncompatibleWidthException("HalfAdder", b, 1)
-    }
+public func HalfAdder() : InterfacedHypergraph {
+    let a = MakeWire(1)
+    let b = MakeWire(1)
     let s = XorGate(a, b)
     let c = AndGate(a, b)
-    (s, c)
+    MakeSubcircuit([a,b], [s,c], name: "half_adder")
 }
 
-public func FullAdder(a : Wire, b : Wire, cin : Wire) : (Wire, Wire) {
-    if (a.GetWidth() != 1){
-        throw IncompatibleWidthException("FullAdder", a, 1)
-    }
-    if (b.GetWidth() != 1){
-        throw IncompatibleWidthException("FullAdder", b, 1)
-    }
-    if (cin.GetWidth() != 1){
-        throw IncompatibleWidthException("FullAdder", cin, 1)
-    }
+public func FullAdder() : InterfacedHypergraph {
+    let a = MakeWire(1)
+    let b = MakeWire(1)
+    let cin = MakeWire(1)
     let inputXor = XorGate(a, b)
     let carryXor = XorGate(inputXor, cin)
     let carryAnd = AndGate(inputXor, cin)
     let inputAnd = AndGate(a, b)
     let carryOr = OrGate(carryAnd, inputAnd)
-    (carryXor, carryOr)
+    MakeSubcircuit([a, b, cin], [carryXor, carryOr], name: "full_adder")
 }
 
-public func RippleAdder(a : Wire, b: Wire, c : Wire) : (Wire, Wire) {
-    let width = a.GetWidth()
-    if (width != b.GetWidth()) {
-        throw WiresNotAllSameWidthException("RippleAdder", width, b)
-    }
-    Bitwise([a, b], {
+public func RippleAdder(width : Int64) : InterfacedHypergraph {
+    let a = MakeWire(width)
+    let b = MakeWire(width)
+    let c = MakeWire(1)
+    let (s, cout) = Bitwise([a, b], {
         ws : Array<Wire>, carry : Wire =>
-        FullAdder(ws[0], ws[1], carry)
+            UseSubcircuit_2(FullAdder(), [ws[0], ws[1], carry])
     }, c)
-}
-public func RippleAdderSubtractor(a : Wire, b : Wire, c : Wire) : (Wire, Wire) {
-    let xor = XorGate(b, c)
-    RippleAdder(a, xor, c)
+    MakeSubcircuit([a, b, c], [s, cout], name: "ripple_adder")
 }
 
+public func RippleAdder(a : Wire, b : Wire, c : Wire) : (Wire, Wire) {
+    AssertWiresSameWidth(a, b)
+    AssertWireWidth(c, 1)
+    UseSubcircuit_2(RippleAdder(a.GetWidth()), [a, b, c])
+}
 
 public func Plus(a : Wire, b : Wire) : (Wire, Wire) {
     RippleAdder(a, b, InfiniteWaveform(False))
 }
 public func Subtract(a : Wire, b : Wire) : (Wire, Wire) {
+    AssertWiresSameWidth(a, b)
     let carry = InfiniteWaveform(True)
     let xor = XorGate(b, carry)
-    RippleAdder(a, b, carry)
+    RippleAdder(a, xor, carry)
 }

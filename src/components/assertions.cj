@@ -67,5 +67,10 @@ func AssertMinNumberOfWires(ws : Array<Wire>, n : Int64) {
     if(ws.size() < n) {
         throw BadNumberOfWiresException(ws, n)
     }
-    ws.size()
+}
+
+func AssertCircuitOutputs(c : InterfacedHypergraph, n : Int64) {
+    if(c.GetOutputs() != n){
+        throw IncompatibleOutputsException(c, n)
+    }
 }

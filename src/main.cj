@@ -13,10 +13,9 @@ main(){
     SetDebugDot(false)
     SetDotNumberRepresentation(DEC)
 
-    let alu = ALU(2)
-    WriteDotToFile(alu, 0, "alu")
-    WriteDotToFile(alu, 1, "alu-expand-1")
-    WriteDotToFile(alu, 2, "alu-expand-2")
+    let cpu = CPU()
+    WriteDotToFile(cpu, 0, "cpu")
+    WriteDotToFile(cpu, 1, "cpu-expand-1")
 
     return 0
 }

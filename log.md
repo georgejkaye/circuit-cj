@@ -1,9 +1,14 @@
 # CircuitCJ Development Log
 
+# 2022-07-25
+
+- Complete CPU example
+- Add labels to ports on circuits
+
 # 2022-06-28
 
 - Add option to expand dot graphs to show implementation of subcircuits
-- Complete CPU example
+- Continue CPU example
 
 # 2022-06-27
 

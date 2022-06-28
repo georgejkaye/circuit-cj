@@ -47,11 +47,9 @@ let vertexNodeOpts = [
 ]
 let portHeight = 5
 let portWidth = 5
-
 func bgColour(colour : String) : (String, String) {
     ("bgcolor", colour)
 }
-
 let interfaceStyle = [
     bgColour("gray")
 ]
@@ -77,42 +75,23 @@ let valueStyle = [
 let blackboxStyle = [
     bgColour("white")
 ]
-
-let vertexCommentString = "Vertices"
-let edgeCommentString = "Edges"
-let connsCommentString = "Connections"
-
 let maxSubgraphOpts = [
     ("rank", "max")
 ]
 let minSubgraphOpts = [
     ("rank", "min")
 ]
-
+/**
+ * Enum to give indentation hints for the generated dot code.
+ */
 public enum IndentInstruction {
-    | Preserve
-    | Indent
-    | Deindent
-}
-extend IndentInstruction <: ToString {
-    public func toString() : String {
-        match(this) {
-            case Preserve => "Preserve"
-            case Indent => "Indent"
-            case Deindent => "Deindent"
-        }
-    }
+    | Preserve      // Keep the current indentation
+    | Indent        // Indent one more starting from the next line
+    | Deindent      // Indent one fewer starting from this line
 }
 
-func MakeElem(
-    tag : String, 
-    options : Array<(String, String)>, 
-    elemContent: Option<ArrayList<(String, IndentInstruction)>>, 
-    inline: Bool, 
-    graphContent : ArrayList<(String, IndentInstruction)>
-) : Unit {
-    let elem = ArrayList<(String, IndentInstruction)>()
-    let options = fold_left(
+func CreateElemOptionsString(options : Array<(String, String)>) : String {
+    fold_left(
         { acc : String , cur: (String, String) => 
             let (key, value) = cur
             let keyval = "${key}=\"${value}\""
@@ -125,20 +104,30 @@ func MakeElem(
         "",
         options
     )    
-    let opener = (
-        if (options == "") {
-            "<${tag}>"
-        } else {
-            "<${tag} ${options}>"
-        },
-        Indent
-    )
+}
+
+/**
+ * Create an HTML element and add it to a list of graph content
+ * 
+ * @param tag           The name of this HTML element
+ * @param options       The list of pairs of options to give this element
+ * @param elemContent   The list of lines to include within this element
+ * @param inline        Whether or not to force this element to occupy one line
+ * @param graphContent  The list to add the element lines to
+ */
+func MakeElem(
+    tag : String, 
+    options : Array<(String, String)>, 
+    elemContent: ArrayList<(String, IndentInstruction)>, 
+    inline: Bool, 
+    graphContent : ArrayList<(String, IndentInstruction)>
+) : Unit {
+    let elem = ArrayList<(String, IndentInstruction)>()
+    let optionString = CreateElemOptionsString(options)
+    let opener = ("<${tag} ${optionString}>", Indent)
     let closer = ("</${tag}>", Deindent)
     elem.append(opener)
-    match(elemContent) {
-        case Some(c) => elem.appendAll(c)
-        case None => ()
-    }
+    elem.appendAll(elemContent)
     elem.append(closer)
 
     let finalElem = if (inline) {
@@ -162,7 +151,7 @@ func EdgeVerticesToTable(vs : Array<Vertex>, id : String, graphContent : ArrayLi
             ("height", "${portHeight}"),
             ("width", "${portWidth}"),
             ("port", "${id}${i}")
-        ], Option<ArrayList<(String, IndentInstruction)>>.None, true, td)
+        ], ArrayList<(String, IndentInstruction)>(), true, td)
         MakeElem("tr", [], td, true, content)
     }
     MakeElem("table", [], content, false, graphContent)

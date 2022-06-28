@@ -31,7 +31,7 @@ public func DebugMessagesOn(){
     debugMessages
 }
 
-enum MessageType{ DEBUG | ERROR | WARNING | INFO }
+enum MessageType{ DEBUG | ERROR | WARNING | INFO | TODO }
 extend MessageType <: ToString {
     public func toString(){
         match(this){
@@ -39,28 +39,33 @@ extend MessageType <: ToString {
             case ERROR   => "[ERROR]"
             case WARNING => "[WARNING]"
             case INFO    => "[INFO]"
+            case TODO    => "[TODO]"
         }
     }
 }
 
-func PrintMessage(mt : MessageType, function : String, msg : String) : Unit {
-    print("${mt}: ${function}: ${msg}\n")
+func PrintMessage(mt : MessageType, msg : String) : Unit {
+    print("${mt}: ${msg}\n")
 }
 
 public func Debug(fnc: String, msg : String) : Unit {
     if(DebugMessagesOn()){
-        PrintMessage(DEBUG, fnc, msg)
+        PrintMessage(DEBUG, msg)
     }
 }
 
 public func ErrorMsg(fnc : String, msg : String) : Unit {
-    PrintMessage(ERROR, fnc, msg)
+    PrintMessage(ERROR, msg)
 }
 
 public func Warning(fnc: String, msg: String) : Unit {
-    PrintMessage(WARNING, fnc, msg)
+    PrintMessage(WARNING, msg)
 }
 
 public func Info(fnc : String, msg: String) : Unit {
-    PrintMessage(INFO, fnc, msg)
+    PrintMessage(INFO, msg)
+}
+
+public func Todo(msg : String) : Unit {
+    PrintMessage(TODO, msg)
 }

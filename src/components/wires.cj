@@ -94,12 +94,24 @@ public func Split(w : Wire, vs : Array<Int64>) : Array<Wire> {
     map({ v : Vertex => Wire(v) }, edge.GetTargets())
 }
 
+public func Split(w : Wire, l : Int64, r : Int64) : (Wire, Wire) {
+    let split = Split(w, [l, r])
+    (split[0], split[1])
+}
+
+public func Split(w : Wire) : Array<Wire> {
+    Split(w, Array<Int64>(w.GetWidth()){ i : Int64 => 1})
+}
+
 public func Combine(ws : Array<Wire>) : Wire {
     let widths = map({ w : Wire => w.GetWidth() }, ws)
     CombineGraphs(ws)
     let vertices = map({ w : Wire => w.GetVertex()}, ws )
     let edge = Edge(BUNDLER(widths, [sum(widths)]), vertices, [sum(widths)])
     Wire(edge.GetTarget(0))
+}
+public func Combine(lhs : Wire, rhs : Wire) : Wire {
+    Combine([lhs, rhs])
 }
 
 public func GetBit(w : Wire, i : Int64) {
@@ -142,6 +154,6 @@ public func LsbsAndMsb(w : Wire) : (Wire, Wire) {
     (splits[0], splits[1])
 }
 
-public func Copy(a : Wire, w : Int64) : Wire {
+public func Replicate(a : Wire, w : Int64) : Wire {
     Combine(Array<Wire>(w){ i : Int64 => a })
 }

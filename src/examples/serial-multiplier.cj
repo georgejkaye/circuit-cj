@@ -11,11 +11,11 @@ package examples
 import components.*
 
 func PartialProduct(a : Wire, b0: Wire) : Wire {
-    Mux2(sel: b0, high: a, low: ConstantZero(a.GetWidth()))
+    Mux2(a, ConstantZero(a.GetWidth()), b0)
 }
 
 func RunningSum(first : Wire, prev_sum: Wire, a: Wire, b0: Wire) : Wire {
-    let lhs = Mux2(sel: first, high: prev_sum, low: ConstantZero(a.GetWidth()))
+    let lhs = Mux2(ConstantZero(a.GetWidth()), prev_sum, first)
     let rhs = PartialProduct(a, b0)
     let a = UnsignedExtend(lhs)
     let b = UnsignedExtend(rhs)

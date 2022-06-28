@@ -31,7 +31,9 @@ func MultibitFullAdder(width : Int64) {
     let c = MakeWire(1)
     let (sum, carry) = Bitwise(
         [a, b],
-        { ws : Array<Wire>, c : Wire => FullAdder(ws[0], ws[1], c)},
+        { ws : Array<Wire>, c : Wire => 
+            UseSubcircuit_2(FullAdder(), [ws[0], ws[1], c])
+        },
         c
     )
     MakeSubcircuit([a, b, c], [sum, carry], name: "+_${a.GetWidth()}")
@@ -51,7 +53,7 @@ public func AddSub(width : Int64) {
     let b = MakeWire(width)
     let c = MakeWire(1)
     // To allow subtraction
-    let xorGates = Xor(b, Copy(c, width))
+    let xorGates = Xor(b, Replicate(c, width))
     let (sum, carry) = UseSubcircuit_2(MultibitFullAdder(width), [a, b, c])
     let finalBitA = Msb(a)
     let finalBitB = Msb(xorGates)
@@ -79,8 +81,8 @@ public func ALU(w : Int64){
     let and = And(a, b)
     let or = Or(a, b)
     let (sum, overflow, carry) = UseSubcircuit_3(AddSub(w), [a, b, c0])
-    let mux1 = Mux2(sel: c0, low: and, high: or)
-    let mux2 = Mux2(sel: c1, low: mux1, high: sum)
+    let mux1 = Mux2(and, or, c1)
+    let mux2 = Mux2(mux1, sum, c1)
 
     let result = mux2
     let zero = Not(Or(result))
