@@ -44,6 +44,9 @@ public func And(a : Wire, b : Wire) : Wire {
 public func And(ws : Array<Wire>) : Wire {
     RippleGate({ w : Wire, v : Wire => AndGate(w, v)}, ws, AND(ws.size(), ws[0].GetWidth()))
 }
+public func And(w : Wire) : Wire {
+    InternalRippleGate({ w : Wire , v : Wire => AndGate(w, v)}, w, AND(w.GetWidth(), 1))
+}
 public func Or(a : Wire, b : Wire) : Wire {
     BitwiseGate({ ws : Array<Wire> => OrGate(ws[0], ws[1])}, [a, b], OR(2, a.GetWidth()))
 }
@@ -58,6 +61,15 @@ public func Xor(a : Wire, b : Wire) : Wire {
 }
 public func Xor(ws : Array<Wire>) : Wire {
     RippleGate({ w : Wire, v : Wire => XorGate(w, v)}, ws, XOR(ws.size(), ws[0].GetWidth()))
+}
+public func Nor(a : Wire, b : Wire) : Wire {
+    BitwiseGate({ ws : Array<Wire> => NorGate(ws[0], ws[1])}, [a, b], NOR(2, a.GetWidth()))
+}
+public func Nor(ws : Array<Wire>) : Wire {
+    RippleGate({ w : Wire, v : Wire => NorGate(w, v)}, ws, NOR(ws.size(), ws[0].GetWidth()))
+}
+public func Nor(w : Wire) : Wire {
+    InternalRippleGate({ w : Wire , v : Wire => NorGate(w, v)}, w, NOR(w.GetWidth(), 1))
 }
 
 func Mux2_1_1() : InterfacedHypergraph {

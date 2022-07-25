@@ -42,8 +42,11 @@ func FDPE(pre: Wire, d : Wire, ce : Wire, c : Wire) {
 func FDC(d : Wire, c : Wire, clr : Wire) {
     BlackBox("FDC", [1,1,1], [1], [d, c, clr])[0]
 }
-func RAM(cpu_do : Wire, addr : Wire, ram_we : Wire) {
-    BlackBox("ram", [16,8,1], [16], [cpu_do,addr,ram_we])[0]
+func FD(d : Wire, c : Wire) {
+    BlackBox("FD", [1,1], [1], [d, c])[0]
+}
+func RAM(cpu_do : Wire, addr : Wire, ram_we : Wire, clk : Wire) {
+    BlackBox("ram", [16,8,1,1], [16], [cpu_do,addr,ram_we,clk])[0]
 }
 
 func Register(w : Int64) : InterfacedHypergraph {
@@ -190,5 +193,78 @@ func Decoder() {
     let en_in = Buf(fetch)
     let en_da = Buf(And(execute, Or([load, add, sub, bitand, input])))
 
-    MakeSubcircuit([ir, carry, zero, clk, ce, clr], [ram, alu_s0, alu_s1, alu_s2, alu_s3, alu_s4, muxa, muxb, muxc, en_in, en_da, en_pc])
+    MakeSubcircuit([ir, carry, zero, clk, ce, clr], [ram, alu_s0, alu_s1, alu_s2, alu_s3, alu_s4, muxa, muxb, muxc, en_in, en_da, en_pc], name: "decoder")
+}
+
+public func SimpleCPU() {
+    let nclr = MakeWire(1)
+    let clk = MakeWire(1)
+    let vcc = MakeWire(1)
+    let clr = FD(Not(nclr), clk)
+
+    // Instruction register
+    let instruction = MakeWire(16)
+    let en_in = MakeWire(1)
+    let ir = UseSubcircuit_1(Register(16), [instruction, clk, en_in, clr])
+    let (ir_muxi, ir_decoder) = Split(ir, 8, 8)
+
+    // Program counter
+    let en_pc = MakeWire(1)
+    let counter_d = MakeWire(8)
+    let pc = UseSubcircuit_1(Register(8), [counter_d, clk, en_pc, clr])
+
+    // Decoder
+    let carry = MakeWire(1)
+    let zero = MakeWire(1)
+    let decoder = UseSubcircuit(Decoder(), [ir_decoder, carry, zero, clk, Buf(vcc), clr])
+    let muxa = decoder[0]
+    let muxb = decoder[1]
+    let muxc = decoder[2]
+    let en_da = decoder[3]
+    Feedback(decoder[4], en_pc)
+    Feedback(decoder[5], en_in)
+    let ram_we = decoder[6]
+    let alu_s0 = decoder[7]
+    let alu_s1 = decoder[8]
+    let alu_s2 = decoder[9]
+    let alu_s3 = decoder[10]
+    let alu_s4 = decoder[11]
+
+    // Mux_I
+    let muxi = Mux2(ir_muxi, pc, muxa)
+
+    // Mux_D
+    let (instruction_muxd, _) = Split(instruction, 8, 8)
+    let acc_fb = MakeWire(8)
+    let muxd = Mux2(instruction_muxd, acc_fb, muxb)
+
+    // Mux_A
+    let addr = Mux2(pc, ir_muxi, muxc)
+
+    // ALU
+    let (alu_z, alu_cout) = UseSubcircuit_2(ALU(), [muxi, muxd, alu_s0, alu_s1, alu_s2, alu_s3, alu_s4])
+    Feedback(alu_cout, carry)
+    Feedback(Nor(alu_z), zero)
+    Feedback(alu_z, counter_d)
+
+    // Accumulator
+    let acc = UseSubcircuit_1(Register(8), [alu_z, clk, en_da, clr])
+    Feedback(acc, acc_fb)
+    
+    // RAM
+    let cpu_do = Combine(acc, ConstantZero(8))
+    let cpu_di = RAM(cpu_do, addr, ram_we, Not(clk))
+    Feedback(cpu_di, instruction)
+
+    // Serial out
+    let serial_out = Not(
+        FDCE(
+            Lsb(cpu_do),
+            And(addr),
+            clk,
+            clr
+        )
+    )
+
+    MakeSubcircuit([nclr, clk, vcc], [serial_out], name: "CPU")
 }

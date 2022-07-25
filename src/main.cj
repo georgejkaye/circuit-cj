@@ -13,7 +13,7 @@ main(){
     SetDebugDot(false)
     SetDotNumberRepresentation(DEC)
 
-    let cpu = CPU()
+    let cpu = SimpleCPU()
     WriteDotToFile(cpu, 0, "cpu")
     WriteDotToFile(cpu, 1, "cpu-expand-1")
 
