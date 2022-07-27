@@ -16,7 +16,11 @@ public let TRUE : Label = VALUE([True], false)
 public let TOP : Label = VALUE([Top], false)
 
 func MakeGateLabel(name : String, m : Int64, w : Int64, defaultInputs : Int64) {
-    let spec = Specification("${name}${m}_${w}", Array<Int64>(m){ i : Int64 => w }, [w])
+    let spec = Specification(
+        "${name}${m}_${w}",
+        Array<Port>(m){ i : Int64 => Port(w, name: numToUppercaseLetter(i)) },
+        [Port(w, name: "Z")]
+    )
     if (m == defaultInputs && w == 1){
         PRIMITIVE(spec)
     } else {
@@ -79,10 +83,14 @@ public func MUX(n : Int64, c : Int64, w : Int64) : Label {
     COMPOSITE(
         Specification(
             "mux${n}_${c}_${w}", 
-            Array<Int64>(n + 1){ 
-                i : Int64 => if (i == 0) { c } else { w }
+            Array<Port>(n + 1){ 
+                i : Int64 => if (i == 0) { 
+                    Port(c, name: "SEL") 
+                } else { 
+                    Port(w, name: numToUppercaseLetter(i - 1))
+                }
             }, 
-            [w]
+            [Port(w, name: "Z")]
         )
     )
 }

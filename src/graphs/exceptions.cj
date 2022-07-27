@@ -37,9 +37,9 @@ class OutputsNotInHypergraphException <: Exception {
         ErrorMsg(function, "Not all outputs of ${h.GetName()} are vertices in ${h}")
     }
 }
-class IncompatibleLabelException <: Exception {
-    init(function : String, label : Label, sources : Array<Int64>, targets : Array<Int64>){
-        ErrorMsg(function, "Tried to construct an edge using label ${label} type ${label.GetInputType()} → ${label.GetOutputType()} but given vertices of types ${sources} → ${targets}")
+class IncompatibleLabelException<T> <: Exception where T <: ToString {
+    init(function : String, label : Specifiable, sources : Array<T>, targets : Array<T>) {
+        ErrorMsg(function, "Tried to construct an edge using label ${label.GetName()} type ${label.GetInputPorts()} → ${label.GetOutputPorts()} but given vertices of types ${sources} → ${targets}")
     }
 }
 class NegativeTraceException <: Exception {
@@ -69,7 +69,7 @@ public class NotOwnedException<T,U> <: Exception where T <: Ownable<U> & ToStrin
 }
 public class OutputInputMismatchException <: Exception {
     public init(function : String, f : InterfacedHypergraph, g : InterfacedHypergraph) {
-        ErrorMsg(function, "The outputs of hypergraph ${f.GetName()} (${f.GetOutputType()} do not match the inputs of hypergraph ${g.GetName()} (${g.GetOutputType()})")
+        ErrorMsg(function, "The outputs of hypergraph ${f.GetName()} (${f.GetOutputPorts()} do not match the inputs of hypergraph ${g.GetName()} (${g.GetOutputPorts()})")
     }
 }
 public class IncompatibleWidthException <: Exception {

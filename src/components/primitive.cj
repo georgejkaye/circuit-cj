@@ -5,8 +5,13 @@ import syntax.*
 
 func Gate(label : Label, inputs: Array<Wire>) : Wire {
     AssertAllWiresWidth(inputs, 1)
-    AssertNumberOfWires(inputs, label.GetInputType().size())
-    MakeEdge(label, inputs, [1])[0]
+    AssertNumberOfWires(inputs, label.GetInputPorts().size())
+    MakeEdge(
+        label,
+        inputs,
+        [1],
+        None
+    )[0]
 }
 
 func NullaryGate(label : Label) : Wire {

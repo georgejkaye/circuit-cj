@@ -15,7 +15,7 @@ public class NegativeNumberException <: Exception {
 }
 public class IncompatibleLabelInterfaceException <: Exception {
     init(function : String, label : Label, inputs : Int64, outputs : Int64) {
-        ErrorMsg(function, "Label ${label} has type ${label.GetInputType()} → ${label.GetOutputType()}, but ${inputs} → ${outputs} was expected")
+        ErrorMsg(function, "Label ${label} has type ${label.GetInputPorts()} → ${label.GetOutputPorts()}, but ${inputs} → ${outputs} was expected")
     }
 }
 public class NotDanglingWireException <: Exception {
@@ -25,7 +25,7 @@ public class NotDanglingWireException <: Exception {
 }
 class IncompatibleInputsException <: Exception {
     init(function : String, inputs : Array<Int64>, f : InterfacedHypergraph) {
-        ErrorMsg(function, "Tried to give ${inputs} as input type but ${f.GetName()} needs ${f.GetInputType()}")
+        ErrorMsg(function, "Tried to give ${inputs} as input type but ${f.GetName()} needs ${f.GetInputPorts()}")
     }
 }
 class IncorrectWireInputsException <: Exception {
@@ -71,5 +71,52 @@ class IncompatibleOutputsException <: Exception {
 public class TodoException <: Exception {
     public init(msg : String) {
         Todo(msg)
+    }
+}
+
+
+/**
+ * Attempting to generalise from below
+ */
+
+class IncompatibleParameterException<T,U,V> <: Exception where T <: ToString, U <: ToString, V <: ToString {
+    public init(
+        paramType : ParamType,
+        target : T,
+        targetParam : V,
+        current : U,
+        currentParam : V
+    ) {
+        ErrorMsg("", "When checking that ${target} and ${current} have the same ${paramType}, found that ${target} has ${targetParam} but ${current} has ${currentParam}")
+    }
+    public init(
+        paramType : ParamType,
+        target: Array<T>,
+        targetParams : Array<V>,
+        current: Array<U>,
+        currentParams : Array<V>
+    ) {
+        ErrorMsg("", "When checking that ${target} and ${current} have the same ${paramType}, found that ${target} has ${targetParams} but ${current} has ${currentParams}")
+    }
+     public init(
+        paramType : ParamType,
+        targetParam : T,
+        current : U,
+        currentParam : T
+    ){
+        ErrorMsg("", "When checking that ${current} has ${paramType} ${targetParam}, found that ${current} has ${paramType} ${currentParam}")
+    }
+}
+
+class EmptyArrayException <: Exception {
+    public init() {
+        ErrorMsg("", "Encountered an empty array when a non-empty one was expected")
+    }
+}
+
+class IncompatibleArrayLengthException <: Exception {
+    public init(n : Int64, m : Int64, exact : Bool) {
+        let exactText = if (exact) { "" } else { " at least"}
+        ErrorMsg("", "Expected an array of ${exactText}length ${n} but encountered one of length ${m}")
     }
 }

@@ -8,8 +8,16 @@ public func Adder(a : Wire, b : Wire) : Wire {
     if (width != b.GetWidth()) {
         throw WiresNotAllSameWidthException("Adder", width, b)
     }
-    let adderSpec = Specification("adder", [width, width], [width])
-    BlackBox("adder", [width, width], [width], [a, b])[0]
+    BlackBox(
+        "adder", 
+        [
+            Port(width, name: "A"),
+            Port(width, name: "B")
+        ], [
+            Port(width, name: "SUM")
+        ],
+        [a, b]
+    )[0]
 }
 
 public func HalfAdder() : InterfacedHypergraph {
@@ -17,7 +25,11 @@ public func HalfAdder() : InterfacedHypergraph {
     let b = MakeWire(1)
     let s = XorGate(a, b)
     let c = AndGate(a, b)
-    MakeSubcircuit([a,b], [s,c], name: "half_adder")
+    MakeSubcircuit(
+        [NamedWire(a, "A"), NamedWire(b, "B")],
+        [NamedWire(s, "S"), NamedWire(c, "C")],
+        name: "half_adder"
+    )
 }
 
 public func FullAdder() : InterfacedHypergraph {
@@ -29,7 +41,11 @@ public func FullAdder() : InterfacedHypergraph {
     let carryAnd = AndGate(inputXor, cin)
     let inputAnd = AndGate(a, b)
     let carryOr = OrGate(carryAnd, inputAnd)
-    MakeSubcircuit([a, b, cin], [carryXor, carryOr], name: "full_adder")
+    MakeSubcircuit(
+        [NamedWire(a, "A"), NamedWire(b, "B"), NamedWire(cin, "Cin")],
+        [NamedWire(carryXor, "S"), NamedWire(carryOr, "Cout")],
+        name: "full_adder"
+    )
 }
 
 public func RippleAdder(width : Int64) : InterfacedHypergraph {
@@ -40,7 +56,11 @@ public func RippleAdder(width : Int64) : InterfacedHypergraph {
         ws : Array<Wire>, carry : Wire =>
             UseSubcircuit_2(FullAdder(), [ws[0], ws[1], carry])
     }, c)
-    MakeSubcircuit([a, b, c], [s, cout], name: "ripple_adder")
+    MakeSubcircuit(
+        [NamedWire(a, "A"), NamedWire(b, "B"), NamedWire(c, "Cin")],
+        [NamedWire(s, "S"), NamedWire(cout, "Cout")],
+        name: "ripple_adder"
+    )
 }
 
 public func RippleAdder(a : Wire, b : Wire, c : Wire) : (Wire, Wire) {

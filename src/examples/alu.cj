@@ -22,7 +22,14 @@ func FullAdder() {
     let carryXor = XorGate(inputC, inputXor)
     let carryAnd = AndGate(inputC, inputXor)
     let carryOr = OrGate(inputAnd, carryAnd)
-    MakeSubcircuit([inputA, inputB, inputC], [carryXor, carryOr], name: "+")
+    MakeSubcircuit([
+        NamedWire(inputA, "A"),
+        NamedWire(inputB, "B"),
+        NamedWire(inputC, "C")
+    ], [
+        NamedWire(carryXor, "S"),
+        NamedWire(carryOr, "C")
+    ], name: "+")
 }
 
 func MultibitFullAdder(width : Int64) {
@@ -36,7 +43,14 @@ func MultibitFullAdder(width : Int64) {
         },
         c
     )
-    MakeSubcircuit([a, b, c], [sum, carry], name: "+_${a.GetWidth()}")
+    MakeSubcircuit([
+        NamedWire(a, "A"),
+        NamedWire(b, "B"),
+        NamedWire(c, "C")
+    ], [
+        NamedWire(sum, "S"),
+        NamedWire(carry, "C")
+    ], name: "+_${a.GetWidth()}")
 }
 
 /**
@@ -70,7 +84,15 @@ public func AddSub(width : Int64) {
             NotGate(finalBitA)
         ])
     )
-    MakeSubcircuit([a, b, c], [sum, overflow, carry], name: "ADD/SUB")
+    MakeSubcircuit([
+        NamedWire(a, "A"),
+        NamedWire(b, "B"),
+        NamedWire(c, "C")
+    ], [
+        NamedWire(sum, "Sum"),
+        NamedWire(overflow, "Overflow"),
+        NamedWire(carry, "Carry")
+    ], name: "ADD/SUB")
 }
 
 public func ALU(w : Int64){
@@ -88,5 +110,16 @@ public func ALU(w : Int64){
     let zero = Not(Or(result))
     let negative = Msb(result)
 
-    MakeSubcircuit([a,b,c0,c1], [result, zero, negative, overflow, carry], name: "ALU")
+    MakeSubcircuit([
+        NamedWire(a, "A"),
+        NamedWire(b, "B"),
+        NamedWire(c0, "C0"),
+        NamedWire(c1, "C1")
+    ], [
+        NamedWire(result, "Result"),
+        NamedWire(zero, "Zero"),
+        NamedWire(negative, "Neg"),
+        NamedWire(overflow, "Overflow"),
+        NamedWire(carry, "Carry")
+    ], name: "ALU")
 }

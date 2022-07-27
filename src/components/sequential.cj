@@ -2,8 +2,12 @@ package components
 
 public func Delay (duration : Int64, input: Wire) : Wire {
     let width = input.GetWidth()
-    let edge = Edge(DELAY(duration, width), [input.GetVertex()], [width])
-    Wire(edge.GetTarget(0))
+    MakeEdge(
+        DELAY(duration, width),
+        [input],
+        [width],
+        None
+    )[0]
 }
 
 public func SimpleRegister(initial! : Int64, signed! : Bool, input! : Wire) : Wire {
@@ -19,8 +23,12 @@ public func SimpleRegister(initial! : Int64, signed! : Bool, input! : Wire) : Wi
 func SimpleRegisterWithInitial(initial: Wire, input : Wire){
     let width = initial.GetWidth()
     let delay = Delay(1, input)
-    let edge = Edge(JOIN(width), [initial.GetVertex(), delay.GetVertex()], [width])
-    Wire(edge.GetTarget(0))
+    MakeEdge(
+        JOIN(width),
+        [initial, delay],
+        [width],
+        None
+    )[0]
 }
 
 public func Feedback(outgoing : Wire, incoming : Wire) : Unit {

@@ -163,14 +163,8 @@ public func map<T,U>(f : (T) -> U, xs : ArrayList<T>) : ArrayList<U> {
     acc
 }
 
-public func mapi<T,U>(f : (T, Int64) -> U, xs : Iterable<T>) : ArrayList<U> {
-    let acc = ArrayList<U>()
-    var i = 0
-    for (x in xs){
-        acc.append(f(x, i))
-        i++
-    }
-    acc
+public func mapi<T,U>(f : (T, Int64) -> U, xs : Array<T>) : Array<U> {
+    Array<U>(xs.size()){ i : Int64 => f(xs[i], i) }
 }
 
 public func map_acc<T,U,V>(f : (T, V) -> (U, V), xs : Array<T>, initial : V) : (ArrayList<U>, V) {
@@ -223,4 +217,13 @@ public func unsafeGet<T,U>(map : HashMap<T,U>, key: T) : U where T <: Equatable<
 
 public func sum(ns : Array<Int64>) : Int64 {
     fold_left({ acc : Int64, cur : Int64 => acc + cur}, 0, ns)
+}
+
+public func unicodeToString(n : UInt32) : String {
+    let char = chr(n)
+    String([char])
+}
+
+public func numToUppercaseLetter(n : Int64) : String {
+    unicodeToString(41 + UInt32(n))
 }

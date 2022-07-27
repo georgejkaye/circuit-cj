@@ -19,34 +19,30 @@ public func CloneWithInterfaces(f : Hypergraph, inputs: Array<Vertex>, outputs: 
     A hypergraph with an interface. Represents a complete circuit with inputs
     and outputs. Interfaced hypergraphs are *immutable*.
  */
-public class InterfacedHypergraph <: Identifiable & ToString & Nameable & Equatable<InterfacedHypergraph> {
+public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equatable<InterfacedHypergraph> {
     let uniqueId : Identifier = Identifier()
     let f : Hypergraph
     let inputs : Array<Vertex>
-    let inputType : Array<Int64>
     let outputs : Array<Vertex>
-    let outputType : Array<Int64>
-    let label : Label
+    let spec : Specification
 
-    public init(f : Hypergraph, inputs : Array<Vertex>, outputs: Array<Vertex>, name : String){
+    public init(
+        f : Hypergraph,
+        spec : Specification,
+        inputs : Array<Vertex>,
+        outputs: Array<Vertex>
+    ){
+        CheckLabelCompatibility(spec, inputs, outputs)
         this.f = f
         this.inputs = inputs
-        this.inputType = map({ v : Vertex => v.GetWidth() }, inputs)
         this.outputs = outputs
-        this.outputType = map({ v : Vertex => v.GetWidth() }, outputs)
-        this.label = COMPOSITE(
-            Specification(
-                name,
-                this.inputType,
-                this.outputType
-            )
-        )
+        this.spec = spec
     }
     public func GetId() : Int64 {
         this.uniqueId.GetId()
     }
-    public func GetLabel() : Label {
-        this.label
+    public func GetSpecification() : Specification {
+        this.spec
     }
     public func GetGraph() : Hypergraph {
         this.f
@@ -81,14 +77,14 @@ public class InterfacedHypergraph <: Identifiable & ToString & Nameable & Equata
     public func GetOutputs() : Int64 {
         this.outputs.size()
     }
-    public func GetInputType() : Array<Int64> {
-        this.inputType
+    public func GetInputPorts() : Array<Port> {
+        this.spec.GetInputPorts()
     }
-    public func GetOutputType() : Array<Int64> {
-        this.outputType
+    public func GetOutputPorts() : Array<Port> {
+        this.spec.GetOutputPorts()
     }
     public func GetName() : String {
-        this.f.name
+        this.spec.name
     }
     public func toString() : String {
         let string = f.toString()
@@ -128,6 +124,6 @@ public class InterfacedHypergraph <: Identifiable & ToString & Nameable & Equata
     }
     public func CloneGraph() : InterfacedHypergraph {
         let (newGraph, newInputs, newOutputs) = this.Clone()    
-        InterfacedHypergraph(newGraph, newInputs, newOutputs, this.label.GetName())
+        InterfacedHypergraph(newGraph, this.spec, newInputs, newOutputs)
     }
 }

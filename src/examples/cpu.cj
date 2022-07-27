@@ -9,6 +9,7 @@
 
 package examples
 
+import syntax.*
 import graphs.*
 
 func ALU() {
@@ -30,23 +31,66 @@ func ALU() {
 
     let mux = Mux4(sum, and2, a, b, s1, s0)
 
-    MakeSubcircuit([a, b, s0, s1, s2, s3, s4], [mux, carry], name: "alu")
+    MakeSubcircuit([
+        NamedWire(a, "A"), 
+        NamedWire(b, "B"),
+        NamedWire(s0, "S0"), 
+        NamedWire(s1, "S1"),
+        NamedWire(s2, "S2"),
+        NamedWire(s3, "S3"),
+        NamedWire(s4, "S4")
+    ], [
+        NamedWire(mux, "Z"),
+        NamedWire(carry, "Cout")
+    ], name: "alu")
 }
 
 func FDCE(d : Wire, ce : Wire, c : Wire, clr : Wire) {
-    BlackBox("FDCE", [1,1,1,1], [1], [d, ce, c, clr])[0]
+    BlackBox("FDCE", [
+        Port(1, name: "D"),
+        Port(1, name: "CE"),
+        Port(1, name: "C"),
+        Port(1, name: "CLR")
+    ], [
+        Port(1, name: "Q")
+    ], [d, ce, c, clr])[0]
 }
 func FDPE(pre: Wire, d : Wire, ce : Wire, c : Wire) {
-    BlackBox("FDPE", [1,1,1,1], [1], [pre, d, ce, c])[0]
+    BlackBox("FDPE", [
+        Port(1, name: "PRE"),
+        Port(1, name: "D"),
+        Port(1, name: "CE"),
+        Port(1, name: "C")
+    ], [
+        Port(1, name: "Q")
+    ], [pre, d, ce, c])[0]
 }
 func FDC(d : Wire, c : Wire, clr : Wire) {
-    BlackBox("FDC", [1,1,1], [1], [d, c, clr])[0]
+    BlackBox("FDC", [
+        Port(1, name: "D"),
+        Port(1, name: "C"),
+        Port(1, name: "CLR")
+    ], [
+        Port(1, name: "Q")
+    ], [d, c, clr])[0]
 }
 func FD(d : Wire, c : Wire) {
-    BlackBox("FD", [1,1], [1], [d, c])[0]
+    BlackBox("FD", [
+        Port(1, name: "D"),
+        Port(1, name: "C")
+    ], [
+        Port(1, name: "Q")
+    ], [d, c])[0]
 }
 func RAM(cpu_do : Wire, addr : Wire, ram_we : Wire, clk : Wire) {
-    BlackBox("ram", [16,8,1,1], [16], [cpu_do,addr,ram_we,clk])[0]
+    BlackBox("ram", [
+        Port(16, name: "din"),
+        Port(8, name: "addr"),
+        Port(1, name: "we"),
+        Port(1, name: "clk")
+    ], [
+        Port(16, name: "dout")
+    ], [cpu_do,addr,ram_we,clk])[0]
 }
 
 func Register(w : Int64) : InterfacedHypergraph {
@@ -66,7 +110,14 @@ func Register(w : Int64) : InterfacedHypergraph {
         let rhs = UseSubcircuit_1(Register(splitWidth), [r, clr, ce, clk])
         Combine(lhs, rhs)
     }
-    MakeSubcircuit([d, clr, ce, clk], [outputs], name: "register_${w}")
+    MakeSubcircuit([
+        NamedWire(d, "D"),
+        NamedWire(clr, "CLR"),
+        NamedWire(ce, "CE"),
+        NamedWire(clk, "CLK")
+    ], [
+        NamedWire(outputs, "Q")
+    ], name: "register_${w}")
 }
 
 func SequenceGenerator() {
@@ -81,7 +132,16 @@ func SequenceGenerator() {
     let reg4 = FDCE(reg3, ce, clk, clr)
 
     Feedback(reg4, fb)
-    MakeSubcircuit([clk, ce, clr], [reg1, reg2, reg3, reg4], name: "sequence_generator")
+    MakeSubcircuit([
+        NamedWire(clk, "CLK"),
+        NamedWire(ce, "CE"),
+        NamedWire(clr, "CLR")
+    ], [
+        NamedWire(reg1, "F"),
+        NamedWire(reg2, "D"),
+        NamedWire(reg3, "E"),
+        NamedWire(reg4, "I")
+    ], name: "sequence_generator")
 }
 
 func InstructionDecoder() {
@@ -100,9 +160,22 @@ func InstructionDecoder() {
     let jumpnz = And([jump_condition, Not(bits[3]), bits[2]])
     let jumpc = And([jump_condition, bits[3], Not(bits[2])])
     let jumpnc = And([jump_condition, bits[3], bits[2]])
-    MakeSubcircuit([a], [input, output, load, add, jump, sub, bitand, jumpz, jumpnz, jumpc, jumpnc], name: "instruction_decoder")
+    MakeSubcircuit([
+        NamedWire(a, "A")
+    ], [
+        NamedWire(add, "ADD"),
+        NamedWire(load, "LOAD"),
+        NamedWire(output, "OUTPUT"),
+        NamedWire(input, "INPUT"),
+        NamedWire(jumpz, "JUMPZ"),
+        NamedWire(jump, "JUMP"),
+        NamedWire(jumpnz, "JUMPNZ"),
+        NamedWire(jumpc, "JUMPC"),
+        NamedWire(jumpnc, "JUMPNC"),
+        NamedWire(sub, "SUB"),
+        NamedWire(bitand, "BITAND")
+    ], name: "instruction_decoder")
 }
-
 
 func Decoder_InstructionDecoder(ir : Wire, decode : Wire, execute : Wire) {
     let instruction_decoder = UseSubcircuit(InstructionDecoder(), [ir])
@@ -193,7 +266,27 @@ func Decoder() {
     let en_in = Buf(fetch)
     let en_da = Buf(And(execute, Or([load, add, sub, bitand, input])))
 
-    MakeSubcircuit([ir, carry, zero, clk, ce, clr], [ram, alu_s0, alu_s1, alu_s2, alu_s3, alu_s4, muxa, muxb, muxc, en_in, en_da, en_pc], name: "decoder")
+    MakeSubcircuit([
+        NamedWire(ir, "IR"),
+        NamedWire(carry, "Carry"),
+        NamedWire(zero, "Zero"),
+        NamedWire(clk, "CLK"),
+        NamedWire(ce, "CE"),
+        NamedWire(clr, "CLR")
+    ], [
+        NamedWire(muxa, "MUXA"),
+        NamedWire(muxb, "MUXB"),
+        NamedWire(muxc, "MUXC"),
+        NamedWire(en_da, "EN_DA"),
+        NamedWire(en_pc, "EN_PC"),
+        NamedWire(en_in, "EN_IN"),
+        NamedWire(ram, "RAM"),
+        NamedWire(alu_s0, "ALU_S0"),
+        NamedWire(alu_s1, "ALU_S1"),
+        NamedWire(alu_s2, "ALU_S2"),
+        NamedWire(alu_s3, "ALU_S3"),
+        NamedWire(alu_s4, "ALU_S4")
+    ], name: "decoder")
 }
 
 public func SimpleCPU() {
@@ -266,5 +359,11 @@ public func SimpleCPU() {
         )
     )
 
-    MakeSubcircuit([nclr, clk, vcc], [serial_out], name: "CPU")
+    MakeSubcircuit([
+        NamedWire(nclr, "NCLR"),
+        NamedWire(clk, "CLK"),
+        NamedWire(vcc, "VCC")
+    ], [
+        NamedWire(serial_out, "SERIAL_OUT")
+    ], name: "CPU")
 }

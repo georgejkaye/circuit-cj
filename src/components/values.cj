@@ -71,9 +71,12 @@ func SignedDecToBin(x : Int64, w : Int64) : Array<Bool> {
 }
 
 public func MakeValue(vs : Array<Value>, signed : Bool) : Wire {
-    let empty = Array<Vertex>()
-    let value = Edge(VALUE(vs, signed), empty, [vs.size()])
-    Wire(value.GetTarget(0))
+    MakeEdge(
+        VALUE(vs, signed),
+        Array<Wire>(),
+        [vs.size()],
+        None
+    )[0]
 }
 
 public func MakeValue(vs : Array<Bool>, signed : Bool) {

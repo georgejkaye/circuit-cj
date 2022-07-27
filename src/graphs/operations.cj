@@ -31,7 +31,7 @@ func CloneOrRetain(f : InterfacedHypergraph, clone : Bool) : (Hypergraph, Array<
 }
 
 func Seq(f : InterfacedHypergraph, g : InterfacedHypergraph, clone : Bool) : InterfacedHypergraph {
-    if (f.GetOutputType() != g.GetInputType()){
+    if (f.GetOutputPorts() != g.GetInputPorts()){
         throw OutputInputMismatchException("Seq", f, g)
     }
 
@@ -55,9 +55,13 @@ func Seq(f : InterfacedHypergraph, g : InterfacedHypergraph, clone : Bool) : Int
     let newGraph = Hypergraph(newVertices, newEdges)
     InterfacedHypergraph(
         newGraph, 
+        Specification(
+            "${f.GetName()} ⨟ ${g.GetName()}}",
+            f.GetInputPorts(),
+            g.GetOutputPorts()
+        ),
         newFInputs, 
-        newGOutputs, 
-        "${f.GetLabel().GetName()} ⨟ ${g.GetLabel().GetName()}}"
+        newGOutputs
     )
 }
 
@@ -94,67 +98,36 @@ func Par(f : InterfacedHypergraph, g : InterfacedHypergraph, clone : Bool) : Int
     } 
 
     let newGraph = Hypergraph(newVertices, newEdges)
+
+    func MakeParPorts(
+        fArray : Array<Port>,
+        gArray : Array<Port>
+    ) : Array<Port> {
+        Array<Port>(fArray.size() + fArray.size()){
+            i : Int64 => if (i < fArray.size()) {
+                fArray[i]
+            } else {
+                gArray[i - fArray.size()]
+            }
+    }
+    }
+
+    let newInputPorts = MakeParPorts(f.GetInputPorts(), g.GetInputPorts())
+    let newOutputPorts = MakeParPorts(f.GetOutputPorts(), g.GetOutputPorts())
+    
     InterfacedHypergraph(
-        newGraph, 
+        newGraph,
+        Specification(
+            "${f.GetName()} ⊗ ${g.GetName()}}",
+            newInputPorts,
+            newOutputPorts
+        ),
         newInputs, 
-        newOutputs,
-        "${f.GetLabel().GetName()} ⊗ ${g.GetLabel().GetName()}}"
+        newOutputs
     )
 
 }
 
 public func Par(f : InterfacedHypergraph, g : InterfacedHypergraph) : InterfacedHypergraph {
     Par(f, g, true)
-}
-
-func Trace(f : InterfacedHypergraph, x : Int64, clone : Bool) {
-    if (x < 0) {
-        throw NegativeTraceException("Trace", x)
-    }
-    if (f.GetInputs() < x) {
-        throw NotEnoughInputsException("Trace", x, f)
-    }
-    if (f.GetOutputs() < x) {
-        throw NotEnoughOutputsException("Trace", x, f)
-    }
-    let (newF, newFInputs, newFOutputs) = CloneOrRetain(f, clone)
-
-    let newVertices = newF.GetVertices()
-    let newEdges = newF.GetEdges()
-
-    let newInputs = Array<Vertex>(f.GetInputs() - x) {
-        i => newFInputs[i+x]
-    }
-    let newOutputs = Array<Vertex>(f.GetOutputs() - x) {
-        i => newFOutputs[i+x]
-    }
-
-    for (i in 0..x) {
-        // HACK .remove() might not return the right element
-        let input = newFInputs[0]
-        let output = newFOutputs[0]
-        let (mergedVertex, removedVertex) = MergeVertices(input, output)
-        for (j in 0..newInputs.size()) {
-            if (newInputs[j] == removedVertex) {
-                newInputs[j] = mergedVertex
-            }
-        }
-        for (j in 0..newOutputs.size()) {
-            if (newOutputs[j] == removedVertex) {
-                newOutputs[j] = mergedVertex
-            }
-        }
-        newVertices.removeIf({ v => v == removedVertex })
-    }
-    let newGraph = Hypergraph(newVertices, newEdges)
-    InterfacedHypergraph(
-        newGraph, 
-        newInputs, 
-        newOutputs,
-        "Tr^{${x}}(${f.GetLabel().GetName()}"
-    )
-}
-
-public func Trace(f : InterfacedHypergraph, x : Int64) : InterfacedHypergraph {
-    Trace(f, x, true)
 }

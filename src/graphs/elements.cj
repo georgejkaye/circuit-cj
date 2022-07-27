@@ -103,53 +103,79 @@ public class Vertex <: Element & Equatable<Vertex> {
     }
 }
 
-public func CheckLabelCompatibility(label : Label, inputs: Array<Int64>, outputs: Array<Int64>) : Unit{
-    func CheckCompatibility(desired : Array<Int64>, actual : Array<Int64>) : Bool {
+public interface ContainsVertex {
+    func GetVertex() : Vertex
+}
+
+extend Int64 <: ContainsVertex {
+    public func GetVertex() : Vertex {
+        Vertex(this)
+    }
+}
+
+extend Port <: ContainsVertex {
+    public func GetVertex() : Vertex {
+        Vertex(this.width)
+    }
+}
+
+func CheckLabelCompatibility<T>(
+    spec : Specifiable,
+    inputs: Array<T>,
+    outputs: Array<T>,
+    fn : (Port, T) -> Bool
+) : Unit where T <: ToString {
+    func CheckCompatibility(desired : Array<Port>, actual : Array<T>) : Bool {
         if (desired.size() != actual.size()) {
             return false
         }
         for (i in 0..actual.size()) {
-            if (desired[i] != actual[i]){
+            if (!fn(desired[i], actual[i])){
                 return false
             }
         }
         return true
     }
-    let inputCheck = CheckCompatibility(label.GetInputType(), inputs)
-    let outputCheck = CheckCompatibility(label.GetOutputType(), outputs)
+    let inputCheck = CheckCompatibility(spec.GetInputPorts(), inputs)
+    let outputCheck = CheckCompatibility(spec.GetOutputPorts(), outputs)
 
     if (!inputCheck || !outputCheck) {
-        throw IncompatibleLabelException("CheckLabelCompatibility", label, inputs, outputs)
+        throw IncompatibleLabelException("CheckLabelCompatibility", spec, inputs, outputs)
     }
+}
+public func CheckLabelCompatibility(spec : Specifiable, inputs: Array<Vertex>, outputs: Array<Vertex>) : Unit {
+    CheckLabelCompatibility(
+        spec,
+        inputs,
+        outputs,
+        { p : Port, v : Vertex => p.width == v.GetWidth() }
+    )
+}
+public func CheckLabelCompatibility(spec : Specifiable, inputs: Array<Int64>, outputs: Array<Int64>) : Unit {
+    CheckLabelCompatibility(
+        spec,
+        inputs,
+        outputs,
+        { p : Port, i : Int64 => p.width == i }
+    )
 }
 
 public class Edge <: Element & Equatable<Edge> {
-    let label : Label
-    let sources : Array<Vertex>
-    let targets : Array<Vertex>
-    let subgraph : Option<InterfacedHypergraph>
-    init(label: Label, sources : Array<Vertex>, targets : Array<Vertex>, subgraph : Option<InterfacedHypergraph>){
-        CheckLabelCompatibility(label, map({v : Vertex => v.GetWidth()}, sources), map({v : Vertex => v.GetWidth() }, targets))
-        this.label = label
-        this.sources = sources
-        this.targets = targets
-        this.subgraph = subgraph
+    public Edge(
+        let label: Label,
+        let sources : Array<Vertex>,
+        let targets : Array<Vertex>,
+        let subgraph : Option<InterfacedHypergraph>
+    ){
+        CheckLabelCompatibility(
+            label,
+            map({v : Vertex => v.GetWidth()}, sources),
+            map({v : Vertex => v.GetWidth() }, targets)
+        )
         let graph = CombineGraphs(sources)
         graph.AddEdge(this)
         ForEachSource({ v : Vertex, i : Int64 => v.AddOutEdge(this, i)})
         ForEachTarget({ v : Vertex, i : Int64 => v.AddInEdge(this, i)})
-    }
-    public init(label : Label, sources : Array<Vertex>, targets: Array<Int64>, subgraph : Option<InterfacedHypergraph> ) {
-        this(label, sources, map({ i : Int64 => Vertex(i) }, targets), subgraph)
-    }
-    public init(label : Label, sources : Array<Vertex>, targets: Array<Int64>, subgraph : InterfacedHypergraph){
-        this(label, sources, targets, Some(subgraph))
-    }
-    public init(label: Label, sources : Array<Vertex>, targets : Array<Vertex>){ 
-        this(label, sources, targets, None)
-    }
-    public init(label : Label, sources : Array<Vertex>, targets: Array<Int64>) {
-        this(label, sources, targets, None)
     }
     public func GetLabel() : Label {
         this.label

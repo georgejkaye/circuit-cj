@@ -15,5 +15,9 @@ public func Accumulator(width!: Int64, initial!: Int64){
     let reg = SimpleRegister(initial: initial, signed: false, input: prev)
     let (sum, carry) = Plus(reg, input)
     Feedback(sum, prev)
-    MakeSubcircuit([input], [sum])
+    MakeSubcircuit([
+        NamedWire(input, "A")
+    ], [
+        NamedWire(sum, "S")
+    ])
 }

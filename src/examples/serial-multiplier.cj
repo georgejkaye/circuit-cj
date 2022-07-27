@@ -47,5 +47,11 @@ public func SerialMultiplierBit(width : Int64) {
     let (sum, bit) = RunningSumLoop(first, a, b0)
     let computedBits = ComputedBits(bit, width)
     let output = Combine([sum, computedBits])
-    MakeSubcircuit([first, a, b0], [output])
+    MakeSubcircuit([
+        NamedWire(first, "first"),
+        NamedWire(a, "A"),
+        NamedWire(b0, "B0")
+    ], [
+        NamedWire(output, "Output")
+    ])
 }
