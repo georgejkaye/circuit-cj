@@ -143,15 +143,28 @@ func MakeElem(
     graphContent.addAll(finalElem)
 }
 
-func EdgeVerticesToTable(vs : Array<Vertex>, id : String, graphContent : ArrayList<(String, IndentInstruction)>) : Unit {
+func EdgeVerticesToTable(ports : Array<Port>, id : String, graphContent : ArrayList<(String, IndentInstruction)>) : Unit {
     let content = ArrayList<(String, IndentInstruction)>()
-    for (i in 0..vs.size()) {
+    for (i in 0..ports.size()) {
+        let port = ports[i]
         let td = ArrayList<(String, IndentInstruction)>()
-        MakeElem("td", [
-            ("height", "${portHeight}"),
-            ("width", "${portWidth}"),
-            ("port", "${id}${i}")
-        ], ArrayList<(String, IndentInstruction)>(), true, td)
+        let portText = match(port.name){
+            case None => "${port.width}"
+            case Some(str) => "${str}:${port.width}"
+        }
+        MakeElem(
+            "td",
+            [
+                ("height", "${portHeight}"),
+                ("width", "${portWidth}"),
+                ("port", "${id}${i}")
+            ],
+            ArrayList<(String, IndentInstruction)>([
+                (portText, Preserve)
+            ]),
+            true,
+            td
+        )
         MakeElem("tr", [], td, true, content)
     }
     MakeElem("table", [], content, false, graphContent)
@@ -169,7 +182,16 @@ func DrawEdgeNode(e : Edge, content : ArrayList<(String, IndentInstruction)>) : 
         case BLACKBOX(spec)         => (blackboxStyle   , spec.GetName())
         case DELAY(dur, width)      => (delayStyle      , "${dur}")
     }
-    DrawEdgelikeNode("e${e.GetId()}", label, style, e.GetSources(), e.GetTargets(), content)
+    DrawEdgelikeNode(
+        "e${e.GetId()}",
+        label,
+        style,
+        e.GetSources(),
+        e.GetInputPorts(),
+        e.GetTargets(),
+        e.GetOutputPorts(),
+        content
+    )
 }
 
 func DrawEdgelikeNode(
@@ -177,31 +199,41 @@ func DrawEdgelikeNode(
     label : String, 
     style : Array<(String, String)>,
     sources : Array<Vertex>,
+    sourcePorts : Array<Port>,
     targets : Array<Vertex>,
+    targetPorts : Array<Port>,
     content : ArrayList<(String, IndentInstruction)>
 ) : Unit {
     func DrawPorts(
         array : Array<Vertex>, 
+        ports : Array<Port>,
         id : String, 
         edgeContent : ArrayList<(String, IndentInstruction)>
     ) : Unit {
         if (array.size() != 0) {
             let table = ArrayList<(String, IndentInstruction)>()
-            EdgeVerticesToTable(array, id, table)
+            EdgeVerticesToTable(ports, id, table)
             MakeElem("td", [], table, false, edgeContent)
         }
     }
 
     let edgeContent = ArrayList<(String, IndentInstruction)>()
-    DrawPorts(sources, "w", edgeContent)
-    MakeElem("td", [], ArrayList<(String, IndentInstruction)>([
-        (if(IsDebugDot()){
-            "${id}: ${label}"
-        } else {
-            label
-        }, Preserve)
-    ]), true, edgeContent)
-    DrawPorts(targets, "e", edgeContent)
+    DrawPorts(sources, sourcePorts, "w", edgeContent)
+    MakeElem(
+        "td",
+        [],
+        ArrayList<(String, IndentInstruction)>([(
+            if(IsDebugDot()){
+                "${id}: ${label}"
+            } else {
+                label
+            },
+            Preserve
+        )]),
+        true,
+        edgeContent
+    )
+    DrawPorts(targets, targetPorts, "e", edgeContent)
     
     let subtable = ArrayList<(String, IndentInstruction)>()
     MakeElem("tr", [], edgeContent, false, subtable)
@@ -331,6 +363,7 @@ func DrawSubgraph(
 
 func DrawInterface(
     vertices : Array<Vertex>, 
+    ports : Array<Port>,
     sink : Bool,
     content : ArrayList<(String, IndentInstruction)>
 ) : Unit {
@@ -340,7 +373,13 @@ func DrawInterface(
         ("input", minSubgraphOpts, Array<Vertex>(), vertices)
     }
     let subgraphContent = ArrayList<(String, IndentInstruction)>()
-    DrawEdgelikeNode(text, text, interfaceStyle, sources, targets, subgraphContent)
+    let (sourcePorts, targetPorts) = 
+        if (sink) {
+            (ports, Array<Port>())
+        } else {
+            (Array<Port>(), ports)
+        }
+    DrawEdgelikeNode(text, "", interfaceStyle, sources, sourcePorts, targets, targetPorts, subgraphContent)
     DrawSubgraph(opts, subgraphContent, content)
     DrawInterfaceConnections(vertices, sink, content)
 
@@ -387,8 +426,8 @@ func DrawSubgraphCluster(
 }
 
 func DrawInterfaces(f : InterfacedHypergraph, content : ArrayList<(String, IndentInstruction)>) : Unit {
-    DrawInterface(f.GetInputVertices(), false, content)
-    DrawInterface(f.GetOutputVertices(), true, content)
+    DrawInterface(f.GetInputVertices(), f.GetInputPorts(), false, content)
+    DrawInterface(f.GetOutputVertices(), f.GetOutputPorts(), true, content)
 }
 
 public func DrawHypergraph(

@@ -29,7 +29,7 @@ func BitwiseGate<T>(
     inputs: Array<T>,
     label: Label,
     outputLabel : Option<String>
-) : Wire where T <: ToString, T <: HasWidth {
+) : Wire where T <: ToString, T <: ContainsWire {
     let internalInputs : Array<NamedWire> = mapi({ 
             t : T, i : Int64 => 
                 NamedWire(
@@ -81,44 +81,46 @@ func InternalRippleGate(
     UseSubcircuit(circuit, [inputs])[0]
 }
 
-public func Buf(a : Wire, output!: Option<String> = None) : Wire {
-    BitwiseGate({ ws : Array<Wire> => NotGate(ws[0])}, [a], BUF(a.GetWidth()), output)
+let gateOutput = "Z"
+
+public func Buf(a : Wire) : Wire {
+    BitwiseGate({ ws : Array<Wire> => NotGate(ws[0])}, [a], BUF(a.GetWidth()), gateOutput)
 }
-public func Not(a : Wire, output!: Option<String> = None) : Wire {
-    BitwiseGate({ ws : Array<Wire> => NotGate(ws[0])}, [a], NOT(a.GetWidth()), output)
+public func Not(a : Wire) : Wire {
+    BitwiseGate({ ws : Array<Wire> => NotGate(ws[0])}, [a], NOT(a.GetWidth()), gateOutput)
 }
-public func And(a : Wire, b : Wire, output!: Option<String> = None) : Wire {
-    BitwiseGate({ ws : Array<Wire> => AndGate(ws[0], ws[1])}, [a, b], AND(2, a.GetWidth()), output)
+public func And(a : Wire, b : Wire) : Wire {
+    BitwiseGate({ ws : Array<Wire> => AndGate(ws[0], ws[1])}, [a, b], AND(2, a.GetWidth()), gateOutput)
 }
-public func And(ws : Array<Wire>, output!: Option<String> = None) : Wire {
-    RippleGate({ w : Wire, v : Wire => AndGate(w, v)}, ws, AND(ws.size(), ws[0].GetWidth()), output)
+public func And(ws : Array<Wire>) : Wire {
+    RippleGate({ w : Wire, v : Wire => AndGate(w, v)}, ws, AND(ws.size(), ws[0].GetWidth()), gateOutput)
 }
-public func And(w : Wire, output!: Option<String> = None) : Wire {
-    InternalRippleGate({ w : Wire , v : Wire => AndGate(w, v)}, w, AND(w.GetWidth(), 1), output)
+public func And(w : Wire) : Wire {
+    InternalRippleGate({ w : Wire , v : Wire => AndGate(w, v)}, w, AND(w.GetWidth(), 1), gateOutput)
 }
-public func Or(a : Wire, b : Wire, output!: Option<String> = None) : Wire {
-    BitwiseGate({ ws : Array<Wire> => OrGate(ws[0], ws[1])}, [a, b], OR(2, a.GetWidth()), output)
+public func Or(a : Wire, b : Wire) : Wire {
+    BitwiseGate({ ws : Array<Wire> => OrGate(ws[0], ws[1])}, [a, b], OR(2, a.GetWidth()), gateOutput)
 }
-public func Or(ws : Array<Wire>, output!: Option<String> = None) : Wire {
-    RippleGate({ w : Wire, v : Wire => OrGate(w, v)}, ws, OR(ws.size(), ws[0].GetWidth()), output)
+public func Or(ws : Array<Wire>) : Wire {
+    RippleGate({ w : Wire, v : Wire => OrGate(w, v)}, ws, OR(ws.size(), ws[0].GetWidth()), gateOutput)
 }
-public func Or(w : Wire, output!: Option<String> = None) : Wire {
-    InternalRippleGate({ w : Wire , v : Wire => OrGate(w, v)}, w, OR(w.GetWidth(), 1), output)
+public func Or(w : Wire) : Wire {
+    InternalRippleGate({ w : Wire , v : Wire => OrGate(w, v)}, w, OR(w.GetWidth(), 1), gateOutput)
 }
-public func Xor(a : Wire, b : Wire, output!: Option<String> = None) : Wire {
-    BitwiseGate({ ws : Array<Wire> => XorGate(ws[0], ws[1])}, [a, b], XOR(2, a.GetWidth()), output)
+public func Xor(a : Wire, b : Wire) : Wire {
+    BitwiseGate({ ws : Array<Wire> => XorGate(ws[0], ws[1])}, [a, b], XOR(2, a.GetWidth()), gateOutput)
 }
-public func Xor(ws : Array<Wire>, output!: Option<String> = None) : Wire {
-    RippleGate({ w : Wire, v : Wire => XorGate(w, v)}, ws, XOR(ws.size(), ws[0].GetWidth()), output)
+public func Xor(ws : Array<Wire>) : Wire {
+    RippleGate({ w : Wire, v : Wire => XorGate(w, v)}, ws, XOR(ws.size(), ws[0].GetWidth()), gateOutput)
 }
-public func Nor(a : Wire, b : Wire, output!: Option<String> = None) : Wire {
-    BitwiseGate({ ws : Array<Wire> => NorGate(ws[0], ws[1])}, [a, b], NOR(2, a.GetWidth()), output)
+public func Nor(a : Wire, b : Wire) : Wire {
+    BitwiseGate({ ws : Array<Wire> => NorGate(ws[0], ws[1])}, [a, b], NOR(2, a.GetWidth()), gateOutput)
 }
-public func Nor(ws : Array<Wire>, output!: Option<String> = None) : Wire {
-    RippleGate({ w : Wire, v : Wire => NorGate(w, v)}, ws, NOR(ws.size(), ws[0].GetWidth()), output)
+public func Nor(ws : Array<Wire>) : Wire {
+    RippleGate({ w : Wire, v : Wire => NorGate(w, v)}, ws, NOR(ws.size(), ws[0].GetWidth()), gateOutput)
 }
-public func Nor(w : Wire, output!: Option<String> = None) : Wire {
-    InternalRippleGate({ w : Wire , v : Wire => NorGate(w, v)}, w, NOR(w.GetWidth(), 1), output)
+public func Nor(w : Wire) : Wire {
+    InternalRippleGate({ w : Wire , v : Wire => NorGate(w, v)}, w, NOR(w.GetWidth(), 1), gateOutput)
 }
 
 func Mux2_1_1() : InterfacedHypergraph {

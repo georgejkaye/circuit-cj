@@ -35,7 +35,7 @@ public class Wire <: Identifiable & ToString & ContainsVertex & HasWidth {
     }
 }
 
-public interface ContainsWire <: HasWidth {
+public interface ContainsWire <: HasWidth & ContainsVertex {
     func GetWire() : Wire
 }
 
@@ -69,7 +69,6 @@ public record NamedWire <: ContainsWire & ToString & ContainsVertex {
         this.wire.GetWidth()
     }
 }
-
 
 public func MakeEdge<T,U>(
     label : Label,

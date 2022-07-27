@@ -46,12 +46,12 @@ public func MakeSubcircuit(
 public func UseSubcircuit<T>(
     circuit : InterfacedHypergraph,
     inputs : Array<T>
-) : Array<Wire> where T <: ToString, T <: HasWidth {
+) : Array<Wire> where T <: ToString, T <: ContainsWire {
     AssertWiresHaveWidths<T, Port>(inputs, circuit.GetInputPorts())
     let newGraph = circuit.CloneGraph()
-    MakeEdge(
+    MakeEdge<T, Port>(
         COMPOSITE(circuit.GetSpecification()),
-        map({ t : T => t.GetWidth() }, inputs),
+        inputs,
         circuit.GetOutputPorts(),
         newGraph
     )

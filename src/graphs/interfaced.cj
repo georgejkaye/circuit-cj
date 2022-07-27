@@ -31,6 +31,7 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
         spec : Specification,
         inputs : Array<Vertex>,
         outputs: Array<Vertex>
+        
     ){
         CheckLabelCompatibility(spec, inputs, outputs)
         this.f = f

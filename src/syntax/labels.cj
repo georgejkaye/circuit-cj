@@ -181,6 +181,7 @@ extend Label <: ToString & Specifiable {
             case COMPOSITE(spec)        => spec.dom
             case BLACKBOX(spec)         => spec.dom
             case DELAY(dur, width)      => [Port(width)] 
+            
         }
     }
     public func GetOutputPorts() : Array<Port> {

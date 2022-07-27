@@ -219,11 +219,11 @@ public func sum(ns : Array<Int64>) : Int64 {
     fold_left({ acc : Int64, cur : Int64 => acc + cur}, 0, ns)
 }
 
-public func unicodeToString(n : UInt32) : String {
+public func ASCIIToString(n : UInt32) : String {
     let char = chr(n)
     String([char])
 }
 
 public func numToUppercaseLetter(n : Int64) : String {
-    unicodeToString(41 + UInt32(n))
+    ASCIIToString(65 + UInt32(n))
 }

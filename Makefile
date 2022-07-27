@@ -25,7 +25,7 @@ DOTS = $(shell find $(DOT_DIR)/*.dot)
 # Dot svgs
 DOTS_SVGS = $(foreach dot, $(DOTS), $(dot).svg)
 
-.PHONY: all prep main clean library $(PACKAGES)
+.PHONY: all prep main clean library cleandot $(PACKAGES)
 
 all: prep $(PACKAGES) main
 
@@ -41,9 +41,12 @@ main: prep $(MAIN).$(OUT_EXT)
 # Make all the dot graphs
 dot: $(DOTS_SVGS)
 
+cleandot:
+	rm $(DOT_DIR)/*
+
 # Clean up
-clean:
-	rm -rf $(BUILD_DIR) $(MAIN).$(OUT_EXT) $(DOT_DIR)/*.svg
+clean: cleandot
+	rm -rf $(BUILD_DIR) $(MAIN).$(OUT_EXT)
 
 
 .SECONDEXPANSION:
@@ -63,9 +66,3 @@ $(MAIN).$(OUT_EXT): $$(shell python dependencies.py $(BUILD_DIR) $(SRC_DIR) $(MI
 # Draw a dot graph
 $(DOT_DIR)/%.svg: $(DOT_DIR)/%
 	dot -Tsvg $(DOT_DIR)/$* -O
-
-# $(BUILD_DIR)/%.$(MIDDLE_EXT): $$(shell python dependencies.py $(BUILD_DIR) $(SRC_DIR) $(MIDDLE_EXT) $$*)
-# 	$(CJC) $(LIB_OPT) $(PKG_OPT) $(SRC_DIR)/$* $(MOD_NAME_OPT) $(MOD_NAME) $(OUTPUT_OPT) $(MOD_NAME)/	
-
-test:
-	echo $(DOTS_SVGS)

@@ -160,7 +160,7 @@ public func CheckLabelCompatibility(spec : Specifiable, inputs: Array<Int64>, ou
     )
 }
 
-public class Edge <: Element & Equatable<Edge> {
+public class Edge <: Element & Specifiable & Equatable<Edge> {
     public Edge(
         let label: Label,
         let sources : Array<Vertex>,
@@ -254,6 +254,9 @@ public class Edge <: Element & Equatable<Edge> {
         this.targets.size()
     }
     public func toString() : String {
+        this.GetName()
+    }
+    public func GetName() : String {
         "e${this.GetId()}"
     }
     public operator func ==(right: Edge) : Bool {
@@ -261,5 +264,11 @@ public class Edge <: Element & Equatable<Edge> {
     }
     public operator func !=(right : Edge) : Bool {
         this.GetId() != right.GetId()
+    }
+    public func GetInputPorts() : Array<Port> {
+        this.label.GetInputPorts()
+    }
+    public func GetOutputPorts() : Array<Port> {
+        this.label.GetOutputPorts()
     }
 }
