@@ -7,6 +7,7 @@
 package settings
 
 import debug.*
+import syntax.*
 
 /** 
  * Dot settings 
@@ -41,11 +42,6 @@ public func SetDebugDot(b : Bool){
  */
 public func IsDebugDot(){
     debugDot
-}
-
-public enum NumberRepresentation {
-    | BIN
-    | DEC
 }
 
 var dotNumberRepresentation = BIN

@@ -1,4 +1,4 @@
-package syntax
+package graphs
 
 from std import collection.ArrayList, collection.HashMap
 

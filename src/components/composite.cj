@@ -68,7 +68,7 @@ func RippleGate(gate : (Wire, Wire) -> Wire, inputs: Array<Wire>, label: Label, 
 func InternalRippleGate(
     gate : (Wire, Wire) -> Wire,
     inputs: Wire,
-    label: Label,
+    spec: Specification,
     outputName : Option<String>
 ) : Wire {
     let internalInputs = MakeWire(inputs.GetWidth())
@@ -76,7 +76,7 @@ func InternalRippleGate(
     let circuit = MakeSubcircuit(
         [NamedWire(internalInputs, "A")], 
         [NamedWire(internalOutputs, outputName)],
-        name: label.GetName()
+        name: spec.GetName()
     )
     UseSubcircuit(circuit, [inputs])[0]
 }

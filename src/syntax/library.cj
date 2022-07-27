@@ -1,96 +1,201 @@
 /**
- * gates.cj
+ * library.cj
  *
- * This file contains some predefined gates
+ * This file is a library of components that make up
+ * our circuits
+ *
+ * @author George Kaye
+ * @since 0.2
  */
 
 package syntax
 
 /**
- * Signals
+ * Convert a given decimal ASCII code to a string
+ * @param n The decimal number
+ * @return The corresponding ascii character as a string
  */
+public func ASCIIToString(n : UInt32) : String {
+    let char = chr(n)
+    String([char])
+}
+/**
+ * Convert a number to an uppercase letter.
+ * A=1, B=2, ..., Z=26
+ *
+ * @param n The number to convert
+ * @return The corresponding uppercase letter
+ */
+public func numToUppercaseLetter(n : Int64) : String {
+    ASCIIToString(64 + UInt32(n))
+}
 
-public let BOTTOM : Label = VALUE([Bottom], false)
-public let FALSE : Label = VALUE([False], false)
-public let TRUE : Label = VALUE([True], false)
-public let TOP : Label = VALUE([Top], false)
-
-func MakeGateLabel(name : String, m : Int64, w : Int64, defaultInputs : Int64) {
-    let spec = Specification(
-        "${name}${m}_${w}",
-        Array<Port>(m){ i : Int64 => Port(w, name: numToUppercaseLetter(i)) },
-        [Port(w, name: "Z")]
-    )
-    if (m == defaultInputs && w == 1){
-        PRIMITIVE(spec)
-    } else {
-        COMPOSITE(spec)
+/**
+ * Primitives are the basic building blocks of circuits, i.e.
+ * the logic gates that take one bit inputs
+ */
+public enum Primitive {
+    | BUF
+    | NOT
+    | AND
+    | OR
+    | NAND
+    | NOR
+    | XOR
+    | XNOR
+}
+extend Primitive <: ToString & Specifiable {
+    public func GetName() : String {
+        match(this) {
+            case BUF  => "BUF"
+            case NOT  => "NOT"
+            case AND  => "AND"
+            case OR   => "OR"
+            case NAND => "NAND"
+            case NOR  => "NOR"
+            case XOR  => "XOR"
+            case XNOR => "XNOR"
+        }
+    }
+    public func GetInputPorts() : Array<Port> {
+        match(this) {
+            case BUF  => [Port(1, "A")]
+            case NOT  => [Port(1, "A")]
+            case AND  => [Port(1, "A"), Port(1, "B")]
+            case OR   => [Port(1, "A"), Port(1, "B")]
+            case NAND => [Port(1, "A"), Port(1, "B")]
+            case NOR  => [Port(1, "A"), Port(1, "B")]
+            case XOR  => [Port(1, "A"), Port(1, "B")]
+            case XNOR => [Port(1, "A"), Port(1, "B")]
+        }
+    }
+    public func GetNoInputs() : Int64 {
+        this.GetInputPorts().size()
+    }
+    public func GetOutputPorts() : Array<Port> {
+        match(this) {
+            case BUF  => [Port(1, "Z")]
+            case NOT  => [Port(1, "Z")]
+            case AND  => [Port(1, "Z")]
+            case OR   => [Port(1, "Z")]
+            case NAND => [Port(1, "Z")]
+            case NOR  => [Port(1, "Z")]
+            case XOR  => [Port(1, "Z")]
+            case XNOR => [Port(1, "Z")]
+        }
+    }
+    public func GetNoOutputs() : Int64 {
+        this.GetOutputPorts().size()
+    }
+    public func toString() : String {
+        this.GetName()
     }
 }
 
 /**
- * Unary gates
+ * Composites are more advanced components that are constructed from 
+ * the primitives. 
+ * 
+ * Users can of course define their own composites, but these are
+ * common components so are predefined
  */
+public enum Composite {
+    | BUF(Int64)
+    | NOT(Int64)
+    | AND(Int64, Int64)
+    | OR(Int64, Int64)
+    | NAND(Int64, Int64)
+    | NOR(Int64, Int64)
+    | XOR(Int64, Int64)
+    | XNOR(Int64, Int64)
+    | MUX(Int64, Int64, Int64)
 
-func MakeUnaryGateLabel(name : String, m : Int64, w : Int64) : Label {
-    MakeGateLabel(name, m, w, 1)
 }
-
-public func BUF(w : Int64) : Label {
-    MakeUnaryGateLabel("BUF", 1, w)
-}
-public func NOT(w : Int64) : Label {
-    MakeUnaryGateLabel("NOT", 1, w)
-}
-
-/**
- * Binary gates
- *
- * Each gate has two parameters:
- * - how many wires it takes as inputs
- * - the width of each wire
- */
-
-func MakeBinaryGateLabel(name : String, m : Int64, w : Int64) : Label {
-    MakeGateLabel(name, m, w, 2)
-}
-
-public func AND(m : Int64, w : Int64) : Label {
-    MakeBinaryGateLabel("and", m, w)
-}
-public func OR(m : Int64, w : Int64) : Label {
-    MakeBinaryGateLabel("or", m, w)
-}
-public func NAND(m : Int64, w : Int64) : Label {
-    MakeBinaryGateLabel("nand", m, w)
-}
-public func NOR(m : Int64, w : Int64) : Label {
-    MakeBinaryGateLabel("nor", m, w)
-}
-public func XOR(m : Int64, w : Int64) : Label {
-    MakeBinaryGateLabel("xor", m, w)
-}
-public func XNOR(m : Int64, w : Int64) : Label {
-    MakeBinaryGateLabel("xnor", m, w)
-}
-
-
-/**
- * Composite specifications
- */
-
-public func MUX(n : Int64, c : Int64, w : Int64) : Label {
-    COMPOSITE(
-        Specification(
-            "mux${n}_${c}_${w}", 
-            Array<Port>(n + 1){ 
-                i : Int64 => if (i == 0) { 
-                    Port(c, name: "SEL") 
-                } else { 
-                    Port(w, name: numToUppercaseLetter(i - 1))
+extend Composite <: Specifiable {
+    public func GetName() : String {
+        match(this) {
+            case BUF(w)       => "BUF_${w}"
+            case NOT(w)       => "NOT_${w}"
+            case AND(n, w)    => "AND${n}_${w}"
+            case OR(n, w)     => "OR${n}_${w}"
+            case NAND(n, w)   => "NAND${n}_${w}"
+            case NOR(n, w)    => "NOR${n}_${w}"
+            case XOR(n, w)    => "XOR${n}_${w}"
+            case XNOR(n, w)   => "XNOR${n}_${w}"
+            case MUX(n, c, w) => "MUX${n}_${c}_${w}"
+        }
+    }
+    public func GetInputPorts() : Array<Port> {
+        match(this) {
+            case BUF(w)       => GeneratePortArray(1, w)
+            case NOT(w)       => GeneratePortArray(1, w)
+            case AND(n, w)    => GeneratePortArray(n, w)
+            case OR(n, w)     => GeneratePortArray(n, w)
+            case NAND(n, w)   => GeneratePortArray(n, w)
+            case NOR(n, w)    => GeneratePortArray(n, w)
+            case XOR(n, w)    => GeneratePortArray(n, w)
+            case XNOR(n, w)   => GeneratePortArray(n, w)
+            case MUX(n, c, w) => 
+                Array<Port>(c + n){
+                    i : Int64 => 
+                        if (i < c){
+                            Port(1, "SEL${i}")
+                        } else {
+                            Port(w, numToUppercaseLetter(i - c + 1))
+                        }
                 }
-            }, 
-            [Port(w, name: "Z")]
-        )
-    )
+        }
+    }
+    public func GetNoInputs() : Int64 {
+        this.GetInputPorts().size()
+    }
+    public func GetOutputPorts() : Array<Port> {
+        match(this) {
+            case BUF(w)       => [Port(1, "Z")]
+            case NOT(w)       => [Port(1, "Z")]
+            case AND(n, w)    => [Port(1, "Z")]
+            case OR(n, w)     => [Port(1, "Z")]
+            case NAND(n, w)   => [Port(1, "Z")]
+            case NOR(n, w)    => [Port(1, "Z")]
+            case XOR(n, w)    => [Port(1, "Z")]
+            case XNOR(n, w)   => [Port(1, "Z")]
+            case MUX(n, c, w) => [Port(1, "Z")]
+        }
+    }
+    public func GetNoOutputs() : Int64 {
+        this.GetOutputPorts().size()
+    }
+    public func toString() : String {
+        this.GetName()
+    }
+}
+
+/**
+ * A black box is a component that we can't look inside,
+ * we only know its external interface
+ */
+public record BlackBox <: Specifiable {
+    BlackBox(
+        let name : String,
+        let inputPorts : Array<Port>,
+        let outputPorts : Array<Port>
+    ){}
+    public func GetName() : String {
+        this.name
+    }
+    public func GetInputPorts() : Array<Port> {
+        this.inputPorts
+    }
+    public func GetNoInputs() : Int64 {
+        this.GetInputPorts().size()
+    }
+    public func GetOutputPorts() : Array<Port> {
+        this.outputPorts
+    }
+    public func GetNoOutputs() : Int64 {
+        this.GetOutputPorts().size()
+    }
+    public func toString() : String {
+        this.GetName()
+    }
 }
