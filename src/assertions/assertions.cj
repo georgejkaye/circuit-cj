@@ -1,5 +1,5 @@
 /**
- * assertions.cj
+ * assertions/assertions.cj
  * 
  * @author George Kaye
  * @since 0.2
@@ -10,22 +10,51 @@ package assertions
 import prelude.map
 
 public enum ParamType {
-    Width
+    | Width
+    | InEdge
+    | Owner
 }
 extend ParamType <: ToString {
     public func toString() : String {
         match(this) {
             case Width => "width"
+            case InEdge => "in edges"
+            case Owner => "owner"
         }
     }
 }
-
 public func AssertNonEmpty<T>(array : Array<T>) : Unit {
     if(array.size() == 0) {
         throw EmptyArrayException()
     }
 }
-
+public func AssertIsNone<T>(
+    opt : Option<T>,
+    paramType: ParamType
+) : Unit where T <: ToString{
+    match (opt) {
+        case None => ()
+        case Some(t) =>
+            throw IncompatibleParameterException(
+                paramType,
+                None<T>,
+                opt,
+                t
+            )
+    }
+}
+public func AssertIsNotNone<T>(
+    opt : Option<T>,
+    paramType : ParamType
+) : T where T <: ToString{
+    match (opt) {
+        case None => throw IncompatibleParameterException(
+            paramType,
+            opt
+        )
+        case Some(t) => return t
+    }
+}
 public func AssertArraysSameLength<T,U>(
     xs : Array<T>,
     ys : Array<U>
@@ -34,7 +63,6 @@ public func AssertArraysSameLength<T,U>(
         throw IncompatibleArrayLengthException<U>(ys, xs.size(), true)
     }
 }
-
 public func AssertArrayHasLength<T>(
     xs : Array<T>,
     n : Int64
@@ -43,7 +71,6 @@ public func AssertArrayHasLength<T>(
         throw IncompatibleArrayLengthException<T>(xs, n, true)
     }
 }
-
 public func AssertArrayHasMinimumLength<T>(
     xs : Array<T>,
     n : Int64
@@ -52,7 +79,6 @@ public func AssertArrayHasMinimumLength<T>(
         throw IncompatibleArrayLengthException<T>(xs, n, false)
     }
 }
-
 public func AssertObjectHasParameter<T,U>(
     t : T,
     u : U,
@@ -69,7 +95,6 @@ public func AssertObjectHasParameter<T,U>(
         )
     }
 }
-
 public func AssertArrayAllSameParameter<T,U>(
     xs : Array<T>,
     fn : (T) -> U,
@@ -154,4 +179,20 @@ public func AssertTwoSameParameter<T,U,V>(
         )
     }
     xParam
+}
+public func AssertHasParameter<T,U>(
+    t : T,
+    desired : U,
+    fn : (T) -> U,
+    paramType : ParamType
+) : Unit where T <: ToString, U <: ToString, U <: Equatable<U> {
+    let param = fn(t)
+    if (param != desired) {
+        throw IncompatibleParameterException<U,T,U>(
+            paramType,
+            desired,
+            t,
+            param
+        )
+    }
 }

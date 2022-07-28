@@ -1,5 +1,5 @@
 /**
- * values.cj
+ * syntx/value.cj
  *
  * This file contains the values (or signals) that flow in circuits
  *

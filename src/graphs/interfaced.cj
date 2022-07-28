@@ -1,17 +1,41 @@
+/**
+ * graphs/interfaced.cj
+ *
+ * Definition of interfaced hypergraphs
+ *
+ * @author George Kaye
+ * @since 0.2
+ */
+
 package graphs
 
 import syntax.*
 
-public func CloneWithInterfaces(f : Hypergraph, inputs: Array<Vertex>, outputs: Array<Vertex>) : (Hypergraph, Array<Vertex>, Array<Vertex>) {
+/**
+ * Clone a(n uninterfaced) hypergraph with some given input and output arrays
+ * 
+ * @param f The uninterfaced hypergraph
+ * @param inputs The array of inputs
+ * @param outputs The array of outputs
+ * @return A tuple (hypergraph, inputs, outputs)
+ */
+public func CloneWithInterfaces(
+    f : Hypergraph,
+    inputs: Array<Vertex>,
+    outputs: Array<Vertex>
+) : (Hypergraph, Array<Vertex>, Array<Vertex>) {
     let (newF, vertexMap, edgeMap) = f.Clone()
 
-    func translateVertices(ws : Array<Vertex>, exn : ((Vertex) -> Exception)) : Array<Vertex> {
-        map({w : Vertex => unsafeGet(vertexMap, w, exn)}, ws)
+    /**
+     * Given an array of vertices, create an array of the corresponding
+     * vertices in a cloned hypergraph
+     * @param ws The array of vertices
+     */
+    func translateVertices(ws : Array<Vertex>) : Array<Vertex> {
+        map({ w : Vertex => vertexMap[w] }, ws)
     }
-
-    let newInputs = translateVertices(inputs, { v : Vertex => InputNotInHypergraphException("InterfacedHypergraph", f, v)})
-    let newOutputs = translateVertices(outputs, { v : Vertex => OutputNotInHypergraphException("InterfacedHypergraph", f, v)})
-
+    let newInputs = translateVertices(inputs)
+    let newOutputs = translateVertices(outputs)
     (newF, newInputs, newOutputs)
 }
 
@@ -20,30 +44,26 @@ public func CloneWithInterfaces(f : Hypergraph, inputs: Array<Vertex>, outputs: 
     and outputs. Interfaced hypergraphs are *immutable*.
  */
 public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equatable<InterfacedHypergraph> {
-    let uniqueId : Identifier = Identifier()
+    let uniqueId : Int64 = GetNextId()
     let f : Hypergraph
     let inputs : Array<Vertex>
     let outputs : Array<Vertex>
-    let spec : Specification
-
+    let spec : Specifiable
     public init(
         f : Hypergraph,
-        spec : Specification,
+        spec : Specifiable,
         inputs : Array<Vertex>,
         outputs: Array<Vertex>
         
     ){
-        CheckLabelCompatibility(spec, inputs, outputs)
+        CheckSpecCompatibility(spec, inputs, outputs)
         this.f = f
         this.inputs = inputs
         this.outputs = outputs
         this.spec = spec
     }
     public func GetId() : Int64 {
-        this.uniqueId.GetId()
-    }
-    public func GetSpecification() : Specification {
-        this.spec
+        this.uniqueId
     }
     public func GetGraph() : Hypergraph {
         this.f
@@ -61,15 +81,11 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
         this.outputs
     }
     public func GetInput(i : Int64) : Vertex {
-        if (i >= this.inputs.size()) {
-            throw NotEnoughInputsException("GetInput", i, this)
-        }
+        AssertGraphHasMinimumInputs(this, i)
         this.inputs[i]
     }
     public func GetOutput(i : Int64) : Vertex {
-        if (i >= this.outputs.size()) {
-            throw NotEnoughOutputsException("GetOutput", i, this)
-        }
+        AssertGraphHasMinimumOutputs(this, i)
         this.outputs[i]
     }
     public func GetInputs() : Int64 {
@@ -85,7 +101,7 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
         this.spec.GetOutputPorts()
     }
     public func GetName() : String {
-        this.spec.name
+        this.spec.GetName()
     }
     public func toString() : String {
         let string = f.toString()

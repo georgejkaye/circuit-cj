@@ -1,20 +1,38 @@
+/**
+ * graphs/operations.cj
+ *
+ * Operations on interfaced hypergraphs
+ *
+ * @author George Kaye
+ * @since 0.2
+ */
+
 package graphs
 
+/**
+ * Merge two vertices v and w such that v has the in/out-edges of w.
+ * Updates the corresponding edges appropriately; w will be orphaned
+ * after this operation. If both v and w already have an in edge, throws 
+ * an exception: we do not permit vertices to have multiple in edges
+ *
+ * @param v The primary vertex to merge into
+ * @param w The secondary vertex that will be merged
+ * @return A pair (new,old) of the merged vertex and the old vertex
+ */
 public func MergeVertices(v : Vertex, w : Vertex) : (Vertex, Vertex) {
-    
-    let wInEdges = w.GetInEdges()
+    let inEdge = AssertAtMostOneInEdge(v, w)
+    match (inEdge) {
+        case None => ()
+        case Some(ec) => 
+            v.SetInEdge(ec)
+            ec.edge.SetTarget(ec.index, v)
+    }
     let wOutEdges = w.GetOutEdges() 
-    
-    v.AddAllInEdges(w.GetInEdges())
     v.AddAllOutEdges(w.GetOutEdges())
-
-    for ((e, i) in wInEdges) {
-        e.SetTarget(i, v)
+    for (e in wOutEdges) {
+        e.edge.SetSource(e.index, v)
     }
-    for ((e, i) in wOutEdges) {
-        e.SetSource(i, v)
-    }
-
+    // Make sure the old vertex isn't part of a hypergraph any more
     match(w.GetOwner()) {
         case None => ()
         case Some(g) => g.RemoveVertex(w)
@@ -22,7 +40,17 @@ public func MergeVertices(v : Vertex, w : Vertex) : (Vertex, Vertex) {
     (v, w)
 }
 
-func CloneOrRetain(f : InterfacedHypergraph, clone : Bool) : (Hypergraph, Array<Vertex>, Array<Vertex>) {
+/**
+ * Depending on a flag, clone an interfaced hypergraph, or just get a
+ * tuple of its underlying graph and its interfaced
+ * @param f The interfaced hypergraph
+ * @param clone Whether or not to clone it
+ * @return A tuple (graph, inputs, outputs)
+ */
+func CloneOrRetain(
+    f : InterfacedHypergraph,
+    clone : Bool
+) : (Hypergraph, Array<Vertex>, Array<Vertex>) {
     if(clone) {
         f.Clone()
     } else {
@@ -30,10 +58,18 @@ func CloneOrRetain(f : InterfacedHypergraph, clone : Bool) : (Hypergraph, Array<
     }
 }
 
-func Seq(f : InterfacedHypergraph, g : InterfacedHypergraph, clone : Bool) : InterfacedHypergraph {
-    if (f.GetOutputPorts() != g.GetInputPorts()){
-        throw OutputInputMismatchException("Seq", f, g)
-    }
+/**
+ * Sequentially compose two interfaced hypergraphs with compatible interfaces
+ * @param f The first interfaced hypergraph m->n
+ * @param g The second interfaced hypergraph n->p
+ * @return The composed hypergraph m->p
+ */
+func Seq(
+    f : InterfacedHypergraph,
+    g : InterfacedHypergraph,
+    clone : Bool
+) : InterfacedHypergraph {
+    AssertCompatibleInputOutput(f, g)
 
     let (newF, newFInputs, newFOutputs) = CloneOrRetain(f, clone)
     let (newG, newGInputs, newGOutputs) = CloneOrRetain(g, clone)
@@ -55,7 +91,7 @@ func Seq(f : InterfacedHypergraph, g : InterfacedHypergraph, clone : Bool) : Int
     let newGraph = Hypergraph(newVertices, newEdges)
     InterfacedHypergraph(
         newGraph, 
-        Specification(
+        USER(
             "${f.GetName()} ⨟ ${g.GetName()}}",
             f.GetInputPorts(),
             g.GetOutputPorts()
@@ -117,7 +153,7 @@ func Par(f : InterfacedHypergraph, g : InterfacedHypergraph, clone : Bool) : Int
     
     InterfacedHypergraph(
         newGraph,
-        Specification(
+        USER(
             "${f.GetName()} ⊗ ${g.GetName()}}",
             newInputPorts,
             newOutputPorts

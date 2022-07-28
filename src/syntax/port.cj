@@ -1,5 +1,5 @@
 /**
- * ports.cj
+ * syntax/ports.cj
  *
  * This file contains the definition of ports with a width and a(n optional) name
  * 

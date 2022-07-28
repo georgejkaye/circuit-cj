@@ -1,5 +1,5 @@
 /**
- * labels.cj
+ * syntax/label.cj
  *
  * This file contains the definition of generators 
  * (in the free categorical sense)

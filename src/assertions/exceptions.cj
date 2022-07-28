@@ -1,5 +1,5 @@
 /**
- * exceptions.cj
+ * assertions/exceptions.cj
  * 
  * @author George Kaye
  * @since 0.2
@@ -45,13 +45,19 @@ class IncompatibleParameterException<T,U,V> <: Exception where T <: ToString,
     ) {
         ErrorMsg("When checking that ${target} and ${current} have the same ${paramType}, found that ${target} has ${targetParams} but ${current} has ${currentParams}")
     }
-     public init(
+    public init(
         paramType : ParamType,
         targetParam : T,
         current : U,
         currentParam : T
     ){
         ErrorMsg("When checking that ${current} has ${paramType} ${targetParam}, found that ${current} has ${paramType} ${currentParam}")
+    }
+    public init(
+        paramType : ParamType,
+        current : Option<T>
+    ){
+        ErrorMsg("When checking that ${current} is not None, found that it was None")
     }
 }
 

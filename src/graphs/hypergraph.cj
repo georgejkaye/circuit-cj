@@ -1,3 +1,10 @@
+/**
+ * graphs/hypergraph.cj
+ * 
+ * @author George Kaye
+ * @since 0.1
+ */
+
 package graphs
 
 import prelude.*
@@ -32,26 +39,31 @@ extend WellformednessIssue <: ToString {
     }
 }
 
-public class Hypergraph <: Identifiable & ToString & Nameable & Equatable<Hypergraph> {
+/**
+ * A hypergraph contains a set of (hyper)edges and vertices.
+ * These hypergraphs are not interfaced.
+ */
+public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Hashable {
     
-    let uniqueId : Identifier = Identifier()
+    let id : Int64 = GetNextId()
     let name : String
     let vertices : HashSet<Vertex>
     let edges : HashSet<Edge>
 
-    var active : Bool = true
-
     public init (vertices : HashSet<Vertex>, edges : HashSet<Edge>){
         this.vertices = vertices
         this.edges = edges
-        this.name = "h${this.uniqueId}"
+        this.name = "h${this.id}"
 
         for (v in this.vertices) {
             v.SetOwner(this)
         }
         for (e in this.edges) {
-            e.RemoveAndSetOwner(this)
+            e.SetOwner(this)
         }
+    }
+    public func hashCode() : Int64 {
+        this.id
     }
     public func GetEdges() : HashSet<Edge> {
         this.edges
@@ -59,7 +71,7 @@ public class Hypergraph <: Identifiable & ToString & Nameable & Equatable<Hyperg
     public func AddEdge(e : Edge) : Unit {
         this.edges.put(e)
         e.ForEachSourceAndTarget({ v : Vertex, i : Int64 => this.vertices.put(v)})
-        e.RemoveAndSetOwner(this)
+        e.SetOwner(this)
     }
     public func GetVertices() : HashSet<Vertex> {
         this.vertices
@@ -109,6 +121,9 @@ public class Hypergraph <: Identifiable & ToString & Nameable & Equatable<Hyperg
         this.vertices.put(w)
     }
     public func toString() : String {
+        this.GetName()
+    }
+    public func toLongString() : String {
         let vertexString = this.vertices.toString()
         let edgeString = this.edges.toString()
         let sourceTargetString = fold_left(
@@ -145,10 +160,10 @@ public class Hypergraph <: Identifiable & ToString & Nameable & Equatable<Hyperg
         "V = ${vertexString}\nE = ${edgeString}"
     }
     public func GetId() : Int64 {
-        this.uniqueId.GetId()
+        this.id
     }
     public func GetName() : String {
-        "hg${this.uniqueId.GetId()}"
+        "hg${this.id}"
     }
     public operator func ==(right: Hypergraph) : Bool {
         this.GetId() == right.GetId()
@@ -156,6 +171,12 @@ public class Hypergraph <: Identifiable & ToString & Nameable & Equatable<Hyperg
     public operator func !=(right : Hypergraph) : Bool {
         this.GetId() != right.GetId()
     }
+    /**
+     * Create a brand new hypergraph with the same connectivity as the
+     * original but with new vertices and edges
+     * @return A tuple (hypergraph, vertex map, edge map) where the two hashmaps
+     * relate the original versions of vertices/edges with the new copies
+     */
     public func Clone() : (Hypergraph, HashMap<Vertex,Vertex>, HashMap<Edge,Edge>) {
         let newVertices = HashSet<Vertex>()
         let vertexMap = HashMap<Vertex,Vertex>()
@@ -178,29 +199,32 @@ public class Hypergraph <: Identifiable & ToString & Nameable & Equatable<Hyperg
     }
 }
 
+/** 
+ * Given an array of vertices, produce a new hypergraph that contains all the
+ * elements of their owners.
+ *
+ * @param vs The array of vertices
+ * @return The new hypergraph containing the elements of the owners
+ */
 public func CombineGraphs(vs : Array<Vertex>) : Hypergraph {
-    let owners = ArrayList<Hypergraph>()
+    // Find all the owners
+    let owners = HashSet<Hypergraph>()
     for (v in vs) {
-        let owner = v.GetOwner()
-        match(owner) {
-            case None => throw NotOwnedException("CombineGraphs", v)
-            case Some(o) => 
-                if (!owners.contains(o)) {
-                    owners.add(o)
-                }
-        }
+        let owner = AssertOwned(v)
+        owners.put(owner)
     }
-
+    // Collect together the vertices and edges in the owners
     let vertices = HashSet<Vertex>()
     let edges = HashSet<Edge>()
-
     for (owner in owners) {
         let currentVertices = owner.GetVertices()
         let currentEdges = owner.GetEdges()
+        // Remove the old owner of the vertices
         for(v in currentVertices) {
             v.RemoveOwner()
         }
         vertices.putAll(currentVertices)
+        // Remove the old owner of the edges
         for(e in currentEdges){
             e.RemoveOwner()
         }

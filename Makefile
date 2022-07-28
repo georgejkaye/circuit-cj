@@ -21,7 +21,7 @@ PACKAGES = $(foreach pkg, $(shell find $(SRC_DIR)/* -name $(LEGACY_DIR) -prune -
 # The corresponding object files for each package
 OBJS = $(foreach pkg, $(PACKAGES),$(BUILD_DIR)/$(pkg).$(MIDDLE_EXT))
 # All the dot files in dot/
-DOTS = $(shell find $(DOT_DIR)/*.dot)
+DOTS = $@(shell find $(DOT_DIR)/*.dot)
 # Dot svgs
 DOTS_SVGS = $(foreach dot, $(DOTS), $(dot).svg)
 
@@ -31,7 +31,8 @@ all: prep $(PACKAGES) main
 
 # Make the build directory
 prep:
-	@mkdir -p $(BUILD_DIR)
+	mkdir -p $(BUILD_DIR)
+	mkdir -p $(DOT_DIR)
 
 # Build all packages in src/
 library: prep $(PACKAGES)
@@ -42,10 +43,10 @@ main: prep $(MAIN).$(OUT_EXT)
 dot: $(DOTS_SVGS)
 
 cleandot:
-	rm $(DOT_DIR)/*
+	rm -f $(DOT_DIR)/*
 
 # Clean up
-clean: cleandot
+clean:
 	rm -rf $(BUILD_DIR) $(MAIN).$(OUT_EXT)
 
 

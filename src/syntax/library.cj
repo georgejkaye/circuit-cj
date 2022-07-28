@@ -1,5 +1,5 @@
 /**
- * library.cj
+ * syntax/library.cj
  *
  * This file is a library of components that make up
  * our circuits
@@ -109,20 +109,22 @@ public enum Composite {
     | XOR(Int64, Int64)
     | XNOR(Int64, Int64)
     | MUX(Int64, Int64, Int64)
+    | USER(String, Array<Port>, Array<Port>)
 
 }
 extend Composite <: Specifiable {
     public func GetName() : String {
         match(this) {
-            case BUF(w)       => "BUF_${w}"
-            case NOT(w)       => "NOT_${w}"
-            case AND(n, w)    => "AND${n}_${w}"
-            case OR(n, w)     => "OR${n}_${w}"
-            case NAND(n, w)   => "NAND${n}_${w}"
-            case NOR(n, w)    => "NOR${n}_${w}"
-            case XOR(n, w)    => "XOR${n}_${w}"
-            case XNOR(n, w)   => "XNOR${n}_${w}"
-            case MUX(n, c, w) => "MUX${n}_${c}_${w}"
+            case BUF(w)        => "BUF_${w}"
+            case NOT(w)        => "NOT_${w}"
+            case AND(n, w)     => "AND${n}_${w}"
+            case OR(n, w)      => "OR${n}_${w}"
+            case NAND(n, w)    => "NAND${n}_${w}"
+            case NOR(n, w)     => "NOR${n}_${w}"
+            case XOR(n, w)     => "XOR${n}_${w}"
+            case XNOR(n, w)    => "XNOR${n}_${w}"
+            case MUX(n, c, w)  => "MUX${n}_${c}_${w}"
+            case USER(s, _, _) => s
         }
     }
     public func GetInputPorts() : Array<Port> {
@@ -144,6 +146,7 @@ extend Composite <: Specifiable {
                             Port(w, numToUppercaseLetter(i - c + 1))
                         }
                 }
+            case USER(_, i, _) => i
         }
     }
     public func GetNoInputs() : Int64 {
@@ -151,15 +154,16 @@ extend Composite <: Specifiable {
     }
     public func GetOutputPorts() : Array<Port> {
         match(this) {
-            case BUF(w)       => [Port(1, "Z")]
-            case NOT(w)       => [Port(1, "Z")]
-            case AND(n, w)    => [Port(1, "Z")]
-            case OR(n, w)     => [Port(1, "Z")]
-            case NAND(n, w)   => [Port(1, "Z")]
-            case NOR(n, w)    => [Port(1, "Z")]
-            case XOR(n, w)    => [Port(1, "Z")]
-            case XNOR(n, w)   => [Port(1, "Z")]
-            case MUX(n, c, w) => [Port(1, "Z")]
+            case BUF(_)        => [Port(1, "Z")]
+            case NOT(_)        => [Port(1, "Z")]
+            case AND(_, _)     => [Port(1, "Z")]
+            case OR(_, _)      => [Port(1, "Z")]
+            case NAND(_, _)    => [Port(1, "Z")]
+            case NOR(_, _)     => [Port(1, "Z")]
+            case XOR(_, _)     => [Port(1, "Z")]
+            case XNOR(_, _)    => [Port(1, "Z")]
+            case MUX(_, _, _)  => [Port(1, "Z")]
+            case USER(_, _, o) => o
         }
     }
     public func GetNoOutputs() : Int64 {
