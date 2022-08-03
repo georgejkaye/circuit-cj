@@ -10,12 +10,6 @@ import syntax.*
 import graphs.*
 import debug.*
 
-func PadFront(xs : ArrayList<Bool>, width: Int64) : Unit {
-    for (i in 0..(width - xs.size())){
-        xs.prepend(false)
-    }
-}
-
 /**
  * Convert a decimal number to a list of truth values
  * The list is ordered with the lsb first
@@ -44,7 +38,11 @@ func UnsignedDecToBin(x : Int64, w : Int64) : Array<Bool> {
     }
     return bin
 }
-
+/**
+ * 'Add one' to an array of booleans, i.e. flip the lowest bit and
+ * propagate the changes throughout the list
+ * @param x The array of booleans
+ */
 func AddOne(x : Array<Bool>) : Unit {
     for (i in 0..(x.size()-1)) {
         let j = x.size() - 1 - i
@@ -56,54 +54,97 @@ func AddOne(x : Array<Bool>) : Unit {
         }
     }
 }
-
+/**
+ * Invert an array of bools, i.e. flip each bit
+ * @param x The array of booleans
+ */
 func Invert(x : Array<Bool>) : Unit {
     for (i in 0..(x.size())){
         x[i] = !x[i]
     }
 }
-
+/**
+ * Convert a decimal number to a bitstring of a fixed length,
+ * interpreted as an array of booleans
+ * @param x The number to convert
+ * @param w The width of the bitstring
+ * @return The corresponding bitstring
+ */
 func SignedDecToBin(x : Int64, w : Int64) : Array<Bool> {
     let bin = UnsignedDecToBin(abs(x), w)
     Invert(bin)
     AddOne(bin)
     bin
 }
-
+/**
+ * Create an edge for a given value
+ * @param vs The array of values
+ * @param signed Whether the number is signed
+ * @return The output wire
+ */
 public func MakeValue(vs : Array<Value>, signed : Bool) : Wire {
-    MakeEdge(
-        VALUE(vs, signed),
+    MakeEdgeWithNewOutputs(
+        VALUE(
+            ValueSpec(vs, signed)
+        ),
         Array<Wire>(),
         [vs.size()],
         None
     )[0]
 }
-
+/**
+ * Create an edge for a given value
+ * @param vs The array of booleans
+ * @param signed Whether the number is signed
+ * @return The output wire
+ */
 public func MakeValue(vs : Array<Bool>, signed : Bool) {
     MakeValue(map({ b : Bool => if(b){ True } else { False }}, vs), signed)
 }
-
+/**
+ * Use an unsigned value for a given number
+ * @param x The number to convert
+ * @param width The width of the resulting bitstring
+ * @return The wire of the value
+ */
 public func UnsignedValueFromInt(x : Int64, width!: Int64) : Wire {
     let bin = UnsignedDecToBin(x, width)
     MakeValue(bin, false)
 }
-
+/**
+ * Use a signed value for a given number
+ * @param x The number to convert
+ * @param width The width of the resulting bitstring
+ * @return The wire of the value
+ */
 public func SignedValueFromInt(x : Int64, width!: Int64) : Wire {
     let bin = SignedDecToBin(x, width)
     MakeValue(bin, true)
 }
-
-public func Zero(width: Int64) {
+/**
+ * Create a zero value for a given width, i.e. all falses
+ * @param width The width of the bitstring
+ * @return The wire of the value
+ */
+public func Zero(width: Int64) : Wire {
     let values = Array<Value>(width){ i : Int64 => False }
     MakeValue(values, false)
 }
-
+/**
+ * Create a constant zero waveform for a given width, i.e. all falses
+ * @param width The width of the bitstring
+ * @return The wire of the value
+ */
 public func ConstantZero(width: Int64) {
     let value = Zero(width)
     InfiniteWaveform(value)
 }
-
-public func UnsignedExtend(w : Wire) {
+/**
+ * Perform an unsigned extension on a wire, i.e. add a false as its msb
+ * @param w The input wire
+ * @return The wire with an extra bit
+ */
+public func UnsignedExtend(w : Wire) : Wire {
     let value = InfiniteWaveform(False)
     Combine([value, w])
 }

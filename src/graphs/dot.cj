@@ -175,7 +175,7 @@ func MakeElem(
  * @param id The id string of the parent edge
  * @param elementContent The
  */
-func EdgeVerticesToTable(ports : Array<Port>, id : String, elementContent : ArrayList<DotLine>) : Unit {
+func EdgeVerticesToTable(ports : Array<Socket>, id : String, elementContent : ArrayList<DotLine>) : Unit {
     let content = ArrayList<DotLine>()
     // Each port is its own row
     for (i in 0..ports.size()) {
@@ -183,9 +183,9 @@ func EdgeVerticesToTable(ports : Array<Port>, id : String, elementContent : Arra
         let td = ArrayList<DotLine>()
         // The port contains the port name (if one is given)
         // and the width of the port
-        let portText = match(port.name){
-            case None => "${port.width}"
-            case Some(str) => "${str}:${port.width}"
+        let portText = match(port.GetName()){
+            case None => "${port.GetWidth()}"
+            case Some(str) => "${str}:${port.GetWidth()}"
         }
         MakeElem(
             "td",
@@ -211,8 +211,8 @@ func EdgeVerticesToTable(ports : Array<Port>, id : String, elementContent : Arra
  */
 func DrawEdgeNode(e : Edge, content : ArrayList<DotLine>) : Unit {
     let (style, label) = match(e.GetLabel()){
-        case VALUE(values, signed) => 
-            (valueStyle, PrintValue(values, signed, GetDotNumberRepresentation()))
+        case VALUE(spec) =>
+            (valueStyle, spec.GetValueAsRepresentation(GetDotNumberRepresentation()))
         case BUNDLER(ms,ns) => 
             (compressorStyle, if (ms.size() < ns.size()) { "◁" } else { "▷" })
         case JOIN(width) => 
@@ -248,16 +248,16 @@ func DrawEdgeNode(e : Edge, content : ArrayList<DotLine>) : Unit {
  * @param targets The list of target vertices
  * @param content The list of content dotlines so far
  */
-func DrawEdgelikeNode(
+func DrawEdgelikeNode<T>(
     id : String, 
-    label : String, 
+    label : Option<String>,
     style : Array<(String, String)>,
-    sources : Array<Vertex>,
-    sourcePorts : Array<Port>,
-    targets : Array<Vertex>,
-    targetPorts : Array<Port>,
+    sources : Array<T>,
+    sourcePorts : Array<Socket>,
+    targets : Array<T>,
+    targetPorts : Array<Socket>,
     content : ArrayList<DotLine>
-) : Unit {
+) : Unit where T <: ContainsVertex {
     /**
      * Append dotlines for the ports on the left or right of the edge
      * to a list of edge dotlines
@@ -267,8 +267,8 @@ func DrawEdgelikeNode(
      * @param edgeContent The list of dotlines to append to
      */
     func DrawPorts(
-        array : Array<Vertex>, 
-        ports : Array<Port>,
+        array : Array<T>,
+        ports : Array<Socket>,
         id : String, 
         edgeContent : ArrayList<DotLine>
     ) : Unit {
@@ -282,6 +282,10 @@ func DrawEdgelikeNode(
     let edgeContent = ArrayList<DotLine>()
     // Draw the sources on the left
     DrawPorts(sources, sourcePorts, "w", edgeContent)
+    let labelText = match(label) {
+        case None    => ""
+        case Some(l) => l
+    }
     // Draw the label on the middle
     MakeElem(
         "td",
@@ -289,9 +293,9 @@ func DrawEdgelikeNode(
         ArrayList<DotLine>([
             DotLine(
                 if(IsDebugDot()){
-                    "${id}: ${label}"
+                    "${id}: ${labelText}"
                 } else {
-                    label
+                    labelText
                 },
                 Preserve
             )
@@ -575,9 +579,9 @@ func DrawSubgraph(
  * @param vertexFirst If the connection is from the vertex to the interface (output) or vice versa (input)
  * @param content The list of dotlines so far
  */
-func DrawInterfaceConnections(list : Array<Vertex>, vertexFirst : Bool, content : ArrayList<DotLine>) : Unit {
+func DrawInterfaceConnections(list : Array<InterfaceVertex>, vertexFirst : Bool, content : ArrayList<DotLine>) : Unit {
     for (i in 0..list.size()){
-        let v = list[i]
+        let v = list[i].GetVertex()
         let vText = "v${v.GetId()}"
         let str = if (vertexFirst) {
             let eText = "output:w${i}:w"
@@ -599,24 +603,24 @@ func DrawInterfaceConnections(list : Array<Vertex>, vertexFirst : Bool, content 
  ( @param elementContent The list of element dotlines so far
  */
 func DrawInterface(
-    vertices : Array<Vertex>, 
-    ports : Array<Port>,
+    vertices : Array<InterfaceVertex>,
+    ports : Array<Socket>,
     sink : Bool,
     elementContent : ArrayList<DotLine>
 ) : Unit {
     // The content of the interface edge depends on whether
     // it is a sink edge (output) or source edge (input)
     let (text, opts, sources, targets) = if (sink) {
-        ("output", maxSubgraphOpts, vertices, Array<Vertex>())
+        ("output", maxSubgraphOpts, vertices, Array<InterfaceVertex>())
     } else {
-        ("input", minSubgraphOpts, Array<Vertex>(), vertices)
+        ("input", minSubgraphOpts, Array<InterfaceVertex>(), vertices)
     }
     let subelementContent = ArrayList<DotLine>()
     let (sourcePorts, targetPorts) = 
         if (sink) {
-            (ports, Array<Port>())
+            (ports, Array<Socket>())
         } else {
-            (Array<Port>(), ports)
+            (Array<Socket>(), ports)
         }
     DrawEdgelikeNode(text, "", interfaceStyle, sources, sourcePorts, targets, targetPorts, subelementContent)
     DrawSubgraph(opts, subelementContent, elementContent)

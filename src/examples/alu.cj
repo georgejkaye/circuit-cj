@@ -23,12 +23,12 @@ func FullAdder() {
     let carryAnd = AndGate(inputC, inputXor)
     let carryOr = OrGate(inputAnd, carryAnd)
     MakeSubcircuit([
-        NamedWire(inputA, "A"),
-        NamedWire(inputB, "B"),
-        NamedWire(inputC, "C")
+        InterfaceWire(inputA, "A"),
+        InterfaceWire(inputB, "B"),
+        InterfaceWire(inputC, "C")
     ], [
-        NamedWire(carryXor, "S"),
-        NamedWire(carryOr, "C")
+        InterfaceWire(carryXor, "S"),
+        InterfaceWire(carryOr, "C")
     ], name: "+")
 }
 
@@ -44,12 +44,12 @@ func MultibitFullAdder(width : Int64) {
         c
     )
     MakeSubcircuit([
-        NamedWire(a, "A"),
-        NamedWire(b, "B"),
-        NamedWire(c, "C")
+        InterfaceWire(a, "A"),
+        InterfaceWire(b, "B"),
+        InterfaceWire(c, "C")
     ], [
-        NamedWire(sum, "S"),
-        NamedWire(carry, "C")
+        InterfaceWire(sum, "S"),
+        InterfaceWire(carry, "C")
     ], name: "+_${a.GetWidth()}")
 }
 
@@ -85,13 +85,13 @@ public func AddSub(width : Int64) {
         ])
     )
     MakeSubcircuit([
-        NamedWire(a, "A"),
-        NamedWire(b, "B"),
-        NamedWire(c, "C")
+        InterfaceWire(a, "A"),
+        InterfaceWire(b, "B"),
+        InterfaceWire(c, "C")
     ], [
-        NamedWire(sum, "Sum"),
-        NamedWire(overflow, "Overflow"),
-        NamedWire(carry, "Carry")
+        InterfaceWire(sum, "Sum"),
+        InterfaceWire(overflow, "Overflow"),
+        InterfaceWire(carry, "Carry")
     ], name: "ADD/SUB")
 }
 
@@ -111,15 +111,15 @@ public func ALU(w : Int64){
     let negative = Msb(result)
 
     MakeSubcircuit([
-        NamedWire(a, "A"),
-        NamedWire(b, "B"),
-        NamedWire(c0, "C0"),
-        NamedWire(c1, "C1")
+        InterfaceWire(a, "A"),
+        InterfaceWire(b, "B"),
+        InterfaceWire(c0, "C0"),
+        InterfaceWire(c1, "C1")
     ], [
-        NamedWire(result, "Result"),
-        NamedWire(zero, "Zero"),
-        NamedWire(negative, "Neg"),
-        NamedWire(overflow, "Overflow"),
-        NamedWire(carry, "Carry")
+        InterfaceWire(result, "Result"),
+        InterfaceWire(zero, "Zero"),
+        InterfaceWire(negative, "Neg"),
+        InterfaceWire(overflow, "Overflow"),
+        InterfaceWire(carry, "Carry")
     ], name: "ALU")
 }

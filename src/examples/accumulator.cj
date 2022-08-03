@@ -16,8 +16,8 @@ public func Accumulator(width!: Int64, initial!: Int64){
     let (sum, carry) = Plus(reg, input)
     Feedback(sum, prev)
     MakeSubcircuit([
-        NamedWire(input, "A")
+        InterfaceWire(input, "A")
     ], [
-        NamedWire(sum, "S")
+        InterfaceWire(sum, "S")
     ])
 }

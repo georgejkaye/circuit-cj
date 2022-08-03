@@ -1,4 +1,4 @@
-/** 
+/**
  * serial-multiplier.cj
  *
  * This example has been taken from the Hardcaml repo:
@@ -35,7 +35,7 @@ func RunningSumLoop(first: Wire, a : Wire, b0 : Wire) : (Wire, Wire) {
 func ComputedBits(bit : Wire, width : Int64) : Wire {
     let prev = MakeWire(width)
     let msbs = Msbs(prev)
-    let combined = Combine([bit, msbs]) 
+    let combined = Combine([bit, msbs])
     DelayedFeedback(combined, prev)
     combined
 }
@@ -48,10 +48,10 @@ public func SerialMultiplierBit(width : Int64) {
     let computedBits = ComputedBits(bit, width)
     let output = Combine([sum, computedBits])
     MakeSubcircuit([
-        NamedWire(first, "first"),
-        NamedWire(a, "A"),
-        NamedWire(b0, "B0")
+        InterfaceWire(first, "first"),
+        InterfaceWire(a, "A"),
+        InterfaceWire(b0, "B0")
     ], [
-        NamedWire(output, "Output")
+        InterfaceWire(output, "Output")
     ])
 }

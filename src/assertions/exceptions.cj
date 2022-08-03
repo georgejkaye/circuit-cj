@@ -18,41 +18,53 @@ public func ErrorMsg(msg : String) : Unit {
 
 /**
  * Exception for when associated parameters of two objects are not equal.
- * 
+ *
  * @param T The type of the first object, has ToString
  * @param U The type of the second object, has ToString
  * @param V The type of the parameter, has ToString
  */
-class IncompatibleParameterException<T,U,V> <: Exception where T <: ToString, 
-                                                                U <: ToString, 
-                                                                V <: ToString 
+class IncompatibleParameterException3<T,U,V> <: Exception where T <: ToString,
+                                                                U <: ToString,
+                                                                V <: ToString
 {
     public init(
         paramType : ParamType,
-        target : T,
-        targetParam : V,
-        current : U,
-        currentParam : V
+        current : T,
+        currentParam : V,
+        target : U,
+        targetParam : V
     ) {
-        ErrorMsg("When checking that ${target} and ${current} have the same ${paramType}, found that ${target} has ${targetParam} but ${current} has ${currentParam}")
+        ErrorMsg("When checking that ${current} has the same ${paramType} as ${target}, found that ${current} has ${currentParam} while ${target} has ${targetParam}")
     }
     public init(
         paramType : ParamType,
-        target: Array<T>,
-        targetParams : Array<V>,
-        current: Array<U>,
-        currentParams : Array<V>
+        current: Array<T>,
+        currentParams : Array<V>,
+        target: Array<U>,
+        targetParams : Array<V>
     ) {
-        ErrorMsg("When checking that ${target} and ${current} have the same ${paramType}, found that ${target} has ${targetParams} but ${current} has ${currentParams}")
+        ErrorMsg("When checking that ${current} has the same ${paramType} as ${target}, found that ${current} has ${currentParams} while ${target} has ${targetParams}")
     }
+}
+class IncompatibleParameterException2<T, V> <: Exception where T <: ToString, V <: ToString {
     public init(
         paramType : ParamType,
-        targetParam : T,
-        current : U,
-        currentParam : T
+        current : T,
+        currentParam : V,
+        targetParam : V
     ){
-        ErrorMsg("When checking that ${current} has ${paramType} ${targetParam}, found that ${current} has ${paramType} ${currentParam}")
+        ErrorMsg("When checking that ${current} has ${paramType} of value ${targetParam}, found that it has ${currentParam}")
     }
+    public init(
+        paramType : ParamType,
+        current: Array<T>,
+        currentParams : Array<V>,
+        target: V
+    ) {
+        ErrorMsg("When checking that each element of ${current} has ${paramType} of value ${target}, found that ${current} has values ${currentParams}")
+    }
+}
+class IncompatibleParameterException<T> <: Exception where T <: ToString {
     public init(
         paramType : ParamType,
         current : Option<T>
@@ -80,5 +92,17 @@ class IncompatibleArrayLengthException<T> <: Exception where T <: ToString {
     public init(xs : Array<T>, n : Int64, exact : Bool) {
         let exactText = if (exact) { "" } else { " at least"}
         ErrorMsg("Expected an array of ${exactText}length ${n} but ${xs} is of length ${xs.size()}")
+    }
+}
+
+class InsufficientParameterException2<T, U> <: Exception where T <: ToString, U <: ToString {
+    public init(paramType : ParamType, t : T, currentParam : U, u : U) {
+        ErrorMsg("Expected ${t} to have ${paramType} of value at least ${u} but it only has ${t}")
+    }
+}
+
+class InsufficientParameterException <: Exception {
+    public init(i : Int64, t : Int64) {
+        ErrorMsg("Expected ${i} to be greater than or equal to ${t}")
     }
 }

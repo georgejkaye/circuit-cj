@@ -32,16 +32,16 @@ func ALU() {
     let mux = Mux4(sum, and2, a, b, s1, s0)
 
     MakeSubcircuit([
-        NamedWire(a, "A"), 
-        NamedWire(b, "B"),
-        NamedWire(s0, "S0"), 
-        NamedWire(s1, "S1"),
-        NamedWire(s2, "S2"),
-        NamedWire(s3, "S3"),
-        NamedWire(s4, "S4")
+        InterfaceWire(a, "A"), 
+        InterfaceWire(b, "B"),
+        InterfaceWire(s0, "S0"), 
+        InterfaceWire(s1, "S1"),
+        InterfaceWire(s2, "S2"),
+        InterfaceWire(s3, "S3"),
+        InterfaceWire(s4, "S4")
     ], [
-        NamedWire(mux, "Z"),
-        NamedWire(carry, "Cout")
+        InterfaceWire(mux, "Z"),
+        InterfaceWire(carry, "Cout")
     ], name: "alu")
 }
 
@@ -111,12 +111,12 @@ func Register(w : Int64) : InterfacedHypergraph {
         Combine(lhs, rhs)
     }
     MakeSubcircuit([
-        NamedWire(d, "D"),
-        NamedWire(clr, "CLR"),
-        NamedWire(ce, "CE"),
-        NamedWire(clk, "CLK")
+        InterfaceWire(d, "D"),
+        InterfaceWire(clr, "CLR"),
+        InterfaceWire(ce, "CE"),
+        InterfaceWire(clk, "CLK")
     ], [
-        NamedWire(outputs, "Q")
+        InterfaceWire(outputs, "Q")
     ], name: "register_${w}")
 }
 
@@ -133,14 +133,14 @@ func SequenceGenerator() {
 
     Feedback(reg4, fb)
     MakeSubcircuit([
-        NamedWire(clk, "CLK"),
-        NamedWire(ce, "CE"),
-        NamedWire(clr, "CLR")
+        InterfaceWire(clk, "CLK"),
+        InterfaceWire(ce, "CE"),
+        InterfaceWire(clr, "CLR")
     ], [
-        NamedWire(reg1, "F"),
-        NamedWire(reg2, "D"),
-        NamedWire(reg3, "E"),
-        NamedWire(reg4, "I")
+        InterfaceWire(reg1, "F"),
+        InterfaceWire(reg2, "D"),
+        InterfaceWire(reg3, "E"),
+        InterfaceWire(reg4, "I")
     ], name: "sequence_generator")
 }
 
@@ -161,19 +161,19 @@ func InstructionDecoder() {
     let jumpc = And([jump_condition, bits[3], Not(bits[2])])
     let jumpnc = And([jump_condition, bits[3], bits[2]])
     MakeSubcircuit([
-        NamedWire(a, "A")
+        InterfaceWire(a, "A")
     ], [
-        NamedWire(add, "ADD"),
-        NamedWire(load, "LOAD"),
-        NamedWire(output, "OUTPUT"),
-        NamedWire(input, "INPUT"),
-        NamedWire(jumpz, "JUMPZ"),
-        NamedWire(jump, "JUMP"),
-        NamedWire(jumpnz, "JUMPNZ"),
-        NamedWire(jumpc, "JUMPC"),
-        NamedWire(jumpnc, "JUMPNC"),
-        NamedWire(sub, "SUB"),
-        NamedWire(bitand, "BITAND")
+        InterfaceWire(add, "ADD"),
+        InterfaceWire(load, "LOAD"),
+        InterfaceWire(output, "OUTPUT"),
+        InterfaceWire(input, "INPUT"),
+        InterfaceWire(jumpz, "JUMPZ"),
+        InterfaceWire(jump, "JUMP"),
+        InterfaceWire(jumpnz, "JUMPNZ"),
+        InterfaceWire(jumpc, "JUMPC"),
+        InterfaceWire(jumpnc, "JUMPNC"),
+        InterfaceWire(sub, "SUB"),
+        InterfaceWire(bitand, "BITAND")
     ], name: "instruction_decoder")
 }
 
@@ -267,25 +267,25 @@ func Decoder() {
     let en_da = Buf(And(execute, Or([load, add, sub, bitand, input])))
 
     MakeSubcircuit([
-        NamedWire(ir, "IR"),
-        NamedWire(carry, "Carry"),
-        NamedWire(zero, "Zero"),
-        NamedWire(clk, "CLK"),
-        NamedWire(ce, "CE"),
-        NamedWire(clr, "CLR")
+        InterfaceWire(ir, "IR"),
+        InterfaceWire(carry, "Carry"),
+        InterfaceWire(zero, "Zero"),
+        InterfaceWire(clk, "CLK"),
+        InterfaceWire(ce, "CE"),
+        InterfaceWire(clr, "CLR")
     ], [
-        NamedWire(muxa, "MUXA"),
-        NamedWire(muxb, "MUXB"),
-        NamedWire(muxc, "MUXC"),
-        NamedWire(en_da, "EN_DA"),
-        NamedWire(en_pc, "EN_PC"),
-        NamedWire(en_in, "EN_IN"),
-        NamedWire(ram, "RAM"),
-        NamedWire(alu_s0, "ALU_S0"),
-        NamedWire(alu_s1, "ALU_S1"),
-        NamedWire(alu_s2, "ALU_S2"),
-        NamedWire(alu_s3, "ALU_S3"),
-        NamedWire(alu_s4, "ALU_S4")
+        InterfaceWire(muxa, "MUXA"),
+        InterfaceWire(muxb, "MUXB"),
+        InterfaceWire(muxc, "MUXC"),
+        InterfaceWire(en_da, "EN_DA"),
+        InterfaceWire(en_pc, "EN_PC"),
+        InterfaceWire(en_in, "EN_IN"),
+        InterfaceWire(ram, "RAM"),
+        InterfaceWire(alu_s0, "ALU_S0"),
+        InterfaceWire(alu_s1, "ALU_S1"),
+        InterfaceWire(alu_s2, "ALU_S2"),
+        InterfaceWire(alu_s3, "ALU_S3"),
+        InterfaceWire(alu_s4, "ALU_S4")
     ], name: "decoder")
 }
 
@@ -360,10 +360,10 @@ public func SimpleCPU() {
     )
 
     MakeSubcircuit([
-        NamedWire(nclr, "NCLR"),
-        NamedWire(clk, "CLK"),
-        NamedWire(vcc, "VCC")
+        InterfaceWire(nclr, "NCLR"),
+        InterfaceWire(clk, "CLK"),
+        InterfaceWire(vcc, "VCC")
     ], [
-        NamedWire(serial_out, "SERIAL_OUT")
+        InterfaceWire(serial_out, "SERIAL_OUT")
     ], name: "CPU")
 }

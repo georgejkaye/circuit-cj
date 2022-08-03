@@ -5,7 +5,7 @@
  * @since 0.2
  */
 
-package graphs 
+package graphs
 
 from std import collection.{ArrayList,HashMap}
 
@@ -28,14 +28,14 @@ func CheckSpecCompatibility<T,U>(
     outputs: Array<U>
 ) : Unit where T <: ToString, U <: ToString, T <: HasWidth, U <: HasWidth {
     func CheckArrayCompatibility<T>(
-        desired : Array<Port>,
+        desired : Array<Socket>,
         actual : Array<T>
     ) : Unit where T <: HasWidth, T <: ToString {
-        AssertArrayElementsHaveParameters<T,Port,Int64>(
+        AssertArrayElementsHaveParameters<T,Socket,Int64>(
             actual,
             desired,
             { t : T => t.GetWidth() },
-            { p : Port => p.GetWidth() },
+            { s : Socket => s.GetWidth() },
             Width
         )
     }
@@ -62,7 +62,7 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
         AssertTargetsUnassigned(targets)
         // Check the ports of the label agree
         CheckSpecCompatibility<Vertex, Vertex>(label, sources, targets)
-        let graph = CombineGraphs(sources)
+        let graph = CombineGraphs<Vertex>(sources)
         graph.AddEdge(this)
         ForEachSource({ v : Vertex, i : Int64 => v.AddOutEdge(this, i)})
         ForEachTarget({ v : Vertex, i : Int64 => v.SetInEdge(this, i)})
@@ -103,9 +103,9 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
         ForEachSourceAndTarget({ v, i => v.RemoveOwner() })
     }
     func SetVertex(
-        i : Int64, 
-        newVertex : Vertex, 
-        array : Array<Vertex>, 
+        i : Int64,
+        newVertex : Vertex,
+        array : Array<Vertex>,
         vertexFn : (Vertex) -> Unit
     ) : Unit {
             array[i] = newVertex
@@ -120,7 +120,7 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
         )
     }
     public func SetTarget(i : Int64, newVertex : Vertex) : Unit {
-        AssertNoInEdge(newVertex)
+        AssertVertexHasNoInEdge(newVertex)
         SetVertex(
             i,
             newVertex,
@@ -147,9 +147,9 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
         this.targets.size()
     }
     public func toString() : String {
-        this.GetName()
+        "e${this.GetId()}"
     }
-    public func GetName() : String {
+    public func GetName() : Option<String> {
         "e${this.GetId()}"
     }
     public operator func ==(right: Edge) : Bool {
@@ -158,10 +158,10 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
     public operator func !=(right : Edge) : Bool {
         this.GetId() != right.GetId()
     }
-    public func GetInputPorts() : Array<Port> {
+    public func GetInputPorts() : Array<Socket> {
         this.label.GetInputPorts()
     }
-    public func GetOutputPorts() : Array<Port> {
+    public func GetOutputPorts() : Array<Socket> {
         this.label.GetOutputPorts()
     }
     public func hashCode() : Int64 {

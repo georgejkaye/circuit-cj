@@ -19,8 +19,10 @@ package graphs
  * @param w The secondary vertex that will be merged
  * @return A pair (new,old) of the merged vertex and the old vertex
  */
-public func MergeVertices(v : Vertex, w : Vertex) : (Vertex, Vertex) {
-    let inEdge = AssertAtMostOneInEdge(v, w)
+public func MergeVertices<T, U>(t : T, u : U) : (Vertex, Vertex) where T <: ContainsVertex, U <: ContainsVertex {
+    let inEdge = AssertAtMostOneInEdge(t, u)
+    let v = t.GetVertex()
+    let w = u.GetVertex()
     match (inEdge) {
         case None => ()
         case Some(ec) => 
@@ -50,7 +52,7 @@ public func MergeVertices(v : Vertex, w : Vertex) : (Vertex, Vertex) {
 func CloneOrRetain(
     f : InterfacedHypergraph,
     clone : Bool
-) : (Hypergraph, Array<Vertex>, Array<Vertex>) {
+) : (Hypergraph, Array<InterfaceVertex>, Array<InterfaceVertex>) {
     if(clone) {
         f.Clone()
     } else {
@@ -81,7 +83,7 @@ func Seq(
     let fVertices = newF.GetVertices()
     let gVertices = newG.GetVertices()
 
-    gVertices.removeAll(newGInputs)
+    gVertices.removeAll(map({ iv : InterfaceVertex => iv.GetVertex() }, newGInputs))
 
     let newVertices = fVertices
     newVertices.putAll(gVertices)
@@ -91,13 +93,9 @@ func Seq(
     let newGraph = Hypergraph(newVertices, newEdges)
     InterfacedHypergraph(
         newGraph, 
-        USER(
-            "${f.GetName()} ⨟ ${g.GetName()}}",
-            f.GetInputPorts(),
-            g.GetOutputPorts()
-        ),
         newFInputs, 
-        newGOutputs
+        newGOutputs,
+        "${f.GetName()} ⨟ ${g.GetName()}}"
     )
 }
 
@@ -118,14 +116,14 @@ func Par(f : InterfacedHypergraph, g : InterfacedHypergraph, clone : Bool) : Int
     let newEdges = newF.GetEdges()
     newEdges.putAll(newG.GetEdges())
 
-    let newInputs = Array<Vertex>(f.GetInputs() + g.GetInputs()){
+    let newInputs = Array<InterfaceVertex>(f.GetInputs() + g.GetInputs()){
         i => if(i < newFInputs.size()) {
             newFInputs[i]
         } else {
             newGInputs[i - f.GetInputs()]
         }
     } 
-    let newOutputs = Array<Vertex>(f.GetOutputs() + g.GetOutputs()){
+    let newOutputs = Array<InterfaceVertex>(f.GetOutputs() + g.GetOutputs()){
         i => if(i < newFOutputs.size()) {
             newFOutputs[i]
         } else {
@@ -134,32 +132,12 @@ func Par(f : InterfacedHypergraph, g : InterfacedHypergraph, clone : Bool) : Int
     } 
 
     let newGraph = Hypergraph(newVertices, newEdges)
-
-    func MakeParPorts(
-        fArray : Array<Port>,
-        gArray : Array<Port>
-    ) : Array<Port> {
-        Array<Port>(fArray.size() + fArray.size()){
-            i : Int64 => if (i < fArray.size()) {
-                fArray[i]
-            } else {
-                gArray[i - fArray.size()]
-            }
-    }
-    }
-
-    let newInputPorts = MakeParPorts(f.GetInputPorts(), g.GetInputPorts())
-    let newOutputPorts = MakeParPorts(f.GetOutputPorts(), g.GetOutputPorts())
     
     InterfacedHypergraph(
         newGraph,
-        USER(
-            "${f.GetName()} ⊗ ${g.GetName()}}",
-            newInputPorts,
-            newOutputPorts
-        ),
         newInputs, 
-        newOutputs
+        newOutputs,
+        "${f.GetName()} ⊗ ${g.GetName()}}"
     )
 
 }

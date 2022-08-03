@@ -11,7 +11,7 @@ package graphs
  * Global ids for objects
  */
 var nextId = 0
-func GetNextId() : Int64 {
+public func GetNextId() : Int64 {
     let id = nextId
     nextId++
     id

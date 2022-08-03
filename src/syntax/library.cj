@@ -30,6 +30,36 @@ public func numToUppercaseLetter(n : Int64) : String {
     ASCIIToString(64 + UInt32(n))
 }
 
+public record ValueSpec <: ToString & Specifiable {
+    public ValueSpec(
+        let values : Array<Value>,
+        let signed : Bool
+    ){}
+    public func GetName() : Option<String> {
+        PrintValue(this.values, this.signed, BIN)
+    }
+    public func GetValueAsRepresentation(rep : NumberRepresentation) : String {
+        PrintValue(this.values, this.signed, rep)
+    }
+    public func toString() : String {
+        "${values}"
+    }
+    public func GetInputPorts() : Array<Socket> {
+        []
+    }
+    public func GetOutputPorts() : Array<Socket> {
+        [Port(values.size())]
+    }
+    public func GetSize() : Int64 {
+        this.values.size()
+    }
+}
+
+public let BOTTOM : ValueSpec = ValueSpec([Bottom], false)
+public let TRUE   : ValueSpec = ValueSpec([True], false)
+public let FALSE  : ValueSpec = ValueSpec([False], false)
+public let TOP    : ValueSpec = ValueSpec([Top], false)
+
 /**
  * Primitives are the basic building blocks of circuits, i.e.
  * the logic gates that take one bit inputs
@@ -45,7 +75,7 @@ public enum Primitive {
     | XNOR
 }
 extend Primitive <: ToString & Specifiable {
-    public func GetName() : String {
+    public func GetName() : Option<String> {
         match(this) {
             case BUF  => "BUF"
             case NOT  => "NOT"
@@ -57,7 +87,7 @@ extend Primitive <: ToString & Specifiable {
             case XNOR => "XNOR"
         }
     }
-    public func GetInputPorts() : Array<Port> {
+    public func GetInputPorts() : Array<Socket> {
         match(this) {
             case BUF  => [Port(1, "A")]
             case NOT  => [Port(1, "A")]
@@ -72,7 +102,7 @@ extend Primitive <: ToString & Specifiable {
     public func GetNoInputs() : Int64 {
         this.GetInputPorts().size()
     }
-    public func GetOutputPorts() : Array<Port> {
+    public func GetOutputPorts() : Array<Socket> {
         match(this) {
             case BUF  => [Port(1, "Z")]
             case NOT  => [Port(1, "Z")]
@@ -88,118 +118,73 @@ extend Primitive <: ToString & Specifiable {
         this.GetOutputPorts().size()
     }
     public func toString() : String {
-        this.GetName()
+        match(this.GetName()) {
+            case None => ""
+            case Some(s) => s
+        }
+    }
+    /**
+    * Get a name for an 'enhanced' version of this primitive, i.e. one
+    * with thicker input wires (where the primitive will be applied bitwise)
+    * and multiple input wires (where the primitive will be folded across them)
+    *
+    * @param n The number of inputs to the composite gate
+    * @param w The width of each input to the composite gate
+    * @return The name of the composite gate
+    */
+    public func GetEnhancedName(n : Int64, w : Int64) : String {
+        "${this.GetName()}${n}_${w}"
     }
 }
 
 /**
- * Composites are more advanced components that are constructed from 
- * the primitives. 
- * 
- * Users can of course define their own composites, but these are
- * common components so are predefined
+ * A specification defines an arbitrary label with a name and arrays of input/output ports
  */
-public enum Composite {
-    | BUF(Int64)
-    | NOT(Int64)
-    | AND(Int64, Int64)
-    | OR(Int64, Int64)
-    | NAND(Int64, Int64)
-    | NOR(Int64, Int64)
-    | XOR(Int64, Int64)
-    | XNOR(Int64, Int64)
-    | MUX(Int64, Int64, Int64)
-    | USER(String, Array<Port>, Array<Port>)
-
-}
-extend Composite <: Specifiable {
-    public func GetName() : String {
-        match(this) {
-            case BUF(w)        => "BUF_${w}"
-            case NOT(w)        => "NOT_${w}"
-            case AND(n, w)     => "AND${n}_${w}"
-            case OR(n, w)      => "OR${n}_${w}"
-            case NAND(n, w)    => "NAND${n}_${w}"
-            case NOR(n, w)     => "NOR${n}_${w}"
-            case XOR(n, w)     => "XOR${n}_${w}"
-            case XNOR(n, w)    => "XNOR${n}_${w}"
-            case MUX(n, c, w)  => "MUX${n}_${c}_${w}"
-            case USER(s, _, _) => s
-        }
-    }
-    public func GetInputPorts() : Array<Port> {
-        match(this) {
-            case BUF(w)       => GeneratePortArray(1, w)
-            case NOT(w)       => GeneratePortArray(1, w)
-            case AND(n, w)    => GeneratePortArray(n, w)
-            case OR(n, w)     => GeneratePortArray(n, w)
-            case NAND(n, w)   => GeneratePortArray(n, w)
-            case NOR(n, w)    => GeneratePortArray(n, w)
-            case XOR(n, w)    => GeneratePortArray(n, w)
-            case XNOR(n, w)   => GeneratePortArray(n, w)
-            case MUX(n, c, w) => 
-                Array<Port>(c + n){
-                    i : Int64 => 
-                        if (i < c){
-                            Port(1, "SEL${i}")
-                        } else {
-                            Port(w, numToUppercaseLetter(i - c + 1))
-                        }
-                }
-            case USER(_, i, _) => i
-        }
-    }
-    public func GetNoInputs() : Int64 {
-        this.GetInputPorts().size()
-    }
-    public func GetOutputPorts() : Array<Port> {
-        match(this) {
-            case BUF(_)        => [Port(1, "Z")]
-            case NOT(_)        => [Port(1, "Z")]
-            case AND(_, _)     => [Port(1, "Z")]
-            case OR(_, _)      => [Port(1, "Z")]
-            case NAND(_, _)    => [Port(1, "Z")]
-            case NOR(_, _)     => [Port(1, "Z")]
-            case XOR(_, _)     => [Port(1, "Z")]
-            case XNOR(_, _)    => [Port(1, "Z")]
-            case MUX(_, _, _)  => [Port(1, "Z")]
-            case USER(_, _, o) => o
-        }
-    }
-    public func GetNoOutputs() : Int64 {
-        this.GetOutputPorts().size()
-    }
-    public func toString() : String {
-        this.GetName()
-    }
-}
-
-/**
- * A black box is a component that we can't look inside,
- * we only know its external interface
- */
-public record BlackBox <: Specifiable {
-    BlackBox(
-        let name : String,
+public record Specification <: Specifiable {
+    public Specification(
+        let name : Option<String>,
         let inputPorts : Array<Port>,
         let outputPorts : Array<Port>
     ){}
-    public func GetName() : String {
+    public func GetName() : Option<String> {
         this.name
     }
-    public func GetInputPorts() : Array<Port> {
-        this.inputPorts
+    public func GetInputPorts() : Array<Socket> {
+        (this.inputPorts as Array<Socket>).getOrThrow()
     }
     public func GetNoInputs() : Int64 {
         this.GetInputPorts().size()
     }
-    public func GetOutputPorts() : Array<Port> {
-        this.outputPorts
+    public func GetOutputPorts() : Array<Socket> {
+        (this.outputPorts as Array<Socket>).getOrThrow()
     }
     public func GetNoOutputs() : Int64 {
         this.GetOutputPorts().size()
     }
     public func toString() : String {
-        this.GetName()
+        match(this.GetName()){
+            case None => ""
+            case Some(s) => s
+        }
     }
+}
+
+public func GetMuxName(n : Int64, c : Int64, w : Int64) : String {
+    "MUX{n}_${c}_{w}"
+}
+
+public func MuxSpec(n : Int64, c : Int64, w: Int64) : Specification {
+    Specification(
+        "MUX{n}_1_{w}",
+        Array<Port>(c + n){
+            i : Int64 =>
+                let (width, name) = if (i < c) {
+                    (1, "SEL${i}")
+                } else {
+                    (w, numToUppercaseLetter(i - c))
+                }
+                Port(width, name: name)
+        },
+        [Port(w, "Z")]
+    )
 }

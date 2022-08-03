@@ -1,0 +1,185 @@
+/**
+ * components/arithmetic.cj
+ *
+ * Functions for creating subcircuits.
+ *
+ * @author George Kaye
+ * @since 0.2
+ */
+
+package components
+
+import prelude.*
+import syntax.*
+
+/**
+ * Make a subcircuit with some (optionally named) input and
+ * output wires. This circuit can then be used in other subcircuits,
+ * where it will be initially displayed as a single edge, but can
+ * be expanded to show the components if desired.
+ * @param inputs The inputs of the subcircuit
+ * @param outputs The outputs of the subcircuit
+ * @param name The name of the circuit, which will be displayed on its edge
+ * @return The new interfaced hypergraph representing the subcircuit
+ */
+public func MakeSubcircuit(
+    inputs : Array<InterfaceWire>,
+    outputs : Array<InterfaceWire>,
+    name : String
+) : InterfacedHypergraph {
+    let interfaceVertices = concat(inputs, outputs)
+    let graph = CombineGraphs(interfaceVertices)
+    let (newF, newInputs, newOutputs) = CloneWithInterfaces<InterfaceWire>(
+        graph,
+        inputs,
+        outputs
+    )
+    InterfacedHypergraph(
+        newF,
+        newInputs,
+        newOutputs,
+        name
+    )
+}
+/**
+ * Make a circuit that applies a given primitive bitwise, i.e. the primitive
+ * will be applied to each bit of the input wires independently
+ *
+ * @param prim The primitive to apply
+ * @param w The width of the input wires
+ * @return The bitwise gate circuit
+ */
+func MakeBitwiseGate(
+    prim : Primitive,
+    w : Int64
+) : InterfacedHypergraph {
+    let inputs = Array<InterfaceWire>(prim.GetNoInputs()) {
+        i : Int64 => InterfaceWire(w, numToUppercaseLetter(i))
+    }
+    let output = [InterfaceWire(w, "Z")]
+    let bitwise = Bitwise<InterfaceWire>(
+        inputs,
+        { ws : Array<Wire> => [prim.UseGate()(ws)] }
+    )
+    MakeSubcircuit(
+        inputs,
+        output,
+        prim.GetEnhancedName(prim.GetNoInputs(), w)
+    )
+}
+/**
+ * Make a circuit that ripples a given primitive over some inputs, i.e. the primitive
+ * will be applied to each input wire one at a time in succession
+ *
+ * @param prim The primitive to apply
+ * @param n The number of input wires
+ * @param w The width of the input wires
+ * @return The ripple gate circuit
+ */
+func MakeRippleGate(
+    prim : Primitive,
+    n : Int64,
+    w : Int64
+) : InterfacedHypergraph {
+    let inputs = Array<InterfaceWire>(n) {
+        i : Int64 => InterfaceWire(w, numToUppercaseLetter(i))
+    }
+    let output = InterfaceWire(
+        Ripple<InterfaceWire>(
+            inputs,
+            { w : Wire, v : Wire => prim.UseGate()([w, v]) }
+        ),
+        "Z"
+    )
+    MakeSubcircuit(
+        inputs,
+        [output],
+        prim.GetEnhancedName(n, w)
+    )
+}
+/**
+ * Make a circuit that ripples a given primitive over the bits in a single wire,
+ * i.e. the primitive will be applied to each bit wire one at a time in succession
+ *
+ * @param prim The primitive to apply
+ * @param w The width of the input wire
+ * @return The internal ripple gate circuit
+ */
+func MakeInternalRippleGate(
+    prim : Primitive,
+    w : Int64
+) : InterfacedHypergraph {
+    let input = InterfaceWire(w, "A")
+    let output = InterfaceWire(
+        InternalRipple<InterfaceWire>(
+            input,
+            { w : Wire, v : Wire => (prim.UseGate()([w, v])) }
+        ),
+        "Z"
+    )
+    MakeSubcircuit(
+        [input],
+        [output],
+        prim.GetEnhancedName(1, w)
+    )
+}
+/**
+ * Connect a subcircuit to some inputs and get its outputs
+ * @param circuit The circuit to connect
+ * @param inputs The inputs to hook up to the circuit
+ * @return The array of output wires from the subcircuit
+ */
+public func UseSubcircuit<T>(
+    circuit : InterfacedHypergraph,
+    inputs : Array<T>
+) : Array<Wire> where T <: ToString, T <: ContainsWire {
+    AssertWiresHaveWidths<T, Socket>(inputs, circuit.GetInputPorts())
+    let newGraph = circuit.CloneGraph()
+    MakeEdgeWithNewOutputs<T, Socket>(
+        circuit.GetLabel(),
+        inputs,
+        circuit.GetOutputPorts(),
+        newGraph
+    )
+}
+/**
+ * Connect a subcircuit to some inputs and get its outputs
+ * @param circuit The circuit to connect
+ * @param inputs The inputs to hook up to the circuit
+ * @return The output wire of the circuit
+ */
+public func UseSubcircuit_1<T>(
+    circuit : InterfacedHypergraph,
+    inputs : Array<T>
+) : Wire where T <: ToString, T <: ContainsWire {
+    AssertCircuitOutputs(circuit, 1)
+    UseSubcircuit<T>(circuit, inputs)[0]
+}
+/**
+ * Connect a subcircuit to some inputs and get its outputs
+ * @param circuit The circuit to connect
+ * @param inputs The inputs to hook up to the circuit
+ * @return The pair of output wires from the subcircuit
+ */
+public func UseSubcircuit_2<T>(
+    circuit : InterfacedHypergraph,
+    inputs : Array<T>
+) : (Wire, Wire) where T <: ToString, T <: ContainsWire {
+    AssertCircuitOutputs(circuit, 2)
+    let outputs = UseSubcircuit<T>(circuit, inputs)
+    (outputs[0], outputs[1])
+}
+/**
+ * Connect a subcircuit to some inputs and get its outputs
+ * @param circuit The circuit to connect
+ * @param inputs The inputs to hook up to the circuit
+ * @return The 3-tuple of output wires from the subcircuit
+ */
+public func UseSubcircuit_3<T>(
+    circuit : InterfacedHypergraph,
+    inputs : Array<T>
+) : (Wire, Wire, Wire) where T <: ToString, T <: ContainsWire {
+    AssertCircuitOutputs(circuit, 3)
+    let outputs = UseSubcircuit<T>(circuit, inputs)
+    (outputs[0], outputs[1], outputs[2])
+}

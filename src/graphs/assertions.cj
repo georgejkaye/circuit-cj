@@ -12,10 +12,12 @@ import assertions.*
 func AssertOwned<T,U>(t : T) : U where T <: Ownable<U>, U <: ToString {
     AssertIsNotNone<U>(t.GetOwner(), Owner)
 }
-func AssertAtMostOneInEdge(v : Vertex, w : Vertex) : Option<EdgeConnection> {
+func AssertAtMostOneInEdge<T, U>(t : T, u : U) : Option<EdgeConnection> where T <: ContainsVertex, U <: ContainsVertex {
+    let v = t.GetVertex()
+    let w = u.GetVertex()
     match(v.GetInEdge()) {
         case None    => w.GetInEdge()
-        case Some(ev) => 
+        case Some(ev) =>
             AssertHasParameter<Option<EdgeConnection>, Option<EdgeConnection>>(
                 w.GetInEdge(),
                 None,
@@ -25,7 +27,7 @@ func AssertAtMostOneInEdge(v : Vertex, w : Vertex) : Option<EdgeConnection> {
             Some(ev)
     }
 }
-func AssertNoInEdge(v : Vertex) : Unit {
+public func AssertVertexHasNoInEdge(v : Vertex) : Unit {
     AssertIsNone(v.GetInEdge(), InEdge)
 }
 func AssertTargetsUnassigned(targets : Array<Vertex>) : Unit {
@@ -40,11 +42,11 @@ func AssertCompatibleInputOutput(
     f : InterfacedHypergraph,
     g : InterfacedHypergraph
 ) : Unit {
-    AssertArrayElementsHaveParameters<Port,Port,Port>(
+    AssertArrayElementsHaveParameters<Socket, Socket, Socket>(
         g.GetInputPorts(),
         f.GetOutputPorts(),
-        { p : Port => p },
-        { p : Port => p },
+        { s : Socket => s },
+        { s : Socket => s },
         Width
     )
 }

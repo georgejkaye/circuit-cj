@@ -38,7 +38,7 @@ extend Value <: ToString {
  * @return The bitstring corresponding to the array
  */
 public func BitString(bits : Array<Value>) : String {
-    AssertNonEmpty(bits)
+    AssertArrayNonEmpty(bits)
     fold_left({acc : String, v : Value => "${acc}${v}"}, "", bits)
 }
 
@@ -51,7 +51,7 @@ public enum NumberRepresentation {
 }
 
 /**
- * Print a string in a given number representation corresponding to 
+ * Print a string in a given number representation corresponding to
  * an array of values.
  * Decimal representation is only computable if there are no Top or Bottom
  * values in the array; if there are then the bitstring will be returned.
@@ -60,8 +60,12 @@ public enum NumberRepresentation {
  * @param rep The number representation to use
  * @return The string corresponding to the array
  */
-public func PrintValue(vs : Array<Value>, signed : Bool, rep : NumberRepresentation) : String {
-    AssertNonEmpty(vs)
+public func PrintValue(
+    vs : Array<Value>,
+    signed : Bool,
+    rep : NumberRepresentation
+) : String {
+    AssertArrayNonEmpty(vs)
     match(rep) {
         case BIN => BitString(vs)
         case DEC =>
@@ -80,11 +84,11 @@ public func PrintValue(vs : Array<Value>, signed : Bool, rep : NumberRepresentat
                     var carry = true
                     match(vs[vs.size() - i - 1]) {
                         case Bottom => return BitString(vs)
-                        case True => 
+                        case True =>
                             if(!carry) {
                                 x += 2**i
                             }
-                        case False => 
+                        case False =>
                             if(carry) {
                                 x += 2**i
                                 carry = false
@@ -98,7 +102,7 @@ public func PrintValue(vs : Array<Value>, signed : Bool, rep : NumberRepresentat
                         // Only a 1 contributes to the total sum
                         case True   => x += 2**(vs.size() - 1 - i)
                         case False  => ()
-                        // We can't translate Bottom or Top, so 
+                        // We can't translate Bottom or Top, so
                         // fallback to bitstring
                         case Bottom => return BitString(vs)
                         case Top    => return BitString(vs)
@@ -108,12 +112,3 @@ public func PrintValue(vs : Array<Value>, signed : Bool, rep : NumberRepresentat
             "${negative}${x}"
     }
 }
-
-/**
- * Signal labels
- */
-
-public let BOTTOM : Label = VALUE([Bottom], false)
-public let FALSE : Label = VALUE([False], false)
-public let TRUE : Label = VALUE([True], false)
-public let TOP : Label = VALUE([Top], false)

@@ -1,5 +1,33 @@
 # CircuitCJ Development Log
 
+# 2022-08-15
+
+- Make sure examples work again
+- Extend subcircuit framework to represent values as hierarchical graphs too
+
+# 2022-08-03
+
+- Complete refactoring components package
+
+# 2022-07-29
+
+- Continue refactoring components packag
+
+# 2022-07-28
+
+- Refactor graphs package
+- Begin to refactor components package
+
+# 2022-07-27
+
+- Complete integration of labels on ports
+- Refactor syntax package, simplify specifications
+
+# 2022-07-26
+
+- Continue to integrate labels on ports
+- Begin to generalise exceptions framework
+
 # 2022-07-25
 
 - Complete CPU example

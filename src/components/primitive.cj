@@ -4,30 +4,63 @@ package components
 import graphs.*
 import syntax.*
 
-func Gate(label : Label, inputs: Array<Wire>) : Wire {
+/**
+ * Use a primitive gate
+ *
+ * @param prim The primitive to apply
+ * @param inputs The array of inputs
+ * @return The output wire of the gate
+ */
+func Gate(prim : Primitive, inputs: Array<Wire>) : Wire {
     AssertAllWiresWidth(inputs, 1)
-    AssertNumberOfWires(inputs, label.GetInputPorts().size())
-    MakeEdge(
-        label,
+    AssertNumberOfWires(inputs, prim.GetInputPorts().size())
+    MakeEdgeWithNewOutputs(
+        PRIMITIVE(prim),
         inputs,
         [1],
         None
     )[0]
 }
-
-func NullaryGate(label : Label) : Wire {
-    Gate(label, [])
+/**
+ * Use a value generator
+ *
+ * @param spec The value spec to use
+ * @return The output wire of the value
+ */
+func ValueGenerator(spec: ValueSpec) : Wire {
+    MakeEdgeWithNewOutputs<Vertex, Int64>(
+        VALUE(spec),
+        Array<Vertex>(),
+        [1],
+        None<InterfacedHypergraph>
+    )[0]
 }
-func UnaryGate(label : Label, a : Wire) : Wire {
-    Gate(label, [a])
+/**
+ * Use a unary primitive gate
+ *
+ * @param prim The primitive to apply
+ * @param a The input wire
+ * @return The output wire of the gate
+ */
+func UnaryGate(prim : Primitive, a : Wire) : Wire {
+    Gate(prim, [a])
 }
-func BinaryGate(label : Label, a : Wire, b : Wire) : Wire {
-    Gate(label, [a,b])
+/**
+ * Use a binary primitive gate
+ *
+ * @param prim The primitive to apply
+ * @param a The first input wire
+ * @param a The second input wire
+ * @return The output wire of the gate
+ */
+func BinaryGate(prim : Primitive, a : Wire, b : Wire) : Wire {
+    Gate(prim, [a,b])
 }
 
 /**
  * Nullary gates
  */
+
 public func Signal(v : Value) : Wire {
     match(v) {
         case Bottom => BottomSignal()
@@ -37,45 +70,66 @@ public func Signal(v : Value) : Wire {
     }
 }
 public func BottomSignal() : Wire {
-    NullaryGate(BOTTOM)
+    ValueGenerator(BOTTOM)
 }
 public func FalseSignal() : Wire {
-    NullaryGate(FALSE)
+    ValueGenerator(FALSE)
 }
 public func TrueSignal() : Wire {
-    NullaryGate(TRUE)
+    ValueGenerator(TRUE)
 }
 public func TopSignal() : Wire {
-    NullaryGate(TOP)
+    ValueGenerator(TOP)
 }
 
 /**
  * Unary gates
  */
 
+public func BufGate(a : Wire) : Wire {
+    UnaryGate(BUF, a)
+}
 public func NotGate(a : Wire) : Wire {
-    UnaryGate(NOT(1), a)
+    UnaryGate(NOT, a)
 }
 
 /**
- * Binary gates 
+ * Binary gates
  */
 
 public func AndGate(a : Wire, b : Wire) : Wire {
-    BinaryGate(AND(2,1), a, b)
+    BinaryGate(AND, a, b)
 }
 public func OrGate(a : Wire, b : Wire) : Wire {
-    BinaryGate(OR(2,1), a, b)
+    BinaryGate(OR, a, b)
 }
 public func NandGate(a : Wire, b : Wire) : Wire {
-    BinaryGate(NAND(2,1), a, b)
+    BinaryGate(NAND, a, b)
 }
 public func NorGate(a : Wire, b : Wire) : Wire {
-    BinaryGate(NOR(2,1), a, b)
+    BinaryGate(NOR, a, b)
 }
 public func XorGate(a : Wire, b : Wire) : Wire {
-    BinaryGate(XOR(2,1), a, b)
+    BinaryGate(XOR, a, b)
 }
 public func XnorGate(a : Wire, b : Wire) : Wire {
-    BinaryGate(XNOR(2,1), a, b)
+    BinaryGate(XNOR, a, b)
+}
+
+extend Primitive {
+    func UseGate() : (Array<Wire>) -> Wire {
+        {
+            ws : Array<Wire> =>
+                match(this) {
+                    case BUF  => Buf(ws[0])
+                    case NOT  => Not(ws[0])
+                    case AND  => And(ws[0], ws[1])
+                    case OR   => Or(ws[0], ws[1])
+                    case NAND => Nand(ws[0], ws[1])
+                    case NOR  => Nor(ws[0], ws[1])
+                    case XOR  => Xor(ws[0], ws[1])
+                    case XNOR => Xnor(ws[0], ws[1])
+                }
+        }
+    }
 }

@@ -16,8 +16,8 @@ from std import collection.HashSet
 public enum WellformednessIssue {
     | InputNotAssigned(Int64)
     | OutputNotAssigned(Int64)
-    | InputNotInGraph(Int64, Vertex)
-    | OutputNotInGraph(Int64, Vertex)
+    | InputNotInGraph(Int64, InterfaceVertex)
+    | OutputNotInGraph(Int64, InterfaceVertex)
     | SourceNotAssigned(Edge, Int64)
     | TargetNotAssigned(Edge, Int64)
     | SourceNotInGraph(Edge, Int64, Vertex)
@@ -206,11 +206,11 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
  * @param vs The array of vertices
  * @return The new hypergraph containing the elements of the owners
  */
-public func CombineGraphs(vs : Array<Vertex>) : Hypergraph {
+public func CombineGraphs<T>(vs : Array<T>) : Hypergraph where T <: ContainsVertex {
     // Find all the owners
     let owners = HashSet<Hypergraph>()
     for (v in vs) {
-        let owner = AssertOwned(v)
+        let owner = AssertOwned(v.GetVertex())
         owners.put(owner)
     }
     // Collect together the vertices and edges in the owners

@@ -1,28 +1,32 @@
 package components
 
 public class Wire <: Identifiable & ToString & ContainsVertex & HasWidth {
-    let id : Identifier = Identifier()
+    let id : Int64 = GetNextId()
     var vertex : Vertex
     public init(v : Vertex) {
         this.vertex = v
     }
+    public init(i : Int64) {
+        this(Vertex(i))
+    }
     public func SetVertex(v : Vertex) : Unit {
         match(this.vertex.GetOwner()) {
             case None => ()
-            case Some(h) => 
+            case Some(h) =>
                 h.RemoveVertex(this.vertex)
                 h.AddVertex(v)
         }
-        for ((e, i) in this.vertex.GetInEdges()) {
-            e.SetTarget(i, v)
+        match(this.vertex.GetInEdge()){
+            case None => ()
+            case Some(ec) => ec.edge.SetTarget(ec.index, v)
         }
-        for ((e, i) in this.vertex.GetOutEdges()) {
-            e.SetSource(i, v)
+        for (ec in this.vertex.GetOutEdges()) {
+            ec.edge.SetSource(ec.index, v)
         }
         this.vertex = v
     }
     public func GetId() : Int64 {
-        this.id.GetId()
+        this.id
     }
     public func GetWidth() : Int64 {
         this.vertex.GetWidth()
@@ -51,11 +55,17 @@ public func MakeWire(width : Int64) : Wire {
     Wire(vertex)
 }
 
-public record NamedWire <: ContainsWire & ToString & ContainsVertex {
-    public NamedWire(
+public record InterfaceWire <: ContainsWire & ToString & ContainsVertex & Socket {
+    public InterfaceWire(
         let wire : Wire,
         let name : Option<String>
     ){}
+    public init(
+        i : Int64,
+        name : Option<String>
+    ){
+        this(Wire(i), name)
+    }
     public func GetWire() : Wire {
         this.wire
     }
@@ -68,45 +78,55 @@ public record NamedWire <: ContainsWire & ToString & ContainsVertex {
     public func GetWidth() : Int64 {
         this.wire.GetWidth()
     }
+    public func GetName() : Option<String> {
+        this.name
+    }
+    public operator func ==(rhs : Socket) {
+        this.wire.GetWidth() == rhs.GetWidth() && this.name == rhs.GetName()
+    }
+    public operator func !=(rhs : Socket) {
+        !(this == rhs)
+    }
 }
 
-public func MakeEdge<T,U>(
+public func MakeEdge(
     label : Label,
-    sources : Array<T>,
-    targets: Array<U>,
+    sources : Array<Vertex>,
+    targets : Array<Vertex>,
     graph : Option<InterfacedHypergraph>
-) : Array<Wire> where T <: ContainsVertex, U <: ContainsVertex {
-    let sources = map({ t : T => t.GetVertex() }, sources)
-    let targets = map({ u : U => u.GetVertex() }, targets)
+) : Array<Wire> {
     let edge = Edge(label, sources, targets, graph)
     map({v : Vertex => Wire(v) }, edge.GetTargets())
 }
+public func MakeEdgeWithNewOutputs<T, U>(
+    label : Label,
+    sources : Array<T>,
+    targets : Array<U>,
+    graph : Option<InterfacedHypergraph>
+) : Array<Wire> where T <: ContainsVertex, U <: HasWidth {
+    let sources = map({ t : T => t.GetVertex() }, sources)
+    let targets = map({ u : U => Vertex(u.GetWidth()) }, targets)
+    MakeEdge(label, sources, targets, graph)
+}
+
 
 /**
  * Merge two vertices together, such that any edges that had either vertex
  * as a source or target is updated with the merged vertex
  * @return A tuple (merged vertex, removed vertex)
  */
-public func MergeWires(v : Wire, w : Wire) : Unit {  
+public func MergeWires(v : Wire, w : Wire) : Unit {
     MergeVertices(v.GetVertex(), w.GetVertex())
     w.SetVertex(v.GetVertex())
 }
 
-public func CombineGraphs(ws : Array<Wire>) : Hypergraph {
-    CombineGraphs(map({ w : Wire => w.GetVertex() }, ws))
-}
-
-public func WiresToWidths(ws : Array<Wire>) : Array<Int64> {
-    map({ w : Wire => w.GetWidth() }, ws)
-}
-
-public func Split(w : Wire, vs : Array<Int64>) : Array<Wire> {
-    AssertWireWidth(w, sum(vs))
-    MakeEdge(
-        BUNDLER([w.GetWidth()], vs),
-        [w],
+public func Split<T>(t : T, vs : Array<Int64>) : Array<Wire> where T <: ContainsWire, T <: ToString {
+    AssertWireWidth<T>(t, Sum(vs))
+    MakeEdgeWithNewOutputs<T, Int64>(
+        BUNDLER([t.GetWidth()], vs),
+        [t],
         vs,
-        None
+        None<InterfacedHypergraph>
     )
 }
 
@@ -122,10 +142,10 @@ public func Split(w : Wire) : Array<Wire> {
 public func Combine(ws : Array<Wire>) : Wire {
     let widths = map({ w : Wire => w.GetWidth() }, ws)
     CombineGraphs(ws)
-    MakeEdge(
-        BUNDLER(widths, [sum(widths)]),
+    MakeEdgeWithNewOutputs(
+        BUNDLER(widths, [Sum(widths)]),
         ws,
-        [sum(widths)],
+        [Sum(widths)],
         None
     )[0]
 }
@@ -139,7 +159,7 @@ public func GetBit(w : Wire, i : Int64) {
         throw IncompatibleWidthException("GetBit", w, i)
     }
     if (i == 0) {
-        let ws = Split(w, [1, width - 1])    
+        let ws = Split(w, [1, width - 1])
         ws[0]
     } else if (i == width-1) {
         let ws = Split(w, [width - 1, 1])

@@ -108,6 +108,11 @@ public class Vertex <: Identifiable &
 public interface ContainsVertex {
     func GetVertex() : Vertex
 }
+extend Vertex <: ContainsVertex {
+    public func GetVertex() : Vertex {
+        this
+    }
+}
 extend Int64 <: ContainsVertex {
     public func GetVertex() : Vertex {
         Vertex(this)
