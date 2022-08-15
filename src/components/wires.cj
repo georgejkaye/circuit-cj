@@ -77,13 +77,18 @@ public func MakeWire(width : Int64) : Wire {
 public class InterfaceWire <: ContainsWire & ToString & ContainsVertex & Socket {
     public InterfaceWire(
         let wire : Wire,
-        let name : Option<String>
+        let name: Option<String>
     ){}
     public init(
         i : Int64,
-        name : Option<String>
+        name: Option<String>
     ){
         this(Wire(i), name)
+    }
+    public init(
+        w : Wire
+    ){
+        this(w, None<String>)
     }
     public func GetWire() : Wire {
         this.wire
@@ -132,14 +137,13 @@ func MakeEdge(
  * @param graph The optional owner of this edge
  * @return The array of wires corresponding to the new edge's targets
  */
-public func MakeEdgeWithNewOutputs<T, U>(
+public func MakeEdgeWithNewOutputs<T>(
     label : Label,
     sources : Array<T>,
-    targets : Array<U>,
     graph : Option<InterfacedHypergraph>
-) : Array<Wire> where T <: ContainsVertex, U <: HasWidth {
+) : Array<Wire> where T <: ContainsVertex {
     let sources = map({ t : T => t.GetVertex() }, sources)
-    let targets = map({ u : U => Vertex(u.GetWidth()) }, targets)
+    let targets = map({ p : Port => Vertex(p.GetWidth()) }, label.GetOutputPorts())
     MakeEdge(label, sources, targets, graph)
 }
 
@@ -163,10 +167,9 @@ public func MergeWires(v : Wire, w : Wire) : Unit {
  */
 public func Split<T>(t : T, vs : Array<Int64>) : Array<Wire> where T <: ContainsWire, T <: ToString {
     AssertWireWidth<T>(t, Sum(vs))
-    MakeEdgeWithNewOutputs<T, Int64>(
+    MakeEdgeWithNewOutputs<T>(
         BUNDLER([t.GetWidth()], vs),
         [t],
-        vs,
         None<InterfacedHypergraph>
     )
 }
@@ -201,7 +204,6 @@ public func Combine(ws : Array<Wire>) : Wire {
     MakeEdgeWithNewOutputs(
         BUNDLER(widths, [Sum(widths)]),
         ws,
-        [Sum(widths)],
         None
     )[0]
 }

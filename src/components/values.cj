@@ -36,7 +36,7 @@ func UnsignedDecToBin(x : Int64, w : Int64) : Array<Bool> {
     // If we run out of w before we run out of list, the msbs will be ignored
     for(i in 0..w){
         let rem = num % 2 == 1
-        bin.set(w-i-1, rem)
+        bin.set(i, rem)
         num = num / 2
     }
     return bin
@@ -48,11 +48,10 @@ func UnsignedDecToBin(x : Int64, w : Int64) : Array<Bool> {
  */
 func AddOne(x : Array<Bool>) : Unit {
     for (i in 0..(x.size - 1)) {
-        let j = x.size - 1 - i
-        if (x[j]) {
-            x[j] = false
+        if (x[i]) {
+            x[i] = false
         } else {
-            x[j] = true
+            x[i] = true
             return
         }
     }
@@ -86,14 +85,26 @@ func SignedDecToBin(x : Int64, w : Int64) : Array<Bool> {
  * @return The output wire
  */
 public func MakeValue(vs : Array<Value>, signed : Bool) : Wire {
-    MakeEdgeWithNewOutputs(
-        VALUE(
-            ValueSpec(vs, signed)
+    let wires = map(
+        { v : Value =>
+            MakeEdgeWithNewOutputs(
+                VALUE(v),
+                Array<Vertex>(),
+                None<InterfacedHypergraph>
+            )[0]
+        },
+        vs
+    )
+    UseSubcircuit_1<Wire>(
+        MakeSubcircuit(
+            Array<InterfaceWire>(),
+            [InterfaceWire(Combine(wires))],
+            VALUES(
+                ValueSpec(vs, signed)
+            )
         ),
-        Array<Wire>(),
-        [vs.size],
-        None
-    )[0]
+        Array<Wire>()
+    )
 }
 /**
  * Create an edge for a given value

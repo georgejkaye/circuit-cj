@@ -39,7 +39,7 @@ extend Value <: ToString {
  */
 public func BitString(bits : Array<Value>) : String {
     AssertArrayNonEmpty(bits)
-    fold_left({acc : String, v : Value => "${acc}${v}"}, "", bits)
+    fold_right({acc : String, v : Value => "${acc}${v}"}, "", bits)
 }
 
 /**
@@ -56,7 +56,7 @@ public enum NumberRepresentation {
  * Decimal representation is only computable if there are no Top or Bottom
  * values in the array; if there are then the bitstring will be returned.
  *
- * @param vs The array of values to convert. Most significant bit is bits[0].
+ * @param vs The array of values to convert. Least significant bit is bits[0].
  * @param rep The number representation to use
  * @return The string corresponding to the array
  */
@@ -74,7 +74,7 @@ public func PrintValue(
             if (signed) {
                 // In a signed number, the first bit indicates if
                 // the number is negative
-                match(vs[0]) {
+                match(vs[vs.size - 1]) {
                     case Bottom => return BitString(vs)
                     case True => negative = "-"
                     case False => ()
@@ -82,7 +82,7 @@ public func PrintValue(
                 }
                 for (i in 0..vs.size) {
                     var carry = true
-                    match(vs[vs.size - i - 1]) {
+                    match(vs[i]) {
                         case Bottom => return BitString(vs)
                         case True =>
                             if(!carry) {
@@ -100,7 +100,7 @@ public func PrintValue(
                 for (i in 0..vs.size) {
                     match(vs[i]) {
                         // Only a 1 contributes to the total sum
-                        case True   => x += 2**UInt64(vs.size - 1 - i)
+                        case True   => x += 2**UInt64(i)
                         case False  => ()
                         // We can't translate Bottom or Top, so
                         // fallback to bitstring

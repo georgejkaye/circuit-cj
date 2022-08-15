@@ -83,6 +83,9 @@ let delayStyle = [
 let valueStyle = [
     bgColour("green")
 ]
+let valuesStyle = [
+    bgColour("forestgreen")
+]
 let blackboxStyle = [
     bgColour("white")
 ]
@@ -230,8 +233,10 @@ func EdgeVerticesToTable(ports : Array<Port>, id : String, elementContent : Arra
  */
 func DrawEdgeNode(e : Edge, content : ArrayList<DotLine>) : Unit {
     let (style, label) = match(e.GetLabel()){
-        case VALUE(spec) =>
-            (valueStyle, spec.GetValueAsRepresentation(GetDotNumberRepresentation()))
+        case VALUE(v) =>
+            (valueStyle, "${v}")
+        case VALUES(spec) =>
+            (valuesStyle, spec.GetValueAsRepresentation(GetDotNumberRepresentation()))
         case BUNDLER(ms,ns) =>
             (compressorStyle, if (ms.size < ns.size) { "\u{25C1}" } else { "\u{25B7}" })
         case JOIN(width) =>
@@ -243,7 +248,7 @@ func DrawEdgeNode(e : Edge, content : ArrayList<DotLine>) : Unit {
         case BLACKBOX(spec) =>
             (blackboxStyle, spec.GetName())
         case DELAY(dur, width) =>
-            (delayStyle, "${dur}")
+            (delayStyle, "\u{03B4}_${dur}")
     }
     DrawEdgelikeNode(
         "e${e.GetId()}",

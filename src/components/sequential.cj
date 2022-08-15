@@ -18,10 +18,9 @@ package components
  */
 public func Delay(duration : Int64, input: Wire) : Wire {
     let width = input.GetWidth()
-    MakeEdgeWithNewOutputs<Wire, Int64>(
+    MakeEdgeWithNewOutputs<Wire>(
         DELAY(duration, width),
         [input],
-        [width],
         None<InterfacedHypergraph>
     )[0]
 }
@@ -55,7 +54,6 @@ func SimpleRegisterWithInitial(initial: Wire, input : Wire){
     MakeEdgeWithNewOutputs(
         JOIN(width),
         [initial, delay],
-        [width],
         None
     )[0]
 }

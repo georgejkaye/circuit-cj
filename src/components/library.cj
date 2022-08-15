@@ -24,7 +24,7 @@ public func BlackBox(
     codomain : Array<Port>,
     inputs: Array<Wire>
 ) : Array<Wire> {
-    MakeEdgeWithNewOutputs<Wire, Port>(
+    MakeEdgeWithNewOutputs<Wire>(
         BLACKBOX(
             Specification(
                 name,
@@ -33,7 +33,6 @@ public func BlackBox(
             )
         ),
         inputs,
-        codomain,
         None<InterfacedHypergraph>
     )
 }

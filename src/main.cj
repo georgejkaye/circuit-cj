@@ -29,5 +29,9 @@ main(){
     WriteDotToFile(and, 0, "and-0")
     WriteDotToFile(and, 1, "and-1")
 
+    let acc = Accumulator(width: 8, initial: 12)
+    WriteDotToFile(acc, 0, "acc-0")
+    WriteDotToFile(acc, 1, "acc-1")
+
     return 0
 }

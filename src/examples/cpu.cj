@@ -333,7 +333,6 @@ public func SimpleCPU() {
     let alu_s4 = decoder[11]
     // Mux_I
     let muxi = Mux2(muxa, ir_muxi, pc)
-    println(muxi.GetWidth())
     // Mux_D
     let (instruction_muxd, _) = Split(instruction, 8, 8)
     let acc_fb = MakeWire(8)

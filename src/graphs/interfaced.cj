@@ -86,7 +86,7 @@ public class InterfaceVertex <: Socket & ContainsVertex {
     A hypergraph with an interface. Represents a complete circuit with inputs
     and outputs. Interfaced hypergraphs are *immutable*.
  */
-public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equatable<InterfacedHypergraph> {
+public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equatable<InterfacedHypergraph> & HasName {
     let uniqueId : Int64 = GetNextId()
     let f : Hypergraph
     let inputs : Array<InterfaceVertex>
@@ -162,12 +162,12 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
     public func GetOutputPorts() : Array<Port> {
         map({ iv : InterfaceVertex => iv.ToPort() }, this.outputs )
     }
-    public func GetName() : Option<String> {
+    public func GetName() : String {
         this.name
     }
     public func toString() : String {
         let string = f.toString()
-        "${string}\ninputs ${this.inputs}\noutputs ${this.outputs}"
+        "${string} (${this.inputs} -> ${this.outputs})"
     }
     public func IsWellFormed() : Bool {
         let issues = this.WellFormednessCheck()

@@ -36,7 +36,7 @@ public class ValueSpec <: ToString & HasName & Specifiable {
         let signed : Bool
     ){}
     public func GetName() : String {
-        PrintValue(this.values, this.signed, BIN)
+        PrintValue(this.values, this.signed, DEC)
     }
     public func GetValueAsRepresentation(rep : NumberRepresentation) : String {
         PrintValue(this.values, this.signed, rep)

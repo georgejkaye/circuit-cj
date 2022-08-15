@@ -110,6 +110,6 @@ func AssertCircuitOutputs(c : InterfacedHypergraph, n : Int64) {
         c,
         n,
         { c : InterfacedHypergraph => c.GetOutputs() },
-        Inputs
+        Outputs
     )
 }

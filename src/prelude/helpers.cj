@@ -15,8 +15,14 @@ public func fold_left<T,U>(f : (U, T) -> U, initial : U,  xs : Iterable<T>) : U 
         acc = f(acc, x)
     }
     acc
+}
+public func fold_right<T,U>(f : (U, T) -> U, initial : U,  xs : Array<T>) : U {
+    var acc = initial
+    for (i in 0..xs.size) {
+        acc = f(acc, xs[xs.size - 1 - i])
+    }
+    acc
 } 
-
 public func foldi_left<T,U>(f : (U, T, Int64) -> U, initial : U, xs : Array<T>) : U {
     var acc = initial
     var i = 0
@@ -26,6 +32,7 @@ public func foldi_left<T,U>(f : (U, T, Int64) -> U, initial : U, xs : Array<T>) 
     }
     acc
 } 
+
 
 public func foldi_left<T,U>(f : (U, T, Int64) -> U, initial : U, xs : Iterable<T>) : U {
     var acc = initial

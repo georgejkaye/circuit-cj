@@ -19,13 +19,14 @@ import syntax.*
  * be expanded to show the components if desired.
  * @param inputs The inputs of the subcircuit
  * @param outputs The outputs of the subcircuit
- * @param name The name of the circuit, which will be displayed on its edge
+ * @param label The label to give the subcircuit, which will be displayed
+ *              on its edge
  * @return The new interfaced hypergraph representing the subcircuit
  */
 public func MakeSubcircuit(
     inputs : Array<InterfaceWire>,
     outputs : Array<InterfaceWire>,
-    name : String
+    label : Label
 ) : InterfacedHypergraph {
     let interfaceVertices = concat(inputs, outputs)
     let graph = CombineGraphs(interfaceVertices)
@@ -38,9 +39,38 @@ public func MakeSubcircuit(
         newF,
         newInputs,
         newOutputs,
-        name
+        label
     )
 }
+/**
+ * Make a subcircuit with some (optionally named) input and
+ * output wires. This circuit can then be used in other subcircuits,
+ * where it will be initially displayed as a single edge, but can
+ * be expanded to show the components if desired.
+ * @param inputs The inputs of the subcircuit
+ * @param outputs The outputs of the subcircuit
+ * @param label The name of the subcircuit, which will be given a
+                'composite' label on its parent edge
+ * @return The new interfaced hypergraph representing the subcircuit
+ */
+public func MakeSubcircuit(
+    inputs : Array<InterfaceWire>,
+    outputs : Array<InterfaceWire>,
+    name : String
+) : InterfacedHypergraph {
+    MakeSubcircuit(
+        inputs,
+        outputs,
+        COMPOSITE(
+            Specification(
+                name,
+                map({ iv : InterfaceWire => Port(iv.GetWidth(), name: iv.GetName() )}, inputs),
+                map({ iv : InterfaceWire => Port(iv.GetWidth(), name: iv.GetName() )}, outputs)
+            )
+        )
+    )
+}
+
 /**
  * Make a circuit that applies a given primitive bitwise, i.e. the primitive
  * will be applied to each bit of the input wires independently
@@ -136,10 +166,9 @@ public func UseSubcircuit<T>(
 ) : Array<Wire> where T <: ToString, T <: ContainsWire {
     AssertWiresHaveWidths<T, Port>(inputs, circuit.GetInputPorts())
     let newGraph = circuit.CloneGraph()
-    MakeEdgeWithNewOutputs<T, Port>(
+    MakeEdgeWithNewOutputs<T>(
         circuit.GetLabel(),
         inputs,
-        circuit.GetOutputPorts(),
         newGraph
     )
 }

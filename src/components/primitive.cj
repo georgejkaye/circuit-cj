@@ -26,7 +26,6 @@ func Gate(prim : Primitive, inputs: Array<Wire>) : Wire {
     MakeEdgeWithNewOutputs(
         PRIMITIVE(prim),
         inputs,
-        [1],
         None
     )[0]
 }
@@ -36,11 +35,10 @@ func Gate(prim : Primitive, inputs: Array<Wire>) : Wire {
  * @param spec The value spec to use
  * @return The output wire of the value
  */
-func ValueGenerator(spec: ValueSpec) : Wire {
-    MakeEdgeWithNewOutputs<Vertex, Int64>(
-        VALUE(spec),
+func ValueGenerator(v : Value) : Wire {
+    MakeEdgeWithNewOutputs<Vertex>(
+        VALUE(v),
         Array<Vertex>(),
-        [1],
         None<InterfacedHypergraph>
     )[0]
 }
@@ -79,16 +77,16 @@ public func Signal(v : Value) : Wire {
     }
 }
 public func BottomSignal() : Wire {
-    ValueGenerator(BOTTOM)
+    ValueGenerator(Bottom)
 }
 public func FalseSignal() : Wire {
-    ValueGenerator(FALSE)
+    ValueGenerator(False)
 }
 public func TrueSignal() : Wire {
-    ValueGenerator(TRUE)
+    ValueGenerator(True)
 }
 public func TopSignal() : Wire {
-    ValueGenerator(TOP)
+    ValueGenerator(Top)
 }
 
 /**
