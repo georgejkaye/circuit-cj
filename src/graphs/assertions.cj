@@ -42,11 +42,11 @@ func AssertCompatibleInputOutput(
     f : InterfacedHypergraph,
     g : InterfacedHypergraph
 ) : Unit {
-    AssertArrayElementsHaveParameters<Socket, Socket, Socket>(
+    AssertArrayElementsHaveParameters<Port, Port, Port>(
         g.GetInputPorts(),
         f.GetOutputPorts(),
-        { s : Socket => s },
-        { s : Socket => s },
+        { p : Port => p },
+        { p : Port => p },
         Width
     )
 }

@@ -18,20 +18,16 @@ import prelude.*
 public interface HasWidth {
     func GetWidth() : Int64
 }
+public interface HasName {
+    func GetName() : String
+}
 public interface HasOptionalName {
     func GetName() : Option<String>
 }
-public interface Socket <: HasWidth & HasOptionalName & ToString & Equatable<Socket> {
-    operator func ==(rhs : Socket) {
-        this.GetWidth() == rhs.GetWidth()
-    }
-    operator func !=(rhs : Socket) {
-        !(this == rhs)
-    }
-}
-public interface Specifiable <: ToString & HasOptionalName {
-    func GetInputPorts() : Array<Socket>
-    func GetOutputPorts() : Array<Socket>
+public interface Socket <: HasWidth & HasOptionalName & ToString {}
+public interface Specifiable {
+    func GetInputPorts() : Array<Port>
+    func GetOutputPorts() : Array<Port>
 }
 extend Int64 <: HasWidth {
     public func GetWidth() : Int64 {
@@ -42,7 +38,7 @@ extend Int64 <: HasWidth {
 /**
  * A port has a width and an optional name
  */
-public class Port <: ToString & Equatable<Socket> & Socket {
+public class Port <: ToString & Equatable<Port> & Socket {
     public Port(
         public let width : Int64,
         public let name!: Option<String> = None
@@ -53,14 +49,14 @@ public class Port <: ToString & Equatable<Socket> & Socket {
     public func toString() : String {
         let nameString = match(name) {
             case None => ""
-            case Some(n) => " ${n}"
+            case Some(n) => " (${n})"
         }
         "${width}${nameString}"
     }
-    public operator func ==(rhs: Socket) : Bool {
+    public operator func ==(rhs : Port) : Bool {
         this.width == rhs.GetWidth() && this.name == rhs.GetName()
     }
-    public operator func !=(rhs: Socket) : Bool {
+    public operator func !=(rhs : Port) : Bool {
         !(this == rhs)
     }
     public func GetWidth() : Int64 {

@@ -130,14 +130,14 @@ extend Primitive {
         {
             ws : Array<Wire> =>
                 match(this) {
-                    case BUF  => Buf(ws[0])
-                    case NOT  => Not(ws[0])
-                    case AND  => And(ws[0], ws[1])
-                    case OR   => Or(ws[0], ws[1])
-                    case NAND => Nand(ws[0], ws[1])
-                    case NOR  => Nor(ws[0], ws[1])
-                    case XOR  => Xor(ws[0], ws[1])
-                    case XNOR => Xnor(ws[0], ws[1])
+                    case BUF  => BufGate(ws[0])
+                    case NOT  => NotGate(ws[0])
+                    case AND  => AndGate(ws[0], ws[1])
+                    case OR   => OrGate(ws[0], ws[1])
+                    case NAND => NandGate(ws[0], ws[1])
+                    case NOR  => NorGate(ws[0], ws[1])
+                    case XOR  => XorGate(ws[0], ws[1])
+                    case XNOR => XnorGate(ws[0], ws[1])
                 }
         }
     }

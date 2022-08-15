@@ -19,7 +19,7 @@ func RunningSum(first : Wire, prev_sum: Wire, a: Wire, b0: Wire) : Wire {
     let rhs = PartialProduct(a, b0)
     let a = UnsignedExtend(lhs)
     let b = UnsignedExtend(rhs)
-    let (sum, carry) = Plus(a, b)
+    let (sum, carry) = RippleAdder(a, b, ConstantZero())
     sum
 }
 
@@ -48,10 +48,12 @@ public func SerialMultiplierBit(width : Int64) {
     let computedBits = ComputedBits(bit, width)
     let output = Combine([sum, computedBits])
     MakeSubcircuit([
-        InterfaceWire(first, "first"),
-        InterfaceWire(a, "A"),
-        InterfaceWire(b0, "B0")
-    ], [
-        InterfaceWire(output, "Output")
-    ])
+            InterfaceWire(first, "first"),
+            InterfaceWire(a, "A"),
+            InterfaceWire(b0, "B0")
+        ], [
+            InterfaceWire(output, "Output")
+        ],
+        "serial_multiplier"
+    )
 }

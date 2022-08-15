@@ -27,11 +27,11 @@ public enum Label {
     | BLACKBOX(Specification)             // A black box with arbitrary name and codomain
     | DELAY(Int64, Int64)                 // A delay parameterised by a duration and a width
 }
-extend Label <: Specifiable {
-    public func GetInputPorts() : Array<Socket> {
+extend Label <: HasName & Specifiable & ToString {
+    public func GetInputPorts() : Array<Port> {
         match(this) {
             case VALUE(spec)            => spec.GetInputPorts()
-            case BUNDLER(ms, ns)        => (ms as Array<Socket>).getOrThrow()
+            case BUNDLER(ms, _)         => map({ i : Int64 => Port(i)}, ms)
             case JOIN(w)                => [Port(w), Port(w)]
             case PRIMITIVE(prim)        => prim.GetInputPorts()
             case COMPOSITE(spec)        => spec.GetInputPorts()
@@ -43,10 +43,10 @@ extend Label <: Specifiable {
     public func GetNoInputs() : Int64 {
         this.GetInputPorts().size
     }
-    public func GetOutputPorts() : Array<Socket> {
+    public func GetOutputPorts() : Array<Port> {
         match(this) {
             case VALUE(spec)            => spec.GetOutputPorts()
-            case BUNDLER(ms,ns)         => (ns as Array<Socket>).getOrThrow()
+            case BUNDLER(ms,ns)         => map({ i : Int64 => Port(i)}, ns)
             case JOIN(w)                => [Port(w)]
             case PRIMITIVE(prim)        => prim.GetOutputPorts()
             case COMPOSITE(spec)        => spec.GetOutputPorts()
@@ -57,13 +57,13 @@ extend Label <: Specifiable {
     public func GetNoOutputs() : Int64 {
         this.GetOutputPorts().size
     }
-    public func GetName() : Option<String> {
+    public func GetName() : String {
         match(this) {
             case VALUE(spec)            => spec.GetName()
             case BUNDLER(ms, ns)        =>
-                let arrow = if (ms.size < ns.size) { "<" } else { ">" }
+                let arrow = if (ms.size < ns.size) { "\u{25C1}" } else { "\u{25B7}" }
                 "${ms.size}${arrow}${ns.size}"
-            case JOIN(w)                => "V_${w}"
+            case JOIN(w)                => "\u{2207}_${w}"
             case PRIMITIVE(prim)        => prim.GetName()
             case COMPOSITE(spec)        => spec.GetName()
             case BLACKBOX(spec)         => spec.GetName()
@@ -71,9 +71,6 @@ extend Label <: Specifiable {
         }
     }
     public func toString() : String {
-        match(this.GetName()){
-            case None => ""
-            case Some(s) => s
-        }
+        this.GetName()
     }
 }

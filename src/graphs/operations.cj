@@ -26,7 +26,6 @@ public func MergeVertices<T, U>(t : T, u : U) : (Vertex, Vertex) where T <: Cont
     match (inEdge) {
         case None => ()
         case Some(ec) => 
-            v.SetInEdge(ec)
             ec.edge.SetTarget(ec.index, v)
     }
     let wOutEdges = w.GetOutEdges() 
@@ -116,21 +115,20 @@ func Par(f : InterfacedHypergraph, g : InterfacedHypergraph, clone : Bool) : Int
     let newEdges = newF.GetEdges()
     newEdges.putAll(newG.GetEdges())
 
-    let newInputs = Array<InterfaceVertex>(f.GetInputs() + g.GetInputs()){
+    let newInputs = Array<InterfaceVertex>(f.GetInputs() + g.GetInputs(), {
         i => if(i < newFInputs.size) {
             newFInputs[i]
         } else {
             newGInputs[i - f.GetInputs()]
         }
-    } 
-    let newOutputs = Array<InterfaceVertex>(f.GetOutputs() + g.GetOutputs()){
+    })
+    let newOutputs = Array<InterfaceVertex>(f.GetOutputs() + g.GetOutputs(), {
         i => if(i < newFOutputs.size) {
             newFOutputs[i]
         } else {
             newGOutputs[i - f.GetInputs()]
         }
-    } 
-
+    })
     let newGraph = Hypergraph(newVertices, newEdges)
     
     InterfacedHypergraph(

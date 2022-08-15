@@ -22,7 +22,7 @@ from std import collection.ArrayList
  * @param control The control array
  * @param initial The initial auxiliary array
  * @param f       The function to perform for the ith bit of each wire. The first argument is the input
- *                  bits, the second is the control, and the third if the auxiliary
+ *                bits, the second is the control, and the third if the auxiliary
  * @return The output wire and the final aux value
  */
 public func Bitwise<T, U>(
@@ -35,21 +35,21 @@ public func Bitwise<T, U>(
     let width = AssertWiresSameWidth<T>(ws)
     // An array of arrays containing the wires of ws split explicitly into their
     // constituent bits: splitWires[i][j] is the jth bit of ws[i]
-    let splitWires = Array<Array<Wire>>(size) {
+    let splitWires = Array<Array<Wire>>(size, {
         i : Int64 =>
             let wire = ws[i].GetWire()
             Split(
                 wire,
-                Array<Int64>(width){ j : Int64 => 1}
+                Array<Int64>(width, { j : Int64 => 1 })
             )
-    }
+    })
     // Set the auxiliary wires as the initial
     var aux = initial
     // For each bit of the primary inputs, apply the circuit function
     let outputs = ArrayList<Array<Wire>>(width)
     for (i in 0..width) {
         // Get the ith bit of the jth input wire
-        let inputs = Array<Wire>(size){ j : Int64 => splitWires[j][i] }
+        let inputs = Array<Wire>(size, { j : Int64 => splitWires[j][i] })
         // Apply the function to transform this into output and a new aux
         let (output, carry) = f(inputs, control, aux)
         outputs.append(output)
@@ -57,11 +57,61 @@ public func Bitwise<T, U>(
         aux = carry
     }
     // Compress the individual bits back into thicker wires
-    let outputWires = Array<Wire>(outputs.size){
-        i : Int64 =>
-            Combine(outputs[i])
-    }
+    let outputWires = Array<Wire>(
+        outputs[0].size,
+        { i : Int64 => Combine(Array<Wire>(outputs.size, { j : Int64 => outputs[j][i] })) }
+    )
     (outputWires, aux)
+}
+/**
+ * Split multiple wires into their constituent bits, and perform some operation on each of them.
+ * The operations will be applied from least significant bit to most significant bit. Additionally one
+ * can provide an *auxiliary* array which is threaded between the operations (e.g. a carry).
+ *
+ * @param ws      The array of wires to input
+ * @param initial The initial auxiliary array
+ * @param f       The function to perform for the ith bit of each wire. The first argument is the input
+ *                bits and the second is the auxiliary
+ * @return The output wire and the final aux value
+ */
+public func Bitwise<T>(
+    ws : Array<T>,
+    initial : Array<Wire>,
+    f : (Array<Wire>, Array<Wire>) -> (Array<Wire>, Array<Wire>)
+) : (Array<Wire>, Array<Wire>) where T <: ToString, T <: ContainsWire {
+    Bitwise<T, Wire>(
+        ws,
+        Array<Wire>(),
+        initial,
+        {ws : Array<Wire>, ctl : Array<Wire>, aux : Array<Wire> => f(ws, aux)}
+    )
+}
+/**
+ * Split multiple wires into their constituent bits, and perform some operation on each of them.
+ * The operations will be applied from least significant bit to most significant bit. Additionally one
+ * can provide an *auxiliary* array which is threaded between the operations (e.g. a carry).
+ *
+ * @param ws      The array of wires to input
+ * @param initial The initial auxiliary array
+ * @param f       The function to perform for the ith bit of each wire. The first argument is the input
+ *                bits and the second is the auxiliary
+ * @return The output wire and the final aux value
+ */
+public func Bitwise<T>(
+    ws : Array<T>,
+    initial : Wire,
+    f : (Array<Wire>, Wire) -> (Wire, Wire)
+) : (Wire, Wire) where T <: ToString, T <: ContainsWire {
+    let (finalOutput, finalAux) = Bitwise<T, Wire>(
+        ws,
+        Array<Wire>(),
+        [initial],
+        {ws : Array<Wire>, ctl : Array<Wire>, aux : Array<Wire> =>
+            let (currentOutput, currentAux) = f(ws, aux[0])
+            ([currentOutput], [currentAux])
+        }
+    )
+    (finalOutput[0], finalAux[0])
 }
 /**
  * Split multiple wires into their constituent bits, and perform some operation on each of them.
@@ -81,6 +131,25 @@ public func Bitwise<T>(
         Array<Wire>(),
         {ws : Array<Wire>, ctl : Array<Wire>, aux : Array<Wire> => (f(ws), aux) }
     )[0]
+}
+/**
+ * Split multiple wires into their constituent bits, and perform some operation on each of them.
+ * The operations will be applied from least significant bit to most significant bit.
+ *
+ * @param ws      The array of wires to input
+ * @param f       The function to perform for the ith bit of each wire
+ * @return The output wire and the final aux value
+ */
+public func Bitwise<T>(
+    ws : Array<T>,
+    f : (Array<Wire>) -> Wire
+) : Wire where T <: ToString, T <: ContainsWire {
+    Bitwise<T, Wire>(
+        ws,
+        Array<Wire>(),
+        Array<Wire>(),
+        {ws : Array<Wire>, ctl : Array<Wire>, aux : Array<Wire> => ([f(ws)], aux) }
+    )[0][0]
 }
 /**
  * Given a binary operation on wires, 'ripple' it across an arbitrary
@@ -125,7 +194,7 @@ public func InternalRipple<T>(
     // Split the input wire into each bit
     let splitWires = Split<T>(
         w,
-        Array<Int64>(width){ i : Int64 => 1 }
+        Array<Int64>(width, { i : Int64 => 1 })
     )
     // Now this is just a ripple on eight inputs
     Ripple(splitWires, f)

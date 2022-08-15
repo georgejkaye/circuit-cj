@@ -12,7 +12,10 @@
 package examples
 
 import components.*
-
+/**
+ * Create a full adder
+ * @return A full adder subcircuit
+ */
 func FullAdder() {
     let inputA = MakeWire(1)
     let inputB = MakeWire(1)
@@ -23,43 +26,47 @@ func FullAdder() {
     let carryAnd = AndGate(inputC, inputXor)
     let carryOr = OrGate(inputAnd, carryAnd)
     MakeSubcircuit([
-        InterfaceWire(inputA, "A"),
-        InterfaceWire(inputB, "B"),
-        InterfaceWire(inputC, "C")
-    ], [
-        InterfaceWire(carryXor, "S"),
-        InterfaceWire(carryOr, "C")
-    ], name: "+")
+            InterfaceWire(inputA, "A"),
+            InterfaceWire(inputB, "B"),
+            InterfaceWire(inputC, "C")
+        ], [
+            InterfaceWire(carryXor, "S"),
+            InterfaceWire(carryOr, "C")
+        ],
+        "+"
+    )
 }
-
+/**
+ * Create a full adder that operates on arbitrary width wires
+ * @param width The width to specify for
+ * @return A multibit full adder subcircuit
+ */
 func MultibitFullAdder(width : Int64) {
     let a = MakeWire(width)
     let b = MakeWire(width)
     let c = MakeWire(1)
     let (sum, carry) = Bitwise(
         [a, b],
+        c,
         { ws : Array<Wire>, c : Wire => 
             UseSubcircuit_2(FullAdder(), [ws[0], ws[1], c])
-        },
-        c
+        }
     )
     MakeSubcircuit([
-        InterfaceWire(a, "A"),
-        InterfaceWire(b, "B"),
-        InterfaceWire(c, "C")
-    ], [
-        InterfaceWire(sum, "S"),
-        InterfaceWire(carry, "C")
-    ], name: "+_${a.GetWidth()}")
+            InterfaceWire(a, "A"),
+            InterfaceWire(b, "B"),
+            InterfaceWire(c, "C")
+        ], [
+            InterfaceWire(sum, "S"),
+            InterfaceWire(carry, "C")
+        ],
+        "+_${a.GetWidth()}"
+    )
 }
-
 /**
  * Create an arbitrary width adder than can also handle subtraction.
- *
- * This is implemented in the components/ library but is provided here
- * as an example.
- *
  * @param w The width of the inputs
+ * @return The add/sub subcircuit
  */
 public func AddSub(width : Int64) {
     // Input wires
@@ -85,16 +92,23 @@ public func AddSub(width : Int64) {
         ])
     )
     MakeSubcircuit([
-        InterfaceWire(a, "A"),
-        InterfaceWire(b, "B"),
-        InterfaceWire(c, "C")
-    ], [
-        InterfaceWire(sum, "Sum"),
-        InterfaceWire(overflow, "Overflow"),
-        InterfaceWire(carry, "Carry")
-    ], name: "ADD/SUB")
+            InterfaceWire(a, "A"),
+            InterfaceWire(b, "B"),
+            InterfaceWire(c, "C")
+        ], [
+            InterfaceWire(sum, "Sum"),
+            InterfaceWire(overflow, "Overflow"),
+            InterfaceWire(carry, "Carry")
+        ],
+        "ADD/SUB"
+    )
 }
-
+/**
+ * Create an ALU that can perform addition, subtraction and bitwise and,
+ * specified for wires of a given width
+ * @param w The width of the input wires
+ * @return The ALU subcircuit
+ */
 public func ALU(w : Int64){
     let a = MakeWire(w)
     let b = MakeWire(w)
@@ -103,23 +117,26 @@ public func ALU(w : Int64){
     let and = And(a, b)
     let or = Or(a, b)
     let (sum, overflow, carry) = UseSubcircuit_3(AddSub(w), [a, b, c0])
-    let mux1 = Mux2(and, or, c1)
-    let mux2 = Mux2(mux1, sum, c1)
+    let mux1 = Mux2(c1, and, or)
+    let mux2 = Mux2(c1, mux1, sum)
 
     let result = mux2
-    let zero = Not(Or(result))
+    let notzero = Or(result)
+    let zero = Not(notzero)
     let negative = Msb(result)
 
     MakeSubcircuit([
-        InterfaceWire(a, "A"),
-        InterfaceWire(b, "B"),
-        InterfaceWire(c0, "C0"),
-        InterfaceWire(c1, "C1")
-    ], [
-        InterfaceWire(result, "Result"),
-        InterfaceWire(zero, "Zero"),
-        InterfaceWire(negative, "Neg"),
-        InterfaceWire(overflow, "Overflow"),
-        InterfaceWire(carry, "Carry")
-    ], name: "ALU")
+            InterfaceWire(a, "A"),
+            InterfaceWire(b, "B"),
+            InterfaceWire(c0, "C0"),
+            InterfaceWire(c1, "C1")
+        ], [
+            InterfaceWire(result, "Result"),
+            InterfaceWire(zero, "Zero"),
+            InterfaceWire(negative, "Neg"),
+            InterfaceWire(overflow, "Overflow"),
+            InterfaceWire(carry, "Carry")
+        ],
+        "ALU"
+    )
 }

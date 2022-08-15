@@ -16,7 +16,7 @@ package components
  * @param input The input wire
  * @return The output of the delay
  */
-public func Delay (duration : Int64, input: Wire) : Wire {
+public func Delay(duration : Int64, input: Wire) : Wire {
     let width = input.GetWidth()
     MakeEdgeWithNewOutputs<Wire, Int64>(
         DELAY(duration, width),

@@ -266,11 +266,11 @@ func Mux2_1_1() : InterfacedHypergraph {
  * Create a 2-multiplexer subcircuit for inputs of arbitrary width:
  * a circuit that produces one of two outputs depending on a control signal.
  */
-func Mux2_1_W(width : Int64) : InterfacedHypergraph {
+public func Mux2_1_W(width : Int64) : InterfacedHypergraph {
     let sel = InterfaceWire(1, "SEL")
     let a = InterfaceWire(width, "A")
     let b = InterfaceWire(width, "B")
-    let output = Bitwise<InterfaceWire, InterfaceWire>(
+    let output = Bitwise(
         [a, b],
         [sel],
         Array<Wire>(),

@@ -21,10 +21,10 @@ public enum Value { Bottom | False | True | Top }
 extend Value <: ToString {
     public func toString() : String {
         match(this) {
-            case Bottom => "B"
+            case Bottom => "\u{22A5}"
             case False => "0"
             case True => "1"
-            case Top => "T"
+            case Top => "\u{22A4}"
         }
     }
 }

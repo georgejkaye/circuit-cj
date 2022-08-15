@@ -13,7 +13,7 @@ package assertions
  * @param msg The message to print
  */
 public func ErrorMsg(msg : String) : Unit {
-    println("[ERROR] ${msg})")
+    println("[ERROR] ${msg}")
 }
 
 /**
@@ -103,7 +103,7 @@ class IncompatibleArrayLengthException<T> <: Exception where T <: ToString {
 
 class InsufficientParameterException2<T, U> <: Exception where T <: ToString, U <: ToString {
     public init(paramType : ParamType, t : T, currentParam : U, u : U) {
-        ErrorMsg("Expected ${t} to have ${paramType} of value at least ${u} but it only has ${t}")
+        ErrorMsg("Expected ${t} to have ${paramType} of value at least ${u} but it only has ${currentParam}")
     }
 }
 

@@ -45,7 +45,7 @@ extend MessageType <: ToString {
 }
 
 func PrintMessage(mt : MessageType, msg : String) : Unit {
-    print("${mt}: ${msg}\n")
+    println("${mt}: ${msg}")
 }
 
 public func Debug(fnc: String, msg : String) : Unit {
@@ -66,6 +66,6 @@ public func Info(fnc : String, msg: String) : Unit {
     PrintMessage(INFO, msg)
 }
 
-public func Todo(msg : String) : Unit {
+public func TodoMessage(msg : String) : Unit {
     PrintMessage(TODO, msg)
 }

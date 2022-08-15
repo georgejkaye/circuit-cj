@@ -51,9 +51,9 @@ public func AssertIsNone<T>(
         case Some(t) =>
             throw IncompatibleParameterException2(
                 paramType,
-                None<T>,
                 opt,
-                t
+                t,
+                None<T>
             )
     }
 }

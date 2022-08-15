@@ -188,7 +188,7 @@ public func Split(w : Wire, l : Int64, r : Int64) : (Wire, Wire) {
  * @return The array of split wires
  */
 public func Split(w : Wire) : Array<Wire> {
-    Split(w, Array<Int64>(w.GetWidth()){ i : Int64 => 1})
+    Split(w, Array<Int64>(w.GetWidth(), { i : Int64 => 1}))
 }
 /**
  * Combine an array of wires into one wire with width the sum of the original wires.
@@ -292,5 +292,5 @@ public func LsbsAndMsb(w : Wire) : (Wire, Wire) {
  * @return The replicated wire
  */
 public func Replicate(a : Wire, w : Int64) : Wire {
-    Combine(Array<Wire>(w){ i : Int64 => a })
+    Combine(Array<Wire>(w, { i : Int64 => a }))
 }

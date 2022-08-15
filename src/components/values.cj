@@ -130,7 +130,7 @@ public func SignedValueFromInt(x : Int64, width!: Int64) : Wire {
  * @return The wire of the value
  */
 public func Zero(width: Int64) : Wire {
-    let values = Array<Value>(width){ i : Int64 => False }
+    let values = Array<Value>(width, { i : Int64 => False })
     MakeValue(values, false)
 }
 /**
@@ -138,9 +138,16 @@ public func Zero(width: Int64) : Wire {
  * @param width The width of the bitstring
  * @return The wire of the value
  */
-public func ConstantZero(width: Int64) {
+public func ConstantZero(width: Int64) : Wire {
     let value = Zero(width)
     InfiniteWaveform(value)
+}
+/**
+ * Create a constant zero waveform for one bit, i.e. a false
+ * @return The wire of the value
+ */
+public func ConstantZero() : Wire {
+    ConstantZero(1)
 }
 /**
  * Perform an unsigned extension on a wire, i.e. add a false as its msb

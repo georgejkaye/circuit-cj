@@ -2,16 +2,18 @@
 
 This repo contains a library for designing hardware in Cangjie. In particular, we want to be able to perform the following things:
 
-* Design
-* Simulation/Reduction
-* Synthesis
-* Verification
+- Design
+- Simulation/Reduction
+- Synthesis
+- Verification
 
 For more documentation see the [wiki](https://gitlab-uk.rnd.huawei.com/cpl_uk_team/circuits-cj/-/wikis/home).
 
 ## Compiling
 
 To make compiling easier, you should use `make`.
+
+The library has been tested with the `cjc` command from the [Cangjie repo](https://open.codehub.huawei.com/innersource/CangjieLang/Cangjie) at commit `754af5393de27d6992b0ad8feb392aeff743b5fe`.
 
 ### Everything
 
@@ -25,7 +27,7 @@ make
 
 To build the library in `src/`:
 
-```sh 
+```sh
 make library
 ```
 

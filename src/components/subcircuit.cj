@@ -49,21 +49,22 @@ public func MakeSubcircuit(
  * @param w The width of the input wires
  * @return The bitwise gate circuit
  */
-func MakeBitwiseGate(
+public func MakeBitwiseGate(
     prim : Primitive,
     w : Int64
 ) : InterfacedHypergraph {
     let inputs = Array<InterfaceWire>(prim.GetNoInputs()) {
         i : Int64 => InterfaceWire(w, numToUppercaseLetter(i))
     }
-    let output = [InterfaceWire(w, "Z")]
-    let bitwise = Bitwise<InterfaceWire>(
-        inputs,
-        { ws : Array<Wire> => [prim.UseGate()(ws)] }
+    let output = InterfaceWire(
+            Bitwise<InterfaceWire>(
+            inputs,
+            { ws : Array<Wire> => [prim.UseGate()(ws)] }
+        )[0], "Z"
     )
     MakeSubcircuit(
         inputs,
-        output,
+        [output],
         prim.GetEnhancedName(prim.GetNoInputs(), w)
     )
 }
@@ -133,9 +134,9 @@ public func UseSubcircuit<T>(
     circuit : InterfacedHypergraph,
     inputs : Array<T>
 ) : Array<Wire> where T <: ToString, T <: ContainsWire {
-    AssertWiresHaveWidths<T, Socket>(inputs, circuit.GetInputPorts())
+    AssertWiresHaveWidths<T, Port>(inputs, circuit.GetInputPorts())
     let newGraph = circuit.CloneGraph()
-    MakeEdgeWithNewOutputs<T, Socket>(
+    MakeEdgeWithNewOutputs<T, Port>(
         circuit.GetLabel(),
         inputs,
         circuit.GetOutputPorts(),
@@ -193,13 +194,17 @@ public func UseSubcircuit_3<T>(
 public func UseBitwiseGate(prim : Primitive, ws : Array<Wire>) : Wire {
     AssertWiresSameWidth(ws)
     AssertNumberOfWires(ws, prim.GetNoInputs())
-    UseSubcircuit(
-        MakeBitwiseGate(
-            prim,
-            ws.size
-        ),
-        ws
-    )[0]
+    if(ws[0].GetWidth() == 1) {
+        prim.UseGate()(ws)
+    } else {
+        UseSubcircuit_1(
+            MakeBitwiseGate(
+                prim,
+                ws[0].GetWidth()
+            ),
+            ws
+        )
+    }
 }
 
 /**

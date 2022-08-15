@@ -71,7 +71,14 @@ public class InterfaceVertex <: Socket & ContainsVertex {
         !(this == rhs)
     }
     public func toString() : String {
-        "${vertex} (${name})"
+        let nameString = match (this.name) {
+            case None => ""
+            case Some(n) => " (${n})"
+        }
+        "${vertex}${nameString}"
+    }
+    public func ToPort() : Port {
+        Port(vertex.GetWidth(), name: name)
     }
 }
 
@@ -85,7 +92,7 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
     let inputs : Array<InterfaceVertex>
     let outputs : Array<InterfaceVertex>
     let label : Label
-    let name : Option<String>
+    let name : String
     public init(
         f : Hypergraph,
         inputs : Array<InterfaceVertex>,
@@ -95,17 +102,14 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
         this.f = f
         this.inputs = inputs
         this.outputs = outputs
-        this.name = match(label.GetName()) {
-            case None => "h${uniqueId}"
-            case Some(s) => s
-        }
+        this.name = label.GetName()
         this.label = label
     }
     public init(
         f : Hypergraph,
         inputs : Array<InterfaceVertex>,
         outputs : Array<InterfaceVertex>,
-        name : Option<String>
+        name : String
     ){
         this(
             f,
@@ -152,11 +156,11 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
     public func GetOutputs() : Int64 {
         this.outputs.size
     }
-    public func GetInputPorts() : Array<Socket> {
-        (this.inputs as Array<Socket>).getOrThrow()
+    public func GetInputPorts() : Array<Port> {
+        map({ iv : InterfaceVertex => iv.ToPort() }, this.inputs )
     }
-    public func GetOutputPorts() : Array<Socket> {
-        (this.outputs as Array<Socket>).getOrThrow()
+    public func GetOutputPorts() : Array<Port> {
+        map({ iv : InterfaceVertex => iv.ToPort() }, this.outputs )
     }
     public func GetName() : Option<String> {
         this.name

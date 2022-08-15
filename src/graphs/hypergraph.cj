@@ -177,7 +177,7 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
      * @return A tuple (hypergraph, vertex map, edge map) where the two hashmaps
      * relate the original versions of vertices/edges with the new copies
      */
-    public func Clone() : (Hypergraph, HashMap<Vertex,Vertex>, HashMap<Edge,Edge>) {
+    public func Clone() : (Hypergraph, HashMap<Vertex, Vertex>, HashMap<Edge, Edge>) {
         let newVertices = HashSet<Vertex>()
         let vertexMap = HashMap<Vertex,Vertex>()
         let newEdges = HashSet<Edge>()

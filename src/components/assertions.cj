@@ -4,6 +4,16 @@ import debug.*
 import assertions.*
 import graphs.*
 
+class TodoException <: Exception {
+    public init(msg : String){
+        TodoMessage(msg)
+    }
+}
+
+public func Todo(msg : String){
+    throw TodoException(msg)
+}
+
 func AssertNonNegative(x : Int64) {
     AssertAtLeast(x, 0)
 }

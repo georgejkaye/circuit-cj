@@ -28,14 +28,14 @@ func CheckSpecCompatibility<T,U>(
     outputs: Array<U>
 ) : Unit where T <: ToString, U <: ToString, T <: HasWidth, U <: HasWidth {
     func CheckArrayCompatibility<T>(
-        desired : Array<Socket>,
+        desired : Array<Port>,
         actual : Array<T>
     ) : Unit where T <: HasWidth, T <: ToString {
-        AssertArrayElementsHaveParameters<T,Socket,Int64>(
+        AssertArrayElementsHaveParameters<T, Port, Int64>(
             actual,
             desired,
             { t : T => t.GetWidth() },
-            { s : Socket => s.GetWidth() },
+            { p : Port => p.GetWidth() },
             Width
         )
     }
@@ -49,7 +49,7 @@ func CheckSpecCompatibility<T,U>(
  * They can have multiple sources and target vertices, and also
  * an optional subgraph representing the internal construction.
  */
-public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Identifiable & Hashable {
+public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Identifiable & ToString & Hashable {
     let id : Int64 = GetNextId()
     var owner : Option<Hypergraph> = None
     public Edge(
@@ -120,7 +120,6 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
         )
     }
     public func SetTarget(i : Int64, newVertex : Vertex) : Unit {
-        AssertVertexHasNoInEdge(newVertex)
         SetVertex(
             i,
             newVertex,
@@ -149,19 +148,16 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
     public func toString() : String {
         "e${this.GetId()}"
     }
-    public func GetName() : Option<String> {
-        "e${this.GetId()}"
-    }
     public operator func ==(right: Edge) : Bool {
         this.GetId() == right.GetId()
     }
     public operator func !=(right : Edge) : Bool {
         this.GetId() != right.GetId()
     }
-    public func GetInputPorts() : Array<Socket> {
+    public func GetInputPorts() : Array<Port> {
         this.label.GetInputPorts()
     }
-    public func GetOutputPorts() : Array<Socket> {
+    public func GetOutputPorts() : Array<Port> {
         this.label.GetOutputPorts()
     }
     public func hashCode() : Int64 {

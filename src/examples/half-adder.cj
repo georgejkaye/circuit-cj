@@ -24,6 +24,6 @@ public func HalfAdder(a : Wire, b : Wire){
             InterfaceWire(sum, "S"),
             InterfaceWire(carry, "C")
         ],
-        "half_adder"
+        "half adder"
     )
 }

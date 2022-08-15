@@ -27,15 +27,15 @@ public func ASCIIToString(n : UInt32) : String {
  * @return The corresponding uppercase letter
  */
 public func numToUppercaseLetter(n : Int64) : String {
-    ASCIIToString(64 + UInt32(n))
+    ASCIIToString(65 + UInt32(n))
 }
 
-public class ValueSpec <: ToString & Specifiable {
+public class ValueSpec <: ToString & HasName & Specifiable {
     public ValueSpec(
         let values : Array<Value>,
         let signed : Bool
     ){}
-    public func GetName() : Option<String> {
+    public func GetName() : String {
         PrintValue(this.values, this.signed, BIN)
     }
     public func GetValueAsRepresentation(rep : NumberRepresentation) : String {
@@ -44,10 +44,10 @@ public class ValueSpec <: ToString & Specifiable {
     public func toString() : String {
         "${values}"
     }
-    public func GetInputPorts() : Array<Socket> {
+    public func GetInputPorts() : Array<Port> {
         []
     }
-    public func GetOutputPorts() : Array<Socket> {
+    public func GetOutputPorts() : Array<Port> {
         [Port(values.size)]
     }
     public func GetSize() : Int64 {
@@ -74,8 +74,8 @@ public enum Primitive {
     | XOR
     | XNOR
 }
-extend Primitive <: ToString & Specifiable {
-    public func GetName() : Option<String> {
+extend Primitive <: ToString & Specifiable & HasName {
+    public func GetName() : String {
         match(this) {
             case BUF  => "BUF"
             case NOT  => "NOT"
@@ -87,7 +87,7 @@ extend Primitive <: ToString & Specifiable {
             case XNOR => "XNOR"
         }
     }
-    public func GetInputPorts() : Array<Socket> {
+    public func GetInputPorts() : Array<Port> {
         match(this) {
             case BUF  => [Port(1, "A")]
             case NOT  => [Port(1, "A")]
@@ -102,7 +102,7 @@ extend Primitive <: ToString & Specifiable {
     public func GetNoInputs() : Int64 {
         this.GetInputPorts().size
     }
-    public func GetOutputPorts() : Array<Socket> {
+    public func GetOutputPorts() : Array<Port> {
         match(this) {
             case BUF  => [Port(1, "Z")]
             case NOT  => [Port(1, "Z")]
@@ -118,10 +118,7 @@ extend Primitive <: ToString & Specifiable {
         this.GetOutputPorts().size
     }
     public func toString() : String {
-        match(this.GetName()) {
-            case None => ""
-            case Some(s) => s
-        }
+        this.GetName()
     }
     /**
     * Get a name for an 'enhanced' version of this primitive, i.e. one
@@ -140,32 +137,29 @@ extend Primitive <: ToString & Specifiable {
 /**
  * A specification defines an arbitrary label with a name and arrays of input/output ports
  */
-public class Specification <: Specifiable {
+public class Specification <: Specifiable & HasName {
     public Specification(
-        let name : Option<String>,
+        let name : String,
         let inputPorts : Array<Port>,
         let outputPorts : Array<Port>
     ){}
-    public func GetName() : Option<String> {
+    public func GetName() : String {
         this.name
     }
-    public func GetInputPorts() : Array<Socket> {
-        (this.inputPorts as Array<Socket>).getOrThrow()
+    public func GetInputPorts() : Array<Port> {
+        this.inputPorts
     }
     public func GetNoInputs() : Int64 {
         this.GetInputPorts().size
     }
-    public func GetOutputPorts() : Array<Socket> {
-        (this.outputPorts as Array<Socket>).getOrThrow()
+    public func GetOutputPorts() : Array<Port> {
+        this.outputPorts
     }
     public func GetNoOutputs() : Int64 {
         this.GetOutputPorts().size
     }
     public func toString() : String {
-        match(this.GetName()){
-            case None => ""
-            case Some(s) => s
-        }
+        this.GetName()
     }
 }
 
@@ -176,7 +170,7 @@ public func GetMuxName(n : Int64, c : Int64, w : Int64) : String {
 public func MuxSpec(n : Int64, c : Int64, w: Int64) : Specification {
     Specification(
         "MUX{n}_1_{w}",
-        Array<Port>(c + n){
+        Array<Port>(c + n, {
             i : Int64 =>
                 let (width, name) = if (i < c) {
                     (1, "SEL${i}")
@@ -184,7 +178,7 @@ public func MuxSpec(n : Int64, c : Int64, w: Int64) : Specification {
                     (w, numToUppercaseLetter(i - c))
                 }
                 Port(width, name: name)
-        },
+        }),
         [Port(w, "Z")]
     )
 }
