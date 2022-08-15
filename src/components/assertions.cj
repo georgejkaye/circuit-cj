@@ -53,7 +53,7 @@ func AssertWiresSameWidth<T,U>(
 }
 func AssertWireArraysCompatible(ws : Array<Wire>, vs : Array<Wire>) : Array<Int64> {
     AssertArraysSameLength(ws, vs)
-    Array<Int64>(ws.size()) {
+    Array<Int64>(ws.size) {
         i : Int64 =>
             AssertWiresSameWidth(ws[i], vs[i])
     }

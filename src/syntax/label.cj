@@ -41,7 +41,7 @@ extend Label <: Specifiable {
         }
     }
     public func GetNoInputs() : Int64 {
-        this.GetInputPorts().size()
+        this.GetInputPorts().size
     }
     public func GetOutputPorts() : Array<Socket> {
         match(this) {
@@ -55,15 +55,15 @@ extend Label <: Specifiable {
         }
     }
     public func GetNoOutputs() : Int64 {
-        this.GetOutputPorts().size()
+        this.GetOutputPorts().size
     }
     public func GetName() : Option<String> {
         match(this) {
             case VALUE(spec)            => spec.GetName()
             case BUNDLER(ms, ns)        =>
-                let arrow = if (ms.size() < ns.size()) { "◁" } else { "▷" }
-                "${ms.size()}${arrow}${ns.size()}"
-            case JOIN(w)                => "∇_${w}"
+                let arrow = if (ms.size < ns.size) { "<" } else { ">" }
+                "${ms.size}${arrow}${ns.size}"
+            case JOIN(w)                => "V_${w}"
             case PRIMITIVE(prim)        => prim.GetName()
             case COMPOSITE(spec)        => spec.GetName()
             case BLACKBOX(spec)         => spec.GetName()

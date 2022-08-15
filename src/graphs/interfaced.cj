@@ -44,7 +44,7 @@ public func CloneWithInterfaces<T>(
     (newF, newInputs, newOutputs)
 }
 
-public record InterfaceVertex <: Socket & ContainsVertex {
+public class InterfaceVertex <: Socket & ContainsVertex {
     public InterfaceVertex(
         public let vertex : Vertex,
         public let name : Option<String>
@@ -147,10 +147,10 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
         this.outputs[i]
     }
     public func GetInputs() : Int64 {
-        this.inputs.size()
+        this.inputs.size
     }
     public func GetOutputs() : Int64 {
-        this.outputs.size()
+        this.outputs.size
     }
     public func GetInputPorts() : Array<Socket> {
         (this.inputs as Array<Socket>).getOrThrow()
@@ -167,7 +167,7 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
     }
     public func IsWellFormed() : Bool {
         let issues = this.WellFormednessCheck()
-        issues.size() == 0
+        issues.size == 0
     }
     public func WellFormednessCheck() : ArrayList<WellformednessIssue> {
         let issues = f.WellFormednessCheck()
@@ -176,10 +176,10 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
             array : Array<InterfaceVertex>,
             notPresent : (Int64, InterfaceVertex) -> WellformednessIssue
         ) : Unit {
-            for (i in 0..array.size()) {
+            for (i in 0..array.size) {
                 let v = array[i]
                 if (!f.GetVertices().contains(v.GetVertex())){
-                    issues.add(notPresent(i, v))
+                    issues.append(notPresent(i, v))
                 }
             }
         }

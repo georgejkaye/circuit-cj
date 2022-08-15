@@ -84,7 +84,7 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
     }
     public func IsWellFormed() : Bool {
         let issues = this.WellFormednessCheck()
-        issues.size() == 0
+        issues.size == 0
     }
     public func WellFormednessCheck() : ArrayList<WellformednessIssue> {
 
@@ -95,10 +95,10 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
             array : Array<Vertex>,
             notPresent : (Edge, Int64, Vertex) -> WellformednessIssue
         ){
-            for (i in 0..array.size()) {
+            for (i in 0..array.size) {
                 let v = array[i]
                 if (!this.vertices.contains(v)) {
-                    issues.add(notPresent(e, i, v))
+                    issues.append(notPresent(e, i, v))
                 }
             }
         }

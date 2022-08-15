@@ -11,7 +11,7 @@ package graphs
  * An EdgeConnection specifies an edge that a vertex
  * is a source or target of, and which index it is. 
  */
-public record EdgeConnection <: ToString & Equatable<EdgeConnection> {
+public class EdgeConnection <: ToString & Equatable<EdgeConnection> {
     public EdgeConnection(
         public let edge : Edge,
         public let index : Int64
@@ -71,10 +71,10 @@ public class Vertex <: Identifiable &
         inEdge = ec
     }
     public func AddOutEdge(e : Edge, i : Int64) : Unit {
-        outEdges.add(EdgeConnection(e, i))
+        outEdges.append(EdgeConnection(e, i))
     }
     public func AddAllOutEdges(es : ArrayList<EdgeConnection>) {
-        outEdges.addAll(es)
+        outEdges.appendAll(es)
     }
     func IncrementFeedback() : Unit {
         this.feedback++

@@ -47,8 +47,8 @@ func UnsignedDecToBin(x : Int64, w : Int64) : Array<Bool> {
  * @param x The array of booleans
  */
 func AddOne(x : Array<Bool>) : Unit {
-    for (i in 0..(x.size()-1)) {
-        let j = x.size() - 1 - i
+    for (i in 0..(x.size - 1)) {
+        let j = x.size - 1 - i
         if (x[j]) {
             x[j] = false
         } else {
@@ -62,7 +62,7 @@ func AddOne(x : Array<Bool>) : Unit {
  * @param x The array of booleans
  */
 func Invert(x : Array<Bool>) : Unit {
-    for (i in 0..(x.size())){
+    for (i in 0..(x.size)){
         x[i] = !x[i]
     }
 }
@@ -91,7 +91,7 @@ public func MakeValue(vs : Array<Value>, signed : Bool) : Wire {
             ValueSpec(vs, signed)
         ),
         Array<Wire>(),
-        [vs.size()],
+        [vs.size],
         None
     )[0]
 }

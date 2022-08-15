@@ -31,7 +31,7 @@ public func Bitwise<T, U>(
     initial : Array<Wire>,
     f : (Array<Wire>, Array<U>, Array<Wire>) -> (Array<Wire>, Array<Wire>)
 ) : (Array<Wire>, Array<Wire>) where T <: ToString, T <: ContainsWire, U <: ToString, T <: ContainsWire {
-    let size = ws.size()
+    let size = ws.size
     let width = AssertWiresSameWidth<T>(ws)
     // An array of arrays containing the wires of ws split explicitly into their
     // constituent bits: splitWires[i][j] is the jth bit of ws[i]
@@ -57,7 +57,7 @@ public func Bitwise<T, U>(
         aux = carry
     }
     // Compress the individual bits back into thicker wires
-    let outputWires = Array<Wire>(outputs.size()){
+    let outputWires = Array<Wire>(outputs.size){
         i : Int64 =>
             Combine(outputs[i])
     }
@@ -97,7 +97,7 @@ public func Ripple<T>(
 ) : Wire where T <: ToString, T <: ContainsWire {
     AssertMinNumberOfWires<T>(ws, 2)
     let width = AssertWiresSameWidth<T>(ws)
-    let size = ws.size()
+    let size = ws.size
     // The first gate is performed on inputs 0 and 1
     var prev = ws[0].GetWire()
     for (i in 1..size) {

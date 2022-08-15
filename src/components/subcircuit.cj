@@ -196,7 +196,7 @@ public func UseBitwiseGate(prim : Primitive, ws : Array<Wire>) : Wire {
     UseSubcircuit(
         MakeBitwiseGate(
             prim,
-            ws.size()
+            ws.size
         ),
         ws
     )[0]
@@ -215,7 +215,7 @@ public func UseRippleGate(prim : Primitive, ws : Array<Wire>) : Wire {
     UseSubcircuit_1<Wire>(
         MakeRippleGate(
             prim,
-            ws.size(),
+            ws.size,
             width
         ),
         ws

@@ -42,7 +42,7 @@ extend Int64 <: HasWidth {
 /**
  * A port has a width and an optional name
  */
-public record Port <: ToString & Equatable<Socket> & Socket {
+public class Port <: ToString & Equatable<Socket> & Socket {
     public Port(
         public let width : Int64,
         public let name!: Option<String> = None

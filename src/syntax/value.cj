@@ -21,10 +21,10 @@ public enum Value { Bottom | False | True | Top }
 extend Value <: ToString {
     public func toString() : String {
         match(this) {
-            case Bottom => "⊥"
+            case Bottom => "B"
             case False => "0"
             case True => "1"
-            case Top => "⊤"
+            case Top => "T"
         }
     }
 }
@@ -32,7 +32,7 @@ extend Value <: ToString {
 /**
  * Generate a string in binary corresponding to an array of values.
  * True and False are printed as 1 and 0 as standard, Bottom and Top
- * as ⊥ and ⊤.
+ * as B and T.
  *
  * @param bits The array of values to convert. Most significant bit is bits[0].
  * @return The bitstring corresponding to the array
@@ -80,27 +80,27 @@ public func PrintValue(
                     case False => ()
                     case Top => return BitString(vs)
                 }
-                for (i in 0..vs.size()) {
+                for (i in 0..vs.size) {
                     var carry = true
-                    match(vs[vs.size() - i - 1]) {
+                    match(vs[vs.size - i - 1]) {
                         case Bottom => return BitString(vs)
                         case True =>
                             if(!carry) {
-                                x += 2**i
+                                x += 2**UInt64(i)
                             }
                         case False =>
                             if(carry) {
-                                x += 2**i
+                                x += 2**UInt64(i)
                                 carry = false
                             }
                         case Top => return BitString(vs)
                     }
                 }
             } else {
-                for (i in 0..vs.size()) {
+                for (i in 0..vs.size) {
                     match(vs[i]) {
                         // Only a 1 contributes to the total sum
-                        case True   => x += 2**(vs.size() - 1 - i)
+                        case True   => x += 2**UInt64(vs.size - 1 - i)
                         case False  => ()
                         // We can't translate Bottom or Top, so
                         // fallback to bitstring

@@ -77,7 +77,7 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
         this.subgraph
     }
     func ForEachVertex(array : Array<Vertex>, f : (Vertex, Int64) -> Unit) : Unit {
-        for (i in 0..array.size()) {
+        for (i in 0..array.size) {
             f(array[i], i)
         }
     }
@@ -135,7 +135,7 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
         this.sources
     }
     public func GetSourcePorts() : Int64 {
-        this.sources.size()
+        this.sources.size
     }
     public func GetTarget(i : Int64) : Vertex {
         this.targets[i]
@@ -144,7 +144,7 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
         this.targets
     }
     public func GetTargetPorts() : Int64 {
-        this.targets.size()
+        this.targets.size
     }
     public func toString() : String {
         "e${this.GetId()}"

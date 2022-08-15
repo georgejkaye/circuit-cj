@@ -16,7 +16,7 @@ package syntax
  * @return The corresponding ascii character as a string
  */
 public func ASCIIToString(n : UInt32) : String {
-    let char = chr(n)
+    let char = Char(n)
     String([char])
 }
 /**
@@ -30,7 +30,7 @@ public func numToUppercaseLetter(n : Int64) : String {
     ASCIIToString(64 + UInt32(n))
 }
 
-public record ValueSpec <: ToString & Specifiable {
+public class ValueSpec <: ToString & Specifiable {
     public ValueSpec(
         let values : Array<Value>,
         let signed : Bool
@@ -48,10 +48,10 @@ public record ValueSpec <: ToString & Specifiable {
         []
     }
     public func GetOutputPorts() : Array<Socket> {
-        [Port(values.size())]
+        [Port(values.size)]
     }
     public func GetSize() : Int64 {
-        this.values.size()
+        this.values.size
     }
 }
 
@@ -100,7 +100,7 @@ extend Primitive <: ToString & Specifiable {
         }
     }
     public func GetNoInputs() : Int64 {
-        this.GetInputPorts().size()
+        this.GetInputPorts().size
     }
     public func GetOutputPorts() : Array<Socket> {
         match(this) {
@@ -115,7 +115,7 @@ extend Primitive <: ToString & Specifiable {
         }
     }
     public func GetNoOutputs() : Int64 {
-        this.GetOutputPorts().size()
+        this.GetOutputPorts().size
     }
     public func toString() : String {
         match(this.GetName()) {
@@ -140,7 +140,7 @@ extend Primitive <: ToString & Specifiable {
 /**
  * A specification defines an arbitrary label with a name and arrays of input/output ports
  */
-public record Specification <: Specifiable {
+public class Specification <: Specifiable {
     public Specification(
         let name : Option<String>,
         let inputPorts : Array<Port>,
@@ -153,13 +153,13 @@ public record Specification <: Specifiable {
         (this.inputPorts as Array<Socket>).getOrThrow()
     }
     public func GetNoInputs() : Int64 {
-        this.GetInputPorts().size()
+        this.GetInputPorts().size
     }
     public func GetOutputPorts() : Array<Socket> {
         (this.outputPorts as Array<Socket>).getOrThrow()
     }
     public func GetNoOutputs() : Int64 {
-        this.GetOutputPorts().size()
+        this.GetOutputPorts().size
     }
     public func toString() : String {
         match(this.GetName()){

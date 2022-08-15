@@ -74,7 +74,7 @@ public func MakeWire(width : Int64) : Wire {
  * An interface wire is a wire with an optional name. These are
  * used to specify the names of interface ports on a subcircuit
  */
-public record InterfaceWire <: ContainsWire & ToString & ContainsVertex & Socket {
+public class InterfaceWire <: ContainsWire & ToString & ContainsVertex & Socket {
     public InterfaceWire(
         let wire : Wire,
         let name : Option<String>

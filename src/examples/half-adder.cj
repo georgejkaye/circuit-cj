@@ -18,10 +18,12 @@ public func HalfAdder(a : Wire, b : Wire){
     let sum = XorGate(a, b)
     // We need to return both the carry and the sum
     MakeSubcircuit([
-        InterfaceWire(a, "A"),
-        InterfaceWire(b, "B")
-    ], [
-        InterfaceWire(sum, "S"),
-        InterfaceWire(carry, "C")
-    ])
+            InterfaceWire(a, "A"),
+            InterfaceWire(b, "B")
+        ], [
+            InterfaceWire(sum, "S"),
+            InterfaceWire(carry, "C")
+        ],
+        "half_adder"
+    )
 }

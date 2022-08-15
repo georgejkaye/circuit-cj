@@ -95,7 +95,7 @@ func Seq(
         newGraph, 
         newFInputs, 
         newGOutputs,
-        "${f.GetName()} ⨟ ${g.GetName()}}"
+        "${f.GetName()} ; ${g.GetName()}}"
     )
 }
 
@@ -117,14 +117,14 @@ func Par(f : InterfacedHypergraph, g : InterfacedHypergraph, clone : Bool) : Int
     newEdges.putAll(newG.GetEdges())
 
     let newInputs = Array<InterfaceVertex>(f.GetInputs() + g.GetInputs()){
-        i => if(i < newFInputs.size()) {
+        i => if(i < newFInputs.size) {
             newFInputs[i]
         } else {
             newGInputs[i - f.GetInputs()]
         }
     } 
     let newOutputs = Array<InterfaceVertex>(f.GetOutputs() + g.GetOutputs()){
-        i => if(i < newFOutputs.size()) {
+        i => if(i < newFOutputs.size) {
             newFOutputs[i]
         } else {
             newGOutputs[i - f.GetInputs()]
@@ -137,7 +137,7 @@ func Par(f : InterfacedHypergraph, g : InterfacedHypergraph, clone : Bool) : Int
         newGraph,
         newInputs, 
         newOutputs,
-        "${f.GetName()} ⊗ ${g.GetName()}}"
+        "${f.GetName()} * ${g.GetName()}}"
     )
 
 }
