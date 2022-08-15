@@ -4,6 +4,12 @@ import debug.*
 import assertions.*
 import graphs.*
 
+func AssertNonNegative(x : Int64) {
+    AssertAtLeast(x, 0)
+}
+func AssertEnoughBits(current : Int64, desired : Int64) {
+    AssertAtLeast(current, desired)
+}
 func AssertWireHasNoInEdge(w : Wire) {
     AssertVertexHasNoInEdge(w.GetVertex())
 }
@@ -46,9 +52,7 @@ func AssertWiresSameWidth<T,U>(
     )
 }
 func AssertWireArraysCompatible(ws : Array<Wire>, vs : Array<Wire>) : Array<Int64> {
-    if (ws.size() != vs.size()) {
-        throw DifferentNumberOfWiresException(ws, vs)
-    }
+    AssertArraysSameLength(ws, vs)
     Array<Int64>(ws.size()) {
         i : Int64 =>
             AssertWiresSameWidth(ws[i], vs[i])

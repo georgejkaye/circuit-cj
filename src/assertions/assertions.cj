@@ -27,6 +27,11 @@ extend ParamType <: ToString {
         }
     }
 }
+public func AssertEqual<T, U>(t : T, u : U) : Unit where T <: Equatable<U>, T <: ToString, U <: ToString {
+    if (t != u) {
+        throw IncompatibleParameterException2<T, U>(t, u)
+    }
+}
 public func AssertAtLeast(i : Int64, t : Int64) : Unit {
     if(i < t) {
         throw InsufficientParameterException(i, t)

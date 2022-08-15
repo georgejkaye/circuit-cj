@@ -1,6 +1,6 @@
 /**
  * assertions/exceptions.cj
- * 
+ *
  * @author George Kaye
  * @since 0.2
  */
@@ -60,8 +60,14 @@ class IncompatibleParameterException2<T, V> <: Exception where T <: ToString, V 
         current: Array<T>,
         currentParams : Array<V>,
         target: V
-    ) {
+    ){
         ErrorMsg("When checking that each element of ${current} has ${paramType} of value ${target}, found that ${current} has values ${currentParams}")
+    }
+    public init(
+        current: T,
+        target: V
+    ){
+        ErrorMsg("When checking that ${current} is ${target}, found that it is not")
     }
 }
 class IncompatibleParameterException<T> <: Exception where T <: ToString {

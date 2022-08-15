@@ -1,7 +1,7 @@
 /**
  * components/arithmetic.cj
  *
- * Functions for creating subcircuits.
+ * Functions for creating subcircuits
  *
  * @author George Kaye
  * @since 0.2
@@ -183,3 +183,58 @@ public func UseSubcircuit_3<T>(
     let outputs = UseSubcircuit<T>(circuit, inputs)
     (outputs[0], outputs[1], outputs[2])
 }
+
+/**
+ * Connect some inputs to a bitwise primitive
+ * @param prim The primitive to bitwise
+ * @param ws The input wires
+ * @return The output wire from the bitwise gate
+ */
+public func UseBitwiseGate(prim : Primitive, ws : Array<Wire>) : Wire {
+    AssertWiresSameWidth(ws)
+    AssertNumberOfWires(ws, prim.GetNoInputs())
+    UseSubcircuit(
+        MakeBitwiseGate(
+            prim,
+            ws.size()
+        ),
+        ws
+    )[0]
+}
+
+/**
+ * Connect some inputs to a rippled primitive
+ * @param prim The primitive to ripple
+ * @param ws The input wires
+ * @return The output wire from the rippled gate
+ */
+public func UseRippleGate(prim : Primitive, ws : Array<Wire>) : Wire {
+    AssertWireArrayNonEmpty(ws)
+    AssertMinNumberOfWires(ws, prim.GetNoInputs())
+    let width = AssertWiresSameWidth(ws)
+    UseSubcircuit_1<Wire>(
+        MakeRippleGate(
+            prim,
+            ws.size(),
+            width
+        ),
+        ws
+    )
+}
+/**
+ * Connect an input to an internally rippled primitive
+ * @param prim The primitive to ripple
+ * @param w The input wire
+ * @return The output wire from the internally rippled gate
+ */
+public func UseInternalRippleGate(prim : Primitive, w : Wire) : Wire {
+    UseSubcircuit_1(
+        MakeInternalRippleGate(
+            prim,
+            w.GetWidth()
+        ),
+        [w]
+    )
+}
+
+

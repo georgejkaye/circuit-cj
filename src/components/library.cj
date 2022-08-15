@@ -2,6 +2,7 @@
  * components/library.cj
  *
  * Common circuit components
+ *
  * @author George Kaye
  * @since 0.2
  */
@@ -42,28 +43,28 @@ public func BlackBox(
  */
 
 public func Buf(a : Wire) : Wire {
-    UseBitwiseGate([a], BUF)
+    UseBitwiseGate(BUF, [a])
 }
 public func Not(a : Wire) : Wire {
-    UseBitwiseGate([a], NOT)
+    UseBitwiseGate(NOT, [a])
 }
 public func And(a : Wire, b : Wire) : Wire {
-    UseBitwiseGate([a, b], AND)
+    UseBitwiseGate(AND, [a, b])
 }
 public func Or(a : Wire, b : Wire) : Wire {
-    UseBitwiseGate([a, b], OR)
+    UseBitwiseGate(OR, [a, b])
 }
 public func Nand(a : Wire, b : Wire) : Wire {
-    UseBitwiseGate([a, b], NAND)
+    UseBitwiseGate(NAND, [a, b])
 }
 public func Nor(a : Wire, b : Wire) : Wire {
-    UseBitwiseGate([a, b], NOR)
+    UseBitwiseGate(NOR, [a, b])
 }
 public func Xor(a : Wire, b : Wire) : Wire {
-    UseBitwiseGate([a, b], XOR)
+    UseBitwiseGate(XOR, [a, b])
 }
 public func Xnor(a : Wire, b : Wire) : Wire {
-    UseBitwiseGate([a, b], XNOR)
+    UseBitwiseGate(XNOR, [a, b])
 }
 
 /**
@@ -71,22 +72,22 @@ public func Xnor(a : Wire, b : Wire) : Wire {
  */
 
 public func And(ws : Array<Wire>) : Wire {
-    UseRippleGate(ws, AND)
+    UseRippleGate(AND, ws)
 }
 public func Or(ws : Array<Wire>) : Wire {
-    UseRippleGate(ws, OR)
+    UseRippleGate(OR, ws)
 }
 public func Nand(ws : Array<Wire>) : Wire {
-    UseRippleGate(ws, NAND)
+    UseRippleGate(NAND, ws)
 }
 public func Nor(ws : Array<Wire>) : Wire {
-    UseRippleGate(ws, NOR)
+    UseRippleGate(NOR, ws)
 }
 public func Xor(ws : Array<Wire>) : Wire {
-    UseRippleGate(ws, XOR)
+    UseRippleGate(XOR, ws)
 }
 public func Xnor(ws : Array<Wire>) : Wire {
-    UseRippleGate(ws, XNOR)
+    UseRippleGate(XNOR, ws)
 }
 
 /**
@@ -94,22 +95,22 @@ public func Xnor(ws : Array<Wire>) : Wire {
  */
 
 public func And(w : Wire) : Wire {
-    UseInternalRippleGate(w, AND)
+    UseInternalRippleGate(AND, w)
 }
 public func Or(w : Wire) : Wire {
-    UseInternalRippleGate(w, OR)
+    UseInternalRippleGate(OR, w)
 }
 public func Nand(w : Wire) : Wire {
-    UseInternalRippleGate(w, NAND)
+    UseInternalRippleGate(NAND, w)
 }
 public func Nor(w : Wire) : Wire {
-    UseInternalRippleGate(w, NOR)
+    UseInternalRippleGate(NOR, w)
 }
 public func Xor(w : Wire) : Wire {
-    UseInternalRippleGate(w, XOR)
+    UseInternalRippleGate(XOR, w)
 }
 public func Xnor(w : Wire) : Wire {
-    UseInternalRippleGate(w, XNOR)
+    UseInternalRippleGate(XNOR, w)
 }
 
 /**

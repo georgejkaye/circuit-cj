@@ -1,14 +1,21 @@
-package components
+/**
+ * components/values.cj
+ *
+ * Functions for building 'values', the signals that flow through
+ * the wires of circuits. A primitive value is a generator 0->1:
+ * values of larger widths can be constructed by composing these
+ * in parallel.
+ *
+ * @author George Kaye
+ * @since 0.1
+ */
 
-from std import collection.ArrayList
-from std import collection.HashSet
+package components
 
 from std import math.abs
 
 import prelude.*
 import syntax.*
-import graphs.*
-import debug.*
 
 /**
  * Convert a decimal number to a list of truth values
@@ -19,13 +26,9 @@ import debug.*
  * @param x      The decimal number to convert
  */
 func UnsignedDecToBin(x : Int64, w : Int64) : Array<Bool> {
-    if(x < 0){
-        throw NegativeNumberException("DecToBin", x)
-    }
+    AssertNonNegative(x)
     let required = log2Ceil(x+1)
-    if(required > w) {
-        throw NotEnoughBitsException("UnsignedDecToBin", x, w, required)
-    }
+    AssertEnoughBits(w, required)
     // Set up the list
     let bin = Array<Bool>(w, {x : Int64 => false})
     var num = x

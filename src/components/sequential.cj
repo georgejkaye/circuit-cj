@@ -1,7 +1,7 @@
 /**
  * components/sequential
  *
- * Contains functions for using sequential components: delay and feedback
+ * Functions for using sequential components: delay and feedback
  *
  * @author George Kaye
  * @since 0.1
@@ -69,9 +69,7 @@ func SimpleRegisterWithInitial(initial: Wire, input : Wire){
 public func Feedback(outgoing : Wire, incoming : Wire) : Unit {
     AssertWireHasNoInEdge(incoming)
     let width = outgoing.GetWidth()
-    if (width != incoming.GetWidth()){
-        throw IncompatibleWidthException("Feedback", incoming, width)
-    }
+    AssertWiresSameWidth(outgoing, incoming)
     MergeWires(outgoing, incoming)
 }
 /**

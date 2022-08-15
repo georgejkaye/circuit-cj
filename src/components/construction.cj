@@ -1,6 +1,16 @@
+/**
+ * components/construction.cj
+ *
+ * Functions for constructing composite circuits that apply
+ * smaller functions to multiple bits of wires in a variety of ways.
+ *
+ * @author George Kaye
+ * @since 0.2
+ */
+
 package components
 
-import graphs.*
+from std import collection.ArrayList
 
 /**
  * Split multiple wires into their constituent bits, and perform some operation on each of them.
