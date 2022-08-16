@@ -164,12 +164,12 @@ public class Specification <: Specifiable & HasName {
 }
 
 public func GetMuxName(n : Int64, c : Int64, w : Int64) : String {
-    "MUX{n}_${c}_{w}"
+    "MUX${n}_${c}_${w}"
 }
 
 public func MuxSpec(n : Int64, c : Int64, w: Int64) : Specification {
     Specification(
-        "MUX{n}_1_{w}",
+        "MUX${n}_1_${w}",
         Array<Port>(c + n, {
             i : Int64 =>
                 let (width, name) = if (i < c) {

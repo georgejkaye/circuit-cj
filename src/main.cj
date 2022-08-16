@@ -13,12 +13,8 @@ main(){
     SetDebugDot(false)
     SetDotNumberRepresentation(DEC)
 
-    let sort = Fibonacci(4, 4)
-    WriteDotToFile(sort, 0, "sort-0")
-    WriteDotToFile(sort, 1, "sort-1")
-    WriteDotToFile(sort, 2, "sort-2")
-    WriteDotToFile(sort, 3, "sort-3")
-    WriteDotToFile(sort, 4, "sort-4")
+    let circ = CyclicCombinational()
+    WriteDotToFile(circ, 0, "comb")
 
     return 0
 }
