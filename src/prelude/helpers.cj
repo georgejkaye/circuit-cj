@@ -32,8 +32,6 @@ public func foldi_left<T,U>(f : (U, T, Int64) -> U, initial : U, xs : Array<T>) 
     }
     acc
 } 
-
-
 public func foldi_left<T,U>(f : (U, T, Int64) -> U, initial : U, xs : Iterable<T>) : U {
     var acc = initial
     var i = 0
@@ -43,24 +41,23 @@ public func foldi_left<T,U>(f : (U, T, Int64) -> U, initial : U, xs : Iterable<T
     }
     acc
 } 
-
-public func map<T,U>(f : (T) -> U, xs : Array<T>) : Array<U> {
+public func map<T, U>(f : (T) -> U, xs : Array<T>) : Array<U> {
     Array<U>(xs.size, { i : Int64 => f(xs[i]) })
 }
-
-public func map<T,U>(f : (T) -> U, xs : ArrayList<T>) : ArrayList<U> {
+public func map2<T, U, V>(f : (T, U) -> V, xs : Array<T>, ys : Array<U>) : Array<V> {
+    Array<V>(xs.size, { i : Int64 => f(xs[i], ys[i]) })
+}
+public func map<T, U>(f : (T) -> U, xs : ArrayList<T>) : ArrayList<U> {
     let acc = ArrayList<U>(xs.size)
     for (x in xs){
         acc.append(f(x))
     }
     acc
 }
-
-public func mapi<T,U>(f : (T, Int64) -> U, xs : Array<T>) : Array<U> {
+public func mapi<T, U>(f : (T, Int64) -> U, xs : Array<T>) : Array<U> {
     Array<U>(xs.size, { i : Int64 => f(xs[i], i) })
 }
-
-public func map_acc<T,U,V>(f : (T, V) -> (U, V), xs : Array<T>, initial : V) : (ArrayList<U>, V) {
+public func map_acc<T, U, V>(f : (T, V) -> (U, V), xs : Array<T>, initial : V) : (ArrayList<U>, V) {
     let acc = ArrayList<U>(xs.size)
     var helper = initial
     for (x in xs) {
@@ -70,7 +67,6 @@ public func map_acc<T,U,V>(f : (T, V) -> (U, V), xs : Array<T>, initial : V) : (
     }
     (acc, helper)
 }
-
 public func map_acc_2<T,U,V,W>(f : (T, U, V) -> (W, V), xs : Array<T>, ys : Array<U>, initial : V) : (Array<W>, V) {
     let acc = ArrayList<W>(xs.size)
     var helper = initial
@@ -81,7 +77,6 @@ public func map_acc_2<T,U,V,W>(f : (T, U, V) -> (W, V), xs : Array<T>, ys : Arra
     }
     (acc.toArray(), helper)
 }
-
 // This exists in bigint, but should probably be in the main math library
 public func log2Ceil(n: Int64): Int64 {
     unsafe { return Int64(ceil(log2(Float64(n)))) }

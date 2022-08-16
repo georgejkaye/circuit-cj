@@ -232,3 +232,10 @@ public func CombineGraphs<T>(vs : Array<T>) : Hypergraph where T <: ContainsVert
     }
     Hypergraph(vertices, edges)
 }
+
+public func EmptyGraph() : Hypergraph {
+    Hypergraph(
+        HashSet<Vertex>(),
+        HashSet<Edge>()
+    )
+}

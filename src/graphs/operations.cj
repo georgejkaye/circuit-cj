@@ -12,7 +12,7 @@ package graphs
 /**
  * Merge two vertices v and w such that v has the in/out-edges of w.
  * Updates the corresponding edges appropriately; w will be orphaned
- * after this operation. If both v and w already have an in edge, throws 
+ * after this operation. If both v and w already have an in edge, throws
  * an exception: we do not permit vertices to have multiple in edges
  *
  * @param v The primary vertex to merge into
@@ -25,10 +25,10 @@ public func MergeVertices<T, U>(t : T, u : U) : (Vertex, Vertex) where T <: Cont
     let w = u.GetVertex()
     match (inEdge) {
         case None => ()
-        case Some(ec) => 
+        case Some(ec) =>
             ec.edge.SetTarget(ec.index, v)
     }
-    let wOutEdges = w.GetOutEdges() 
+    let wOutEdges = w.GetOutEdges()
     v.AddAllOutEdges(w.GetOutEdges())
     for (e in wOutEdges) {
         e.edge.SetSource(e.index, v)
@@ -40,7 +40,6 @@ public func MergeVertices<T, U>(t : T, u : U) : (Vertex, Vertex) where T <: Cont
     }
     (v, w)
 }
-
 /**
  * Depending on a flag, clone an interfaced hypergraph, or just get a
  * tuple of its underlying graph and its interfaced
@@ -58,11 +57,12 @@ func CloneOrRetain(
         (f.GetGraph(), f.GetInputVertices(), f.GetOutputVertices())
     }
 }
-
 /**
  * Sequentially compose two interfaced hypergraphs with compatible interfaces
  * @param f The first interfaced hypergraph m->n
  * @param g The second interfaced hypergraph n->p
+ * @param clone Whether to clone the hypergraphs involved. If this is false, the
+ *              original two hypergraphs will be deformed after this operation
  * @return The composed hypergraph m->p
  */
 func Seq(
@@ -71,50 +71,60 @@ func Seq(
     clone : Bool
 ) : InterfacedHypergraph {
     AssertCompatibleInputOutput(f, g)
-
+    // If necessary, clone the graphs
     let (newF, newFInputs, newFOutputs) = CloneOrRetain(f, clone)
     let (newG, newGInputs, newGOutputs) = CloneOrRetain(g, clone)
-
+    // The outputs of f and the inputs of g must be merged pointwise
     for (i in 0..f.GetOutputs()){
         MergeVertices(newFOutputs[i], newGInputs[i])
     }
-
     let fVertices = newF.GetVertices()
     let gVertices = newG.GetVertices()
-
+    // The 'unmerged' inputs of g must be removed from the graph to avoid duplicates
     gVertices.removeAll(map({ iv : InterfaceVertex => iv.GetVertex() }, newGInputs))
-
+    // Create the new sets of vertices are edges
     let newVertices = fVertices
     newVertices.putAll(gVertices)
     let newEdges = newF.GetEdges()
     newEdges.putAll(newG.GetEdges())
-
     let newGraph = Hypergraph(newVertices, newEdges)
     InterfacedHypergraph(
-        newGraph, 
-        newFInputs, 
+        newGraph,
+        newFInputs,
         newGOutputs,
-        "${f.GetName()} ; ${g.GetName()}}"
+        "${f.GetName()} \u{2A1F} ${g.GetName()}}"
     )
 }
-
+/**
+ * Sequentially compose two interfaced hypergraphs with compatible interfaces
+ * @param f The first interfaced hypergraph m->n
+ * @param g The second interfaced hypergraph n->p
+ * @return The composed hypergraph m->p
+ */
 public func Seq(f : InterfacedHypergraph, g : InterfacedHypergraph) : InterfacedHypergraph {
     Seq(f, g, true)
 }
-
+/**
+ * Compose two interfaced hypergraphs in parallel (i.e. stack one on top of
+ * each other).
+ * @param f The 'first' hypergraph, to go on top
+ * @param g The 'second' hypergraph, to go on bottom
+ * @param clone Whether to clone the hypergraphs involved. If this is false, the
+ *              original two hypergraphs will be deformed after this operation
+ * @return The result of the parallel composition
+ */
 func Par(f : InterfacedHypergraph, g : InterfacedHypergraph, clone : Bool) : InterfacedHypergraph {
-
+    // If necessary, clone the graphs
     let (newF, newFInputs, newFOutputs) = CloneOrRetain(f, clone)
     let (newG, newGInputs, newGOutputs) = CloneOrRetain(g, clone)
-
+    // All the vertices of the original graph are preserved
     let fVertices = newF.GetVertices()
     let gVertices = newG.GetVertices()
-
     let newVertices = fVertices
     newVertices.putAll(gVertices)
     let newEdges = newF.GetEdges()
     newEdges.putAll(newG.GetEdges())
-
+    // Concatenate the inputs and outputs
     let newInputs = Array<InterfaceVertex>(f.GetInputs() + g.GetInputs(), {
         i => if(i < newFInputs.size) {
             newFInputs[i]
@@ -130,16 +140,21 @@ func Par(f : InterfacedHypergraph, g : InterfacedHypergraph, clone : Bool) : Int
         }
     })
     let newGraph = Hypergraph(newVertices, newEdges)
-    
     InterfacedHypergraph(
         newGraph,
-        newInputs, 
+        newInputs,
         newOutputs,
-        "${f.GetName()} * ${g.GetName()}}"
+        "${f.GetName()} \u{2A02} ${g.GetName()}}"
     )
 
 }
-
+/**
+ * Compose two interfaced hypergraphs in parallel (i.e. stack one on top of
+ * each other).
+ * @param f The 'first' hypergraph, to go on top
+ * @param g The 'second' hypergraph, to go on bottom
+ * @return The result of the parallel composition
+ */
 public func Par(f : InterfacedHypergraph, g : InterfacedHypergraph) : InterfacedHypergraph {
     Par(f, g, true)
 }

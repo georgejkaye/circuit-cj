@@ -13,25 +13,11 @@ main(){
     SetDebugDot(false)
     SetDotNumberRepresentation(DEC)
 
-    let cpu = SimpleCPU()
-    WriteDotToFile(cpu, 0, "cpu-0")
-    WriteDotToFile(cpu, 1, "cpu-1")
-    WriteDotToFile(cpu, 2, "cpu-2")
-
-    let alu = ALU(8)
-    WriteDotToFile(alu, 0, "alu-0")
-    WriteDotToFile(alu, 1, "alu-1")
-    WriteDotToFile(alu, 2, "alu-2")
-
-    let a = MakeWire(8)
-    let b = MakeWire(8)
-    let and = MakeBitwiseGate(AND, 8)
-    WriteDotToFile(and, 0, "and-0")
-    WriteDotToFile(and, 1, "and-1")
-
-    let acc = Accumulator(width: 8, initial: 12)
-    WriteDotToFile(acc, 0, "acc-0")
-    WriteDotToFile(acc, 1, "acc-1")
+    let sort = SortingNetwork(8, 4)
+    WriteDotToFile(sort, 0, "sort-0")
+    WriteDotToFile(sort, 1, "sort-1")
+    WriteDotToFile(sort, 2, "sort-2")
+    WriteDotToFile(sort, 3, "sort-3")
 
     return 0
 }

@@ -17,6 +17,9 @@ public func Todo(msg : String){
 func AssertNonNegative(x : Int64) {
     AssertAtLeast(x, 0)
 }
+func AssertStrictlyPositive(x : Int64) {
+    AssertAtLeast(x, 1)
+}
 func AssertEnoughBits(current : Int64, desired : Int64) {
     AssertAtLeast(current, desired)
 }

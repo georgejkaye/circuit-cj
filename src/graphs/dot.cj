@@ -48,6 +48,13 @@ let edgeNodeOpts = [
     ("fixedsize", "false"),
     ("fontcolor", "black")
 ]
+let interfaceVertexOpts = [
+    ("shape", "circle"),
+    ("style", "filled"),
+    ("height", "0.1"),
+    ("fixedsize", "true"),
+    ("label", "")
+]
 let vertexNodeOpts = [
     ("shape", "circle"),
     ("style", "filled"),
@@ -359,6 +366,7 @@ func DrawEdge(
     e : Edge,
     depth : Int64,
     vertexMap : HashMap<Int64, Int64>,
+    omittedVertices : HashSet<Int64>,
     omittedEdges : HashSet<Int64>,
     elementContent : ArrayList<DotLine>,
     connectionContent: ArrayList<DotLine>
@@ -368,7 +376,16 @@ func DrawEdge(
             case None => DrawEdgeNode(e, elementContent)
             case Some(g) =>
                 omittedEdges.put(e.GetId())
-                DrawSubgraphCluster(g, e, depth, vertexMap, omittedEdges, elementContent, connectionContent)
+                DrawSubgraphCluster(
+                    g,
+                    e,
+                    depth,
+                    vertexMap,
+                    omittedVertices,
+                    omittedEdges,
+                    elementContent,
+                    connectionContent
+                )
         }
     } else {
         DrawEdgeNode(e, elementContent)
@@ -415,15 +432,15 @@ func DrawVertex(
             } else {
                 ""
             }
-        content.append(
-            DrawOptions(
-                "v${v.GetId()}",
-                [
-                    ("label", "${v.GetWidth()}"),
-                    ("xlabel", text)
-                ]
+            content.append(
+                DrawOptions(
+                    "v${v.GetId()}",
+                    [
+                        ("label", "${v.GetWidth()}"),
+                        ("xlabel", text)
+                    ]
+                )
             )
-        )
     }
 }
 /**
@@ -492,73 +509,121 @@ func DrawSubgraphCluster(
     parent : Edge,
     depth : Int64,
     vertexMap : HashMap<Int64, Int64>,
+    omittedVertices : HashSet<Int64>,
     omittedEdges : HashSet<Int64>,
     elementContent : ArrayList<DotLine>,
     connectionContent : ArrayList<DotLine>
 ) : Unit {
-    /**
-     * Update the map that sends vertices to vertices that they have been subsumed by. This occurs
-     * because the internal interfaces of subgraphs that have been expanded are 'merged' with
-     * the sources and targets of their parent edge.
-     * @param array An interface of the parent edge
-     * @param getLocalVertex A function that gets the ith local interface vertex
-     * @param getParentVertex A function that gets the ith parent interface vertex
-     */
-    func UpdateVertexMap(
-        array : Array<InterfaceVertex>,
-        getLocalVertex : (Int64) -> Vertex,
-        getParentVertex : (Int64) -> Vertex
-    ) : Unit {
-        for (i in 0..array.size) {
-            let localVertex = getLocalVertex(i).GetId()
-            let parentVertex = getParentVertex(i).GetId()
-            match(vertexMap.get(parentVertex)) {
-                case Some(superParentVertex) => vertexMap.put(localVertex, superParentVertex)
-                case None => vertexMap.put(localVertex, parentVertex)
-            }
-        }
-    }
     let id = parent.GetId()
-    UpdateVertexMap(f.GetInputVertices(), { i : Int64 => f.GetInput(i).GetVertex() }, { i : Int64 => parent.GetSource(i) })
-    UpdateVertexMap(f.GetOutputVertices(), { i : Int64 => f.GetOutput(i).GetVertex() }, { i : Int64 => parent.GetTarget(i) })
-    let openingText = DotLine("subgraph cluster${id} {", Indent)
     let label = parent.GetLabel()
+    let openingText = DotLine("subgraph cluster_${label} {", Indent)
     let labelText = DotLine("label=\"${label}\"", Preserve)
     let closingText = DotLine("}", Deindent)
     // Recursively draw the subgraph, mapping any of its interface vertices
     // to the source and target of the parent edge, and decreasing the depth
     // by one
-    let subelementContent = ArrayList<DotLine>()
+    let subgraphContent = ArrayList<DotLine>()
+    subgraphContent.append(DrawOptions("node", interfaceVertexOpts))
+    /**
+     * Draw the interfaces for the subgraph as tiny nodes. This has the advantage
+     * over just connecting the internal nodes to the sources and target of the
+     * parent edge as it clearly indicates when the boundary of a subgraph is being
+     * crossed.  It also means that subgraphs that are just the identity don't break
+     * when they get expanded.
+     *
+     * @param array The interface
+     * @param getLocalVertex The function to get the ith interface vertex of the subgraph
+     * @param getParentVertex The function to get the ith interface vertex of the parent edge
+     * @param omittedVertices The set of omitted vertices to be updated
+     * @param subgraphContent The list of dotlines for the subgraph
+     * @param connectionContent The list of dotlines for connections
+     * @param inputs Whether we are dealing with inputs (this affects the order of connections)
+     */
+    func DrawSubgraphInterface(
+        array : Array<InterfaceVertex>,
+        getLocalVertex : (Int64) -> Vertex,
+        getParentVertex : (Int64) -> Vertex,
+        omittedVertices : HashSet<Int64>,
+        subgraphContent : ArrayList<DotLine>,
+        connectionContent : ArrayList<DotLine>,
+        inputs : Bool
+    ){
+        for(i in 0..array.size) {
+            let local = getLocalVertex(i)
+            let parent = getParentVertex(i)
+            // Draw the interface vertex
+            let vertexLine = DotLine("v${local.GetId()}", Preserve)
+            subgraphContent.append(vertexLine)
+            // Draw the connection between the parent and the local vertex
+            let localText = "v${local.GetId()}"
+            let parentText = "v${parent.GetId()}"
+            let connText = if(inputs) {
+                "${parentText}:e -- ${localText}:w"
+            } else {
+                "${localText}:e -- ${parentText}:w"
+            }
+            connectionContent.append(
+                DotLine(connText, Preserve)
+            )
+            // We don't want to draw the interface vertices in the subgraph now
+            omittedVertices.put(local.GetId())
+        }
+    }
+    // Draw the input vertices
+    DrawSubgraphInterface(
+        f.GetInputVertices(),
+        { i : Int64 => f.GetInput(i).GetVertex() },
+        { i : Int64 => parent.GetSource(i) },
+        omittedVertices,
+        subgraphContent,
+        connectionContent,
+        true
+    )
+    // Draw the output vertices
+    DrawSubgraphInterface(
+        f.GetOutputVertices(),
+        { i : Int64 => f.GetOutput(i).GetVertex() },
+        { i : Int64 => parent.GetTarget(i) },
+        omittedVertices,
+        subgraphContent,
+        connectionContent,
+        false
+    )
+    // Draw the subgraph
     DrawHypergraph(
         f.GetGraph(),
         depth - 1,
         vertexMap,
+        omittedVertices,
         omittedEdges,
-        subelementContent,
+        subgraphContent,
         connectionContent
     )
     elementContent.append(openingText)
     elementContent.append(labelText)
-    elementContent.appendAll(subelementContent)
+    elementContent.appendAll(subgraphContent)
     elementContent.append(closingText)
 }
 /**
  * Append dotlines corresponding to a(n uninterfaced) hypergraph to lists of
  * element and connection dotlines, expanding subgraphs up to a given depth.
- * @param f The hypergraph
- * @param depth The maximum depth to expand subgraphs
- * @param vertexMap A map containing vertex ids that subsume the ones in this graph,
- *                      such as if a parent edge has been expanded and the internal
- *                      vertices need to be merged with the external ones
- * @param omittedEdges A set of edges that should not be drawn, e.g. the parent edges
-                         of subgraphs that have been expanded
- * @param elementContent The list containing the existing element dotlines so far
+ * @param f                 The hypergraph
+ * @param depth             The maximum depth to expand subgraphs
+ * @param vertexMap         A map containing vertex ids that subsume the ones in this graph,
+ *                              such as if a parent edge has been expanded and the internal
+ *                              vertices need to be merged with the external ones
+ * @param omittedVertices   A set of vertices that should not be drawn, e.g. the interface
+                                vertices of a subgraph, since these are handled above
+ * @param omittedEdges      A set of edges that should not be drawn, e.g. the parent edges
+                                of subgraphs that have been expanded
+ * @param elementContent    The list containing the existing element dotlines so far
  * @param connectionContent The list containing the existing connection dotlines so far
  */
 public func DrawHypergraph(
     f : Hypergraph,
     depth : Int64,
     vertexMap : HashMap<Int64, Int64>,
+    omittedVertices : HashSet<Int64>,
     omittedEdges : HashSet<Int64>,
     elementContent : ArrayList<DotLine>,
     connectionContent : ArrayList<DotLine>
@@ -566,11 +631,13 @@ public func DrawHypergraph(
     let vertexContent = ArrayList<DotLine>()
     let edgeContent = ArrayList<DotLine>()
     let newConnectionContent = ArrayList<DotLine>()
-    for(e in f.GetVertices()){
-        DrawVertex(e, vertexContent, vertexMap)
+    for(v in f.GetVertices()){
+        if(!omittedVertices.contains(v.GetId())){
+            DrawVertex(v, vertexContent, vertexMap)
+        }
     }
     for (e in f.GetEdges()){
-        DrawEdge(e, depth,  vertexMap, omittedEdges, edgeContent, connectionContent)
+        DrawEdge(e, depth,  vertexMap, omittedVertices, omittedEdges, edgeContent, connectionContent)
         DrawConnections(e, vertexMap, omittedEdges, connectionContent)
     }
     let vertexOptionsString = DrawOptions("node", vertexNodeOpts)
@@ -684,6 +751,7 @@ public func DotGraph(f : InterfacedHypergraph, depth : Int64) : String {
         f.GetGraph(),
         depth,
         HashMap<Int64, Int64>(),
+        HashSet<Int64>(),
         HashSet<Int64>(),
         elementContent,
         connectionContent

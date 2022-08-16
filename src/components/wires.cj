@@ -64,11 +64,32 @@ extend Wire <: ContainsWire {
 }
 /**
  * Make a wire (and underlying vertex) of a given width
+ * @param width The width of the wire
+ * @return The wire
  */
 public func MakeWire(width : Int64) : Wire {
     let vertex = Vertex(width)
     let f = Hypergraph(HashSet<Vertex>([ vertex ]), HashSet<Edge>())
     Wire(vertex)
+}
+/**
+ * Make an array of wires all of a given width
+ * @param n The number of wires to create
+ * @param width The width of the wire
+ * @return The array of wires
+ */
+public func MakeWires(n : Int64, width : Int64) : Array<Wire> {
+    AssertStrictlyPositive(n)
+    Array<Wire>(n, { i : Int64 => MakeWire(width) })
+}
+/**
+ * Make an array of wires of given widths
+ * @param widths The array of widths for the wires
+ * @return The array of wires
+ */
+public func MakeWires(widths : Array<Int64>) : Array<Wire> {
+    AssertArrayNonEmpty(widths)
+    map({ i : Int64 => MakeWire(i) }, widths)
 }
 /**
  * An interface wire is a wire with an optional name. These are
@@ -111,6 +132,25 @@ public class InterfaceWire <: ContainsWire & ToString & ContainsVertex & Socket 
     public operator func !=(rhs : Socket) {
         !(this == rhs)
     }
+}
+/**
+ * Create an array of named wires, given an array of wires and an array of names
+ * @param wires The array of wires
+ * @param names The array of names
+ * @return The array of interface wires
+ */
+public func NameWires(wires : Array<Wire>, names : Array<String>) : Array<InterfaceWire> {
+    AssertArraysSameLength(wires, names)
+    map2({ w : Wire, name : String => InterfaceWire(w, name) }, wires, names)
+}
+/**
+ * Create an array of named wires, given an array of wires and a function from indices to names
+ * @param wires The array of wires
+ * @param f The function from wire indices to names
+ * @return The array of interface wires
+ */
+public func NameWires(wires : Array<Wire>, f : (Int64) -> String) : Array<InterfaceWire> {
+    Array<InterfaceWire>(wires.size, { i : Int64 => InterfaceWire(wires[i], f(i)) })
 }
 /**
  * Make an edge and get the wires corresponding to its targets

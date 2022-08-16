@@ -11,6 +11,7 @@ package components
 
 import prelude.*
 import syntax.*
+import graphs.*
 
 /**
  * Make a subcircuit with some (optionally named) input and
@@ -270,5 +271,3 @@ public func UseInternalRippleGate(prim : Primitive, w : Wire) : Wire {
         [w]
     )
 }
-
-
