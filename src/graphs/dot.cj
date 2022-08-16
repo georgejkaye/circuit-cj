@@ -499,7 +499,7 @@ func DrawSubgraphCluster(
 ) : Unit {
     let id = parent.GetId()
     let label = parent.GetLabel()
-    let openingText = DotLine("subgraph cluster_${label} {", Indent)
+    let openingText = DotLine("subgraph cluster_${label}_${f.GetId()} {", Indent)
     let labelText = DotLine("label=\"${label}\"", Preserve)
     let closingText = DotLine("}", Deindent)
     // Recursively draw the subgraph, mapping any of its interface vertices

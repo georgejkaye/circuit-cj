@@ -85,26 +85,30 @@ func SignedDecToBin(x : Int64, w : Int64) : Array<Bool> {
  * @return The output wire
  */
 public func MakeValue(vs : Array<Value>, signed : Bool) : Wire {
-    let wires = map(
-        { v : Value =>
-            MakeEdgeWithNewOutputs(
-                VALUE(v),
-                Array<Vertex>(),
-                None<InterfacedHypergraph>
-            )[0]
-        },
-        vs
-    )
-    UseSubcircuit_1<Wire>(
-        MakeSubcircuit(
-            Array<InterfaceWire>(),
-            [InterfaceWire(Combine(wires))],
-            VALUES(
-                ValueSpec(vs, signed)
-            )
-        ),
-        Array<Wire>()
-    )
+    if(vs.size == 1) {
+        Signal(vs[0])
+    } else {
+        let wires = map(
+            { v : Value =>
+                MakeEdgeWithNewOutputs(
+                    VALUE(v),
+                    Array<Vertex>(),
+                    None<InterfacedHypergraph>
+                )[0]
+            },
+            vs
+        )
+        UseSubcircuit_1<Wire>(
+            MakeSubcircuit(
+                Array<InterfaceWire>(),
+                [InterfaceWire(Combine(wires))],
+                VALUES(
+                    ValueSpec(vs, signed)
+                )
+            ),
+            Array<Wire>()
+        )
+    }
 }
 /**
  * Create an edge for a given value
