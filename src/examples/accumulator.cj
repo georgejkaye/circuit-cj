@@ -1,5 +1,5 @@
 /**
- * accumulator.cj
+ * examples/accumulator.cj
  *
  * A simple n-width accumulator that adds the input to the stored value.
  * The initial value can also be specified.

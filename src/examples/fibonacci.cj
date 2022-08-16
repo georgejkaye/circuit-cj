@@ -1,3 +1,13 @@
+/**
+ * examples/fibonacci.cj
+ *
+ * A naive fibonacci circuit to compute the nth
+ * fibonacci number
+ *
+ * @author George Kaye
+ * @since 0.1
+ */
+
 package examples
 
 /**

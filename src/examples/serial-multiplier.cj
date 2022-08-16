@@ -1,10 +1,12 @@
 /**
  * serial-multiplier.cj
  *
- * This example has been taken from the Hardcaml repo:
+ * A circuit that multiplies two numbers together. Taken from the Hardcaml repo:
  * https://github.com/janestreet/hardcaml/blob/master/docs/serial_multiplier_example.mdx
+ *
+ * @author George Kaye
+ * @since 0.1
  */
-
 
 package examples
 

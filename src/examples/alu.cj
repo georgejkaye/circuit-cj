@@ -1,5 +1,5 @@
 /**
- * alu.cj
+ * examples/alu.cj
  * 
  * A simple ALU with AND, OR and ADD/SUB.
  * Follows a tutorial http://www.csc.villanova.edu/~mdamian/Past/csc2400fa13/assign/ALU.html

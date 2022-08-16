@@ -2,7 +2,10 @@
  * half-adder.cj
  *
  * A half-adder, one of the most simple combinational
- * combinational one can design.
+ * circuits one can design.
+ *
+ * @author George Kaye
+ * @since 0.1
  */
 
 package examples

@@ -1,5 +1,5 @@
 /**
- * cpu.cj
+ * examples/cpu.cj
  * A simple 8 bit CPU 
  * http://www.simplecpudesign.com/simple_cpu_v1/
  *

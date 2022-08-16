@@ -15,10 +15,6 @@ Contains functions for generating dot graphs representing hypergraphs.
 Contains the definition of the `Edge` class.
 A (hyper)`Edge` represents a circuit component, and can have arbitrarily many (but fixed) `Vertex` objects as sources and targets.
 
-## [`exceptions.cj`](exceptions.cj)
-
-Contains exceptions specific to graphs.
-
 ## [`hypergraph.cj`](hypergraph.cj)
 
 Contains the definition of the `Hypergraph` class.

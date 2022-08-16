@@ -1,6 +1,24 @@
+/**
+ * examples/sorting-network.cj
+ *
+ * An example of a sorting network
+ * https://en.wikipedia.org/wiki/Sorting_network
+ *
+ * @author George Kaye
+ * @since 0.1
+ */
+
 package examples
 
-func SortingComparator(width : Int64, w1 : Wire, w2 : Wire) {
+/**
+ * A sorting comparator black box component
+ *
+ * @param width The width of the wires
+ * @param w1 The first wire to sort
+ * @param w2 The second wire to sort
+ * @return The two output wires of the comparator
+ */
+fun SortingComparator(width : Int64, w1 : Wire, w2 : Wire) {
     let cmp = BlackBox(
         "cmp${width}",
         [
@@ -29,14 +47,17 @@ public func SortingNetwork(width : Int64, inputs : Int64) : InterfacedHypergraph
     }
     let inputWires = MakeWires(inputs, width)
     let outputWires =
+        // A sorting network on one wire is just the identity
         if(inputs == 1){
             inputWires
         } else {
+            // Otherwise we recursively sort the first inputs-1 wires
             let smallerWires = inputWires.slice(0, inputs - 1).toArray()
             let smallerNetwork = UseSubcircuit(
                 SortingNetwork(width, inputs - 1),
                 smallerWires
             )
+            // Concatenate the sorted inputs-1 wires with the original inputth wire
             let smallerSortedInputs = Array<Wire>(
                 inputs,
                 { i : Int64 =>
@@ -48,6 +69,7 @@ public func SortingNetwork(width : Int64, inputs : Int64) : InterfacedHypergraph
                     }
                 }
             )
+            // Ripple the sorting comparators across the wires
             Ripple(
                 smallerSortedInputs,
                 {

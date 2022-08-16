@@ -1,3 +1,14 @@
+/**
+ * examples/cyclic-combinational.cj
+ *
+ * An example of a cyclic combinational circuit: a
+ * circuit that has non-delay-guarded feedback but
+ * is still a combinational circuit
+ *
+ * @author George Kaye
+ * @since 0.1
+ */
+
 package examples
 
 public func CyclicCombinational() {
