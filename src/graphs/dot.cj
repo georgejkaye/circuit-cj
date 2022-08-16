@@ -15,22 +15,6 @@ import prelude.*
 
 from std import io.*
 
-/**
- * Convert a number into unicode subscripts
- * @param n the number
- * @return the corresponding unicode subscript characters
- */
-func subscript(n : Int64){
-    let code = "${n}"
-    var sub = ""
-    for(i in 0..code.size){
-        let charc = UInt32(code[i])
-        let subs = Char(charc + 0x2050)
-        sub = "${sub}${subs}"
-    }
-    sub
-}
-
 let tableStyle = [
     ("border", "0"),
     ("cellborder", "1"),
@@ -51,7 +35,7 @@ let edgeNodeOpts = [
 let interfaceVertexOpts = [
     ("shape", "circle"),
     ("style", "filled"),
-    ("height", "0.1"),
+    ("height", "0.05"),
     ("fixedsize", "true"),
     ("label", "")
 ]
@@ -485,7 +469,6 @@ func DrawConnections(
  */
 func DrawConnection(vText : String, eText : String, vertexFirst : Bool) : String {
     if(vertexFirst) {
-
         "${vText}:e -- ${eText}"
     } else {
         "${eText} -- ${vText}:w"
@@ -548,26 +531,40 @@ func DrawSubgraphCluster(
         connectionContent : ArrayList<DotLine>,
         inputs : Bool
     ){
+        // The interface vertices occupy another subgraph
+        let openingLine = DotLine("{", Indent)
+        subgraphContent.append(openingLine)
+        // Depending on wheteher they are inputs or outputs, this subgraph
+        // will have rank min or max
+        let graphOpts = if(inputs) {
+            minSubgraphOpts
+        } else {
+            maxSubgraphOpts
+        }
+        let graphOptsLine = DrawOptions("graph", graphOpts)
+        subgraphContent.append(graphOptsLine)
+        // Draw each vertex in the interface
         for(i in 0..array.size) {
             let local = getLocalVertex(i)
             let parent = getParentVertex(i)
-            // Draw the interface vertex
-            let vertexLine = DotLine("v${local.GetId()}", Preserve)
-            subgraphContent.append(vertexLine)
-            // Draw the connection between the parent and the local vertex
+            // Get the ids of the local and parent vertices
             let localText = "v${local.GetId()}"
             let parentText = "v${parent.GetId()}"
+            // Draw the local vertex
+            let vertexLine = DotLine("${localText}", Preserve)
+            subgraphContent.append(vertexLine)
+            // Connect the little local vertex to the big parent vertex
             let connText = if(inputs) {
                 "${parentText}:e -- ${localText}:w"
             } else {
                 "${localText}:e -- ${parentText}:w"
             }
-            connectionContent.append(
-                DotLine(connText, Preserve)
-            )
+            connectionContent.append(DotLine(connText, Preserve))
             // We don't want to draw the interface vertices in the subgraph now
             omittedVertices.put(local.GetId())
         }
+        let closingLine = DotLine("}", Deindent)
+        subgraphContent.append(closingLine)
     }
     // Draw the input vertices
     DrawSubgraphInterface(
