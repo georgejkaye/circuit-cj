@@ -1,0 +1,153 @@
+graph "cyclic_combinational" {
+    graph[rankdir="LR", bgcolor="white"]
+    node[shape="circle", style="filled", fillcolor="black", height="0.25", fixedsize="true", fontcolor="white"]
+    v533[label="1", xlabel=""]
+    v535[label="1", xlabel=""]
+    v537[label="1", xlabel=""]
+    v539[label="1", xlabel=""]
+    v541[label="1", xlabel=""]
+    v543[label="1", xlabel=""]
+    v545[label="1", xlabel=""]
+    node[shape="plaintext", fillcolor="white", fixedsize="false", fontcolor="black"]
+    e547 [label=<
+    <table bgcolor="darkturquoise" border="0" cellborder="1" cellspacing="0">
+        <tr>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="w0">SEL:1</td></tr>
+                    <tr><td height="5" width="5" port="w1">A:1</td></tr>
+                    <tr><td height="5" width="5" port="w2">B:1</td></tr>
+                </table>
+            </td>
+            <td>MUX2_1_1</td>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="e0">Z:1</td></tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    >];
+    e549 [label=<
+    <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+        <tr>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="w0">A:1</td></tr>
+                </table>
+            </td>
+            <td>F</td>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="e0">Z:1</td></tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    >];
+    e551 [label=<
+    <table bgcolor="darkturquoise" border="0" cellborder="1" cellspacing="0">
+        <tr>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="w0">SEL:1</td></tr>
+                    <tr><td height="5" width="5" port="w1">A:1</td></tr>
+                    <tr><td height="5" width="5" port="w2">B:1</td></tr>
+                </table>
+            </td>
+            <td>MUX2_1_1</td>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="e0">Z:1</td></tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    >];
+    e553 [label=<
+    <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+        <tr>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="w0">A:1</td></tr>
+                </table>
+            </td>
+            <td>G</td>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="e0">Z:1</td></tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    >];
+    e555 [label=<
+    <table bgcolor="darkturquoise" border="0" cellborder="1" cellspacing="0">
+        <tr>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="w0">SEL:1</td></tr>
+                    <tr><td height="5" width="5" port="w1">A:1</td></tr>
+                    <tr><td height="5" width="5" port="w2">B:1</td></tr>
+                </table>
+            </td>
+            <td>MUX2_1_1</td>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="e0">Z:1</td></tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    >];
+    v533:e -- e547:w0:w
+    v535:e -- e547:w1:w
+    v543:e -- e547:w2:w
+    e547:e0:e -- v537:w
+    v537:e -- e549:w0:w
+    e549:e0:e -- v539:w
+    v533:e -- e551:w0:w
+    v539:e -- e551:w1:w
+    v535:e -- e551:w2:w
+    e551:e0:e -- v541:w
+    v541:e -- e553:w0:w
+    e553:e0:e -- v543:w
+    v533:e -- e555:w0:w
+    v543:e -- e555:w1:w
+    v539:e -- e555:w2:w
+    e555:e0:e -- v545:w
+    {
+        graph[rank="min"]
+        input [label=<
+        <table bgcolor="gray" border="0" cellborder="1" cellspacing="0">
+            <tr>
+                <td></td>
+                <td>
+                    <table>
+                        <tr><td height="5" width="5" port="e0">x:1</td></tr>
+                        <tr><td height="5" width="5" port="e1">c:1</td></tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        >];
+    }
+    input:e0:e -- v535:w
+    input:e1:e -- v533:w
+    {
+        graph[rank="max"]
+        output [label=<
+        <table bgcolor="gray" border="0" cellborder="1" cellspacing="0">
+            <tr>
+                <td>
+                    <table>
+                        <tr><td height="5" width="5" port="w0">z:1</td></tr>
+                    </table>
+                </td>
+                <td></td>
+            </tr>
+        </table>
+        >];
+    }
+    v545:e -- output:w0:w
+}

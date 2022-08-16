@@ -18,7 +18,7 @@ package examples
  * @param w2 The second wire to sort
  * @return The two output wires of the comparator
  */
-fun SortingComparator(width : Int64, w1 : Wire, w2 : Wire) {
+func SortingComparator(width : Int64, w1 : Wire, w2 : Wire) {
     let cmp = BlackBox(
         "cmp${width}",
         [
@@ -64,7 +64,6 @@ public func SortingNetwork(width : Int64, inputs : Int64) : InterfacedHypergraph
                     if(i == inputs - 1) {
                         inputWires[inputs - 1]
                     } else {
-                        println("${i}")
                         smallerNetwork[i]
                     }
                 }

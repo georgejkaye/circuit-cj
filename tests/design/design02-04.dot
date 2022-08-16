@@ -1,0 +1,766 @@
+graph "sort8_8" {
+    graph[rankdir="LR", bgcolor="white"]
+    node[shape="circle", style="filled", fillcolor="black", height="0.25", fixedsize="true", fontcolor="white"]
+    v981[label="8", xlabel=""]
+    v983[label="8", xlabel=""]
+    v985[label="8", xlabel=""]
+    v987[label="8", xlabel=""]
+    v989[label="8", xlabel=""]
+    v991[label="8", xlabel=""]
+    v993[label="8", xlabel=""]
+    v995[label="8", xlabel=""]
+    v997[label="8", xlabel=""]
+    v999[label="8", xlabel=""]
+    v1001[label="8", xlabel=""]
+    v1003[label="8", xlabel=""]
+    v1005[label="8", xlabel=""]
+    v1007[label="8", xlabel=""]
+    v1009[label="8", xlabel=""]
+    v1011[label="8", xlabel=""]
+    v1013[label="8", xlabel=""]
+    v1015[label="8", xlabel=""]
+    v1017[label="8", xlabel=""]
+    v1019[label="8", xlabel=""]
+    v1021[label="8", xlabel=""]
+    v1023[label="8", xlabel=""]
+    v1025[label="8", xlabel=""]
+    v1027[label="8", xlabel=""]
+    v1029[label="8", xlabel=""]
+    v1031[label="8", xlabel=""]
+    v1033[label="8", xlabel=""]
+    v1035[label="8", xlabel=""]
+    v1037[label="8", xlabel=""]
+    node[shape="plaintext", fillcolor="white", fixedsize="false", fontcolor="black"]
+    subgraph cluster_sort7_8_900 {
+        label="sort7_8"
+        node[shape="circle", style="filled", height="0.05", fixedsize="true", label=""]
+        {
+            graph[rank="min"]
+            v834
+            v836
+            v838
+            v840
+            v842
+            v844
+            v858
+        }
+        {
+            graph[rank="max"]
+            v880
+            v882
+            v878
+            v874
+            v870
+            v866
+            v862
+        }
+        node[shape="circle", style="filled", fillcolor="black", height="0.25", fixedsize="true", fontcolor="white"]
+        v846[label="8", xlabel=""]
+        v848[label="8", xlabel=""]
+        v850[label="8", xlabel=""]
+        v852[label="8", xlabel=""]
+        v854[label="8", xlabel=""]
+        v856[label="8", xlabel=""]
+        v860[label="8", xlabel=""]
+        v864[label="8", xlabel=""]
+        v868[label="8", xlabel=""]
+        v872[label="8", xlabel=""]
+        v876[label="8", xlabel=""]
+        node[shape="plaintext", fillcolor="white", fixedsize="false", fontcolor="black"]
+        subgraph cluster_sort6_8_698 {
+            label="sort6_8"
+            node[shape="circle", style="filled", height="0.05", fixedsize="true", label=""]
+            {
+                graph[rank="min"]
+                v642
+                v644
+                v646
+                v648
+                v650
+                v662
+            }
+            {
+                graph[rank="max"]
+                v680
+                v682
+                v678
+                v674
+                v670
+                v666
+            }
+            node[shape="circle", style="filled", fillcolor="black", height="0.25", fixedsize="true", fontcolor="white"]
+            v652[label="8", xlabel=""]
+            v654[label="8", xlabel=""]
+            v656[label="8", xlabel=""]
+            v658[label="8", xlabel=""]
+            v660[label="8", xlabel=""]
+            v664[label="8", xlabel=""]
+            v668[label="8", xlabel=""]
+            v672[label="8", xlabel=""]
+            v676[label="8", xlabel=""]
+            node[shape="plaintext", fillcolor="white", fixedsize="false", fontcolor="black"]
+            subgraph cluster_sort5_8_527 {
+                label="sort5_8"
+                node[shape="circle", style="filled", height="0.05", fixedsize="true", label=""]
+                {
+                    graph[rank="min"]
+                    v481
+                    v483
+                    v485
+                    v487
+                    v497
+                }
+                {
+                    graph[rank="max"]
+                    v511
+                    v513
+                    v509
+                    v505
+                    v501
+                }
+                node[shape="circle", style="filled", fillcolor="black", height="0.25", fixedsize="true", fontcolor="white"]
+                v489[label="8", xlabel=""]
+                v491[label="8", xlabel=""]
+                v493[label="8", xlabel=""]
+                v495[label="8", xlabel=""]
+                v499[label="8", xlabel=""]
+                v503[label="8", xlabel=""]
+                v507[label="8", xlabel=""]
+                node[shape="plaintext", fillcolor="white", fixedsize="false", fontcolor="black"]
+                e515 [label=<
+                <table bgcolor="darkturquoise" border="0" cellborder="1" cellspacing="0">
+                    <tr>
+                        <td>
+                            <table>
+                                <tr><td height="5" width="5" port="w0">I0:8</td></tr>
+                                <tr><td height="5" width="5" port="w1">I1:8</td></tr>
+                                <tr><td height="5" width="5" port="w2">I2:8</td></tr>
+                                <tr><td height="5" width="5" port="w3">I3:8</td></tr>
+                            </table>
+                        </td>
+                        <td>sort4_8</td>
+                        <td>
+                            <table>
+                                <tr><td height="5" width="5" port="e0">O0:8</td></tr>
+                                <tr><td height="5" width="5" port="e1">O1:8</td></tr>
+                                <tr><td height="5" width="5" port="e2">O2:8</td></tr>
+                                <tr><td height="5" width="5" port="e3">O3:8</td></tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+                >];
+                e517 [label=<
+                <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+                    <tr>
+                        <td>
+                            <table>
+                                <tr><td height="5" width="5" port="w0">8</td></tr>
+                                <tr><td height="5" width="5" port="w1">8</td></tr>
+                            </table>
+                        </td>
+                        <td>cmp8</td>
+                        <td>
+                            <table>
+                                <tr><td height="5" width="5" port="e0">8</td></tr>
+                                <tr><td height="5" width="5" port="e1">8</td></tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+                >];
+                e519 [label=<
+                <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+                    <tr>
+                        <td>
+                            <table>
+                                <tr><td height="5" width="5" port="w0">8</td></tr>
+                                <tr><td height="5" width="5" port="w1">8</td></tr>
+                            </table>
+                        </td>
+                        <td>cmp8</td>
+                        <td>
+                            <table>
+                                <tr><td height="5" width="5" port="e0">8</td></tr>
+                                <tr><td height="5" width="5" port="e1">8</td></tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+                >];
+                e521 [label=<
+                <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+                    <tr>
+                        <td>
+                            <table>
+                                <tr><td height="5" width="5" port="w0">8</td></tr>
+                                <tr><td height="5" width="5" port="w1">8</td></tr>
+                            </table>
+                        </td>
+                        <td>cmp8</td>
+                        <td>
+                            <table>
+                                <tr><td height="5" width="5" port="e0">8</td></tr>
+                                <tr><td height="5" width="5" port="e1">8</td></tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+                >];
+                e523 [label=<
+                <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+                    <tr>
+                        <td>
+                            <table>
+                                <tr><td height="5" width="5" port="w0">8</td></tr>
+                                <tr><td height="5" width="5" port="w1">8</td></tr>
+                            </table>
+                        </td>
+                        <td>cmp8</td>
+                        <td>
+                            <table>
+                                <tr><td height="5" width="5" port="e0">8</td></tr>
+                                <tr><td height="5" width="5" port="e1">8</td></tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+                >];
+            }
+            e686 [label=<
+            <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+                <tr>
+                    <td>
+                        <table>
+                            <tr><td height="5" width="5" port="w0">8</td></tr>
+                            <tr><td height="5" width="5" port="w1">8</td></tr>
+                        </table>
+                    </td>
+                    <td>cmp8</td>
+                    <td>
+                        <table>
+                            <tr><td height="5" width="5" port="e0">8</td></tr>
+                            <tr><td height="5" width="5" port="e1">8</td></tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+            >];
+            e688 [label=<
+            <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+                <tr>
+                    <td>
+                        <table>
+                            <tr><td height="5" width="5" port="w0">8</td></tr>
+                            <tr><td height="5" width="5" port="w1">8</td></tr>
+                        </table>
+                    </td>
+                    <td>cmp8</td>
+                    <td>
+                        <table>
+                            <tr><td height="5" width="5" port="e0">8</td></tr>
+                            <tr><td height="5" width="5" port="e1">8</td></tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+            >];
+            e690 [label=<
+            <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+                <tr>
+                    <td>
+                        <table>
+                            <tr><td height="5" width="5" port="w0">8</td></tr>
+                            <tr><td height="5" width="5" port="w1">8</td></tr>
+                        </table>
+                    </td>
+                    <td>cmp8</td>
+                    <td>
+                        <table>
+                            <tr><td height="5" width="5" port="e0">8</td></tr>
+                            <tr><td height="5" width="5" port="e1">8</td></tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+            >];
+            e692 [label=<
+            <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+                <tr>
+                    <td>
+                        <table>
+                            <tr><td height="5" width="5" port="w0">8</td></tr>
+                            <tr><td height="5" width="5" port="w1">8</td></tr>
+                        </table>
+                    </td>
+                    <td>cmp8</td>
+                    <td>
+                        <table>
+                            <tr><td height="5" width="5" port="e0">8</td></tr>
+                            <tr><td height="5" width="5" port="e1">8</td></tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+            >];
+            e694 [label=<
+            <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+                <tr>
+                    <td>
+                        <table>
+                            <tr><td height="5" width="5" port="w0">8</td></tr>
+                            <tr><td height="5" width="5" port="w1">8</td></tr>
+                        </table>
+                    </td>
+                    <td>cmp8</td>
+                    <td>
+                        <table>
+                            <tr><td height="5" width="5" port="e0">8</td></tr>
+                            <tr><td height="5" width="5" port="e1">8</td></tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+            >];
+        }
+        e886 [label=<
+        <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+            <tr>
+                <td>
+                    <table>
+                        <tr><td height="5" width="5" port="w0">8</td></tr>
+                        <tr><td height="5" width="5" port="w1">8</td></tr>
+                    </table>
+                </td>
+                <td>cmp8</td>
+                <td>
+                    <table>
+                        <tr><td height="5" width="5" port="e0">8</td></tr>
+                        <tr><td height="5" width="5" port="e1">8</td></tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        >];
+        e888 [label=<
+        <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+            <tr>
+                <td>
+                    <table>
+                        <tr><td height="5" width="5" port="w0">8</td></tr>
+                        <tr><td height="5" width="5" port="w1">8</td></tr>
+                    </table>
+                </td>
+                <td>cmp8</td>
+                <td>
+                    <table>
+                        <tr><td height="5" width="5" port="e0">8</td></tr>
+                        <tr><td height="5" width="5" port="e1">8</td></tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        >];
+        e890 [label=<
+        <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+            <tr>
+                <td>
+                    <table>
+                        <tr><td height="5" width="5" port="w0">8</td></tr>
+                        <tr><td height="5" width="5" port="w1">8</td></tr>
+                    </table>
+                </td>
+                <td>cmp8</td>
+                <td>
+                    <table>
+                        <tr><td height="5" width="5" port="e0">8</td></tr>
+                        <tr><td height="5" width="5" port="e1">8</td></tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        >];
+        e892 [label=<
+        <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+            <tr>
+                <td>
+                    <table>
+                        <tr><td height="5" width="5" port="w0">8</td></tr>
+                        <tr><td height="5" width="5" port="w1">8</td></tr>
+                    </table>
+                </td>
+                <td>cmp8</td>
+                <td>
+                    <table>
+                        <tr><td height="5" width="5" port="e0">8</td></tr>
+                        <tr><td height="5" width="5" port="e1">8</td></tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        >];
+        e894 [label=<
+        <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+            <tr>
+                <td>
+                    <table>
+                        <tr><td height="5" width="5" port="w0">8</td></tr>
+                        <tr><td height="5" width="5" port="w1">8</td></tr>
+                    </table>
+                </td>
+                <td>cmp8</td>
+                <td>
+                    <table>
+                        <tr><td height="5" width="5" port="e0">8</td></tr>
+                        <tr><td height="5" width="5" port="e1">8</td></tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        >];
+        e896 [label=<
+        <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+            <tr>
+                <td>
+                    <table>
+                        <tr><td height="5" width="5" port="w0">8</td></tr>
+                        <tr><td height="5" width="5" port="w1">8</td></tr>
+                    </table>
+                </td>
+                <td>cmp8</td>
+                <td>
+                    <table>
+                        <tr><td height="5" width="5" port="e0">8</td></tr>
+                        <tr><td height="5" width="5" port="e1">8</td></tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        >];
+    }
+    e1041 [label=<
+    <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+        <tr>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="w0">8</td></tr>
+                    <tr><td height="5" width="5" port="w1">8</td></tr>
+                </table>
+            </td>
+            <td>cmp8</td>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="e0">8</td></tr>
+                    <tr><td height="5" width="5" port="e1">8</td></tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    >];
+    e1043 [label=<
+    <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+        <tr>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="w0">8</td></tr>
+                    <tr><td height="5" width="5" port="w1">8</td></tr>
+                </table>
+            </td>
+            <td>cmp8</td>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="e0">8</td></tr>
+                    <tr><td height="5" width="5" port="e1">8</td></tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    >];
+    e1045 [label=<
+    <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+        <tr>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="w0">8</td></tr>
+                    <tr><td height="5" width="5" port="w1">8</td></tr>
+                </table>
+            </td>
+            <td>cmp8</td>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="e0">8</td></tr>
+                    <tr><td height="5" width="5" port="e1">8</td></tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    >];
+    e1047 [label=<
+    <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+        <tr>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="w0">8</td></tr>
+                    <tr><td height="5" width="5" port="w1">8</td></tr>
+                </table>
+            </td>
+            <td>cmp8</td>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="e0">8</td></tr>
+                    <tr><td height="5" width="5" port="e1">8</td></tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    >];
+    e1049 [label=<
+    <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+        <tr>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="w0">8</td></tr>
+                    <tr><td height="5" width="5" port="w1">8</td></tr>
+                </table>
+            </td>
+            <td>cmp8</td>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="e0">8</td></tr>
+                    <tr><td height="5" width="5" port="e1">8</td></tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    >];
+    e1051 [label=<
+    <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+        <tr>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="w0">8</td></tr>
+                    <tr><td height="5" width="5" port="w1">8</td></tr>
+                </table>
+            </td>
+            <td>cmp8</td>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="e0">8</td></tr>
+                    <tr><td height="5" width="5" port="e1">8</td></tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    >];
+    e1053 [label=<
+    <table bgcolor="white" border="0" cellborder="1" cellspacing="0">
+        <tr>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="w0">8</td></tr>
+                    <tr><td height="5" width="5" port="w1">8</td></tr>
+                </table>
+            </td>
+            <td>cmp8</td>
+            <td>
+                <table>
+                    <tr><td height="5" width="5" port="e0">8</td></tr>
+                    <tr><td height="5" width="5" port="e1">8</td></tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    >];
+    v981:e -- v834:w
+    v983:e -- v836:w
+    v985:e -- v838:w
+    v987:e -- v840:w
+    v989:e -- v842:w
+    v991:e -- v844:w
+    v993:e -- v858:w
+    v880:e -- v995:w
+    v882:e -- v997:w
+    v878:e -- v999:w
+    v874:e -- v1001:w
+    v870:e -- v1003:w
+    v866:e -- v1005:w
+    v862:e -- v1007:w
+    v834:e -- v642:w
+    v836:e -- v644:w
+    v838:e -- v646:w
+    v840:e -- v648:w
+    v842:e -- v650:w
+    v844:e -- v662:w
+    v680:e -- v846:w
+    v682:e -- v848:w
+    v678:e -- v850:w
+    v674:e -- v852:w
+    v670:e -- v854:w
+    v666:e -- v856:w
+    v642:e -- v481:w
+    v644:e -- v483:w
+    v646:e -- v485:w
+    v648:e -- v487:w
+    v650:e -- v497:w
+    v511:e -- v652:w
+    v513:e -- v654:w
+    v509:e -- v656:w
+    v505:e -- v658:w
+    v501:e -- v660:w
+    v481:e -- e515:w0:w
+    v483:e -- e515:w1:w
+    v485:e -- e515:w2:w
+    v487:e -- e515:w3:w
+    e515:e0:e -- v489:w
+    e515:e1:e -- v491:w
+    e515:e2:e -- v493:w
+    e515:e3:e -- v495:w
+    v495:e -- e517:w0:w
+    v497:e -- e517:w1:w
+    e517:e0:e -- v499:w
+    e517:e1:e -- v501:w
+    v493:e -- e519:w0:w
+    v499:e -- e519:w1:w
+    e519:e0:e -- v503:w
+    e519:e1:e -- v505:w
+    v491:e -- e521:w0:w
+    v503:e -- e521:w1:w
+    e521:e0:e -- v507:w
+    e521:e1:e -- v509:w
+    v489:e -- e523:w0:w
+    v507:e -- e523:w1:w
+    e523:e0:e -- v511:w
+    e523:e1:e -- v513:w
+    v660:e -- e686:w0:w
+    v662:e -- e686:w1:w
+    e686:e0:e -- v664:w
+    e686:e1:e -- v666:w
+    v658:e -- e688:w0:w
+    v664:e -- e688:w1:w
+    e688:e0:e -- v668:w
+    e688:e1:e -- v670:w
+    v656:e -- e690:w0:w
+    v668:e -- e690:w1:w
+    e690:e0:e -- v672:w
+    e690:e1:e -- v674:w
+    v654:e -- e692:w0:w
+    v672:e -- e692:w1:w
+    e692:e0:e -- v676:w
+    e692:e1:e -- v678:w
+    v652:e -- e694:w0:w
+    v676:e -- e694:w1:w
+    e694:e0:e -- v680:w
+    e694:e1:e -- v682:w
+    v856:e -- e886:w0:w
+    v858:e -- e886:w1:w
+    e886:e0:e -- v860:w
+    e886:e1:e -- v862:w
+    v854:e -- e888:w0:w
+    v860:e -- e888:w1:w
+    e888:e0:e -- v864:w
+    e888:e1:e -- v866:w
+    v852:e -- e890:w0:w
+    v864:e -- e890:w1:w
+    e890:e0:e -- v868:w
+    e890:e1:e -- v870:w
+    v850:e -- e892:w0:w
+    v868:e -- e892:w1:w
+    e892:e0:e -- v872:w
+    e892:e1:e -- v874:w
+    v848:e -- e894:w0:w
+    v872:e -- e894:w1:w
+    e894:e0:e -- v876:w
+    e894:e1:e -- v878:w
+    v846:e -- e896:w0:w
+    v876:e -- e896:w1:w
+    e896:e0:e -- v880:w
+    e896:e1:e -- v882:w
+    v1007:e -- e1041:w0:w
+    v1009:e -- e1041:w1:w
+    e1041:e0:e -- v1011:w
+    e1041:e1:e -- v1013:w
+    v1005:e -- e1043:w0:w
+    v1011:e -- e1043:w1:w
+    e1043:e0:e -- v1015:w
+    e1043:e1:e -- v1017:w
+    v1003:e -- e1045:w0:w
+    v1015:e -- e1045:w1:w
+    e1045:e0:e -- v1019:w
+    e1045:e1:e -- v1021:w
+    v1001:e -- e1047:w0:w
+    v1019:e -- e1047:w1:w
+    e1047:e0:e -- v1023:w
+    e1047:e1:e -- v1025:w
+    v999:e -- e1049:w0:w
+    v1023:e -- e1049:w1:w
+    e1049:e0:e -- v1027:w
+    e1049:e1:e -- v1029:w
+    v997:e -- e1051:w0:w
+    v1027:e -- e1051:w1:w
+    e1051:e0:e -- v1031:w
+    e1051:e1:e -- v1033:w
+    v995:e -- e1053:w0:w
+    v1031:e -- e1053:w1:w
+    e1053:e0:e -- v1035:w
+    e1053:e1:e -- v1037:w
+    {
+        graph[rank="min"]
+        input [label=<
+        <table bgcolor="gray" border="0" cellborder="1" cellspacing="0">
+            <tr>
+                <td></td>
+                <td>
+                    <table>
+                        <tr><td height="5" width="5" port="e0">I0:8</td></tr>
+                        <tr><td height="5" width="5" port="e1">I1:8</td></tr>
+                        <tr><td height="5" width="5" port="e2">I2:8</td></tr>
+                        <tr><td height="5" width="5" port="e3">I3:8</td></tr>
+                        <tr><td height="5" width="5" port="e4">I4:8</td></tr>
+                        <tr><td height="5" width="5" port="e5">I5:8</td></tr>
+                        <tr><td height="5" width="5" port="e6">I6:8</td></tr>
+                        <tr><td height="5" width="5" port="e7">I7:8</td></tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        >];
+    }
+    input:e0:e -- v981:w
+    input:e1:e -- v983:w
+    input:e2:e -- v985:w
+    input:e3:e -- v987:w
+    input:e4:e -- v989:w
+    input:e5:e -- v991:w
+    input:e6:e -- v993:w
+    input:e7:e -- v1009:w
+    {
+        graph[rank="max"]
+        output [label=<
+        <table bgcolor="gray" border="0" cellborder="1" cellspacing="0">
+            <tr>
+                <td>
+                    <table>
+                        <tr><td height="5" width="5" port="w0">O0:8</td></tr>
+                        <tr><td height="5" width="5" port="w1">O1:8</td></tr>
+                        <tr><td height="5" width="5" port="w2">O2:8</td></tr>
+                        <tr><td height="5" width="5" port="w3">O3:8</td></tr>
+                        <tr><td height="5" width="5" port="w4">O4:8</td></tr>
+                        <tr><td height="5" width="5" port="w5">O5:8</td></tr>
+                        <tr><td height="5" width="5" port="w6">O6:8</td></tr>
+                        <tr><td height="5" width="5" port="w7">O7:8</td></tr>
+                    </table>
+                </td>
+                <td></td>
+            </tr>
+        </table>
+        >];
+    }
+    v1035:e -- output:w0:w
+    v1037:e -- output:w1:w
+    v1033:e -- output:w2:w
+    v1029:e -- output:w3:w
+    v1025:e -- output:w4:w
+    v1021:e -- output:w5:w
+    v1017:e -- output:w6:w
+    v1013:e -- output:w7:w
+}
