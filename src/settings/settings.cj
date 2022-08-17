@@ -7,10 +7,9 @@
 package settings
 
 import debug.*
-import syntax.*
 
-/** 
- * Dot settings 
+/**
+ * Dot settings
  */
 
 /* The string to use as a tab */
@@ -44,17 +43,24 @@ public func IsDebugDot(){
     debugDot
 }
 
+/**
+ * Number representaions, can be BINary or DECimal
+ */
+public enum NumberRepresentation {
+    | BIN
+    | DEC
+}
 var dotNumberRepresentation = BIN
-public func GetDotNumberRepresentation() : NumberRepresentation {
+public func GetNumberRepresentation() : NumberRepresentation {
     dotNumberRepresentation
 }
 
-public func SetDotNumberRepresentation(rep : NumberRepresentation) : Unit {
+public func SetNumberRepresentation(rep : NumberRepresentation) : Unit {
     dotNumberRepresentation = rep
 }
 
 /* The director the dot files are put in */
-var dotDir = ""  
+var dotDir = ""
 /**
  * Set the directory the dot files are put in
  * @param dir The new directory

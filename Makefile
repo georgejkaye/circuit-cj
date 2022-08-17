@@ -24,23 +24,23 @@ OBJS = $(foreach pkg, $(PACKAGES),$(BUILD_DIR)/$(pkg).$(MIDDLE_EXT))
 DOTS = $(shell find $(DOT_DIR)/*.dot)
 # Dot svgs
 DOTS_SVGS = $(foreach dot, $(DOTS), $(dot).svg)
+# Dot pngs
+DOTS_PNGS = $(foreach dot, $(DOTS), $(dot).png)
 
-.PHONY: all prep main clean library cleandot $(PACKAGES)
+.PHONY: all prep main clean library cleandot $(PACKAGES) dot dotpng
 
 all: prep $(PACKAGES) main
 
-# Make the build directory
-prep:
-	mkdir -p $(BUILD_DIR)
-	mkdir -p $(DOT_DIR)
-
 # Build all packages in src/
-library: prep $(PACKAGES)
+library: $(PACKAGES)
 # Build the main file src/main.cj
-main: prep $(MAIN).$(OUT_EXT)
+main: $(MAIN).$(OUT_EXT)
 
 # Make all the dot graphs
 dot: $(DOTS_SVGS)
+
+# Make all the dot graphs
+dotpng: $(DOTS_PNGS)
 
 cleandot:
 	rm -f $(DOT_DIR)/*
@@ -48,7 +48,11 @@ cleandot:
 # Clean up
 clean:
 	rm -rf $(BUILD_DIR) $(MAIN).$(OUT_EXT)
+	rm -f $(DOT_DIR)/*svg
+	rm -f $(DOT_DIR)/*png
 
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
 
 .SECONDEXPANSION:
 
@@ -56,7 +60,7 @@ clean:
 $(PACKAGES): $(BUILD_DIR)/$$@.$(MIDDLE_EXT)
 
 # Build an object file in circuits/
-$(BUILD_DIR)/%.$(MIDDLE_EXT): $$(shell python dependencies.py $(BUILD_DIR) $(SRC_DIR) $(MIDDLE_EXT) $$*) $$(shell find $(SRC_DIR)/$$*/*${SRC_EXT})
+$(BUILD_DIR)/%.$(MIDDLE_EXT): $(BUILD_DIR) $$(shell python dependencies.py $(BUILD_DIR) $(SRC_DIR) $(MIDDLE_EXT) $$*) $$(shell find $(SRC_DIR)/$$*/*${SRC_EXT})
 	@echo "Building $*"
 	$(CJC) $(OPTS) $(LIB_OPT) $(PKG_OPT) $(SRC_DIR)/$* $(MOD_NAME_OPT) $(MOD_NAME) $(OUTPUT_OPT) $(MOD_NAME)/
 
@@ -67,3 +71,6 @@ $(MAIN).$(OUT_EXT): $$(shell python dependencies.py $(BUILD_DIR) $(SRC_DIR) $(MI
 # Draw a dot graph
 $(DOT_DIR)/%.svg: $(DOT_DIR)/%
 	dot -Tsvg $(DOT_DIR)/$* -O
+
+$(DOT_DIR)/%.png: $(DOT_DIR)/%
+	dot -Tpng $(DOT_DIR)/$* -O

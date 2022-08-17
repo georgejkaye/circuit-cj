@@ -223,27 +223,27 @@ func EdgeVerticesToTable(ports : Array<Port>, id : String, elementContent : Arra
  * @param content The list of dotlines to append to
  */
 func DrawEdgeNode(e : Edge, content : ArrayList<DotLine>) : Unit {
-    let (style, label) = match(e.GetLabel()){
+    let style = match(e.GetLabel()){
         case VALUE(v) =>
-            (valueStyle, "${v}")
+            valueStyle
         case VALUES(spec) =>
-            (valuesStyle, spec.GetValueAsRepresentation(GetDotNumberRepresentation()))
+            valuesStyle
         case BUNDLER(ms,ns) =>
-            (compressorStyle, if (ms.size < ns.size) { "\u{25C1}" } else { "\u{25B7}" })
+            compressorStyle
         case JOIN(width) =>
-            (structuralStyle, "\u{2207}")
+            structuralStyle
         case PRIMITIVE(spec) =>
-            (primitiveStyle, spec.GetName())
+            primitiveStyle
         case COMPOSITE(spec) =>
-            (compositeStyle, spec.GetName())
+            compositeStyle
         case BLACKBOX(spec) =>
-            (blackboxStyle, spec.GetName())
+            blackboxStyle
         case DELAY(dur, width) =>
-            (delayStyle, "\u{03B4}_${dur}")
+            delayStyle
     }
     DrawEdgelikeNode(
         "e${e.GetId()}",
-        label,
+        e.GetLabel().GetName(),
         style,
         e.GetSources(),
         e.GetInputPorts(),

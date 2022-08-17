@@ -1,5 +1,15 @@
 # CircuitCJ Development Log
 
+# 2022-08-17
+
+- Begin rewrite framework
+
+# 2022-08-16
+
+- Modify how subgraphs are drawn (add little nodes to indicate when data from a vertex enters a subgraph)
+- Finish sorting network and fibonacci examples
+- Finish documenting design stuff
+
 # 2022-08-15
 
 - Make sure examples work again

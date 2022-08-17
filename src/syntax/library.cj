@@ -10,6 +10,8 @@
 
 package syntax
 
+import settings.*
+
 /**
  * Convert a given decimal ASCII code to a string
  * @param n The decimal number
@@ -36,7 +38,7 @@ public class ValueSpec <: ToString & HasName & Specifiable {
         let signed : Bool
     ){}
     public func GetName() : String {
-        PrintValue(this.values, this.signed, DEC)
+        PrintValue(this.values, this.signed, GetNumberRepresentation())
     }
     public func GetValueAsRepresentation(rep : NumberRepresentation) : String {
         PrintValue(this.values, this.signed, rep)

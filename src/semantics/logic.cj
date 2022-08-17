@@ -1,6 +1,13 @@
-package semantics
+/**
+ * semantics/logic.cj
+ *
+ * Logic operations on values
+ *
+ * @author George Kaye
+ * @since 0.1
+ */
 
-from std import collection.ArrayList
+package semantics
 
 import syntax.*
 

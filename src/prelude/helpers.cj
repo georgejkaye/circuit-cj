@@ -114,3 +114,24 @@ public func printOptString(str : Option<String>) : String {
         case None => ""
     }
 }
+public func concatArray<T,U,V>(
+    arr1 : Array<T>,
+    arr2 : Array<U>,
+    ft : (T) -> V,
+    fu : (U) -> V
+) : Array<V> {
+    Array<V>(
+        arr1.size + arr2.size,
+        {
+            i : Int64 =>
+                if(i < arr1.size) {
+                    ft(arr1[i])
+                } else {
+                    fu(arr2[i - arr1.size])
+                }
+        }
+    )
+}
+public func id<T>(t : T) : T {
+    t
+}

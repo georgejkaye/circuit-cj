@@ -93,6 +93,11 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
     let outputs : Array<InterfaceVertex>
     let label : Label
     let name : String
+    // These are the vertices that we start traversing this graph from
+    let traversalVertices : HashSet<Vertex> = HashSet<Vertex>()
+    // For easy checking if a vertex is in the interface
+    let inputMap : HashMap<Vertex, Int64> = HashMap<Vertex, Int64>()
+    let outputMap : HashMap<Vertex, Int64> = HashMap<Vertex, Int64>()
     public init(
         f : Hypergraph,
         inputs : Array<InterfaceVertex>,
@@ -104,6 +109,16 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
         this.outputs = outputs
         this.name = label.GetName()
         this.label = label
+        this.traversalVertices.putAll(f.GetTraversalVertices())
+        for(i in 0..inputs.size){
+            let v = inputs[i].GetVertex()
+            this.traversalVertices.put(v)
+            inputMap.put(v, i)
+        }
+        for(i in 0..outputs.size){
+            let v = outputs[i].GetVertex()
+            outputMap.put(v, i)
+        }
     }
     public init(
         f : Hypergraph,
@@ -141,6 +156,9 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
     }
     public func GetOutputVertices() : Array<InterfaceVertex> {
         this.outputs
+    }
+    public func GetTraversalVertices() : HashSet<Vertex> {
+        this.traversalVertices
     }
     public func GetInput(i : Int64) : InterfaceVertex {
         AssertGraphHasMinimumInputs(this, i)

@@ -91,7 +91,7 @@ func AssertAllWiresWidth<T>(ws : Array<T>, n: Int64) : Unit where T <: ToString,
         Width
     )
 }
-func AssertNumberOfWires<T>(ws : Array<T>, n : Int64) : Unit where T <: ContainsWire, T <: ToString {
+public func AssertNumberOfWires<T>(ws : Array<T>, n : Int64) : Unit where T <: ContainsWire, T <: ToString {
     AssertArrayHasLength<T>(ws, n)
 }
 func AssertMinNumberOfWires<T>(

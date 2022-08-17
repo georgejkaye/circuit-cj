@@ -62,16 +62,14 @@ extend Label <: HasName & Specifiable & ToString {
     }
     public func GetName() : String {
         match(this) {
-            case VALUE(v)               => v.toString()
+            case VALUE(v)               => "${v}"
             case VALUES(spec)           => spec.GetName()
-            case BUNDLER(ms, ns)        =>
-                let arrow = if (ms.size < ns.size) { "\u{25C1}" } else { "\u{25B7}" }
-                "${ms.size}${arrow}${ns.size}"
+            case BUNDLER(ms, ns)        => if (ms.size < ns.size) { "\u{25C1}" } else { "\u{25B7}" }
             case JOIN(w)                => "\u{2207}_${w}"
             case PRIMITIVE(prim)        => prim.GetName()
             case COMPOSITE(spec)        => spec.GetName()
             case BLACKBOX(spec)         => spec.GetName()
-            case DELAY(d, w)            => "delay_${d}_{w}"
+            case DELAY(d, w)            => "delay_${d}_${w}"
         }
     }
     public func toString() : String {

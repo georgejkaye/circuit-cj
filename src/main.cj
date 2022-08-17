@@ -1,18 +1,19 @@
+from circuits import graphs.Traverse
 from circuits import graphs.WriteDotToFile
-from circuits import examples.SimpleCPU
+from circuits import examples.Accumulator
 
 from circuits import settings.*
 
 main(){
 
     SetDotDir("dot")
+    SetNumberRepresentation(DEC)
+    SetDebugDot(true)
 
-    let circ = SimpleCPU()
-    WriteDotToFile(circ, 0, "design03-01")
-    WriteDotToFile(circ, 1, "design03-02")
-    WriteDotToFile(circ, 2, "design03-03")
-    WriteDotToFile(circ, 3, "design03-04")
-    WriteDotToFile(circ, 4, "design03-05")
+    let circ = Accumulator(width: 8, initial: 17)
+    WriteDotToFile(circ, 1, "acc-1")
+    WriteDotToFile(circ, 2, "acc-2")
+    Traverse(circ, 1)
 
     return 0
 }

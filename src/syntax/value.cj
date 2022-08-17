@@ -43,14 +43,6 @@ public func BitString(bits : Array<Value>) : String {
 }
 
 /**
- * Number representaions, can be BINary or DECimal
- */
-public enum NumberRepresentation {
-    | BIN
-    | DEC
-}
-
-/**
  * Print a string in a given number representation corresponding to
  * an array of values.
  * Decimal representation is only computable if there are no Top or Bottom

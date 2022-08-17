@@ -133,7 +133,7 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
     public func GetSources() : Array<Vertex> {
         this.sources
     }
-    public func GetSourcePorts() : Int64 {
+    public func GetNoSources() : Int64 {
         this.sources.size
     }
     public func GetTarget(i : Int64) : Vertex {
@@ -142,11 +142,11 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
     public func GetTargets() : Array<Vertex> {
         this.targets
     }
-    public func GetTargetPorts() : Int64 {
+    public func GetNoTargets() : Int64 {
         this.targets.size
     }
     public func toString() : String {
-        "e${this.GetId()}"
+        "e${this.GetId()} (${label.GetName()})"
     }
     public operator func ==(right: Edge) : Bool {
         this.GetId() == right.GetId()

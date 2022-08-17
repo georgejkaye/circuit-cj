@@ -1,6 +1,6 @@
 /**
  * graphs/hypergraph.cj
- * 
+ *
  * @author George Kaye
  * @since 0.1
  */
@@ -44,11 +44,14 @@ extend WellformednessIssue <: ToString {
  * These hypergraphs are not interfaced.
  */
 public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Hashable {
-    
+
     let id : Int64 = GetNextId()
     let name : String
     let vertices : HashSet<Vertex>
     let edges : HashSet<Edge>
+    // We keep track of edges with no sources, as these
+    // are where we begin traversing the graph
+    let traversalVertices : HashSet<Vertex> = HashSet<Vertex>()
 
     public init (vertices : HashSet<Vertex>, edges : HashSet<Edge>){
         this.vertices = vertices
@@ -60,6 +63,9 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
         }
         for (e in this.edges) {
             e.SetOwner(this)
+            if(e.GetNoSources() == 0) {
+                traversalVertices.putAll(e.GetTargets())
+            }
         }
     }
     public func hashCode() : Int64 {
@@ -68,10 +74,16 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
     public func GetEdges() : HashSet<Edge> {
         this.edges
     }
+    public func GetTraversalVertices() : HashSet<Vertex> {
+        this.traversalVertices
+    }
     public func AddEdge(e : Edge) : Unit {
         this.edges.put(e)
         e.ForEachSourceAndTarget({ v : Vertex, i : Int64 => this.vertices.put(v)})
         e.SetOwner(this)
+        if(e.GetNoSources() == 0) {
+            traversalVertices.putAll(e.GetTargets())
+        }
     }
     public func GetVertices() : HashSet<Vertex> {
         this.vertices
@@ -104,13 +116,13 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
         }
         for (e in this.edges) {
             EdgeVertexCheck(
-                e, 
-                e.GetSources(), 
+                e,
+                e.GetSources(),
                 { e, i, v => SourceNotInGraph(e,i,v)}
             )
             EdgeVertexCheck(
-                e, 
-                e.GetTargets(), 
+                e,
+                e.GetTargets(),
                 { e, i, v => TargetNotInGraph(e,i,v) }
             )
         }
@@ -127,13 +139,13 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
         let vertexString = this.vertices.toString()
         let edgeString = this.edges.toString()
         let sourceTargetString = fold_left(
-            { acc : String , e : Edge => 
+            { acc : String , e : Edge =>
                 func EdgeVertexString (
                     name : String,
                     array: Array<Vertex>
                 ){
                     foldi_left(
-                        { acc : String , v : Vertex, i : Int64 => 
+                        { acc : String , v : Vertex, i : Int64 =>
                             let str = "${v}"
                             let acc = if (acc == "") {
                                 ""
@@ -199,7 +211,7 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
     }
 }
 
-/** 
+/**
  * Given an array of vertices, produce a new hypergraph that contains all the
  * elements of their owners.
  *
