@@ -34,37 +34,53 @@ public func EnterSubgraph(parent : Edge, child : InterfacedHypergraph, data : Tr
     }
 }
 
-public func GetTraversalVertices(f : InterfacedHypergraph, currentDepth : Int64, data : TraversalData) : Unit {
+public func GetTraversalEdges(
+    f : InterfacedHypergraph,
+    currentDepth : Int64,
+    nexts : ArrayList<EdgeAtDepth>
+) : Unit {
     for(v in f.GetTraversalVertices()){
         match(v.GetInEdge()){
-            case None     =>
+            case None =>
                 for(ec in v.GetOutEdges()) {
-                    data.frontier.append(EdgeAtDepth(ec.edge, currentDepth))
+                    AddEdgeConnection(ec, nexts, currentDepth)
                 }
-            case Some(ec) => data.frontier.append(EdgeAtDepth(ec.edge, currentDepth))
+            case Some(ec) => AddEdgeConnection(ec, nexts, currentDepth)
         }
+    }
+}
+
+func AddEdgeConnection(ec : EdgeConnection, nexts : ArrayList<EdgeAtDepth>, currentDepth : Int64) {
+    let ed = EdgeAtDepth(ec.edge, currentDepth)
+    if (!nexts.contains(ed)){
+        nexts.append(ed)
     }
 }
 
 public func Traverse(f : InterfacedHypergraph, maxDepth : Int64) {
     let frontier = ArrayList<EdgeAtDepth>()
+    GetTraversalEdges(f, 0, frontier)
     let visitedVertices = ArrayList<Vertex>()
     let visitedEdges = ArrayList<Edge>()
     let vertexMap = HashMap<Vertex, Vertex>()
-    let actionAtEdge = { e : Edge, i : Int64, data : TraversalData =>
-        match(e.GetSubgraph()){
+    let actionAtEdge = { ed : EdgeAtDepth, data : TraversalData =>
+        let edge = ed.edge
+        let depth = ed.depth
+        let nexts = ArrayList<EdgeAtDepth>()
+        match(edge.GetSubgraph()) {
             case None => ()
             case Some(g) =>
-                if (i < maxDepth) {
-                    EnterSubgraph(e, g, data)
+                if (depth < data.maxDepth) {
+                    EnterSubgraph(edge, g, data)
+                    GetTraversalEdges(g, depth + 1, nexts)
                 }
-
-                e.GetTargets()
         }
-        ArrayList<Vertex>()
-    }
-    let actionAtVertex = { v : Vertex, i : Int64, data : TraversalData =>
-        map({ ec : EdgeConnection => EdgeAtDepth(ec.edge, 0) }, v.GetOutEdges())
+        for (v in edge.GetTargets()){
+            for (ec in v.GetOutEdges()){
+                AddEdgeConnection(ec, nexts, depth)
+            }
+        }
+        nexts
     }
     let data = TraversalData(
         frontier,
@@ -72,10 +88,8 @@ public func Traverse(f : InterfacedHypergraph, maxDepth : Int64) {
         visitedEdges,
         vertexMap,
         maxDepth,
-        actionAtEdge,
-        actionAtVertex
+        actionAtEdge
     )
-    GetTraversalVertices(f, 0, data)
     PerformTraversal(data)
 }
 
@@ -86,35 +100,19 @@ public struct TraversalData{
         let visitedEdges : ArrayList<Edge>,
         let vertexMap : HashMap<Vertex, Vertex>,
         let maxDepth : Int64,
-        let actionAtEdge : (Edge, Int64, TraversalData) -> ArrayList<Vertex>,
-        let actionAtVertex : (Vertex, Int64, TraversalData) -> ArrayList<EdgeAtDepth>
+        let actionAtEdge : (EdgeAtDepth, TraversalData) -> ArrayList<EdgeAtDepth>
     ){}
 }
 
-func UpdateFrontier(
-    vs : Iterable<Vertex>,
-    depth : Int64,
-    data : TraversalData
-) {
-    // for(v in vs) {
-    //     if(!data.frontier.contains(VertexAtDepth(v, depth)) && !data.visitedVertices.contains(v)) {
-    //         data.frontier.append(VertexAtDepth(v, depth))
-    //     }
-    // }
-}
-
-func VisitEdge(e : Edge, depth : Int64, data : TraversalData) {
-    println("${e}")
-    data.visitedEdges.append(e)
-    for(v in data.actionAtEdge(e, depth, data)) {
-        VisitVertex(v, depth, data)
+func VisitEdge(ed : EdgeAtDepth, data : TraversalData) {
+    println("${data.visitedEdges.size}: ${ed}")
+    data.visitedEdges.append(ed.edge)
+    let nexts = data.actionAtEdge(ed, data)
+    for(edd in nexts) {
+        if(!data.frontier.contains(edd) && !data.visitedEdges.contains(edd.edge)) {
+            data.frontier.append(edd)
+        }
     }
-}
-
-func VisitVertex(v : Vertex, depth : Int64, data : TraversalData) {
-    println("${v}")
-    data.visitedVertices.append(v)
-    data.frontier.appendAll(data.actionAtVertex(v, depth, data))
 }
 
 func PerformTraversal(
@@ -122,7 +120,7 @@ func PerformTraversal(
 ){
     while(data.frontier.size != 0){
         let currentEdge = data.frontier.remove(0)
-        VisitEdge(currentEdge.edge, currentEdge.depth, data)
+        VisitEdge(currentEdge, data)
     }
 }
 

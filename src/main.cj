@@ -14,25 +14,8 @@ main(){
     SetDebugDot(true)
 
     let circ = ALU(8)
-    WriteDotToFile(circ, 0, "alu")
-    WriteDotToFile(circ, 1, "alu-expanded")
-
-    let edges = circ.GetEdges()
-    var i = 0
-    var edge = None<Edge>
-    for(e in edges) {
-        if (i == 0){
-            edge = Some(e)
-            i++
-        }
-    }
-    match(edge) {
-        case None => ()
-        case Some(e) =>
-            println("bursting ${e}")
-            e.BurstSubgraph()
-            WriteDotToFile(circ, 0, "alu-${i}")
-    }
+    WriteDotToFile(circ, 1, "alu")
+    Traverse(circ, 1)
 
     return 0
 }
