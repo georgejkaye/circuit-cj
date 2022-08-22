@@ -54,6 +54,13 @@ public func map<T, U>(f : (T) -> U, xs : ArrayList<T>) : ArrayList<U> {
     }
     acc
 }
+public func map_list<T, U>(f : (T) -> U, xs : Array<T>) : ArrayList<U> {
+    let acc = ArrayList<U>(xs.size)
+    for (x in xs){
+        acc.append(f(x))
+    }
+    acc
+}
 public func mapi<T, U>(f : (T, Int64) -> U, xs : Array<T>) : Array<U> {
     Array<U>(xs.size, { i : Int64 => f(xs[i], i) })
 }

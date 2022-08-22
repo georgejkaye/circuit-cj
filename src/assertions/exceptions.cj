@@ -112,3 +112,9 @@ class InsufficientParameterException <: Exception {
         ErrorMsg("Expected ${i} to be greater than or equal to ${t}")
     }
 }
+
+public class IncompatibleVariantException<T> <: Exception where T <: ToString {
+    public init(current : T, desired : String) {
+        ErrorMsg("Expected ${current} to be of variant ${desired} but it is not")
+    }
+}

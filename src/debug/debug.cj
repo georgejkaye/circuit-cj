@@ -10,7 +10,7 @@ package debug
  */
 
 /** Whether the debug messages are printed */
-var debugMessages = true
+var debugMessages = false
 /**
  * Toggle the debug messages on and off
  */
@@ -48,7 +48,7 @@ func PrintMessage(mt : MessageType, msg : String) : Unit {
     println("${mt}: ${msg}")
 }
 
-public func Debug(fnc: String, msg : String) : Unit {
+public func Debug(msg : String) : Unit {
     if(DebugMessagesOn()){
         PrintMessage(DEBUG, msg)
     }
@@ -62,7 +62,7 @@ public func Warning(fnc: String, msg: String) : Unit {
     PrintMessage(WARNING, msg)
 }
 
-public func Info(fnc : String, msg: String) : Unit {
+public func Info(msg: String) : Unit {
     PrintMessage(INFO, msg)
 }
 

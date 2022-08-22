@@ -51,7 +51,7 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
     let edges : HashSet<Edge>
     // We keep track of edges with no sources, as these
     // are where we begin traversing the graph
-    let traversalVertices : HashSet<Vertex> = HashSet<Vertex>()
+    let startingEdges : HashSet<Edge> = HashSet<Edge>()
 
     public init (vertices : HashSet<Vertex>, edges : HashSet<Edge>){
         this.vertices = vertices
@@ -64,7 +64,7 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
         for (e in this.edges) {
             e.SetOwner(this)
             if(e.GetNoSources() == 0) {
-                traversalVertices.putAll(e.GetTargets())
+                startingEdges.put(e)
             }
         }
     }
@@ -74,15 +74,15 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
     public func GetEdges() : HashSet<Edge> {
         this.edges
     }
-    public func GetTraversalVertices() : HashSet<Vertex> {
-        this.traversalVertices
+    public func GetStartingEdges() : HashSet<Edge> {
+        this.startingEdges
     }
     public func AddEdge(e : Edge) : Unit {
         this.edges.put(e)
         e.ForEachSourceAndTarget({ v : Vertex, i : Int64 => this.vertices.put(v)})
         e.SetOwner(this)
         if(e.GetNoSources() == 0) {
-            traversalVertices.putAll(e.GetTargets())
+            startingEdges.put(e)
         }
     }
     public func AddEdges(es : Iterable<Edge>) {
@@ -103,9 +103,11 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
         this.edges.remove(e)
         for(v in e.GetSources()){
             v.RemoveOutEdge(e)
+            this.RemoveVertex(v)
         }
         for(v in e.GetTargets()){
             v.RemoveInEdge(e)
+            this.RemoveVertex(v)
         }
     }
     public func IsWellFormed() : Bool {

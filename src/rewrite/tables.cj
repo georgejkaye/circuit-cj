@@ -7,7 +7,7 @@
  * @since 0.1
  */
 
-package semantics
+package rewrite
 
 import syntax.*
 import assertions.*
@@ -27,7 +27,7 @@ class TruthTable {
      * Throws an exception if the number of arguments is incompatible with this truth table
     * @param args The list of arguments
      */
-    func Eval(args : Array<Value>) : Value {
+    func Eval(args : Array<Value>) : Array<Value> {
         AssertArrayHasLength(args, generator.GetNoInputs())
         table(args)
     }

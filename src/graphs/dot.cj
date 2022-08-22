@@ -821,7 +821,7 @@ public func ConvertStringIndentListToString(list : ArrayList<DotLine>) : String 
  */
 public func WriteDotToFile(f : InterfacedHypergraph, depth : Int64, file : String) : Unit {
     let filename = GetDotFile(file)
-    Info("WriteDotToFile", "Writing dot file ${filename}")
+    Info("Writing dot file ${filename}")
     let dot = DotGraph(f, depth)
     let fs = FileStream(filename, OpenMode.ForceCreate)
     if(fs.openFile()){

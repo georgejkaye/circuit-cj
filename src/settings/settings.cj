@@ -19,7 +19,7 @@ public let tab = "  "
 var debugDot = false
 
 func DebugDotInfo(){
-    Info("ToggleDebugDot", "Dot debug information has been toggled ${if(debugDot) { "on" } else { "off" }}")
+    Info("Dot debug information has been toggled ${if(debugDot) { "on" } else { "off" }}")
 }
 
 /**
@@ -67,7 +67,7 @@ var dotDir = ""
  */
 public func SetDotDir(dir : String){
     dotDir = dir
-    Info("SetDotDir", "The dot directory has been set to ${dir}")
+    Info("The dot directory has been set to ${dir}")
 }
 /**
  * Get the dot output file path (relative to the project root) with extension

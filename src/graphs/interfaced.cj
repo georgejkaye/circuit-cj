@@ -93,11 +93,11 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
     let outputs : Array<InterfaceVertex>
     let label : Label
     let name : String
-    // These are the vertices that we start traversing this graph from
-    let traversalVertices : HashSet<Vertex> = HashSet<Vertex>()
+    // These are the edges that we start traversing this graph from
+    let startingEdges : HashSet<Edge> = HashSet<Edge>()
     // For easy checking if a vertex is in the interface
-    let inputMap : HashMap<Vertex, Int64> = HashMap<Vertex, Int64>()
-    let outputMap : HashMap<Vertex, Int64> = HashMap<Vertex, Int64>()
+    let inputMap : HashMap<Vertex, ArrayList<Int64>> = HashMap<Vertex, ArrayList<Int64>>()
+    let outputMap : HashMap<Vertex, ArrayList<Int64>> = HashMap<Vertex, ArrayList<Int64>>()
     public init(
         f : Hypergraph,
         inputs : Array<InterfaceVertex>,
@@ -109,15 +109,29 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
         this.outputs = outputs
         this.name = label.GetName()
         this.label = label
-        this.traversalVertices.putAll(f.GetTraversalVertices())
+        this.startingEdges.putAll(f.GetStartingEdges())
         for(i in 0..inputs.size){
             let v = inputs[i].GetVertex()
-            this.traversalVertices.put(v)
-            inputMap.put(v, i)
+            for(ec in v.GetOutEdges()){
+                startingEdges.put(ec.edge)
+            }
+            match(inputMap.get(v)) {
+                case None =>
+                    let vs = ArrayList<Int64>()
+                    vs.append(i)
+                    inputMap.put(v, vs)
+                case Some(vs) => vs.append(i)
+            }
         }
         for(i in 0..outputs.size){
             let v = outputs[i].GetVertex()
-            outputMap.put(v, i)
+            match(outputMap.get(v)) {
+                case None =>
+                    let vs = ArrayList<Int64>()
+                    vs.append(i)
+                    inputMap.put(v, vs)
+                case Some(vs) => vs.append(i)
+            }
         }
     }
     public init(
@@ -157,8 +171,8 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
     public func GetOutputVertices() : Array<InterfaceVertex> {
         this.outputs
     }
-    public func GetTraversalVertices() : HashSet<Vertex> {
-        this.traversalVertices
+    public func GetStartingEdges() : HashSet<Edge> {
+        this.startingEdges
     }
     public func GetInput(i : Int64) : InterfaceVertex {
         AssertGraphHasMinimumInputs(this, i)
@@ -167,6 +181,18 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
     public func GetOutput(i : Int64) : InterfaceVertex {
         AssertGraphHasMinimumOutputs(this, i)
         this.outputs[i]
+    }
+    public func GetInputPositions(v : Vertex) : ArrayList<Int64> {
+        match(this.inputMap.get(v)){
+            case None => ArrayList<Int64>()
+            case Some(ps) => ps
+        }
+    }
+    public func GetOutputPositions(v : Vertex) : ArrayList<Int64> {
+        match(this.outputMap.get(v)){
+            case None => ArrayList<Int64>()
+            case Some(ps) => ps
+        }
     }
     public func GetInputs() : Int64 {
         this.inputs.size
@@ -180,8 +206,22 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
     public func GetOutputPorts() : Array<Port> {
         map({ iv : InterfaceVertex => iv.ToPort() }, this.outputs )
     }
+    public func ReplaceInput(i : Int64, v : Vertex) : Unit {
+        let iv = this.GetInput(i)
+        this.inputs[i] = InterfaceVertex(v, iv.name)
+    }
+    public func ReplaceOutput(i : Int64, v : Vertex) : Unit {
+        let iv = this.GetOutput(i)
+        this.outputs[i] = InterfaceVertex(v, iv.name)
+    }
     public func GetName() : String {
         this.name
+    }
+    public func AddEdge(e : Edge) : Unit {
+        this.f.AddEdge(e)
+    }
+    public func RemoveEdge(e : Edge) : Unit {
+        this.f.RemoveEdge(e)
     }
     public func toString() : String {
         let string = f.toString()

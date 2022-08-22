@@ -18,7 +18,6 @@ func AssertAtMostOneInEdge<T, U>(t : T, u : U) : Option<EdgeConnection> where T 
     match(v.GetInEdge()) {
         case None    => w.GetInEdge()
         case Some(ev) =>
-            println("${v} has in edge ${ev}, so now checking that ${w} has none")
             AssertHasParameter<Vertex, Option<EdgeConnection>>(
                 w,
                 None,

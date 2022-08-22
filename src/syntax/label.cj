@@ -75,4 +75,29 @@ extend Label <: HasName & Specifiable & ToString {
     public func toString() : String {
         this.GetName()
     }
+    public func IsValue() : Bool {
+        match(this) {
+            case VALUE(_) => true
+            case VALUES(_) => true
+            case _ => false
+        }
+    }
+    public func GetValue() : Value {
+        match(this) {
+            case VALUE(v) => v
+            case _ => throw IncompatibleVariantException(this, "VALUE")
+        }
+    }
+    public func IsPrimitive() : Bool {
+        match(this) {
+            case PRIMITIVE(_) => true
+            case _ => false
+        }
+    }
+    public func GetPrimitive() : Primitive {
+        match(this) {
+            case PRIMITIVE(prim) => prim
+            case _ => throw IncompatibleVariantException(this, "PRIMITIVE")
+        }
+    }
 }
