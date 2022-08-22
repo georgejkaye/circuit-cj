@@ -85,6 +85,11 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
             traversalVertices.putAll(e.GetTargets())
         }
     }
+    public func AddEdges(es : Iterable<Edge>) {
+        for (e in es) {
+            this.AddEdge(e)
+        }
+    }
     public func GetVertices() : HashSet<Vertex> {
         this.vertices
     }
@@ -93,6 +98,15 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
     }
     public func RemoveVertex(v : Vertex) : Unit {
         this.vertices.remove(v)
+    }
+    public func RemoveEdge(e : Edge) : Unit {
+        this.edges.remove(e)
+        for(v in e.GetSources()){
+            v.RemoveOutEdge(e)
+        }
+        for(v in e.GetTargets()){
+            v.RemoveInEdge(e)
+        }
     }
     public func IsWellFormed() : Bool {
         let issues = this.WellFormednessCheck()

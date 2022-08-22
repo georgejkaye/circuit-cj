@@ -145,6 +145,25 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
     public func GetNoTargets() : Int64 {
         this.targets.size
     }
+    public func BurstSubgraph() : Unit {
+        let owner = AssertOwned(this)
+        match(this.GetSubgraph()){
+            case None => ()
+            case Some(f) =>
+                owner.RemoveEdge(this)
+                func MergeInterfaces(
+                    parentVertices : Array<Vertex>,
+                    childVertices : Array<InterfaceVertex>
+                ) : Unit {
+                    for (i in 0..parentVertices.size) {
+                        MergeVertices(parentVertices[i], childVertices[i].GetVertex())
+                    }
+                }
+                MergeInterfaces(this.GetSources(), f.GetInputVertices())
+                MergeInterfaces(this.GetTargets(), f.GetOutputVertices())
+                owner.AddEdges(f.GetEdges())
+    }
+}
     public func toString() : String {
         "e${this.GetId()} (${label.GetName()})"
     }

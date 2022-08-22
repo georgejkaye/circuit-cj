@@ -3,13 +3,13 @@
  *
  * @author George Kaye
  * @since 0.2
- */ 
+ */
 
 package graphs
 
 /**
  * An EdgeConnection specifies an edge that a vertex
- * is a source or target of, and which index it is. 
+ * is a source or target of, and which index it is.
  */
 public class EdgeConnection <: ToString & Equatable<EdgeConnection> {
     public EdgeConnection(
@@ -28,12 +28,12 @@ public class EdgeConnection <: ToString & Equatable<EdgeConnection> {
 }
 
 /**
- * A vertex is a wire in a circuit. 
+ * A vertex is a wire in a circuit.
  * Vertices can be the source at most one edge, but the target of an
  * arbitrary number of edges, which represents forking wires.
  */
 public class Vertex <: Identifiable &
-                        Equatable<Vertex> & 
+                        Equatable<Vertex> &
                         Ownable<Hypergraph> &
                         Hashable &
                         ToString &
@@ -45,8 +45,8 @@ public class Vertex <: Identifiable &
     var outEdges : ArrayList<EdgeConnection> = ArrayList()
     var feedback : Int64 = 0
     var owner : Option<Hypergraph> = None
-    public init(width: Int64){ 
-        this.width = width    
+    public init(width: Int64){
+        this.width = width
         this.owner = Some(Hypergraph(HashSet<Vertex>([this]), HashSet<Edge>()))
     }
     public init() {
@@ -69,6 +69,18 @@ public class Vertex <: Identifiable &
     }
     public func SetInEdge(ec : EdgeConnection) : Unit {
         inEdge = ec
+    }
+    public func RemoveInEdge(e : Edge) : Unit {
+        match(this.inEdge) {
+            case None => ()
+            case Some(ec) =>
+                if (ec.edge == e) {
+                    this.inEdge = None
+                }
+        }
+    }
+    public func RemoveOutEdge(e : Edge) : Unit {
+        this.outEdges.removeIf({ec : EdgeConnection => ec.edge == e})
     }
     public func AddOutEdge(e : Edge, i : Int64) : Unit {
         outEdges.append(EdgeConnection(e, i))

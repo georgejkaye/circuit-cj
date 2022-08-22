@@ -1,8 +1,13 @@
 # CircuitCJ Development Log
 
+# 2022-08-22
+
+- Adapt traversal algorithm for graph rewriting
+
 # 2022-08-17
 
 - Begin rewrite framework
+- Complete basic graph traversal algorithm
 
 # 2022-08-16
 
