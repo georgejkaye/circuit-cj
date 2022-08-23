@@ -11,11 +11,18 @@ package graphs
  * An EdgeConnection specifies an edge that a vertex
  * is a source or target of, and which index it is.
  */
-public class EdgeConnection <: ToString & Equatable<EdgeConnection> {
+public struct EdgeConnection <: ToString & Equatable<EdgeConnection> {
     public EdgeConnection(
         public let edge : Edge,
-        public let index : Int64
+        public let index : Int64,
+        public let feedback : Bool
     ){}
+    init(
+        edge : Edge,
+        index : Int64
+    ) {
+        this(edge, index, false)
+    }
     public func toString() : String {
         "${edge}[${index}]"
     }
@@ -82,8 +89,8 @@ public class Vertex <: Identifiable &
     public func RemoveOutEdge(e : Edge) : Unit {
         this.outEdges.removeIf({ec : EdgeConnection => ec.edge == e})
     }
-    public func AddOutEdge(e : Edge, i : Int64) : Unit {
-        outEdges.append(EdgeConnection(e, i))
+    public func AddOutEdge(e : Edge, i : Int64, feedback!: Bool = false) : Unit {
+        outEdges.append(EdgeConnection(e, i, feedback))
     }
     public func AddAllOutEdges(es : ArrayList<EdgeConnection>) {
         outEdges.appendAll(es)

@@ -111,12 +111,12 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
             array[i] = newVertex
             vertexFn(newVertex)
     }
-    public func SetSource(i : Int64, newVertex : Vertex) : Unit {
+    public func SetSource(i : Int64, newVertex : Vertex, feedback!: Bool = false) : Unit {
         SetVertex(
             i,
             newVertex,
             this.sources,
-            { v => v.AddOutEdge(this, i) }
+            { v => v.AddOutEdge(this, i, feedback: feedback) }
         )
     }
     public func SetTarget(i : Int64, newVertex : Vertex) : Unit {

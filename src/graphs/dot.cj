@@ -86,6 +86,9 @@ let maxSubgraphOpts = [
 let minSubgraphOpts = [
     ("rank", "min")
 ]
+let feedbackStyle = [
+    ("color", "red")
+]
 /**
  * Enum to give indentation hints for the generated dot code.
  */
@@ -349,8 +352,6 @@ func DrawEdgelikeNode<T>(
 func DrawEdge(
     e : Edge,
     depth : Int64,
-    vertexMap : HashMap<Int64, Int64>,
-    omittedVertices : HashSet<Int64>,
     omittedEdges : HashSet<Int64>,
     elementContent : ArrayList<DotLine>,
     connectionContent: ArrayList<DotLine>
@@ -364,8 +365,6 @@ func DrawEdge(
                     g,
                     e,
                     depth,
-                    vertexMap,
-                    omittedVertices,
                     omittedEdges,
                     elementContent,
                     connectionContent
@@ -381,7 +380,7 @@ func DrawEdge(
  * @param opts The list of key-value pairs of options
  * @return The dotline of the options
  */
-func DrawOptions(selector : String, opts : Array<(String, String)>) : DotLine {
+func GetOptions(opts : Array<(String, String)>) : String {
     let options = fold_left(
         { acc : String, opt : (String, String) =>
             let (key, value) = opt
@@ -395,7 +394,11 @@ func DrawOptions(selector : String, opts : Array<(String, String)>) : DotLine {
         "",
         opts
     )
-    DotLine("${selector}[${options}]", Preserve)
+    "[${options}]"
+}
+func DrawOptions(selector : String, opts : Array<(String, String)>) : DotLine {
+    let options = GetOptions(opts)
+    DotLine("${selector}${options}", Preserve)
 }
 /**
  * Append the dotline for a vertex to a list
@@ -405,26 +408,73 @@ func DrawOptions(selector : String, opts : Array<(String, String)>) : DotLine {
  */
 func DrawVertex(
     v : Vertex,
-    content : ArrayList<DotLine>,
-    vertexMap : HashMap<Int64, Int64>
+    content : ArrayList<DotLine>
 ) : Unit {
-    match (vertexMap.get(v.GetId())) {
-        case Some(vv) => ()
-        case None =>
-            let text = if(IsDebugDot()){
-                "${v.GetId()}"
-            } else {
-                ""
-            }
-            content.append(
-                DrawOptions(
-                    "v${v.GetId()}",
-                    [
-                        ("label", "${v.GetWidth()}"),
-                        ("xlabel", text)
-                    ]
-                )
+    let text = if(IsDebugDot()){
+        "${v.GetId()}"
+    } else {
+        ""
+    }
+    content.append(
+        DrawOptions(
+            "v${v.GetId()}",
+            [
+                ("label", "${v.GetWidth()}"),
+                ("xlabel", text)
+            ]
+        )
+    )
+}
+func DrawVertexConnections(
+    v : Vertex,
+    expandedEdges : HashSet<Int64>,
+    connectionContent : ArrayList<DotLine>
+) : Unit {
+    func AddConnection(
+        thisString : String,
+        otherString : String,
+        toLeft : Bool,
+        feedback : Bool
+    ) : Unit {
+        let (lhs, rhs) = if(toLeft) {
+            (otherString, thisString)
+        } else {
+            (thisString, otherString)
+        }
+        let feedbackString = if(feedback) {
+            " ${GetOptions(feedbackStyle)}"
+        } else {
+            ""
+        }
+        connectionContent.append(
+            DotLine(
+                "${lhs}:e -- ${rhs}:w${feedbackString}",
+                Preserve
             )
+        )
+    }
+    let thisString = "v${v.GetId()}"
+    func ConnectToEdge(
+        ec : EdgeConnection,
+        toLeft : Bool
+    ) : Unit {
+        let edge = ec.edge
+        if(!expandedEdges.contains(edge.GetId())) {
+            let otherDirection = if(toLeft) {
+                "e"
+            } else {
+                "w"
+            }
+            let otherString = "e${edge.GetId()}:${otherDirection}${ec.index}"
+            AddConnection(thisString, otherString, toLeft, ec.feedback)
+        }
+    }
+    match(v.GetInEdge()) {
+        case None => ()
+        case Some(ec) => ConnectToEdge(ec, true)
+    }
+    for (ec in v.GetOutEdges()) {
+        ConnectToEdge(ec, false)
     }
 }
 /**
@@ -483,7 +533,7 @@ func DrawConnection(vText : String, eText : String, vertexFirst : Bool) : String
  * @param parent The edge that this subgraph belongs to
  * @param depth The maximum depth of subgraphs to expand
  * @param vertexMap A map indicating which vertices have been subsumed by others
- * @param omittedEdges A list of edges that should not be drawn
+ * @param expandedEdges A list of edges that have been expanded
  * @param elementContent The list of graph element dotlines so far
  * @param connectionContent The list of connection element dotlines so far
  */
@@ -491,8 +541,6 @@ func DrawSubgraphCluster(
     f : InterfacedHypergraph,
     parent : Edge,
     depth : Int64,
-    vertexMap : HashMap<Int64, Int64>,
-    omittedVertices : HashSet<Int64>,
     omittedEdges : HashSet<Int64>,
     elementContent : ArrayList<DotLine>,
     connectionContent : ArrayList<DotLine>
@@ -517,7 +565,6 @@ func DrawSubgraphCluster(
      * @param array The interface
      * @param getLocalVertex The function to get the ith interface vertex of the subgraph
      * @param getParentVertex The function to get the ith interface vertex of the parent edge
-     * @param omittedVertices The set of omitted vertices to be updated
      * @param subgraphContent The list of dotlines for the subgraph
      * @param connectionContent The list of dotlines for connections
      * @param inputs Whether we are dealing with inputs (this affects the order of connections)
@@ -526,42 +573,48 @@ func DrawSubgraphCluster(
         array : Array<InterfaceVertex>,
         getLocalVertex : (Int64) -> Vertex,
         getParentVertex : (Int64) -> Vertex,
-        omittedVertices : HashSet<Int64>,
         subgraphContent : ArrayList<DotLine>,
         connectionContent : ArrayList<DotLine>,
-        inputs : Bool
+        isInputs : Bool
     ){
         // The interface vertices occupy another subgraph
         let openingLine = DotLine("{", Indent)
         subgraphContent.append(openingLine)
         // Depending on wheteher they are inputs or outputs, this subgraph
         // will have rank min or max
-        let graphOpts = if(inputs) {
-            minSubgraphOpts
+        let (graphOpts, interfaceName) = if(isInputs) {
+            (minSubgraphOpts, "inputs")
         } else {
-            maxSubgraphOpts
+            (maxSubgraphOpts, "outputs")
         }
         let graphOptsLine = DrawOptions("graph", graphOpts)
         subgraphContent.append(graphOptsLine)
         // Draw each vertex in the interface
         for(i in 0..array.size) {
-            let local = getLocalVertex(i)
+            // The parent vertex is the ith source/target of the parent graph
             let parent = getParentVertex(i)
-            // Get the ids of the local and parent vertices
-            let localText = "v${local.GetId()}"
             let parentText = "v${parent.GetId()}"
-            // Draw the local vertex
-            let vertexLine = DotLine("${localText}", Preserve)
-            subgraphContent.append(vertexLine)
-            // Connect the little local vertex to the big parent vertex
-            let connText = if(inputs) {
-                "${parentText}:e -- ${localText}:w"
+            // The local vertex is the ith input/output of the subgraph
+            let local = getLocalVertex(i)
+            let localText = "v${local.GetId()}"
+            // The interface vertex is a small vertex at the boundary
+            // It is used as a 'support' to make it clear when signals
+            // leave the subgraph, while still allowing vertices on either
+            // side of the boundary to fork correctly
+            let interfaceVertexText = "h${id}_${interfaceName}_${i}"
+            let interfaceVertexLine = DotLine(interfaceVertexText, Preserve)
+            subgraphContent.append(interfaceVertexLine)
+            // Draw the connections from the outside world to the subgraph world,
+            // via the little interface vertex
+            let (leftVertex, rightVertex) = if(isInputs) {
+                (parentText, localText)
             } else {
-                "${localText}:e -- ${parentText}:w"
+                (localText, parentText)
             }
-            connectionContent.append(DotLine(connText, Preserve))
-            // We don't want to draw the interface vertices in the subgraph now
-            omittedVertices.put(local.GetId())
+            let conn1 = "${leftVertex}:e -- ${interfaceVertexText}:w"
+            connectionContent.append(DotLine(conn1, Preserve))
+            let conn2 = "${interfaceVertexText}:e -- ${rightVertex}:w"
+            connectionContent.append(DotLine(conn2, Preserve))
         }
         let closingLine = DotLine("}", Deindent)
         subgraphContent.append(closingLine)
@@ -571,7 +624,6 @@ func DrawSubgraphCluster(
         f.GetInputVertices(),
         { i : Int64 => f.GetInput(i).GetVertex() },
         { i : Int64 => parent.GetSource(i) },
-        omittedVertices,
         subgraphContent,
         connectionContent,
         true
@@ -581,7 +633,6 @@ func DrawSubgraphCluster(
         f.GetOutputVertices(),
         { i : Int64 => f.GetOutput(i).GetVertex() },
         { i : Int64 => parent.GetTarget(i) },
-        omittedVertices,
         subgraphContent,
         connectionContent,
         false
@@ -590,12 +641,11 @@ func DrawSubgraphCluster(
     DrawHypergraph(
         f.GetGraph(),
         depth - 1,
-        vertexMap,
-        omittedVertices,
         omittedEdges,
         subgraphContent,
         connectionContent
     )
+    // Append everything to the content list
     elementContent.append(openingText)
     elementContent.append(labelText)
     elementContent.appendAll(subgraphContent)
@@ -606,36 +656,25 @@ func DrawSubgraphCluster(
  * element and connection dotlines, expanding subgraphs up to a given depth.
  * @param f                 The hypergraph
  * @param depth             The maximum depth to expand subgraphs
- * @param vertexMap         A map containing vertex ids that subsume the ones in this graph,
- *                              such as if a parent edge has been expanded and the internal
- *                              vertices need to be merged with the external ones
- * @param omittedVertices   A set of vertices that should not be drawn, e.g. the interface
-                                vertices of a subgraph, since these are handled above
- * @param omittedEdges      A set of edges that should not be drawn, e.g. the parent edges
-                                of subgraphs that have been expanded
+ * @param omittedEdges      A set of edges that have been expanded
  * @param elementContent    The list containing the existing element dotlines so far
  * @param connectionContent The list containing the existing connection dotlines so far
  */
 public func DrawHypergraph(
     f : Hypergraph,
     depth : Int64,
-    vertexMap : HashMap<Int64, Int64>,
-    omittedVertices : HashSet<Int64>,
     omittedEdges : HashSet<Int64>,
     elementContent : ArrayList<DotLine>,
     connectionContent : ArrayList<DotLine>
 ) : Unit {
     let vertexContent = ArrayList<DotLine>()
     let edgeContent = ArrayList<DotLine>()
-    let newConnectionContent = ArrayList<DotLine>()
-    for(v in f.GetVertices()){
-        if(!omittedVertices.contains(v.GetId())){
-            DrawVertex(v, vertexContent, vertexMap)
-        }
-    }
     for (e in f.GetEdges()){
-        DrawEdge(e, depth,  vertexMap, omittedVertices, omittedEdges, edgeContent, connectionContent)
-        DrawConnections(e, vertexMap, omittedEdges, connectionContent)
+        DrawEdge(e, depth, omittedEdges, edgeContent, connectionContent)
+    }
+    for(v in f.GetVertices()){
+        DrawVertex(v, vertexContent)
+        DrawVertexConnections(v, omittedEdges, connectionContent)
     }
     let vertexOptionsString = DrawOptions("node", vertexNodeOpts)
     let edgeOptionsString = DrawOptions("node", edgeNodeOpts)
@@ -644,7 +683,6 @@ public func DrawHypergraph(
     elementContent.appendAll(vertexContent)
     elementContent.append(edgeOptionsString)
     elementContent.appendAll(edgeContent)
-    connectionContent.appendAll(newConnectionContent)
 }
 /**
  * Append dotlines for a subgraph to the list of element lines so far.
@@ -664,33 +702,13 @@ func DrawSubgraph(
     elementContent.append(DotLine("}", Deindent))
 }
 /**
- * Append the dotlines for connections from vertices to an interface to a list of dotlines
- * @param list The array of interface vertices
- * @param vertexFirst If the connection is from the vertex to the interface (output) or vice versa (input)
- * @param content The list of dotlines so far
- */
-func DrawInterfaceConnections(list : Array<InterfaceVertex>, vertexFirst : Bool, content : ArrayList<DotLine>) : Unit {
-    for (i in 0..list.size){
-        let v = list[i].GetVertex()
-        let vText = "v${v.GetId()}"
-        let str = if (vertexFirst) {
-            let eText = "output:w${i}:w"
-            DrawConnection(vText, eText, vertexFirst)
-        } else {
-            let eText = "input:e${i}:e"
-            DrawConnection(vText, eText, vertexFirst)
-        }
-        content.append(DotLine(str, Preserve))
-    }
-}
-/**
  * Append dotlines corresponding to an interface to the lists of lines so far.
  * Interfaces are drawn as subgraphs, so that inputs can be drawn at the far
  * left of the graph and outputs at the far right
  * @param vertices The array of vertices in the interface
  * @param ports The array of ports in the interface
  * @param sink Whether the interface should be drawn at the far right of the graph
- ( @param elementContent The list of element dotlines so far
+ * @param elementContent The list of element dotlines so far
  */
 func DrawInterface(
     vertices : Array<InterfaceVertex>,
@@ -698,6 +716,26 @@ func DrawInterface(
     sink : Bool,
     elementContent : ArrayList<DotLine>
 ) : Unit {
+    /**
+    * Append the dotlines for connections from vertices to an interface to a list of dotlines
+    * @param list The array of interface vertices
+    * @param vertexFirst If the connection is from the vertex to the interface (output) or vice versa (input)
+    * @param content The list of dotlines so far
+    */
+    func DrawInterfaceConnections(list : Array<InterfaceVertex>, vertexFirst : Bool, content : ArrayList<DotLine>) : Unit {
+        for (i in 0..list.size){
+            let v = list[i].GetVertex()
+            let vText = "v${v.GetId()}"
+            let str = if (vertexFirst) {
+                let eText = "output:w${i}:w"
+                DrawConnection(vText, eText, vertexFirst)
+            } else {
+                let eText = "input:e${i}:e"
+                DrawConnection(vText, eText, vertexFirst)
+            }
+            content.append(DotLine(str, Preserve))
+        }
+    }
     // The content of the interface edge depends on whether
     // it is a sink edge (output) or source edge (input)
     let (text, opts, sources, targets) = if (sink) {
@@ -747,8 +785,6 @@ public func DotGraph(f : InterfacedHypergraph, depth : Int64) : String {
     DrawHypergraph(
         f.GetGraph(),
         depth,
-        HashMap<Int64, Int64>(),
-        HashSet<Int64>(),
         HashSet<Int64>(),
         elementContent,
         connectionContent
