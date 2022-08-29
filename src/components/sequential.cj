@@ -68,7 +68,7 @@ public func Feedback(outgoing : Wire, incoming : Wire) : Unit {
     AssertWireHasNoInEdge(incoming)
     let width = outgoing.GetWidth()
     AssertWiresSameWidth(outgoing, incoming)
-    MergeWires(outgoing, incoming)
+    MergeWires(outgoing, incoming, true)
 }
 /**
  * Create a delayed feedback loop: join a wire to a wire that is not connected

@@ -50,7 +50,7 @@ public func GetUniqueNextEdges(
     nexts : ArrayList<EdgeAtDepth>
 ) : Unit {
     for(v in ed.edge.GetTargets()){
-        for(e in v.GetOutEdges()){
+        for(e in v.GetVertex().GetOutEdges()){
             let edd = EdgeAtDepth(e.edge, ed.depth)
             if(!nexts.contains(edd)){
                 nexts.append(edd)
@@ -63,7 +63,7 @@ public func GetUniqueNextEdges(
     nexts : ArrayList<Edge>
 ) : Unit {
     for(v in e.GetTargets()) {
-        for(ec in v.GetOutEdges()) {
+        for(ec in v.GetVertex().GetOutEdges()) {
             if(!nexts.contains(ec.edge)) {
                 nexts.append(ec.edge)
             }
@@ -130,7 +130,8 @@ public func TraverseAll(
                 }
         }
         // Add all the edges connected to targets of this edge
-        for (v in edge.GetTargets()){
+        for (t in edge.GetTargets()){
+            let v = t.vertex
             for (ec in v.GetOutEdges()){
                 AddEdgeConnection(ec, nexts, depth)
             }

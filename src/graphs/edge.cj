@@ -42,7 +42,26 @@ func CheckSpecCompatibility<T,U>(
     CheckArrayCompatibility<T>(spec.GetInputPorts(), inputs)
     CheckArrayCompatibility<U>(spec.GetOutputPorts(), outputs)
 }
-
+public struct Tentacle <: ToString & ContainsVertex & HasWidth {
+    public Tentacle(
+        public let vertex : Vertex,
+        public let feedback : Bool
+    ) {}
+    public func toString() : String {
+        let feedbackText = if(feedback) {
+            " (fb)"
+        } else {
+            ""
+        }
+        "${vertex}${feedbackText}"
+    }
+    public func GetVertex() : Vertex {
+        this.vertex
+    }
+    public func GetWidth() : Int64 {
+        this.vertex.GetWidth()
+    }
+}
 /**
  * (Hyper)edges represent the components in circuits, whether
  * they are primitives such as logic gates or larger subcircuits.
@@ -54,18 +73,32 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
     var owner : Option<Hypergraph> = None
     public Edge(
         let label: Label,
-        let sources : Array<Vertex>,
-        let targets : Array<Vertex>,
+        let sources : Array<Tentacle>,
+        let targets : Array<Tentacle>,
         let subgraph : Option<InterfacedHypergraph>
     ){
         // Vertices cannot be the targets of multiple edges
         AssertTargetsUnassigned(targets)
         // Check the ports of the label agree
-        CheckSpecCompatibility<Vertex, Vertex>(label, sources, targets)
-        let graph = CombineGraphs<Vertex>(sources)
+        CheckSpecCompatibility(label, sources, targets)
+        let graph = CombineGraphs(sources)
         graph.AddEdge(this)
+        this.owner = graph
         ForEachSource({ v : Vertex, i : Int64 => v.AddOutEdge(this, i)})
         ForEachTarget({ v : Vertex, i : Int64 => v.SetInEdge(this, i)})
+    }
+    public init(
+        label : Label,
+        sources : Array<Vertex>,
+        targets : Array<Vertex>,
+        subgraph : Option<InterfacedHypergraph>
+    ){
+        this(
+            label,
+            map({ v : Vertex => Tentacle(v, false) }, sources),
+            map({ v : Vertex => Tentacle(v, false) }, targets),
+            subgraph
+        )
     }
     public func GetId() : Int64 {
         this.id
@@ -76,9 +109,9 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
     public func GetSubgraph() : Option<InterfacedHypergraph> {
         this.subgraph
     }
-    func ForEachVertex(array : Array<Vertex>, f : (Vertex, Int64) -> Unit) : Unit {
+    func ForEachVertex<T>(array : Array<T>, f : (Vertex, Int64) -> Unit) : Unit where T <: ContainsVertex {
         for (i in 0..array.size) {
-            f(array[i], i)
+            f(array[i].GetVertex(), i)
         }
     }
     public func ForEachSource(f : (Vertex, Int64) -> Unit) : Unit {
@@ -104,42 +137,49 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
     }
     func SetVertex(
         i : Int64,
-        newVertex : Vertex,
-        array : Array<Vertex>,
+        newVertex : Tentacle,
+        array : Array<Tentacle>,
         vertexFn : (Vertex) -> Unit
     ) : Unit {
             array[i] = newVertex
-            vertexFn(newVertex)
+            vertexFn(newVertex.GetVertex())
     }
-    public func SetSource(i : Int64, newVertex : Vertex, feedback!: Bool = false) : Unit {
+    public func SetSource(i : Int64, newVertex : Vertex, feedback: Bool) : Unit {
+        let t = Tentacle(newVertex, feedback)
         SetVertex(
             i,
-            newVertex,
+            t,
             this.sources,
-            { v => v.AddOutEdge(this, i, feedback: feedback) }
+            { v => v.AddOutEdge(this, i) }
         )
     }
     public func SetTarget(i : Int64, newVertex : Vertex) : Unit {
         SetVertex(
             i,
-            newVertex,
+            Tentacle(newVertex, false),
             this.targets,
             {v => v.SetInEdge(this, i)}
         )
     }
-    public func GetSource(i : Int64) : Vertex {
+    public func GetSource(i : Int64) : Tentacle {
         this.sources[i]
     }
-    public func GetSources() : Array<Vertex> {
+    public func GetSourceVertex(i : Int64) : Vertex {
+        this.GetSource(i).vertex
+    }
+    public func GetSources() : Array<Tentacle> {
         this.sources
     }
     public func GetNoSources() : Int64 {
         this.sources.size
     }
-    public func GetTarget(i : Int64) : Vertex {
+    public func GetTarget(i : Int64) : Tentacle {
         this.targets[i]
     }
-    public func GetTargets() : Array<Vertex> {
+    public func GetTargetVertex(i : Int64) : Vertex {
+        this.GetTarget(i).vertex
+    }
+    public func GetTargets() : Array<Tentacle> {
         this.targets
     }
     public func GetNoTargets() : Int64 {
@@ -152,11 +192,11 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
             case Some(f) =>
                 owner.RemoveEdge(this)
                 func MergeInterfaces(
-                    parentVertices : Array<Vertex>,
+                    parentVertices : Array<Tentacle>,
                     childVertices : Array<InterfaceVertex>
                 ) : Unit {
                     for (i in 0..parentVertices.size) {
-                        MergeVertices(parentVertices[i], childVertices[i].GetVertex())
+                        MergeVertices(parentVertices[i].vertex, childVertices[i].GetVertex(), false)
                     }
                 }
                 MergeInterfaces(this.GetSources(), f.GetInputVertices())

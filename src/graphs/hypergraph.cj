@@ -101,11 +101,13 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
     }
     public func RemoveEdge(e : Edge) : Unit {
         this.edges.remove(e)
-        for(v in e.GetSources()){
+        for(t in e.GetSources()){
+            let v = t.GetVertex()
             v.RemoveOutEdge(e)
             this.RemoveVertex(v)
         }
-        for(v in e.GetTargets()){
+        for(t in e.GetTargets()){
+            let v = t.GetVertex()
             v.RemoveInEdge(e)
             this.RemoveVertex(v)
         }
@@ -120,11 +122,11 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
 
         func EdgeVertexCheck(
             e : Edge,
-            array : Array<Vertex>,
+            array : Array<Tentacle>,
             notPresent : (Edge, Int64, Vertex) -> WellformednessIssue
         ){
             for (i in 0..array.size) {
-                let v = array[i]
+                let v = array[i].GetVertex()
                 if (!this.vertices.contains(v)) {
                     issues.append(notPresent(e, i, v))
                 }
@@ -158,11 +160,11 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
             { acc : String , e : Edge =>
                 func EdgeVertexString (
                     name : String,
-                    array: Array<Vertex>
+                    array: Array<Tentacle>
                 ){
                     foldi_left(
-                        { acc : String , v : Vertex, i : Int64 =>
-                            let str = "${v}"
+                        { acc : String , t : Tentacle, i : Int64 =>
+                            let str = "${t.GetVertex()}"
                             let acc = if (acc == "") {
                                 ""
                             } else {
@@ -206,19 +208,25 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
      * relate the original versions of vertices/edges with the new copies
      */
     public func Clone() : (Hypergraph, HashMap<Vertex, Vertex>, HashMap<Edge, Edge>) {
+        Debug("Cloning ${this}")
         let newVertices = HashSet<Vertex>()
         let vertexMap = HashMap<Vertex,Vertex>()
         let newEdges = HashSet<Edge>()
         let edgeMap = HashMap<Edge,Edge>()
-
         for (vertex in this.vertices) {
             let newVertex = Vertex(vertex.GetWidth())
             newVertices.put(newVertex)
             vertexMap.put(vertex, newVertex)
         }
         for (edge in this.edges) {
-            let newSources = map({ v : Vertex => unsafeGet(vertexMap, v)}, edge.GetSources())
-            let newTargets = map({ v : Vertex => unsafeGet(vertexMap, v)}, edge.GetTargets())
+            let newSources = map(
+                { t : Tentacle => Tentacle(unsafeGet(vertexMap, t.GetVertex()), t.feedback)},
+                edge.GetSources()
+            )
+            let newTargets = map(
+                { t : Tentacle => Tentacle(unsafeGet(vertexMap, t.GetVertex()), t.feedback)},
+                edge.GetTargets()
+            )
             let newEdge = Edge(edge.GetLabel(), newSources, newTargets, edge.GetSubgraph())
             newEdges.put(newEdge)
             edgeMap.put(edge, newEdge)

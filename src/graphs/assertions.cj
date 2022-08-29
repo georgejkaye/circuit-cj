@@ -30,11 +30,11 @@ func AssertAtMostOneInEdge<T, U>(t : T, u : U) : Option<EdgeConnection> where T 
 public func AssertVertexHasNoInEdge(v : Vertex) : Unit {
     AssertIsNone(v.GetInEdge(), InEdge)
 }
-func AssertTargetsUnassigned(targets : Array<Vertex>) : Unit {
-    AssertArrayElementsHaveParameter<Vertex, Option<EdgeConnection>>(
+func AssertTargetsUnassigned<T>(targets : Array<T>) : Unit where T <: ContainsVertex, T <: ToString {
+    AssertArrayElementsHaveParameter<T, Option<EdgeConnection>>(
         targets,
         None,
-        { v : Vertex => v.GetInEdge() },
+        { t : T => t.GetVertex().GetInEdge() },
         InEdge
     )
 }

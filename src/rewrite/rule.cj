@@ -40,7 +40,7 @@ struct RewriteRule {
 }
 
 func ReplaceTargets(
-    oldTargets : Array<Vertex>,
+    oldTargets : Array<Tentacle>,
     newTargets : Array<Vertex>,
     f : InterfacedHypergraph
 ) : Unit {
@@ -49,13 +49,13 @@ func ReplaceTargets(
         let oldTarget = oldTargets[i]
         let newTarget = newTargets[i]
         // Replace sources of edges
-        for(ec in oldTarget.GetOutEdges()) {
-            ec.edge.SetSource(ec.index, newTarget)
+        for(ec in oldTarget.vertex.GetOutEdges()) {
+            ec.edge.SetSource(ec.index, newTarget, oldTarget.feedback)
         }
         let outputs = f.GetOutputVertices()
         for(j in 0..outputs.size) {
             let iv = outputs[j]
-            if(iv.vertex == oldTarget) {
+            if(iv.vertex == oldTarget.vertex) {
                 f.GetOutputVertices()[j] = InterfaceVertex(newTarget, iv.name)
             }
         }
@@ -69,14 +69,14 @@ let fork = RewriteRule(
         e : Edge, f : InterfacedHypergraph =>
         // VALUE or VALUES edges can only have one target
         // although it may be of arbitrary width
-        let v = e.GetTargets()[0]
+        let v = e.GetTargets()[0].vertex
         v.GetOutEdges().size + f.GetOutputPositions(v).size > 1
     },
     {
         e : Edge, f : InterfacedHypergraph =>
             let nexts = ArrayList<Edge>()
             let targets = e.GetTargets()
-            let v = targets[0]
+            let v = targets[0].vertex
 
             func CopyValue() : (Edge, Vertex) {
                 let newTarget = Vertex(v.GetWidth())
@@ -88,11 +88,10 @@ let fork = RewriteRule(
 
             let edges = v.GetOutEdges()
             // For each outgoing tentacle of the vertex
-            for(i in 0..edges.size) {
+            for(ec in edges) {
                 let (newEdge, newTarget) = CopyValue()
                 // Hook the new edge into the system
-                let ec = edges[i]
-                ec.edge.SetSource(ec.index, newTarget)
+                ec.edge.SetSource(ec.index, newTarget, false)
                 GetUniqueNextEdges(newEdge, nexts)
             }
             for(i in f.GetOutputPositions(v)) {
@@ -115,12 +114,12 @@ let apply = RewriteRule(
             // Check that none of the values are forked
             // If they are, we need to fork them first!
             for (v in sources) {
-                if(v.GetOutEdges().size != 1){
+                if(v.vertex.GetOutEdges().size != 1){
                     return false
                 }
             }
             // Check that the inputs are all values
-            let es = map({ v : Vertex => v.GetInEdge() }, sources)
+            let es = map({ t : Tentacle => t.vertex.GetInEdge() }, sources)
             for(eo in es) {
                 match(eo){
                     case None => return false
@@ -139,7 +138,7 @@ let apply = RewriteRule(
             let targets = e.GetTargets()
             f.RemoveEdge(e)
             // We also know all the inputs are values
-            let es = map({ v : Vertex => v.GetInEdge() }, e.GetSources())
+            let es = map({ t : Tentacle => t.vertex.GetInEdge() }, e.GetSources())
             let values = Array<Value>(
                 es.size,
                 { i : Int64 => es[i].getOrThrow().edge.GetLabel().GetValue()}

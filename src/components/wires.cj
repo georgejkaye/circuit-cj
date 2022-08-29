@@ -32,13 +32,6 @@ public class Wire <: Identifiable & ToString & ContainsVertex & HasWidth {
                 h.RemoveVertex(this.vertex)
                 h.AddVertex(v)
         }
-        match(this.vertex.GetInEdge()){
-            case None => ()
-            case Some(ec) => ec.edge.SetTarget(ec.index, v)
-        }
-        for (ec in this.vertex.GetOutEdges()) {
-            ec.edge.SetSource(ec.index, v)
-        }
         this.vertex = v
     }
     public func GetId() : Int64 {
@@ -167,7 +160,7 @@ func MakeEdge(
     graph : Option<InterfacedHypergraph>
 ) : Array<Wire> {
     let edge = Edge(label, sources, targets, graph)
-    map({v : Vertex => Wire(v) }, edge.GetTargets())
+    map({t : Tentacle => Wire(t.vertex) }, edge.GetTargets())
 }
 /**
  * Make an edge with fresh targets, and get the wires corresponding to them
@@ -194,9 +187,9 @@ public func MakeEdgeWithNewOutputs<T>(
  * @param w The vertex to be merged and removed
  * @return A tuple (merged vertex, removed vertex)
  */
-public func MergeWires(v : Wire, w : Wire) : Unit {
-    MergeVertices(v.GetVertex(), w.GetVertex())
-    w.SetVertex(v.GetVertex())
+public func MergeWires(v : Wire, w : Wire, feedback: Bool) : Unit {
+    let (retainedVertex, discardedVertex) = MergeVertices(v.GetVertex(), w.GetVertex(), feedback)
+    w.SetVertex(retainedVertex)
 }
 /**
  * Split a wire into multiple wires with given widths, using a bundler edge. The new widths

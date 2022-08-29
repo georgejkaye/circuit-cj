@@ -96,6 +96,7 @@ public enum IndentInstruction {
     | Preserve      // Keep the current indentation
     | Indent        // Indent one more starting from the next line
     | Deindent      // Indent one fewer starting from this line
+    | SameLine      // Do not put a carriage return after this line
 }
 extend IndentInstruction <: ToString {
     public func toString() : String {
@@ -103,6 +104,7 @@ extend IndentInstruction <: ToString {
             case Preserve => "Preserve"
             case Indent => "Indent"
             case Deindent => "Deindent"
+            case SameLine => "SameLine"
         }
     }
 }
@@ -147,41 +149,31 @@ func CreateElemOptionsString(options : Array<(String, String)>) : String {
  *
  * @param tag           The name of this HTML element
  * @param options       The list of pairs of options to give this element
- * @param elemContent   The list of lines to include within this element
+ * @param insideElem    The actions to perform when inside this element
  * @param inline        Whether or not to force this element to occupy one line
  * @param elementContent  The list to add the element lines to
  */
 func MakeElem(
     tag : String,
     options : Array<(String, String)>,
-    elemContent: ArrayList<DotLine>,
-    inline: Bool,
-    elementContent : ArrayList<DotLine>
+    elementContent : ArrayList<DotLine>,
+    inline : Bool,
+    generateElemContents: (ArrayList<DotLine>, Bool) -> Unit
 ) : Unit {
-    let elem = ArrayList<DotLine>()
     let optionString = CreateElemOptionsString(options)
     let optionStringSpaced = if (optionString == "") {
         optionString
     } else {
         " ${optionString}"
     }
-    let opener = DotLine("<${tag}${optionStringSpaced}>", Indent)
-    let closer = DotLine("</${tag}>", Deindent)
-    elem.append(opener)
-    elem.appendAll(elemContent)
-    elem.append(closer)
-    let finalElem = if (inline) {
-        ArrayList<DotLine>([
-            DotLine(
-                fold_left (
-                { acc : String, cur : DotLine => "${acc}${cur.str}"},
-                "",
-                elem
-            ), Preserve)])
-    } else {
-        elem
-    }
-    elementContent.appendAll(finalElem)
+    // Add the opening html tag
+    let opener = DotLine("<${tag}${optionStringSpaced}>", if(inline) { SameLine } else { Indent })
+    elementContent.append(opener)
+    // Generate the dotlines for the content inside this element
+    generateElemContents(elementContent, inline)
+    // Add the closing html tag
+    let closer = DotLine("</${tag}>", if(inline) { Preserve } else { Deindent })
+    elementContent.append(closer)
 }
 /**
  * Convert an array of source or target ports into an HTML table in which each cell
@@ -192,33 +184,27 @@ func MakeElem(
  * @param elementContent The
  */
 func EdgeVerticesToTable(ports : Array<Port>, id : String, elementContent : ArrayList<DotLine>) : Unit {
-    let content = ArrayList<DotLine>()
-    // Each port is its own row
-    for (i in 0..ports.size) {
-        let port = ports[i]
-        let td = ArrayList<DotLine>()
-        // The port contains the port name (if one is given)
-        // and the width of the port
-        let portText = match(port.GetName()){
-            case None => "${port.GetWidth()}"
-            case Some(str) => "${str}:${port.GetWidth()}"
-        }
-        MakeElem(
-            "td",
-            [
-                ("height", "${portHeight}"),
-                ("width", "${portWidth}"),
-                ("port", "${id}${i}")
-            ],
-            ArrayList<DotLine>([
-                DotLine(portText, Preserve)
-            ]),
-            true,
-            td
-        )
-        MakeElem("tr", [], td, true, content)
-    }
-    MakeElem("table", [], content, false, elementContent)
+    MakeElem("table", [], elementContent, false, {elementContent, inline =>
+        MakeElem("tr", [], elementContent, true, {elementContent, inline =>
+            for (i in 0..ports.size) {
+                let portStyle =  [
+                    ("height", "${portHeight}"),
+                    ("width", "${portWidth}"),
+                    ("port", "${id}${i}")
+                ]
+                MakeElem("td", portStyle, elementContent, true, {elementContent, inline =>
+                    let port = ports[i]
+                    // The port contains the port name (if one is given)
+                    // and the width of the port
+                    let portText = match(port.GetName()){
+                        case None => "${port.GetWidth()}"
+                        case Some(str) => "${str}:${port.GetWidth()}"
+                    }
+                    elementContent.append(DotLine(portText, SameLine))
+                })
+            }
+        })
+    })
 }
 /**
  * Append dotlines for an edge to a list of content dotlines
@@ -256,6 +242,34 @@ func DrawEdgeNode(e : Edge, content : ArrayList<DotLine>) : Unit {
     )
 }
 /**
+ * Append dotlines for the ports on the left or right of the edge
+ * to a list of edge dotlines
+ * @param array The array of vertices
+ * @param port The array of ports
+ * @param id The id of the edge
+ * @param edgeContent The list of dotlines to append to
+ */
+func DrawPorts(
+    ports : Array<Port>,
+    id : String,
+    edgeContent : ArrayList<DotLine>
+) : Unit {
+    if (ports.size != 0) {
+        let table = ArrayList<DotLine>()
+        EdgeVerticesToTable(ports, id, table)
+        MakeElem("td", [], table, false, edgeContent)
+    }
+}
+func DrawBoxNode(
+    id : String,
+    label : Option<String>,
+    style : Array<(String, String)>,
+    elementContent : ArrayList<DotLine>
+) : Unit {
+
+}
+
+/**
  * Append dotlines for an 'edge-like' node (i.e. edge or interface node) to
  * list of element dotlines
  * @param id The id of the node
@@ -266,40 +280,19 @@ func DrawEdgeNode(e : Edge, content : ArrayList<DotLine>) : Unit {
  * @param targets The list of target vertices
  * @param content The list of content dotlines so far
  */
-func DrawEdgelikeNode<T>(
+func DrawEdgelikeNode(
     id : String,
     label : Option<String>,
     style : Array<(String, String)>,
-    sources : Array<T>,
     sourcePorts : Array<Port>,
-    targets : Array<T>,
     targetPorts : Array<Port>,
     content : ArrayList<DotLine>
-) : Unit where T <: ContainsVertex {
-    /**
-     * Append dotlines for the ports on the left or right of the edge
-     * to a list of edge dotlines
-     * @param array The array of vertices
-     * @param port The array of ports
-     * @param id The id of the edge
-     * @param edgeContent The list of dotlines to append to
-     */
-    func DrawPorts(
-        array : Array<T>,
-        ports : Array<Port>,
-        id : String,
-        edgeContent : ArrayList<DotLine>
-    ) : Unit {
-        if (array.size != 0) {
-            let table = ArrayList<DotLine>()
-            EdgeVerticesToTable(ports, id, table)
-            MakeElem("td", [], table, false, edgeContent)
-        }
-    }
-    // The edge needs to be drawn as a table
-    let edgeContent = ArrayList<DotLine>()
+) : Unit {
+    // Add the edge identifier
+    let declaration = DotLine("${id} [label=<", Preserve)
+    content.append(declaration)
     // Draw the sources on the left
-    DrawPorts(sources, sourcePorts, "w", edgeContent)
+    DrawPorts(sourcePorts, "w", edgeContent)
     let labelText = match(label) {
         case None    => ""
         case Some(l) => l
@@ -322,7 +315,7 @@ func DrawEdgelikeNode<T>(
         edgeContent
     )
     // Draw the targets on the right
-    DrawPorts(targets, targetPorts, "e", edgeContent)
+    DrawPorts(targetPorts, "e", edgeContent)
     // These three components exist inside a single row
     let subtable = ArrayList<DotLine>()
     MakeElem("tr", [], edgeContent, false, subtable)
@@ -332,13 +325,8 @@ func DrawEdgelikeNode<T>(
     currentTableStyle.appendAll(tableStyle)
     let table = ArrayList<DotLine>()
     MakeElem("table", currentTableStyle.toArray(), subtable, false, table)
-    // Add the edge identifier and closing braces
-    let declaration = DotLine("${id} [label=<", Preserve)
-    table.prepend(declaration)
     let conclusion = DotLine(">];", Preserve)
-    table.append(conclusion)
-
-    content.appendAll(table)
+    content.append(conclusion)
 }
 /**
  * Append dotlines for an edge to a list of element and connections dotlines
@@ -452,6 +440,7 @@ func DrawVertexConnections(
                 Preserve
             )
         )
+
     }
     let thisString = "v${v.GetId()}"
     func ConnectToEdge(
@@ -460,13 +449,15 @@ func DrawVertexConnections(
     ) : Unit {
         let edge = ec.edge
         if(!expandedEdges.contains(edge.GetId())) {
-            let otherDirection = if(toLeft) {
-                "e"
+            let (otherDirection, feedback) = if(toLeft) {
+                let tentacle = edge.GetTarget(ec.index)
+                ("e", tentacle.feedback)
             } else {
-                "w"
+                let tentacle = edge.GetSource(ec.index)
+                ("w", tentacle.feedback)
             }
             let otherString = "e${edge.GetId()}:${otherDirection}${ec.index}"
-            AddConnection(thisString, otherString, toLeft, ec.feedback)
+            AddConnection(thisString, otherString, toLeft, feedback)
         }
     }
     match(v.GetInEdge()) {
@@ -491,9 +482,9 @@ func DrawConnections(
     omittedEdges : HashSet<Int64>,
     content : ArrayList<DotLine>
 ) : Unit {
-    func DrawConnectionsForArray(array : Array<Vertex>, port : String, vertexFirst : Bool) : Unit {
+    func DrawConnectionsForArray(array : Array<Tentacle>, port : String, vertexFirst : Bool) : Unit {
         for (i in 0..array.size) {
-            let v = array[i]
+            let v = array[i].vertex
             let id = match (vertexMap.get(v.GetId())) {
                     case None => v.GetId()
                     case Some(w) => w
@@ -518,17 +509,21 @@ func DrawConnections(
  * @return The connection string
  */
 func DrawConnection(vText : String, eText : String, vertexFirst : Bool) : String {
-    if(vertexFirst) {
+    let connectionString = if(vertexFirst) {
         "${vText}:e -- ${eText}"
     } else {
         "${eText} -- ${vText}:w"
     }
+    connectionString
 }
 /**
  * Append dotlines corresponding to a subgraph to lists of existing graph content.
  * A subgraph is drawn as a cluster with a box around, indicating the extend of the
- * subgraph. The sources and targets of the parent edge are 'merged' with the interface
- * vertices of the subgraph, making a smooth connection.
+ * subgraph. A small node is used to 'mount' the interfaces at the left and the right
+ * of the cluster box.
+ *
+ * TODO: generalise sufficiently so that this can be used on the shallowest graph
+ *
  * @param f The interfaced hypergraph
  * @param parent The edge that this subgraph belongs to
  * @param depth The maximum depth of subgraphs to expand
@@ -539,7 +534,7 @@ func DrawConnection(vText : String, eText : String, vertexFirst : Bool) : String
  */
 func DrawSubgraphCluster(
     f : InterfacedHypergraph,
-    parent : Edge,
+    parent : Option<Edge>,
     depth : Int64,
     omittedEdges : HashSet<Int64>,
     elementContent : ArrayList<DotLine>,
@@ -623,7 +618,7 @@ func DrawSubgraphCluster(
     DrawSubgraphInterface(
         f.GetInputVertices(),
         { i : Int64 => f.GetInput(i).GetVertex() },
-        { i : Int64 => parent.GetSource(i) },
+        { i : Int64 => parent.GetSourceVertex(i) },
         subgraphContent,
         connectionContent,
         true
@@ -632,7 +627,7 @@ func DrawSubgraphCluster(
     DrawSubgraphInterface(
         f.GetOutputVertices(),
         { i : Int64 => f.GetOutput(i).GetVertex() },
-        { i : Int64 => parent.GetTarget(i) },
+        { i : Int64 => parent.GetTargetVertex(i) },
         subgraphContent,
         connectionContent,
         false

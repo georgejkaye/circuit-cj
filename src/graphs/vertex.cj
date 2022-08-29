@@ -7,30 +7,46 @@
 
 package graphs
 
+public enum VertexType {
+    | SOURCE
+    | TARGET
+}
+extend VertexType <: ToString {
+    public func toString() : String {
+        match(this) {
+            case SOURCE => "source"
+            case TARGET => "target"
+        }
+    }
+}
+
 /**
  * An EdgeConnection specifies an edge that a vertex
  * is a source or target of, and which index it is.
  */
-public struct EdgeConnection <: ToString & Equatable<EdgeConnection> {
+public struct EdgeConnection <: ToString & Equatable<EdgeConnection> & Hashable {
     public EdgeConnection(
         public let edge : Edge,
         public let index : Int64,
-        public let feedback : Bool
-    ){}
-    init(
-        edge : Edge,
-        index : Int64
-    ) {
-        this(edge, index, false)
-    }
+        public let vertexType : VertexType
+    ) {}
     public func toString() : String {
-        "${edge}[${index}]"
+        "${vertexType} ${index} of ${edge}"
     }
     public operator func ==(right: EdgeConnection) : Bool {
         this.edge == right.edge && this.index == right.index
     }
     public operator func !=(right : EdgeConnection) : Bool {
         !(this == right)
+    }
+    // HACK: This won't be unique if you have something with more than
+    // 100000 sources or targets
+    public func hashCode() : Int64 {
+        let code = edge.GetId() * 100000 + index
+        match(vertexType) {
+            case SOURCE => code
+            case TARGET => -code
+        }
     }
 }
 
@@ -49,7 +65,7 @@ public class Vertex <: Identifiable &
     let width : Int64
     let id : Int64 = GetNextId()
     var inEdge : Option<EdgeConnection> = None
-    var outEdges : ArrayList<EdgeConnection> = ArrayList()
+    var outEdges : HashSet<EdgeConnection> = HashSet<EdgeConnection>()
     var feedback : Int64 = 0
     var owner : Option<Hypergraph> = None
     public init(width: Int64){
@@ -68,11 +84,11 @@ public class Vertex <: Identifiable &
     public func GetInEdge() : Option<EdgeConnection> {
         this.inEdge
     }
-    public func GetOutEdges() : ArrayList<EdgeConnection> {
+    public func GetOutEdges() : HashSet<EdgeConnection> {
         this.outEdges
     }
     public func SetInEdge(e : Edge, i : Int64) : Unit {
-        SetInEdge(EdgeConnection(e, i))
+        SetInEdge(EdgeConnection(e, i, TARGET))
     }
     public func SetInEdge(ec : EdgeConnection) : Unit {
         inEdge = ec
@@ -89,11 +105,11 @@ public class Vertex <: Identifiable &
     public func RemoveOutEdge(e : Edge) : Unit {
         this.outEdges.removeIf({ec : EdgeConnection => ec.edge == e})
     }
-    public func AddOutEdge(e : Edge, i : Int64, feedback!: Bool = false) : Unit {
-        outEdges.append(EdgeConnection(e, i, feedback))
+    public func AddOutEdge(e : Edge, i : Int64) : Unit {
+        outEdges.put(EdgeConnection(e, i, SOURCE))
     }
-    public func AddAllOutEdges(es : ArrayList<EdgeConnection>) {
-        outEdges.appendAll(es)
+    public func AddAllOutEdges(es : HashSet<EdgeConnection>) {
+        outEdges.putAll(es)
     }
     func IncrementFeedback() : Unit {
         this.feedback++

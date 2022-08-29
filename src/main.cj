@@ -12,14 +12,11 @@ main(){
     SetDebugMessages(true)
     SetDotDir("dot")
     SetNumberRepresentation(DEC)
-    SetDebugDot(false)
+    SetDebugDot(true)
 
-    let alu = ALU(2)
-    WriteDotToFile(alu, 1, "alu")
-
-    let circ = AddSub(2)
-    WriteDotToFile(circ, 0, "circ-0")
-    WriteDotToFile(circ, 1, "circ-1")
+    let acc = Accumulator(width: 2, initial: 1)
+    WriteDotToFile(acc, 0, "acc-0")
+    WriteDotToFile(acc, 1, "acc-1")
 
     return 0
 }

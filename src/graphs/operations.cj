@@ -19,7 +19,7 @@ package graphs
  * @param w The secondary vertex that will be merged
  * @return A pair (new,old) of the merged vertex and the old vertex
  */
-public func MergeVertices<T, U>(t : T, u : U, feedback!: Bool = false) : (Vertex, Vertex) where T <: ContainsVertex, U <: ContainsVertex {
+public func MergeVertices<T, U>(t : T, u : U, feedback: Bool) : (Vertex, Vertex) where T <: ContainsVertex, U <: ContainsVertex {
     let inEdge = AssertAtMostOneInEdge(t, u)
     let v = t.GetVertex()
     let w = u.GetVertex()
@@ -30,7 +30,7 @@ public func MergeVertices<T, U>(t : T, u : U, feedback!: Bool = false) : (Vertex
     }
     let wOutEdges = w.GetOutEdges()
     for (ec in wOutEdges) {
-        ec.edge.SetSource(ec.index, v, feedback: feedback)
+       ec.edge.SetSource(ec.index, v, feedback)
     }
     // Make sure the old vertex isn't part of a hypergraph any more
     match(w.GetOwner()) {
@@ -75,7 +75,7 @@ func Seq(
     let (newG, newGInputs, newGOutputs) = CloneOrRetain(g, clone)
     // The outputs of f and the inputs of g must be merged pointwise
     for (i in 0..f.GetOutputs()){
-        MergeVertices(newFOutputs[i], newGInputs[i])
+        MergeVertices(newFOutputs[i], newGInputs[i], false)
     }
     let fVertices = newF.GetVertices()
     let gVertices = newG.GetVertices()
