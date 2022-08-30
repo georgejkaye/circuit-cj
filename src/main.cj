@@ -1,11 +1,11 @@
-from circuits import graphs.WriteDotToFile
-from circuits import rewrite.RewriteCombinational
+import graphs.WriteDotToFile
+import rewrite.RewriteCombinational
 
-from circuits import settings.*
-from circuits import components.*
-from circuits import debug.SetDebugMessages
+import settings.*
+import components.*
+import debug.SetDebugMessages
 
-from circuits import examples.*
+import examples.*
 
 main(){
 
@@ -15,8 +15,8 @@ main(){
     SetDebugDot(true)
 
     let acc = Accumulator(width: 2, initial: 1)
-    WriteDotToFile(acc, 0, "acc-0")
-    WriteDotToFile(acc, 1, "acc-1")
+    WriteDotToFile(acc, 0, "acc-0-test")
+    WriteDotToFile(acc, 1, "acc-1-test")
 
     return 0
 }

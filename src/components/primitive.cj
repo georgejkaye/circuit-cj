@@ -22,7 +22,7 @@ import syntax.*
  */
 func Gate(prim : Primitive, inputs: Array<Wire>) : Wire {
     AssertAllWiresWidth(inputs, 1)
-    AssertNumberOfWires(inputs, prim.GetInputPorts().size)
+    AssertNumberOfWires(inputs, prim.GetInputPorts().size())
     MakeEdgeWithNewOutputs(
         PRIMITIVE(prim),
         inputs,

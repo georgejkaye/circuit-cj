@@ -50,10 +50,10 @@ public class ValueSpec <: ToString & HasName & Specifiable {
         []
     }
     public func GetOutputPorts() : Array<Port> {
-        [Port(values.size)]
+        [Port(values.size())]
     }
     public func GetSize() : Int64 {
-        this.values.size
+        this.values.size()
     }
 }
 
@@ -102,7 +102,7 @@ extend Primitive <: ToString & Specifiable & HasName {
         }
     }
     public func GetNoInputs() : Int64 {
-        this.GetInputPorts().size
+        this.GetInputPorts().size()
     }
     public func GetOutputPorts() : Array<Port> {
         match(this) {
@@ -117,7 +117,7 @@ extend Primitive <: ToString & Specifiable & HasName {
         }
     }
     public func GetNoOutputs() : Int64 {
-        this.GetOutputPorts().size
+        this.GetOutputPorts().size()
     }
     public func toString() : String {
         this.GetName()
@@ -152,13 +152,13 @@ public class Specification <: Specifiable & HasName {
         this.inputPorts
     }
     public func GetNoInputs() : Int64 {
-        this.GetInputPorts().size
+        this.GetInputPorts().size()
     }
     public func GetOutputPorts() : Array<Port> {
         this.outputPorts
     }
     public func GetNoOutputs() : Int64 {
-        this.GetOutputPorts().size
+        this.GetOutputPorts().size()
     }
     public func toString() : String {
         this.GetName()

@@ -250,7 +250,7 @@ public func UseRippleGate(prim : Primitive, ws : Array<Wire>) : Wire {
     UseSubcircuit_1<Wire>(
         MakeRippleGate(
             prim,
-            ws.size,
+            ws.size(),
             width
         ),
         ws

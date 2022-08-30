@@ -47,7 +47,7 @@ func UnsignedDecToBin(x : Int64, w : Int64) : Array<Bool> {
  * @param x The array of booleans
  */
 func AddOne(x : Array<Bool>) : Unit {
-    for (i in 0..(x.size - 1)) {
+    for (i in 0..(x.size() - 1)) {
         if (x[i]) {
             x[i] = false
         } else {
@@ -61,7 +61,7 @@ func AddOne(x : Array<Bool>) : Unit {
  * @param x The array of booleans
  */
 func Invert(x : Array<Bool>) : Unit {
-    for (i in 0..(x.size)){
+    for (i in 0..(x.size())){
         x[i] = !x[i]
     }
 }
@@ -85,7 +85,7 @@ func SignedDecToBin(x : Int64, w : Int64) : Array<Bool> {
  * @return The output wire
  */
 public func MakeValue(vs : Array<Value>, signed : Bool) : Wire {
-    if(vs.size == 1) {
+    if(vs.size() == 1) {
         Signal(vs[0])
     } else {
         let wires = map(

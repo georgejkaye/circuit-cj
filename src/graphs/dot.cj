@@ -96,7 +96,7 @@ public enum IndentInstruction {
     | Preserve      // Keep the current indentation
     | Indent        // Indent one more starting from the next line
     | Deindent      // Indent one fewer starting from this line
-    | SameLine      // Do not put a carriage return after this line
+    | SameLine      // Indent and toggle inline mode
 }
 extend IndentInstruction <: ToString {
     public func toString() : String {
@@ -118,7 +118,7 @@ public class DotLine <: ToString {
         let instruction : IndentInstruction
     ){}
     public func toString() : String {
-       str
+       "(${str}, ${instruction})"
     }
 
 }
@@ -170,9 +170,9 @@ func MakeElem(
     let opener = DotLine("<${tag}${optionStringSpaced}>", if(inline) { SameLine } else { Indent })
     elementContent.append(opener)
     // Generate the dotlines for the content inside this element
-    generateElemContents(elementContent, inline)
+    generateElemContents(elementContent, false)
     // Add the closing html tag
-    let closer = DotLine("</${tag}>", if(inline) { Preserve } else { Deindent })
+    let closer = DotLine("</${tag}>", if(inline) { SameLine } else { Deindent })
     elementContent.append(closer)
 }
 /**
@@ -181,28 +181,34 @@ func MakeElem(
  * can be used as the ports of a parent HTML node.
  * @param ports The array of ports
  * @param id The id string of the parent edge
- * @param elementContent The
+ * @param elementContent The element content arraylist to fill
  */
-func EdgeVerticesToTable(ports : Array<Port>, id : String, elementContent : ArrayList<DotLine>) : Unit {
-    MakeElem("table", [], elementContent, false, {elementContent, inline =>
-        MakeElem("tr", [], elementContent, true, {elementContent, inline =>
-            for (i in 0..ports.size) {
-                let portStyle =  [
-                    ("height", "${portHeight}"),
-                    ("width", "${portWidth}"),
-                    ("port", "${id}${i}")
-                ]
-                MakeElem("td", portStyle, elementContent, true, {elementContent, inline =>
-                    let port = ports[i]
-                    // The port contains the port name (if one is given)
-                    // and the width of the port
-                    let portText = match(port.GetName()){
-                        case None => "${port.GetWidth()}"
-                        case Some(str) => "${str}:${port.GetWidth()}"
-                    }
-                    elementContent.append(DotLine(portText, SameLine))
-                })
-            }
+func MakePorts<T>(
+    ports : Array<T>,
+    prefix : String,
+    elementContent : ArrayList<DotLine>
+) : Unit where T <: Socket {
+    MakeElem("td", [], elementContent, false, {elementContent, inline =>
+        MakeElem("table", [], elementContent, false, {elementContent, inline =>
+            MakeElem("tr", [], elementContent, true, {elementContent, inline =>
+                for (i in 0..ports.size()) {
+                    let portStyle =  [
+                        ("height", "${portHeight}"),
+                        ("width", "${portWidth}"),
+                        ("port", "${prefix}${i}")
+                    ]
+                    MakeElem("td", portStyle, elementContent, false, {elementContent, inline =>
+                        let port = ports[i]
+                        // The port contains the port name (if one is given)
+                        // and the width of the port
+                        let portText = match(port.GetName()){
+                            case None => "${port.GetWidth()}"
+                            case Some(str) => "${str}:${port.GetWidth()}"
+                        }
+                        elementContent.append(DotLine(portText, Preserve))
+                    })
+                }
+            })
         })
     })
 }
@@ -230,103 +236,55 @@ func DrawEdgeNode(e : Edge, content : ArrayList<DotLine>) : Unit {
         case DELAY(dur, width) =>
             delayStyle
     }
-    DrawEdgelikeNode(
+    DrawBoxNode(
         "e${e.GetId()}",
-        e.GetLabel().GetName(),
         style,
-        e.GetSources(),
         e.GetInputPorts(),
-        e.GetTargets(),
+        e.GetLabel().GetName(),
         e.GetOutputPorts(),
         content
     )
 }
-/**
- * Append dotlines for the ports on the left or right of the edge
- * to a list of edge dotlines
- * @param array The array of vertices
- * @param port The array of ports
- * @param id The id of the edge
- * @param edgeContent The list of dotlines to append to
- */
-func DrawPorts(
-    ports : Array<Port>,
+func DrawBoxNode<T, U>(
     id : String,
-    edgeContent : ArrayList<DotLine>
-) : Unit {
-    if (ports.size != 0) {
-        let table = ArrayList<DotLine>()
-        EdgeVerticesToTable(ports, id, table)
-        MakeElem("td", [], table, false, edgeContent)
-    }
-}
-func DrawBoxNode(
-    id : String,
-    label : Option<String>,
     style : Array<(String, String)>,
+    leftPorts : Array<T>,
+    label : Option<String>,
+    rightPorts : Array<U>,
     elementContent : ArrayList<DotLine>
-) : Unit {
-
-}
-
-/**
- * Append dotlines for an 'edge-like' node (i.e. edge or interface node) to
- * list of element dotlines
- * @param id The id of the node
- * @param label The label to give the node
- * @param style The key-value list of styles to apply to this node
- * @param sources The list of source vertices
- * @param sourcePorts The list of source ports
- * @param targets The list of target vertices
- * @param content The list of content dotlines so far
- */
-func DrawEdgelikeNode(
-    id : String,
-    label : Option<String>,
-    style : Array<(String, String)>,
-    sourcePorts : Array<Port>,
-    targetPorts : Array<Port>,
-    content : ArrayList<DotLine>
-) : Unit {
+) : Unit where T <: Socket, U <: Socket {
     // Add the edge identifier
-    let declaration = DotLine("${id} [label=<", Preserve)
-    content.append(declaration)
-    // Draw the sources on the left
-    DrawPorts(sourcePorts, "w", edgeContent)
-    let labelText = match(label) {
-        case None    => ""
-        case Some(l) => l
-    }
-    // Draw the label on the middle
-    MakeElem(
-        "td",
-        [],
-        ArrayList<DotLine>([
-            DotLine(
-                if(IsDebugDot()){
-                    "${id}: ${labelText}"
-                } else {
-                    labelText
-                },
-                Preserve
-            )
-        ]),
-        true,
-        edgeContent
-    )
-    // Draw the targets on the right
-    DrawPorts(targetPorts, "e", edgeContent)
-    // These three components exist inside a single row
-    let subtable = ArrayList<DotLine>()
-    MakeElem("tr", [], edgeContent, false, subtable)
-    // Create the overall table
-    let currentTableStyle = ArrayList<(String, String)>()
-    currentTableStyle.appendAll(style)
-    currentTableStyle.appendAll(tableStyle)
-    let table = ArrayList<DotLine>()
-    MakeElem("table", currentTableStyle.toArray(), subtable, false, table)
-    let conclusion = DotLine(">];", Preserve)
-    content.append(conclusion)
+    let declaration = DotLine("${id} [label=<", Indent)
+    elementContent.append(declaration)
+    // Make the main table of the node
+    MakeElem("table", style, elementContent, false, {elementContent, inline =>
+        // There is one row in the node
+        MakeElem("tr", [], elementContent, false, {elementContent, inline =>
+            // Draw left ports, if there are any
+            if(leftPorts.size() > 0) {
+                MakePorts(leftPorts, "w", elementContent)
+            }
+            // Draw the label, if there is one
+            match(label) {
+                case None => ()
+                case Some(s) => MakeElem("td", [], elementContent, true, {elementContent, inline =>
+                    let text = if(IsDebugDot()){
+                        "${id}: ${s}"
+                    } else {
+                        s
+                    }
+                    elementContent.append(DotLine(text, Preserve))
+                })
+            }
+            // Draw right ports, if there are any
+            if(rightPorts.size() > 0) {
+                MakePorts(leftPorts, "e", elementContent)
+            }
+        })
+    })
+    // Wrap everything up
+    let conclusion = DotLine(">];", Deindent)
+    elementContent.append(conclusion)
 }
 /**
  * Append dotlines for an edge to a list of element and connections dotlines
@@ -341,21 +299,19 @@ func DrawEdge(
     e : Edge,
     depth : Int64,
     omittedEdges : HashSet<Int64>,
-    elementContent : ArrayList<DotLine>,
-    connectionContent: ArrayList<DotLine>
+    elementContent : ArrayList<DotLine>
 ) : Unit {
     if (depth != 0) {
         match (e.GetSubgraph()) {
             case None => DrawEdgeNode(e, elementContent)
             case Some(g) =>
                 omittedEdges.put(e.GetId())
-                DrawSubgraphCluster(
+                DrawInterfacedHypergraph(
                     g,
                     e,
                     depth,
                     omittedEdges,
-                    elementContent,
-                    connectionContent
+                    elementContent
                 )
         }
     } else {
@@ -403,70 +359,8 @@ func DrawVertex(
     } else {
         ""
     }
-    content.append(
-        DrawOptions(
-            "v${v.GetId()}",
-            [
-                ("label", "${v.GetWidth()}"),
-                ("xlabel", text)
-            ]
-        )
-    )
-}
-func DrawVertexConnections(
-    v : Vertex,
-    expandedEdges : HashSet<Int64>,
-    connectionContent : ArrayList<DotLine>
-) : Unit {
-    func AddConnection(
-        thisString : String,
-        otherString : String,
-        toLeft : Bool,
-        feedback : Bool
-    ) : Unit {
-        let (lhs, rhs) = if(toLeft) {
-            (otherString, thisString)
-        } else {
-            (thisString, otherString)
-        }
-        let feedbackString = if(feedback) {
-            " ${GetOptions(feedbackStyle)}"
-        } else {
-            ""
-        }
-        connectionContent.append(
-            DotLine(
-                "${lhs}:e -- ${rhs}:w${feedbackString}",
-                Preserve
-            )
-        )
-
-    }
-    let thisString = "v${v.GetId()}"
-    func ConnectToEdge(
-        ec : EdgeConnection,
-        toLeft : Bool
-    ) : Unit {
-        let edge = ec.edge
-        if(!expandedEdges.contains(edge.GetId())) {
-            let (otherDirection, feedback) = if(toLeft) {
-                let tentacle = edge.GetTarget(ec.index)
-                ("e", tentacle.feedback)
-            } else {
-                let tentacle = edge.GetSource(ec.index)
-                ("w", tentacle.feedback)
-            }
-            let otherString = "e${edge.GetId()}:${otherDirection}${ec.index}"
-            AddConnection(thisString, otherString, toLeft, feedback)
-        }
-    }
-    match(v.GetInEdge()) {
-        case None => ()
-        case Some(ec) => ConnectToEdge(ec, true)
-    }
-    for (ec in v.GetOutEdges()) {
-        ConnectToEdge(ec, false)
-    }
+    let vertexOptions = [("label", "${v.GetWidth()}"), ("xlabel", text)]
+    content.append(DrawOptions("v${v.GetId()}", vertexOptions))
 }
 /**
  * Append all the connections for the sources and targets of an edge to a
@@ -483,7 +377,7 @@ func DrawConnections(
     content : ArrayList<DotLine>
 ) : Unit {
     func DrawConnectionsForArray(array : Array<Tentacle>, port : String, vertexFirst : Bool) : Unit {
-        for (i in 0..array.size) {
+        for (i in 0..array.size()) {
             let v = array[i].vertex
             let id = match (vertexMap.get(v.GetId())) {
                     case None => v.GetId()
@@ -516,6 +410,22 @@ func DrawConnection(vText : String, eText : String, vertexFirst : Bool) : String
     }
     connectionString
 }
+func DrawInterface1(
+    id : String,
+    vertices : Array<InterfaceVertex>,
+    isInputs : Bool,
+    elementContent : ArrayList<DotLine>
+) : Unit {
+    let interfaceName = "\"${id}_${ if(isInputs) { "inputs" } else { "otputs" }}\""
+    DrawBoxNode(
+        interfaceName,
+        interfaceStyle,
+        vertices,
+        None<String>,
+        Array<Port>(),
+        elementContent
+    )
+}
 /**
  * Append dotlines corresponding to a subgraph to lists of existing graph content.
  * A subgraph is drawn as a cluster with a box around, indicating the extend of the
@@ -532,118 +442,44 @@ func DrawConnection(vText : String, eText : String, vertexFirst : Bool) : String
  * @param elementContent The list of graph element dotlines so far
  * @param connectionContent The list of connection element dotlines so far
  */
-func DrawSubgraphCluster(
+func DrawInterfacedHypergraph(
     f : InterfacedHypergraph,
     parent : Option<Edge>,
     depth : Int64,
     omittedEdges : HashSet<Int64>,
-    elementContent : ArrayList<DotLine>,
-    connectionContent : ArrayList<DotLine>
+    elementContent : ArrayList<DotLine>
 ) : Unit {
-    let id = parent.GetId()
-    let label = parent.GetLabel()
-    let openingText = DotLine("subgraph \"cluster_${label}_${f.GetId()}\" {", Indent)
-    let labelText = DotLine("label=\"${label}\"", Preserve)
-    let closingText = DotLine("}", Deindent)
-    // Recursively draw the subgraph, mapping any of its interface vertices
-    // to the source and target of the parent edge, and decreasing the depth
-    // by one
-    let subgraphContent = ArrayList<DotLine>()
-    subgraphContent.append(DrawOptions("node", interfaceVertexOpts))
-    /**
-     * Draw the interfaces for the subgraph as tiny nodes. This has the advantage
-     * over just connecting the internal nodes to the sources and target of the
-     * parent edge as it clearly indicates when the boundary of a subgraph is being
-     * crossed.  It also means that subgraphs that are just the identity don't break
-     * when they get expanded.
-     *
-     * @param array The interface
-     * @param getLocalVertex The function to get the ith interface vertex of the subgraph
-     * @param getParentVertex The function to get the ith interface vertex of the parent edge
-     * @param subgraphContent The list of dotlines for the subgraph
-     * @param connectionContent The list of dotlines for connections
-     * @param inputs Whether we are dealing with inputs (this affects the order of connections)
-     */
-    func DrawSubgraphInterface(
-        array : Array<InterfaceVertex>,
-        getLocalVertex : (Int64) -> Vertex,
-        getParentVertex : (Int64) -> Vertex,
-        subgraphContent : ArrayList<DotLine>,
-        connectionContent : ArrayList<DotLine>,
-        isInputs : Bool
-    ){
-        // The interface vertices occupy another subgraph
-        let openingLine = DotLine("{", Indent)
-        subgraphContent.append(openingLine)
-        // Depending on wheteher they are inputs or outputs, this subgraph
-        // will have rank min or max
-        let (graphOpts, interfaceName) = if(isInputs) {
-            (minSubgraphOpts, "inputs")
-        } else {
-            (maxSubgraphOpts, "outputs")
-        }
-        let graphOptsLine = DrawOptions("graph", graphOpts)
-        subgraphContent.append(graphOptsLine)
-        // Draw each vertex in the interface
-        for(i in 0..array.size) {
-            // The parent vertex is the ith source/target of the parent graph
-            let parent = getParentVertex(i)
-            let parentText = "v${parent.GetId()}"
-            // The local vertex is the ith input/output of the subgraph
-            let local = getLocalVertex(i)
-            let localText = "v${local.GetId()}"
-            // The interface vertex is a small vertex at the boundary
-            // It is used as a 'support' to make it clear when signals
-            // leave the subgraph, while still allowing vertices on either
-            // side of the boundary to fork correctly
-            let interfaceVertexText = "h${id}_${interfaceName}_${i}"
-            let interfaceVertexLine = DotLine(interfaceVertexText, Preserve)
-            subgraphContent.append(interfaceVertexLine)
-            // Draw the connections from the outside world to the subgraph world,
-            // via the little interface vertex
-            let (leftVertex, rightVertex) = if(isInputs) {
-                (parentText, localText)
-            } else {
-                (localText, parentText)
-            }
-            let conn1 = "${leftVertex}:e -- ${interfaceVertexText}:w"
-            connectionContent.append(DotLine(conn1, Preserve))
-            let conn2 = "${interfaceVertexText}:e -- ${rightVertex}:w"
-            connectionContent.append(DotLine(conn2, Preserve))
-        }
-        let closingLine = DotLine("}", Deindent)
-        subgraphContent.append(closingLine)
+    let id = f.GetId()
+    let label = f.GetLabel()
+    // If there isn't a parent, declare that this is a graph
+    // If there is a parent, then it is a subgraph and a cluster
+    let openingText = match(parent) {
+        case None => "graph \"${label}\" {"
+        case Some(p) => "subgraph \"cluster_${label}_${id}\" {"
     }
-    // Draw the input vertices
-    DrawSubgraphInterface(
-        f.GetInputVertices(),
-        { i : Int64 => f.GetInput(i).GetVertex() },
-        { i : Int64 => parent.GetSourceVertex(i) },
-        subgraphContent,
-        connectionContent,
-        true
-    )
-    // Draw the output vertices
-    DrawSubgraphInterface(
-        f.GetOutputVertices(),
-        { i : Int64 => f.GetOutput(i).GetVertex() },
-        { i : Int64 => parent.GetTargetVertex(i) },
-        subgraphContent,
-        connectionContent,
-        false
-    )
-    // Draw the subgraph
+    let openingLine = DotLine(openingText, Indent)
+    elementContent.append(openingLine)
+    // Label the (sub)graph with its name
+    let labelText = "label=\"${label}\""
+    let labelLine = DotLine(labelText, Preserve)
+    elementContent.append(labelLine)
+    // Draw the inputs
+    DrawSubgraph(minSubgraphOpts, elementContent, { elementContent =>
+        DrawInterface1("${id}", f.GetInputVertices(), true, elementContent)
+    })
+    // Draw the content of the graph
     DrawHypergraph(
         f.GetGraph(),
         depth - 1,
         omittedEdges,
-        subgraphContent,
-        connectionContent
+        elementContent
     )
-    // Append everything to the content list
-    elementContent.append(openingText)
-    elementContent.append(labelText)
-    elementContent.appendAll(subgraphContent)
+    // Draw the outputs
+    DrawSubgraph(maxSubgraphOpts, elementContent, { elementContent =>
+        DrawInterface1("${id}", f.GetOutputVertices(), true, elementContent)
+    })
+    // Wrap everything up
+    let closingText = DotLine("}", Deindent)
     elementContent.append(closingText)
 }
 /**
@@ -659,25 +495,18 @@ public func DrawHypergraph(
     f : Hypergraph,
     depth : Int64,
     omittedEdges : HashSet<Int64>,
-    elementContent : ArrayList<DotLine>,
-    connectionContent : ArrayList<DotLine>
+    elementContent : ArrayList<DotLine>
 ) : Unit {
-    let vertexContent = ArrayList<DotLine>()
-    let edgeContent = ArrayList<DotLine>()
-    for (e in f.GetEdges()){
-        DrawEdge(e, depth, omittedEdges, edgeContent, connectionContent)
-    }
-    for(v in f.GetVertices()){
-        DrawVertex(v, vertexContent)
-        DrawVertexConnections(v, omittedEdges, connectionContent)
-    }
     let vertexOptionsString = DrawOptions("node", vertexNodeOpts)
-    let edgeOptionsString = DrawOptions("node", edgeNodeOpts)
-    // Append everything to the content lists
     elementContent.append(vertexOptionsString)
-    elementContent.appendAll(vertexContent)
+    for(v in f.GetVertices()){
+        DrawVertex(v, elementContent)
+    }
+    let edgeOptionsString = DrawOptions("node", edgeNodeOpts)
     elementContent.append(edgeOptionsString)
-    elementContent.appendAll(edgeContent)
+    for (e in f.GetEdges()){
+        DrawEdge(e, depth, omittedEdges, elementContent)
+    }
 }
 /**
  * Append dotlines for a subgraph to the list of element lines so far.
@@ -687,78 +516,14 @@ public func DrawHypergraph(
  */
 func DrawSubgraph(
     opt : Array<(String, String)>,
-    subelementContent : ArrayList<DotLine>,
-    elementContent : ArrayList<DotLine>
+    elementContent : ArrayList<DotLine>,
+    generateSubgraphContents : (ArrayList<DotLine>) -> Unit
 ) : Unit {
     elementContent.append(DotLine("{", Indent))
     let opts = DrawOptions("graph", opt)
     elementContent.append(opts)
-    elementContent.appendAll(subelementContent)
+    generateSubgraphContents(elementContent)
     elementContent.append(DotLine("}", Deindent))
-}
-/**
- * Append dotlines corresponding to an interface to the lists of lines so far.
- * Interfaces are drawn as subgraphs, so that inputs can be drawn at the far
- * left of the graph and outputs at the far right
- * @param vertices The array of vertices in the interface
- * @param ports The array of ports in the interface
- * @param sink Whether the interface should be drawn at the far right of the graph
- * @param elementContent The list of element dotlines so far
- */
-func DrawInterface(
-    vertices : Array<InterfaceVertex>,
-    ports : Array<Port>,
-    sink : Bool,
-    elementContent : ArrayList<DotLine>
-) : Unit {
-    /**
-    * Append the dotlines for connections from vertices to an interface to a list of dotlines
-    * @param list The array of interface vertices
-    * @param vertexFirst If the connection is from the vertex to the interface (output) or vice versa (input)
-    * @param content The list of dotlines so far
-    */
-    func DrawInterfaceConnections(list : Array<InterfaceVertex>, vertexFirst : Bool, content : ArrayList<DotLine>) : Unit {
-        for (i in 0..list.size){
-            let v = list[i].GetVertex()
-            let vText = "v${v.GetId()}"
-            let str = if (vertexFirst) {
-                let eText = "output:w${i}:w"
-                DrawConnection(vText, eText, vertexFirst)
-            } else {
-                let eText = "input:e${i}:e"
-                DrawConnection(vText, eText, vertexFirst)
-            }
-            content.append(DotLine(str, Preserve))
-        }
-    }
-    // The content of the interface edge depends on whether
-    // it is a sink edge (output) or source edge (input)
-    let (text, opts, sources, targets) = if (sink) {
-        ("output", maxSubgraphOpts, vertices, Array<InterfaceVertex>())
-    } else {
-        ("input", minSubgraphOpts, Array<InterfaceVertex>(), vertices)
-    }
-    let subelementContent = ArrayList<DotLine>()
-    let (sourcePorts, targetPorts) =
-        if (sink) {
-            (ports, Array<Port>())
-        } else {
-            (Array<Port>(), ports)
-        }
-    DrawEdgelikeNode(text, "", interfaceStyle, sources, sourcePorts, targets, targetPorts, subelementContent)
-    DrawSubgraph(opts, subelementContent, elementContent)
-    DrawInterfaceConnections(vertices, sink, elementContent)
-
-}
-/**
- * Append dotlines for the input and output edges of an interfaced hypergraph
- * to a list of existing dotlines.
- * @param f The interfaced hypergraph
- * @param content The existing graph content
- */
-func DrawInterfaces(f : InterfacedHypergraph, content : ArrayList<DotLine>) : Unit {
-    DrawInterface(f.GetInputVertices(), f.GetInputPorts(), false, content)
-    DrawInterface(f.GetOutputVertices(), f.GetOutputPorts(), true, content)
 }
 /**
  * Generate a string of dot code corresponding to an interfaced hypergraph.
@@ -769,27 +534,13 @@ func DrawInterfaces(f : InterfacedHypergraph, content : ArrayList<DotLine>) : Un
  */
 public func DotGraph(f : InterfacedHypergraph, depth : Int64) : String {
     let elementContent = ArrayList<DotLine>()
-    // Declare the name of the graph
-    let declaration = DotLine("graph \"${f.GetName()}\" {", Indent)
-    elementContent.append(declaration)
-    // Declare the global graph options
-    let graphOptionsString = DrawOptions("graph", GetGraphOpts())
-    elementContent.append(graphOptionsString)
-    // Draw the hypergraph, the connections are drawn after declaring the vertices and edges
-    let connectionContent = ArrayList<DotLine>()
-    DrawHypergraph(
-        f.GetGraph(),
+    DrawInterfacedHypergraph(
+        f,
+        None<Edge>,
         depth,
         HashSet<Int64>(),
-        elementContent,
-        connectionContent
+        elementContent
     )
-    elementContent.appendAll(connectionContent)
-    // Draw the inputs and the outputs
-    DrawInterfaces(f, elementContent)
-    // Close the opening brace
-    let conclusion = DotLine("}", Deindent)
-    elementContent.append(conclusion)
     // Generate the final string
     ConvertStringIndentListToString(elementContent)
 }
@@ -815,30 +566,46 @@ func indentString(n : Int64, str : String) : String {
  * @return The corresponding dot code
  */
 public func ConvertStringIndentListToString(list : ArrayList<DotLine>) : String {
-    let (output, i) =
+    println(list)
+    let (output, _, _) =
         fold_left(
-            { acc : (String, Int64) , dl : DotLine =>
+            { acc : (String, Int64, Bool) , dl : DotLine =>
                 // (previous lines, current indent)
-                let (accString, accIndent) = acc
+                let (accString, accIndent, accSameLine) = acc
                 // The instruction determines the current and next indent
-                let (curIndent, nextIndent) = match(dl.instruction) {
-                    // Indent the current line
-                    case Indent => (accIndent, accIndent + 1)
-                    // Deindent the next line
-                    case Deindent => (accIndent - 1, accIndent - 1)
+                let (curIndent, nextIndent, nextSameLine) = match(dl.instruction) {
+                    // Indent the next line
+                    case Indent => (accIndent, accIndent + 1, accSameLine)
+                    // Deindent the current line
+                    case Deindent => (accIndent - 1, accIndent - 1, accSameLine)
                     // Do nothing
-                    case Preserve => (accIndent, accIndent)
+                    case Preserve => (accIndent, accIndent, accSameLine)
+                    // Toggle newlines
+                    case SameLine => (
+                        if(accSameLine) { accIndent - 1 } else { accIndent },
+                        if(!accSameLine) { accIndent + 1 } else { accIndent - 1},
+                        !accSameLine
+                    )
                 }
-                let line = indentString(curIndent, dl.str)
+                let line = if(accSameLine) {
+                    dl.str
+                } else {
+                    indentString(curIndent, dl.str)
+                }
                 // Only make a newline if this is not the first line
                 let nextAcc = if(accString == "") {
                     line
                 } else {
-                    "${accString}\n${line}"
+                    let newlineString = if(accSameLine){
+                        ""
+                    } else {
+                        "\n"
+                    }
+                    "${accString}${newlineString}${line}"
                 }
-                (nextAcc, nextIndent)
+                (nextAcc, nextIndent, nextSameLine)
             },
-            ("", 0),
+            ("", 0, false),
             list
         )
     output

@@ -13,3 +13,5 @@ dot/
 *.o
 *.cj.o
 *txt
+module-resolve.json
+*.dep

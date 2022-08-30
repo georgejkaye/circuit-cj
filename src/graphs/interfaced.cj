@@ -110,7 +110,7 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
         this.name = label.GetName()
         this.label = label
         this.startingEdges.putAll(f.GetStartingEdges())
-        for(i in 0..inputs.size){
+        for(i in 0..inputs.size()){
             let v = inputs[i].GetVertex()
             for(ec in v.GetOutEdges()){
                 startingEdges.put(ec.edge)
@@ -123,7 +123,7 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
                 case Some(vs) => vs.append(i)
             }
         }
-        for(i in 0..outputs.size){
+        for(i in 0..outputs.size()){
             let v = outputs[i].GetVertex()
             match(outputMap.get(v)) {
                 case None =>
@@ -195,10 +195,10 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
         }
     }
     public func GetInputs() : Int64 {
-        this.inputs.size
+        this.inputs.size()
     }
     public func GetOutputs() : Int64 {
-        this.outputs.size
+        this.outputs.size()
     }
     public func GetInputPorts() : Array<Port> {
         map({ iv : InterfaceVertex => iv.ToPort() }, this.inputs )
@@ -229,7 +229,7 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
     }
     public func IsWellFormed() : Bool {
         let issues = this.WellFormednessCheck()
-        issues.size == 0
+        issues.size() == 0
     }
     public func WellFormednessCheck() : ArrayList<WellformednessIssue> {
         let issues = f.WellFormednessCheck()
@@ -238,7 +238,7 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
             array : Array<InterfaceVertex>,
             notPresent : (Int64, InterfaceVertex) -> WellformednessIssue
         ) : Unit {
-            for (i in 0..array.size) {
+            for (i in 0..array.size()) {
                 let v = array[i]
                 if (!f.GetVertices().contains(v.GetVertex())){
                     issues.append(notPresent(i, v))

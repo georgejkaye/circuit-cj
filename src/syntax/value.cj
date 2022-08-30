@@ -66,13 +66,13 @@ public func PrintValue(
             if (signed) {
                 // In a signed number, the first bit indicates if
                 // the number is negative
-                match(vs[vs.size - 1]) {
+                match(vs[vs.size() - 1]) {
                     case Bottom => return BitString(vs)
                     case True => negative = "-"
                     case False => ()
                     case Top => return BitString(vs)
                 }
-                for (i in 0..vs.size) {
+                for (i in 0..vs.size()) {
                     var carry = true
                     match(vs[i]) {
                         case Bottom => return BitString(vs)
@@ -89,7 +89,7 @@ public func PrintValue(
                     }
                 }
             } else {
-                for (i in 0..vs.size) {
+                for (i in 0..vs.size()) {
                     match(vs[i]) {
                         // Only a 1 contributes to the total sum
                         case True   => x += 2**UInt64(i)

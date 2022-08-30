@@ -143,7 +143,7 @@ public func NameWires(wires : Array<Wire>, names : Array<String>) : Array<Interf
  * @return The array of interface wires
  */
 public func NameWires(wires : Array<Wire>, f : (Int64) -> String) : Array<InterfaceWire> {
-    Array<InterfaceWire>(wires.size, { i : Int64 => InterfaceWire(wires[i], f(i)) })
+    Array<InterfaceWire>(wires.size(), { i : Int64 => InterfaceWire(wires[i], f(i)) })
 }
 /**
  * Make an edge and get the wires corresponding to its targets

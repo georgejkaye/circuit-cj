@@ -110,7 +110,7 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
         this.subgraph
     }
     func ForEachVertex<T>(array : Array<T>, f : (Vertex, Int64) -> Unit) : Unit where T <: ContainsVertex {
-        for (i in 0..array.size) {
+        for (i in 0..array.size()) {
             f(array[i].GetVertex(), i)
         }
     }
@@ -171,7 +171,7 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
         this.sources
     }
     public func GetNoSources() : Int64 {
-        this.sources.size
+        this.sources.size()
     }
     public func GetTarget(i : Int64) : Tentacle {
         this.targets[i]
@@ -183,7 +183,7 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
         this.targets
     }
     public func GetNoTargets() : Int64 {
-        this.targets.size
+        this.targets.size()
     }
     public func BurstSubgraph() : Unit {
         let owner = AssertOwned(this)
@@ -195,7 +195,7 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
                     parentVertices : Array<Tentacle>,
                     childVertices : Array<InterfaceVertex>
                 ) : Unit {
-                    for (i in 0..parentVertices.size) {
+                    for (i in 0..parentVertices.size()) {
                         MergeVertices(parentVertices[i].vertex, childVertices[i].GetVertex(), false)
                     }
                 }

@@ -38,7 +38,7 @@ public func AssertAtLeast(i : Int64, t : Int64) : Unit {
     }
 }
 public func AssertArrayNonEmpty<T>(array : Array<T>) : Unit {
-    if(array.size == 0) {
+    if(array.size() == 0) {
         throw EmptyArrayException()
     }
 }
@@ -73,15 +73,15 @@ public func AssertArraysSameLength<T, U>(
     xs : Array<T>,
     ys : Array<U>
 ) : Unit where T <: ToString {
-    if(xs.size != ys.size) {
-        throw IncompatibleArrayLengthException<T>(xs, ys.size, true)
+    if(xs.size() != ys.size()) {
+        throw IncompatibleArrayLengthException<T>(xs, ys.size(), true)
     }
 }
 public func AssertArrayHasLength<T>(
     xs : Array<T>,
     n : Int64
 ) : Unit where T <: ToString {
-    if(xs.size != n) {
+    if(xs.size() != n) {
         throw IncompatibleArrayLengthException<T>(xs, n, true)
     }
 }
@@ -89,7 +89,7 @@ public func AssertArrayHasMinimumLength<T>(
     xs : Array<T>,
     n : Int64
 ) : Unit where T <: ToString {
-    if (xs.size < n) {
+    if (xs.size() < n) {
         throw IncompatibleArrayLengthException<T>(xs, n, false)
     }
 }
@@ -116,7 +116,7 @@ public func AssertArrayAllSameParameter<T, U>(
 ) : U where T <: ToString, U <: ToString, U <: Equatable<U> {
     AssertArrayNonEmpty(xs)
     let targetParam = fn(xs[0])
-    for(i in 1..xs.size) {
+    for(i in 1..xs.size()) {
         let current = xs[i]
         let currentParam = fn(current)
         if (targetParam != currentParam) {
@@ -138,7 +138,7 @@ public func AssertArrayElementsHaveParameters<T, U, V>(
     paramType : ParamType
 ) : Unit where T <: ToString, U <: ToString, V <: ToString, V <: Equatable<V> {
     AssertArraysSameLength<T,U>(xs, desiredParams)
-    for(i in 0..xs.size) {
+    for(i in 0..xs.size()) {
         let current = xs[i]
         let desired = desiredParams[i]
         let currentParam = fnt(current)

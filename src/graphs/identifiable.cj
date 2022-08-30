@@ -1,6 +1,6 @@
 /**
  * graphs/element.cj
- * 
+ *
  * @author George Kaye
  * @since 0.2
  */
@@ -22,7 +22,7 @@ public interface Identifiable {
 }
 
 public interface Ownable<T> {
-    func GetOwner() : Option<T> 
+    func GetOwner() : Option<T>
     func SetOwner(t : T) : Unit
     func RemoveOwner() : Unit
 }
