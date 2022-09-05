@@ -190,25 +190,26 @@ func MakePorts<T>(
 ) : Unit where T <: Socket {
     MakeElem("td", [], elementContent, false, {elementContent, inline =>
         MakeElem("table", [], elementContent, false, {elementContent, inline =>
-            MakeElem("tr", [], elementContent, true, {elementContent, inline =>
-                for (i in 0..ports.size()) {
-                    let portStyle =  [
-                        ("height", "${portHeight}"),
-                        ("width", "${portWidth}"),
-                        ("port", "${prefix}${i}")
-                    ]
-                    MakeElem("td", portStyle, elementContent, false, {elementContent, inline =>
-                        let port = ports[i]
-                        // The port contains the port name (if one is given)
-                        // and the width of the port
-                        let portText = match(port.GetName()){
-                            case None => "${port.GetWidth()}"
-                            case Some(str) => "${str}:${port.GetWidth()}"
-                        }
-                        elementContent.append(DotLine(portText, Preserve))
-                    })
-                }
-            })
+            for (i in 0..ports.size()) {
+                MakeElem("tr", [], elementContent, true, {elementContent, inline =>
+                        let portStyle =  [
+                            ("height", "${portHeight}"),
+                            ("width", "${portWidth}"),
+                            ("port", "${prefix}${i}")
+                        ]
+                        MakeElem("td", portStyle, elementContent, false, {elementContent, inline =>
+                            let port = ports[i]
+                            // The port contains the port name (if one is given)
+                            // and the width of the port
+                            let portText = match(port.GetName()){
+                                case None => "${port.GetWidth()}"
+                                case Some(str) => "${str}:${port.GetWidth()}"
+                            }
+                            elementContent.append(DotLine(portText, Preserve))
+                        })
+                    }
+                )
+            }
         })
     })
 }
@@ -217,7 +218,7 @@ func MakePorts<T>(
  * @param e The edge
  * @param content The list of dotlines to append to
  */
-func DrawEdgeNode(e : Edge, content : ArrayList<DotLine>) : Unit {
+func DrawEdgeNode(e : Edge, elementContent : ArrayList<DotLine>, connectionContent : ArrayList<DotLine>) : Unit {
     let style = match(e.GetLabel()){
         case VALUE(v) =>
             valueStyle
@@ -239,20 +240,42 @@ func DrawEdgeNode(e : Edge, content : ArrayList<DotLine>) : Unit {
     DrawBoxNode(
         "e${e.GetId()}",
         style,
+        e.GetSources(),
         e.GetInputPorts(),
         e.GetLabel().GetName(),
+        e.GetTargets(),
         e.GetOutputPorts(),
-        content
+        elementContent,
+        connectionContent
     )
 }
-func DrawBoxNode<T, U>(
+/**
+ * Draw a box node (normally used to represent a hyperedge) which may have sources,
+ * targets and a label.
+ *
+ * @param id The id of the edge
+ * @param style The style to apply to this node
+ * @param leftVertices The tentacles to connect to the left ports of the node
+ * @param leftPorts The details of the left ports
+ * @param label The optional label to put in the middle of the node
+ * @param rightVertices The tentacles to connect to the right ports of the node
+ * @param rightPorts The details of the right ports
+ * @param elementContent The element content list
+ * @param connectionContent The connection content list
+ */
+func DrawBoxNode<T1, U1, T2, U2>(
     id : String,
     style : Array<(String, String)>,
-    leftPorts : Array<T>,
+    leftVertices : Array<T1>,
+    leftPorts : Array<U1>,
     label : Option<String>,
-    rightPorts : Array<U>,
-    elementContent : ArrayList<DotLine>
-) : Unit where T <: Socket, U <: Socket {
+    rightVertices : Array<T2>,
+    rightPorts : Array<U2>,
+    elementContent : ArrayList<DotLine>,
+    connectionContent : ArrayList<DotLine>
+) : Unit where
+    T1 <: HasTentacle, U1 <: Socket,
+    T2 <: HasTentacle, U2 <: Socket {
     // Add the edge identifier
     let declaration = DotLine("${id} [label=<", Indent)
     elementContent.append(declaration)
@@ -261,8 +284,9 @@ func DrawBoxNode<T, U>(
         // There is one row in the node
         MakeElem("tr", [], elementContent, false, {elementContent, inline =>
             // Draw left ports, if there are any
-            if(leftPorts.size() > 0) {
+            if(leftVertices.size() > 0) {
                 MakePorts(leftPorts, "w", elementContent)
+                DrawConnections(id, leftVertices, true, SOURCE, connectionContent)
             }
             // Draw the label, if there is one
             match(label) {
@@ -277,14 +301,40 @@ func DrawBoxNode<T, U>(
                 })
             }
             // Draw right ports, if there are any
-            if(rightPorts.size() > 0) {
-                MakePorts(leftPorts, "e", elementContent)
+            if(rightVertices.size() > 0) {
+                MakePorts(rightPorts, "e", elementContent)
+                DrawConnections(id, rightVertices, false, TARGET, connectionContent)
             }
         })
     })
     // Wrap everything up
     let conclusion = DotLine(">];", Deindent)
     elementContent.append(conclusion)
+}
+/**
+ * Draw the connections from the sources and targets from a parent edge to
+ * the interfaces of the subgraph.
+ *
+ * @param g The subgraph
+ * @param parentVertices The sources or targets of the parent edge
+ * @param vertexType The type of vertex
+ * @param connectionContent The list of connection content
+ */
+func DrawSubgraphInterfaceConnections(
+    g : InterfacedHypergraph,
+    parentVertices : Array<Tentacle>,
+    vertexType : VertexType,
+    connectionContent : ArrayList<DotLine>
+) : Unit {
+    for(i in 0..parentVertices.size()) {
+        let v = parentVertices[i]
+        let (interfaceText, portPrefix, vertexFirst) = match(vertexType) {
+            case SOURCE => ("inputs", "e", true)
+            case TARGET => ("outputs", "w", false)
+        }
+        let eText = "\"${g.GetId()}_${interfaceText}\":${portPrefix}${i}"
+        DrawConnection(v.GetVertex(), eText, vertexFirst, connectionContent, v.feedback)
+    }
 }
 /**
  * Append dotlines for an edge to a list of element and connections dotlines
@@ -299,23 +349,26 @@ func DrawEdge(
     e : Edge,
     depth : Int64,
     omittedEdges : HashSet<Int64>,
-    elementContent : ArrayList<DotLine>
+    elementContent : ArrayList<DotLine>,
+    connectionContent : ArrayList<DotLine>
 ) : Unit {
     if (depth != 0) {
         match (e.GetSubgraph()) {
-            case None => DrawEdgeNode(e, elementContent)
+            case None => DrawEdgeNode(e, elementContent, connectionContent)
             case Some(g) =>
                 omittedEdges.put(e.GetId())
                 DrawInterfacedHypergraph(
                     g,
                     e,
-                    depth,
+                    depth - 1,
                     omittedEdges,
                     elementContent
                 )
+                DrawSubgraphInterfaceConnections(g, e.GetSources(), SOURCE, connectionContent)
+                DrawSubgraphInterfaceConnections(g, e.GetTargets(), TARGET, connectionContent)
         }
     } else {
-        DrawEdgeNode(e, elementContent)
+        DrawEdgeNode(e, elementContent, connectionContent)
     }
 }
 /**
@@ -363,38 +416,6 @@ func DrawVertex(
     content.append(DrawOptions("v${v.GetId()}", vertexOptions))
 }
 /**
- * Append all the connections for the sources and targets of an edge to a
- * list of dotlines.
- * @param e The edge
- * @param vertexMap A map sending vertices to vertices that have subsumed it
- * @param omittedEdges List of edges that should not be drawn
- * @param content The list of dotlines to append to
- */
-func DrawConnections(
-    e : Edge,
-    vertexMap : HashMap<Int64, Int64>,
-    omittedEdges : HashSet<Int64>,
-    content : ArrayList<DotLine>
-) : Unit {
-    func DrawConnectionsForArray(array : Array<Tentacle>, port : String, vertexFirst : Bool) : Unit {
-        for (i in 0..array.size()) {
-            let v = array[i].vertex
-            let id = match (vertexMap.get(v.GetId())) {
-                    case None => v.GetId()
-                    case Some(w) => w
-            }
-            let vText = "v${id}"
-            let eText =  "e${e.GetId()}:${port}${i}:${port}"
-            let str = DrawConnection(vText, eText, vertexFirst)
-            content.append(DotLine(str, Preserve))
-        }
-    }
-    if(!omittedEdges.contains(e.GetId())){
-        DrawConnectionsForArray(e.GetSources(), "w", true)
-        DrawConnectionsForArray(e.GetTargets(), "e", false)
-    }
-}
-/**
  * Get the connection text for a connection between a vertex and an edge
  * @param vText The name of the vertex
  * @param eText The name of the edge
@@ -402,28 +423,66 @@ func DrawConnections(
                         target) or vice versa (i.e. source)
  * @return The connection string
  */
-func DrawConnection(vText : String, eText : String, vertexFirst : Bool) : String {
+func DrawConnection<T>(
+    vertex : T,
+    eText : String,
+    vertexFirst : Bool,
+    connectionContent : ArrayList<DotLine>,
+    feedback : Bool
+) : Unit where T <: Vertex {
+    let vText = "v${vertex.GetVertex().GetId()}"
     let connectionString = if(vertexFirst) {
-        "${vText}:e -- ${eText}"
+        "${vText}:e -- ${eText}:w"
     } else {
-        "${eText} -- ${vText}:w"
+        "${eText}:e -- ${vText}:w"
     }
-    connectionString
+    let fullConnectionString = if(feedback){
+        "${connectionString} ${GetOptions(feedbackStyle)}"
+    } else {
+        connectionString
+    }
+    connectionContent.append(DotLine(fullConnectionString, Preserve))
 }
-func DrawInterface1(
+func DrawConnections<T>(
+    boxId : String,
+    vertices : Array<T>,
+    isLeft : Bool,
+    vertexType : VertexType,
+    connectionContent : ArrayList<DotLine>
+) : Unit where T <: HasTentacle {
+    let portPrefix = match(vertexType) {
+        case SOURCE => "w"
+        case TARGET => "e"
+    }
+    for(i in 0..vertices.size()) {
+        let v = vertices[i]
+        let eText = "${boxId}:${portPrefix}${i}"
+        DrawConnection(v.GetVertex(), eText, isLeft, connectionContent, v.GetFeedback())
+    }
+}
+func DrawInterface<T>(
     id : String,
-    vertices : Array<InterfaceVertex>,
+    childVertices : Array<InterfaceVertex>,
     isInputs : Bool,
-    elementContent : ArrayList<DotLine>
-) : Unit {
-    let interfaceName = "\"${id}_${ if(isInputs) { "inputs" } else { "otputs" }}\""
+    elementContent : ArrayList<DotLine>,
+    connectionContent : ArrayList<DotLine>
+) : Unit where T <: ContainsVertex {
+    let interfaceName = "\"${id}_${ if(isInputs) { "inputs" } else { "outputs" }}\""
+    let (leftVertices, rightVertices) = if(isInputs) {
+        (Array<InterfaceVertex>(), childVertices)
+    } else {
+        (childVertices, Array<InterfaceVertex>())
+    }
     DrawBoxNode(
         interfaceName,
         interfaceStyle,
-        vertices,
+        leftVertices,
+        leftVertices,
         None<String>,
-        Array<Port>(),
-        elementContent
+        rightVertices,
+        rightVertices,
+        elementContent,
+        connectionContent
     )
 }
 /**
@@ -459,25 +518,34 @@ func DrawInterfacedHypergraph(
     }
     let openingLine = DotLine(openingText, Indent)
     elementContent.append(openingLine)
+    let graphOptions = "graph${GetOptions(GetGraphOpts())}"
+    elementContent.append(DotLine(graphOptions, Preserve))
     // Label the (sub)graph with its name
     let labelText = "label=\"${label}\""
     let labelLine = DotLine(labelText, Preserve)
     elementContent.append(labelLine)
-    // Draw the inputs
-    DrawSubgraph(minSubgraphOpts, elementContent, { elementContent =>
-        DrawInterface1("${id}", f.GetInputVertices(), true, elementContent)
-    })
+    let connectionContent = ArrayList<DotLine>()
     // Draw the content of the graph
     DrawHypergraph(
         f.GetGraph(),
-        depth - 1,
+        depth,
         omittedEdges,
-        elementContent
+        elementContent,
+        connectionContent
     )
+    // Draw the inputs
+    if(f.GetInputs() > 0) {
+        DrawSubgraph(minSubgraphOpts, elementContent, connectionContent, { elementContent, connectionContent =>
+            DrawInterface("${id}", f.GetInputVertices(), true, elementContent, connectionContent)
+        })
+    }
     // Draw the outputs
-    DrawSubgraph(maxSubgraphOpts, elementContent, { elementContent =>
-        DrawInterface1("${id}", f.GetOutputVertices(), true, elementContent)
-    })
+    if(f.GetOutputs() > 0){
+        DrawSubgraph(maxSubgraphOpts, elementContent, connectionContent, { elementContent, connectionContent =>
+            DrawInterface("${id}", f.GetOutputVertices(), false, elementContent, connectionContent)
+        })
+    }
+    elementContent.appendAll(connectionContent)
     // Wrap everything up
     let closingText = DotLine("}", Deindent)
     elementContent.append(closingText)
@@ -495,7 +563,8 @@ public func DrawHypergraph(
     f : Hypergraph,
     depth : Int64,
     omittedEdges : HashSet<Int64>,
-    elementContent : ArrayList<DotLine>
+    elementContent : ArrayList<DotLine>,
+    connectionContent : ArrayList<DotLine>
 ) : Unit {
     let vertexOptionsString = DrawOptions("node", vertexNodeOpts)
     elementContent.append(vertexOptionsString)
@@ -505,7 +574,7 @@ public func DrawHypergraph(
     let edgeOptionsString = DrawOptions("node", edgeNodeOpts)
     elementContent.append(edgeOptionsString)
     for (e in f.GetEdges()){
-        DrawEdge(e, depth, omittedEdges, elementContent)
+        DrawEdge(e, depth, omittedEdges, elementContent, connectionContent)
     }
 }
 /**
@@ -517,12 +586,13 @@ public func DrawHypergraph(
 func DrawSubgraph(
     opt : Array<(String, String)>,
     elementContent : ArrayList<DotLine>,
-    generateSubgraphContents : (ArrayList<DotLine>) -> Unit
+    connectionContent : ArrayList<DotLine>,
+    generateSubgraphContents : (ArrayList<DotLine>, ArrayList<DotLine>) -> Unit
 ) : Unit {
     elementContent.append(DotLine("{", Indent))
     let opts = DrawOptions("graph", opt)
     elementContent.append(opts)
-    generateSubgraphContents(elementContent)
+    generateSubgraphContents(elementContent, connectionContent)
     elementContent.append(DotLine("}", Deindent))
 }
 /**
@@ -566,7 +636,6 @@ func indentString(n : Int64, str : String) : String {
  * @return The corresponding dot code
  */
 public func ConvertStringIndentListToString(list : ArrayList<DotLine>) : String {
-    println(list)
     let (output, _, _) =
         fold_left(
             { acc : (String, Int64, Bool) , dl : DotLine =>

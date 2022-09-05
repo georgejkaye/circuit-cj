@@ -13,7 +13,7 @@ For more documentation see the [wiki](https://gitlab-uk.rnd.huawei.com/cpl_uk_te
 
 To make compiling easier, you should use `make`.
 
-The library has been tested with the `cjc` command from the [Cangjie repo](https://open.codehub.huawei.com/innersource/CangjieLang/Cangjie) at commit `754af5393de27d6992b0ad8feb392aeff743b5fe`.
+The library compiles with Cangjie version `0.31.4`.
 
 ### Everything
 

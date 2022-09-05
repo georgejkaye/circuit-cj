@@ -12,7 +12,7 @@ package examples
 
 import components.*
 
-public func HalfAdder(a : Wire, b : Wire){
+public func HalfAdder(){
     // First we declare our inputs so we have handles on them
     let a = MakeWire(1)
     let b = MakeWire(1)

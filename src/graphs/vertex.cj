@@ -60,7 +60,8 @@ public class Vertex <: Identifiable &
                         Ownable<Hypergraph> &
                         Hashable &
                         ToString &
-                        HasWidth
+                        HasWidth &
+                        Socket
 {
     let width : Int64
     let id : Int64 = GetNextId()
@@ -137,6 +138,9 @@ public class Vertex <: Identifiable &
     }
     public func hashCode() : Int64 {
         this.id
+    }
+    public func GetName() : Option<String> {
+        None
     }
 }
 

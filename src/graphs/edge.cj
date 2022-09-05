@@ -42,7 +42,10 @@ func CheckSpecCompatibility<T,U>(
     CheckArrayCompatibility<T>(spec.GetInputPorts(), inputs)
     CheckArrayCompatibility<U>(spec.GetOutputPorts(), outputs)
 }
-public struct Tentacle <: ToString & ContainsVertex & HasWidth {
+public interface HasTentacle <: ContainsVertex {
+    func GetFeedback() : Bool
+}
+public struct Tentacle <: ToString & HasWidth & HasTentacle {
     public Tentacle(
         public let vertex : Vertex,
         public let feedback : Bool
@@ -60,6 +63,9 @@ public struct Tentacle <: ToString & ContainsVertex & HasWidth {
     }
     public func GetWidth() : Int64 {
         this.vertex.GetWidth()
+    }
+    public func GetFeedback() : Bool {
+        this.feedback
     }
 }
 /**

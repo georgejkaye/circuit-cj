@@ -44,7 +44,7 @@ public func CloneWithInterfaces<T>(
     (newF, newInputs, newOutputs)
 }
 
-public class InterfaceVertex <: Socket & ContainsVertex {
+public class InterfaceVertex <: Socket & HasTentacle {
     public InterfaceVertex(
         public let vertex : Vertex,
         public let name : Option<String>
@@ -79,6 +79,9 @@ public class InterfaceVertex <: Socket & ContainsVertex {
     }
     public func ToPort() : Port {
         Port(vertex.GetWidth(), name: name)
+    }
+    public func GetFeedback() : Bool {
+        false
     }
 }
 

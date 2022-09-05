@@ -14,9 +14,9 @@ main(){
     SetNumberRepresentation(DEC)
     SetDebugDot(true)
 
-    let acc = Accumulator(width: 2, initial: 1)
-    WriteDotToFile(acc, 0, "acc-0-test")
-    WriteDotToFile(acc, 1, "acc-1-test")
+    let circ = Accumulator(width: 2, initial: 1)
+    WriteDotToFile(circ, 0, "acc-0")
+    WriteDotToFile(circ, 1, "acc-1")
 
     return 0
 }
