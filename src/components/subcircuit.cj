@@ -31,11 +31,11 @@ public func MakeSubcircuit(
 ) : InterfacedHypergraph {
     let interfaceVertices = concat(inputs, outputs)
     let graph = CombineGraphs(interfaceVertices)
-    let (newF, newInputs, newOutputs) = CloneWithInterfaces<InterfaceWire>(
-        graph,
-        inputs,
-        outputs
-    )
+    let (newF, vertexMap, _) = graph.Clone()
+    let newInputs = map({iv : InterfaceWire =>
+        InterfaceVertex(vertexMap.get(iv.GetVertex()).getOrThrow(), iv.GetName())}, inputs)
+    let newOutputs = map({iv : InterfaceWire =>
+        InterfaceVertex(vertexMap.get(iv.GetVertex()).getOrThrow(), iv.GetName())}, outputs)
     InterfacedHypergraph(
         newF,
         newInputs,
@@ -166,7 +166,7 @@ public func UseSubcircuit<T>(
     inputs : Array<T>
 ) : Array<Wire> where T <: ToString, T <: ContainsWire {
     AssertWiresHaveWidths<T, Port>(inputs, circuit.GetInputPorts())
-    let newGraph = circuit.CloneGraph()
+    let (newGraph, _, _) = circuit.CloneGraph()
     MakeEdgeWithNewOutputs<T>(
         circuit.GetLabel(),
         inputs,

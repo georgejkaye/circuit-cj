@@ -29,7 +29,9 @@ public func MergeVertices<T, U>(t : T, u : U, feedback: Bool) : (Vertex, Vertex)
             ec.edge.SetTarget(ec.index, v)
     }
     let wOutEdges = w.GetOutEdges()
-    for (ec in wOutEdges) {
+    // Clone the collection since we'll be removing vertices from the set
+    let outEdges = Array<EdgeConnection>(wOutEdges)
+    for (ec in outEdges) {
        ec.edge.SetSource(ec.index, v, feedback)
     }
     // Make sure the old vertex isn't part of a hypergraph any more
@@ -51,7 +53,8 @@ func CloneOrRetain(
     clone : Bool
 ) : (Hypergraph, Array<InterfaceVertex>, Array<InterfaceVertex>) {
     if(clone) {
-        f.Clone()
+        let (newGraph, newInputs, newOutputs, _, _) = f.Clone()
+        (newGraph, newInputs, newOutputs)
     } else {
         (f.GetGraph(), f.GetInputVertices(), f.GetOutputVertices())
     }

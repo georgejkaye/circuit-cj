@@ -4,6 +4,7 @@ import rewrite.RewriteCombinational
 import settings.*
 import components.*
 import debug.SetDebugMessages
+import rewrite.*
 
 import examples.*
 
@@ -15,8 +16,8 @@ main(){
     SetDebugDot(true)
 
     let circ = Accumulator(width: 2, initial: 1)
-    WriteDotToFile(circ, 0, "acc-0")
-    WriteDotToFile(circ, 1, "acc-1")
+    InstantFeedback(circ)
+    WriteDotToFile(circ, 0, "acc-copy")
 
     return 0
 }

@@ -84,7 +84,7 @@ func SignedDecToBin(x : Int64, w : Int64) : Array<Bool> {
  * @param signed Whether the number is signed
  * @return The output wire
  */
-public func MakeValue(vs : Array<Value>, signed : Bool) : Wire {
+func ConstructValue(vs : Array<Value>, signed : Bool) : Wire {
     if(vs.size() == 1) {
         Signal(vs[0])
     } else {
@@ -110,14 +110,18 @@ public func MakeValue(vs : Array<Value>, signed : Bool) : Wire {
         )
     }
 }
+public func UseValue(v : Value, i : Int64) : Wire {
+    let array : Array<Value> = Array<Value>(i, {i : Int64 => v})
+    ConstructValue(array, false)
+}
 /**
  * Create an edge for a given value
  * @param vs The array of booleans
  * @param signed Whether the number is signed
  * @return The output wire
  */
-public func MakeValue(vs : Array<Bool>, signed : Bool) {
-    MakeValue(map({ b : Bool => if(b){ True } else { False }}, vs), signed)
+public func UseValueFromBool(vs : Array<Bool>, signed : Bool) : Wire {
+    ConstructValue(map({ b : Bool => if(b){ True } else { False }}, vs), signed)
 }
 /**
  * Use an unsigned value for a given number
@@ -127,7 +131,7 @@ public func MakeValue(vs : Array<Bool>, signed : Bool) {
  */
 public func UnsignedValueFromInt(x : Int64, width!: Int64) : Wire {
     let bin = UnsignedDecToBin(x, width)
-    MakeValue(bin, false)
+    UseValueFromBool(bin, false)
 }
 /**
  * Use a signed value for a given number
@@ -137,7 +141,7 @@ public func UnsignedValueFromInt(x : Int64, width!: Int64) : Wire {
  */
 public func SignedValueFromInt(x : Int64, width!: Int64) : Wire {
     let bin = SignedDecToBin(x, width)
-    MakeValue(bin, true)
+    UseValueFromBool(bin, true)
 }
 /**
  * Create a zero value for a given width, i.e. all falses
@@ -146,7 +150,7 @@ public func SignedValueFromInt(x : Int64, width!: Int64) : Wire {
  */
 public func Zero(width: Int64) : Wire {
     let values = Array<Value>(width, { i : Int64 => False })
-    MakeValue(values, false)
+    ConstructValue(values, false)
 }
 /**
  * Create a constant zero waveform for a given width, i.e. all falses

@@ -152,6 +152,8 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
     }
     public func SetSource(i : Int64, newVertex : Vertex, feedback: Bool) : Unit {
         let t = Tentacle(newVertex, feedback)
+        let oldTentacle = this.GetSource(i)
+        oldTentacle.vertex.RemoveOutEdge(this)
         SetVertex(
             i,
             t,
@@ -160,6 +162,8 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
         )
     }
     public func SetTarget(i : Int64, newVertex : Vertex) : Unit {
+        let oldTentacle = this.GetTarget(i)
+        oldTentacle.vertex.RemoveInEdge(this)
         SetVertex(
             i,
             Tentacle(newVertex, false),

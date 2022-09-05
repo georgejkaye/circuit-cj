@@ -40,6 +40,7 @@ clean:
 	rm -f $(MODULE_RESOLVE_JSON)
 	rm -f *bc
 	rm -f dot/*svg dot/*png
+	rm -f log.*.txt
 
 # Make the directories
 

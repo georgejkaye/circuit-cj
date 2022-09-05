@@ -11,39 +11,6 @@ package graphs
 
 import syntax.*
 
-/**
- * Clone a(n uninterfaced) hypergraph with some given input and output arrays
- *
- * @param f The uninterfaced hypergraph
- * @param inputs The array of inputs
- * @param outputs The array of outputs
- * @return A tuple (hypergraph, inputs, outputs)
- */
-public func CloneWithInterfaces<T>(
-    f : Hypergraph,
-    inputs: Array<T>,
-    outputs: Array<T>
-) : (Hypergraph, Array<InterfaceVertex>, Array<InterfaceVertex>) where
-  T <: ContainsVertex, T <: Socket {
-    let (newF, vertexMap, edgeMap) = f.Clone()
-
-    /**
-     * Given an array of vertices, create an array of the corresponding
-     * vertices in a cloned hypergraph
-     * @param ws The array of vertices
-     */
-    func translateVertices(ws : Array<T>) : Array<InterfaceVertex> {
-        map({ t : T =>
-            let v = vertexMap[t.GetVertex()]
-            let name = t.GetName()
-            InterfaceVertex(v, name)
-        }, ws)
-    }
-    let newInputs = translateVertices(inputs)
-    let newOutputs = translateVertices(outputs)
-    (newF, newInputs, newOutputs)
-}
-
 public class InterfaceVertex <: Socket & HasTentacle {
     public InterfaceVertex(
         public let vertex : Vertex,
@@ -259,12 +226,29 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
     public operator func !=(right : InterfacedHypergraph) : Bool {
         this.GetId() != right.GetId()
     }
-    public func Clone() : (Hypergraph, Array<InterfaceVertex>, Array<InterfaceVertex>) {
-         CloneWithInterfaces<InterfaceVertex>(this.f, this.inputs, this.outputs)
+    public func Clone()
+        : (Hypergraph, Array<InterfaceVertex>, Array<InterfaceVertex>, HashMap<Vertex, Vertex>, HashMap<Edge, Edge>) {
+         let (newF, vertexMap, edgeMap) = f.Clone()
+        /**
+        * Given an array of vertices, create an array of the corresponding
+        * vertices in a cloned hypergraph
+        * @param ws The array of vertices
+        */
+        func translateVertices(ws : Array<InterfaceVertex>) : Array<InterfaceVertex> {
+            map({ iv : InterfaceVertex =>
+                let v = vertexMap[iv.GetVertex()]
+                let name = v.GetName()
+                InterfaceVertex(v, name)
+            }, ws)
+        }
+        let newInputs = translateVertices(this.inputs)
+        let newOutputs = translateVertices(this.outputs)
+        (newF, newInputs, newOutputs, vertexMap, edgeMap)
     }
-    public func CloneGraph() : InterfacedHypergraph {
-        let (newGraph, newInputs, newOutputs) = this.Clone()
-        InterfacedHypergraph(newGraph, newInputs, newOutputs, this.name)
+    public func CloneGraph() : (InterfacedHypergraph, HashMap<Vertex, Vertex>, HashMap<Edge, Edge>) {
+        let (newGraph, newInputs, newOutputs, vertexMap, edgeMap) = this.Clone()
+        let graph = InterfacedHypergraph(newGraph, newInputs, newOutputs, this.name)
+        (graph, vertexMap, edgeMap)
     }
     public func GetLabel() : Label {
         this.label
