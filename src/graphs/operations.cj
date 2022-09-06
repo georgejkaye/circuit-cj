@@ -35,10 +35,7 @@ public func MergeVertices<T, U>(t : T, u : U, feedback: Bool) : (Vertex, Vertex)
        ec.edge.SetSource(ec.index, v, feedback)
     }
     // Make sure the old vertex isn't part of a hypergraph any more
-    match(w.GetOwner()) {
-        case None => ()
-        case Some(g) => g.RemoveVertex(w)
-    }
+    w.GetOwner().RemoveVertex(w)
     (v, w)
 }
 /**

@@ -29,9 +29,21 @@ public func MakeSubcircuit(
     outputs : Array<InterfaceWire>,
     label : Label
 ) : InterfacedHypergraph {
-    let interfaceVertices = concat(inputs, outputs)
-    let graph = CombineGraphs(interfaceVertices)
-    let (newF, vertexMap, _) = graph.Clone()
+    let (first, inputsStart, outputsStart) = if(inputs.size() > 0) {
+        (inputs[0], 1, 0)
+    } else {
+        (outputs[0], 0, 1)
+    }
+    let owner = first.GetVertex().GetOwner()
+    for(i in inputsStart..inputs.size()) {
+        let v = inputs[i].GetVertex()
+        owner.IncludeHypergraph(v.GetOwner())
+    }
+    for(i in outputsStart..outputs.size()) {
+        let v = outputs[i].GetVertex()
+        owner.IncludeHypergraph(v.GetOwner())
+    }
+    let (newF, vertexMap, _) = owner.Clone()
     let newInputs = map({iv : InterfaceWire =>
         InterfaceVertex(vertexMap.get(iv.GetVertex()).getOrThrow(), iv.GetName())}, inputs)
     let newOutputs = map({iv : InterfaceWire =>

@@ -25,13 +25,10 @@ public class Wire <: Identifiable & ToString & ContainsVertex & HasWidth {
     init(i : Int64) {
         this(Vertex(i))
     }
-    public func SetVertex(v : Vertex) : Unit {
-        match(this.vertex.GetOwner()) {
-            case None => ()
-            case Some(h) =>
-                h.RemoveVertex(this.vertex)
-                h.AddVertex(v)
-        }
+public func SetVertex(v : Vertex) : Unit {
+        let owner = v.GetOwner()
+        owner.RemoveVertex(this.vertex)
+        owner.AddVertex(v)
         this.vertex = v
     }
     public func GetId() : Int64 {
@@ -233,7 +230,6 @@ public func Split(w : Wire) : Array<Wire> {
  */
 public func Combine(ws : Array<Wire>) : Wire {
     let widths = map({ w : Wire => w.GetWidth() }, ws)
-    CombineGraphs(ws)
     MakeEdgeWithNewOutputs(
         BUNDLER(widths, [Sum(widths)]),
         ws,

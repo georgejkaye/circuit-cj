@@ -82,7 +82,7 @@ let fork = RewriteRule(
                 let newTarget = Vertex(v.GetWidth())
                 // Make a new copy of the value
                 let newEdge = Edge(e.GetLabel(), [], [newTarget], None)
-                f.AddEdge(newEdge)
+                f.AddEdgeAndVertices(newEdge)
                 (newEdge, newTarget)
             }
 
@@ -151,7 +151,7 @@ let apply = RewriteRule(
             // Create the value edge with this result
             let newTarget = Vertex(1)
             let resultEdge = Edge(VALUE(result), [], [newTarget], None)
-            f.AddEdge(resultEdge)
+            f.AddEdgeAndVertices(resultEdge)
             // Hook up the next edges
             ReplaceTargets(
                 targets,

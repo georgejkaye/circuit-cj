@@ -42,6 +42,9 @@ clean:
 	rm -f dot/*svg dot/*png
 	rm -f log.*.txt
 
+cleandot:
+	rm -f dot/*.dot dot/*.svg dot/*.png
+
 # Make the directories
 
 $(BUILD_DIR):

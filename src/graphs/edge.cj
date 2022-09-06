@@ -74,9 +74,9 @@ public struct Tentacle <: ToString & HasWidth & HasTentacle {
  * They can have multiple sources and target vertices, and also
  * an optional subgraph representing the internal construction.
  */
-public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Identifiable & ToString & Hashable {
+public class Edge <: Specifiable & Equatable<Edge> & Identifiable & ToString & Hashable {
     let id : Int64 = GetNextId()
-    var owner : Option<Hypergraph> = None
+    var owner : Hypergraph = Hypergraph()
     public Edge(
         let label: Label,
         let sources : Array<Tentacle>,
@@ -87,11 +87,15 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
         AssertTargetsUnassigned(targets)
         // Check the ports of the label agree
         CheckSpecCompatibility(label, sources, targets)
-        let graph = CombineGraphs(sources)
-        graph.AddEdge(this)
-        this.owner = graph
-        ForEachSource({ v : Vertex, i : Int64 => v.AddOutEdge(this, i)})
-        ForEachTarget({ v : Vertex, i : Int64 => v.SetInEdge(this, i)})
+        ForEachSource({ v : Vertex, i : Int64 =>
+            v.AddOutEdge(this, i)
+            this.owner.IncludeHypergraph(v.GetOwner())
+        })
+        ForEachTarget({ v : Vertex, i : Int64 =>
+            v.SetInEdge(this, i)
+            this.owner.IncludeHypergraph(v.GetOwner())
+        })
+        owner.AddEdgeAndVertices(this)
     }
     public init(
         label : Label,
@@ -130,16 +134,12 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
         ForEachVertex(this.sources, f)
         ForEachVertex(this.targets, f)
     }
-    public func GetOwner() : Option<Hypergraph> {
+    public func GetOwner() : Hypergraph {
         this.owner
     }
     public func SetOwner(f : Hypergraph) : Unit {
         this.owner = f
         ForEachSourceAndTarget({ v, i => v.SetOwner(f)} )
-    }
-    public func RemoveOwner() : Unit {
-        this.owner = Option<Hypergraph>.None
-        ForEachSourceAndTarget({ v, i => v.RemoveOwner() })
     }
     func SetVertex(
         i : Int64,
@@ -148,7 +148,9 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
         vertexFn : (Vertex) -> Unit
     ) : Unit {
             array[i] = newVertex
-            vertexFn(newVertex.GetVertex())
+            let v = newVertex.vertex
+            vertexFn(v)
+            this.owner.IncludeHypergraph(v.GetOwner())
     }
     public func SetSource(i : Int64, newVertex : Vertex, feedback: Bool) : Unit {
         let t = Tentacle(newVertex, feedback)
@@ -196,11 +198,10 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
         this.targets.size()
     }
     public func BurstSubgraph() : Unit {
-        let owner = AssertOwned(this)
         match(this.GetSubgraph()){
             case None => ()
             case Some(f) =>
-                owner.RemoveEdge(this)
+                this.owner.RemoveEdge(this)
                 func MergeInterfaces(
                     parentVertices : Array<Tentacle>,
                     childVertices : Array<InterfaceVertex>
@@ -211,7 +212,7 @@ public class Edge <: Specifiable & Equatable<Edge> & Ownable<Hypergraph> & Ident
                 }
                 MergeInterfaces(this.GetSources(), f.GetInputVertices())
                 MergeInterfaces(this.GetTargets(), f.GetOutputVertices())
-                owner.AddEdges(f.GetEdges())
+                this.owner.IncludeHypergraph(f.GetGraph())
     }
 }
     public func toString() : String {

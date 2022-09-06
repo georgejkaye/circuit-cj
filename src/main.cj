@@ -16,6 +16,7 @@ main(){
     SetDebugDot(true)
 
     let circ = Accumulator(width: 2, initial: 1)
+    WriteDotToFile(circ, 0, "acc")
     InstantFeedback(circ)
     WriteDotToFile(circ, 0, "acc-copy")
 

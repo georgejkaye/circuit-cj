@@ -57,7 +57,6 @@ public struct EdgeConnection <: ToString & Equatable<EdgeConnection> & Hashable 
  */
 public class Vertex <: Identifiable &
                         Equatable<Vertex> &
-                        Ownable<Hypergraph> &
                         Hashable &
                         ToString &
                         HasWidth &
@@ -68,10 +67,10 @@ public class Vertex <: Identifiable &
     var inEdge : Option<EdgeConnection> = None
     var outEdges : HashSet<EdgeConnection> = HashSet<EdgeConnection>()
     var feedback : Int64 = 0
-    var owner : Option<Hypergraph> = None
+    var owner : Hypergraph = Hypergraph()
     public init(width: Int64){
         this.width = width
-        this.owner = Some(Hypergraph(HashSet<Vertex>([this]), HashSet<Edge>()))
+        this.owner.AddVertex(this)
     }
     public init() {
         this(1)
@@ -127,14 +126,11 @@ public class Vertex <: Identifiable &
     public operator func !=(right : Vertex) : Bool {
         this.GetId() != right.GetId()
     }
-    public func GetOwner() : Option<Hypergraph> {
+    public func GetOwner() : Hypergraph {
         this.owner
     }
     public func SetOwner(f : Hypergraph) : Unit {
-        this.owner = Some(f)
-    }
-    public func RemoveOwner() : Unit {
-        this.owner = None
+        this.owner = f
     }
     public func hashCode() : Int64 {
         this.id

@@ -144,6 +144,9 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
     public func GetStartingEdges() : HashSet<Edge> {
         this.startingEdges
     }
+    public func GetSequentialData() : SequentialData {
+        this.f.GetSequentialData()
+    }
     public func GetInput(i : Int64) : InterfaceVertex {
         AssertGraphHasMinimumInputs(this, i)
         this.inputs[i]
@@ -184,11 +187,17 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
         let iv = this.GetOutput(i)
         this.outputs[i] = InterfaceVertex(v, iv.name)
     }
+    public func IsCombinational() : Bool {
+        this.f.IsCombinational()
+    }
     public func GetName() : String {
         this.name
     }
     public func AddEdge(e : Edge) : Unit {
         this.f.AddEdge(e)
+    }
+    public func AddEdgeAndVertices(e : Edge) : Unit {
+        this.f.AddEdgeAndVertices(e)
     }
     public func RemoveEdge(e : Edge) : Unit {
         this.f.RemoveEdge(e)

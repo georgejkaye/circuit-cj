@@ -83,7 +83,10 @@ public func FalseSignal() : Wire {
     ValueGenerator(False)
 }
 public func TrueSignal() : Wire {
-    ValueGenerator(True)
+    let w = ValueGenerator(True)
+    println(w.GetVertex().GetOwner().toLongString())
+    println()
+    w
 }
 public func TopSignal() : Wire {
     ValueGenerator(Top)
@@ -105,7 +108,10 @@ public func NotGate(a : Wire) : Wire {
  */
 
 public func AndGate(a : Wire, b : Wire) : Wire {
-    BinaryGate(AND, a, b)
+    let w = BinaryGate(AND, a, b)
+    println(w.GetVertex().GetOwner().toLongString())
+    println()
+    w
 }
 public func OrGate(a : Wire, b : Wire) : Wire {
     BinaryGate(OR, a, b)
