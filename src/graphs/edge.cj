@@ -76,12 +76,12 @@ public struct Tentacle <: ToString & HasWidth & HasTentacle {
  */
 public class Edge <: Specifiable & Equatable<Edge> & Identifiable & ToString & Hashable {
     let id : Int64 = GetNextId()
-    var owner : Hypergraph = Hypergraph()
     public Edge(
         let label: Label,
         let sources : Array<Tentacle>,
         let targets : Array<Tentacle>,
-        let subgraph : Option<InterfacedHypergraph>
+        let subgraph : Option<InterfacedHypergraph>,
+        var owner : Hypergraph
     ){
         // Vertices cannot be the targets of multiple edges
         AssertTargetsUnassigned(targets)
@@ -95,7 +95,36 @@ public class Edge <: Specifiable & Equatable<Edge> & Identifiable & ToString & H
             v.SetInEdge(this, i)
             this.owner.IncludeHypergraph(v.GetOwner())
         })
-        owner.AddEdgeAndVertices(this)
+        this.owner.AddEdge(this)
+    }
+    public init(
+        label : Label,
+        sources : Array<Tentacle>,
+        targets : Array<Tentacle>,
+        subgraph : Option<InterfacedHypergraph>
+    ){
+        this(
+            label,
+            sources,
+            targets,
+            subgraph,
+            Hypergraph()
+        )
+    }
+    public init(
+        label : Label,
+        sources : Array<Vertex>,
+        targets : Array<Vertex>,
+        subgraph : Option<InterfacedHypergraph>,
+        owner : Hypergraph
+    ){
+        this(
+            label,
+            map({ v : Vertex => Tentacle(v, false) }, sources),
+            map({ v : Vertex => Tentacle(v, false) }, targets),
+            subgraph,
+            owner
+        )
     }
     public init(
         label : Label,
@@ -105,9 +134,10 @@ public class Edge <: Specifiable & Equatable<Edge> & Identifiable & ToString & H
     ){
         this(
             label,
-            map({ v : Vertex => Tentacle(v, false) }, sources),
-            map({ v : Vertex => Tentacle(v, false) }, targets),
-            subgraph
+            sources,
+            targets,
+            subgraph,
+            Hypergraph()
         )
     }
     public func GetId() : Int64 {

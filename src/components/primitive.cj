@@ -84,8 +84,6 @@ public func FalseSignal() : Wire {
 }
 public func TrueSignal() : Wire {
     let w = ValueGenerator(True)
-    println(w.GetVertex().GetOwner().toLongString())
-    println()
     w
 }
 public func TopSignal() : Wire {
@@ -109,8 +107,6 @@ public func NotGate(a : Wire) : Wire {
 
 public func AndGate(a : Wire, b : Wire) : Wire {
     let w = BinaryGate(AND, a, b)
-    println(w.GetVertex().GetOwner().toLongString())
-    println()
     w
 }
 public func OrGate(a : Wire, b : Wire) : Wire {

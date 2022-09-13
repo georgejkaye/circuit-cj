@@ -31,7 +31,11 @@ public struct EdgeConnection <: ToString & Equatable<EdgeConnection> & Hashable 
         public let vertexType : VertexType
     ) {}
     public func toString() : String {
-        "${vertexType} ${index} of ${edge}"
+        let initial = match(this.vertexType) {
+            case SOURCE => "s"
+            case TARGET => "t"
+        }
+        "${edge}.${initial}${index}"
     }
     public operator func ==(right: EdgeConnection) : Bool {
         this.edge == right.edge && this.index == right.index

@@ -16,13 +16,17 @@ package components
  * @param input The input wire
  * @return The output of the delay
  */
-public func Delay(duration : Int64, input: Wire) : Wire {
+public func Delay(input: Wire, duration!: Int64 = 1) : Wire {
     let width = input.GetWidth()
-    MakeEdgeWithNewOutputs<Wire>(
-        DELAY(duration, width),
-        [input],
-        None<InterfacedHypergraph>
-    )[0]
+    var inputWire = input
+    for(i in 0..duration) {
+        inputWire = MakeEdgeWithNewOutputs<Wire>(
+            DELAY(1, width),
+            [input],
+            None<InterfacedHypergraph>
+        )[0]
+    }
+    inputWire
 }
 /**
  * Use a simple register: a join of some value and a delay
@@ -50,7 +54,7 @@ public func SimpleRegister(initial! : Int64, signed! : Bool, input! : Wire) : Wi
  */
 func SimpleRegisterWithInitial(initial: Wire, input : Wire){
     let width = initial.GetWidth()
-    let delay = Delay(1, input)
+    let delay = Delay(input)
     MakeEdgeWithNewOutputs(
         JOIN(width),
         [initial, delay],
@@ -78,7 +82,7 @@ public func Feedback(outgoing : Wire, incoming : Wire) : Unit {
  * @param incoming The wire to feed back into, must not have an incoming edge
  */
 public func DelayedFeedback(outgoing : Wire, incoming : Wire) : Unit {
-    let delay = Delay(1, outgoing)
+    let delay = Delay(outgoing)
     Feedback(delay, incoming)
 }
 /**

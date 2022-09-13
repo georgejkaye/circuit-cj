@@ -118,7 +118,6 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
         this.vertices = vertices
         this.edges = edges
         this.name = "h${this.id}"
-
         for (v in this.vertices) {
             v.SetOwner(this)
         }
@@ -143,8 +142,9 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
         this.sequentialData
     }
     public func AddEdgeAndVertices(e : Edge) : Unit {
-        AddEdge(e)
-        e.ForEachSourceAndTarget({ v : Vertex, i : Int64 => AddVertex(v)})
+        this.IncludeHypergraph(e.GetOwner())
+        // AddEdge(e)
+        // e.ForEachSourceAndTarget({ v : Vertex, i : Int64 => AddVertex(v)})
     }
     public func AddEdge(e : Edge) : Unit {
         this.edges.put(e)

@@ -206,6 +206,12 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
         let string = f.toString()
         "${string} (${this.inputs} -> ${this.outputs})"
     }
+    public func ReplaceOutputVertices(newOutputs : ArrayList<Vertex>) : Unit {
+        for(i in 0..this.outputs.size()) {
+            let currentOutput = this.outputs[i]
+            this.outputs.set(i, InterfaceVertex(newOutputs[i], currentOutput.name))
+        }
+    }
     public func IsWellFormed() : Bool {
         let issues = this.WellFormednessCheck()
         issues.size() == 0
