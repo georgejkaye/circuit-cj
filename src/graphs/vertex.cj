@@ -52,6 +52,13 @@ public struct EdgeConnection <: ToString & Equatable<EdgeConnection> & Hashable 
             case TARGET => -code
         }
     }
+    public func GetWidth() : Int64 {
+        let t = match(vertexType) {
+            case SOURCE => edge.GetSource(index)
+            case TARGET => edge.GetTarget(index)
+        }
+        t.GetWidth()
+    }
 }
 
 /**

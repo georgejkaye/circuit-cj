@@ -100,4 +100,10 @@ extend Label <: HasName & Specifiable & ToString {
             case _ => throw IncompatibleVariantException(this, "PRIMITIVE")
         }
     }
+    public func IsDelay() : Bool {
+        match(this) {
+            case DELAY(_,_) => true
+            case _ => false
+        }
+    }
 }

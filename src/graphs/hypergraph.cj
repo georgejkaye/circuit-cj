@@ -299,11 +299,11 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
         }
         for (edge in this.edges) {
             let newSources = map(
-                { t : Tentacle => Tentacle(unsafeGet(vertexMap, t.GetVertex()), t.feedback)},
+                { t : Tentacle => Tentacle(unsafeGet(vertexMap, t.GetVertex()), t.feedback, t.delay)},
                 edge.GetSources()
             )
             let newTargets = map(
-                { t : Tentacle => Tentacle(unsafeGet(vertexMap, t.GetVertex()), t.feedback)},
+                { t : Tentacle => Tentacle(unsafeGet(vertexMap, t.GetVertex()), t.feedback, t.delay)},
                 edge.GetTargets()
             )
             let newEdge = Edge(edge.GetLabel(), newSources, newTargets, edge.GetSubgraph())

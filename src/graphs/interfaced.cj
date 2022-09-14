@@ -47,7 +47,10 @@ public class InterfaceVertex <: Socket & HasTentacle {
     public func ToPort() : Port {
         Port(vertex.GetWidth(), name: name)
     }
-    public func GetFeedback() : Bool {
+    public func IsFeedback() : Bool {
+        false
+    }
+    public func IsDelay() : Bool {
         false
     }
 }
@@ -187,6 +190,11 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
         let iv = this.GetOutput(i)
         this.outputs[i] = InterfaceVertex(v, iv.name)
     }
+    public func ReplaceOutputs(vs : ArrayList<Vertex>) {
+        for(i in 0..vs.size()) {
+            ReplaceOutput(i, vs[i])
+        }
+    }
     public func IsCombinational() : Bool {
         this.f.IsCombinational()
     }
@@ -205,6 +213,10 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
     public func toString() : String {
         let string = f.toString()
         "${string} (${this.inputs} -> ${this.outputs})"
+    }
+    public func toLongString() : String {
+        let string = f.toLongString()
+        "${string}\ninputs ${this.inputs}\noutputs ${this.outputs}"
     }
     public func ReplaceOutputVertices(newOutputs : ArrayList<Vertex>) : Unit {
         for(i in 0..this.outputs.size()) {

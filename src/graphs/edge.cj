@@ -43,20 +43,26 @@ func CheckSpecCompatibility<T,U>(
     CheckArrayCompatibility<U>(spec.GetOutputPorts(), outputs)
 }
 public interface HasTentacle <: ContainsVertex {
-    func GetFeedback() : Bool
+    func IsFeedback() : Bool
+    func IsDelay() : Bool
 }
 public struct Tentacle <: ToString & HasWidth & HasTentacle {
     public Tentacle(
         public let vertex : Vertex,
-        public let feedback : Bool
+        public let feedback : Bool,
+        public let delay : Bool
     ) {}
     public func toString() : String {
-        let feedbackText = if(feedback) {
+        let extraDetails = if(feedback && delay) {
+            " (fb/d)"
+        } else if(feedback) {
             " (fb)"
+        } else if(delay) {
+            " (d)"
         } else {
             ""
         }
-        "${vertex}${feedbackText}"
+        "${vertex}${extraDetails}"
     }
     public func GetVertex() : Vertex {
         this.vertex
@@ -64,8 +70,11 @@ public struct Tentacle <: ToString & HasWidth & HasTentacle {
     public func GetWidth() : Int64 {
         this.vertex.GetWidth()
     }
-    public func GetFeedback() : Bool {
+    public func IsFeedback() : Bool {
         this.feedback
+    }
+    public func IsDelay() : Bool {
+        this.delay
     }
 }
 /**
@@ -120,8 +129,8 @@ public class Edge <: Specifiable & Equatable<Edge> & Identifiable & ToString & H
     ){
         this(
             label,
-            map({ v : Vertex => Tentacle(v, false) }, sources),
-            map({ v : Vertex => Tentacle(v, false) }, targets),
+            map({ v : Vertex => Tentacle(v, false, label.IsDelay()) }, sources),
+            map({ v : Vertex => Tentacle(v, false, false) }, targets),
             subgraph,
             owner
         )
@@ -183,12 +192,12 @@ public class Edge <: Specifiable & Equatable<Edge> & Identifiable & ToString & H
             this.owner.IncludeHypergraph(v.GetOwner())
     }
     public func SetSource(i : Int64, newVertex : Vertex, feedback: Bool) : Unit {
-        let t = Tentacle(newVertex, feedback)
         let oldTentacle = this.GetSource(i)
+        let newTentacle = Tentacle(newVertex, feedback, oldTentacle.delay)
         oldTentacle.vertex.RemoveOutEdge(this)
         SetVertex(
             i,
-            t,
+            newTentacle,
             this.sources,
             { v => v.AddOutEdge(this, i) }
         )
@@ -198,7 +207,7 @@ public class Edge <: Specifiable & Equatable<Edge> & Identifiable & ToString & H
         oldTentacle.vertex.RemoveInEdge(this)
         SetVertex(
             i,
-            Tentacle(newVertex, false),
+            Tentacle(newVertex, false, false),
             this.targets,
             {v => v.SetInEdge(this, i)}
         )

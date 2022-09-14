@@ -457,7 +457,7 @@ func DrawConnections<T>(
     for(i in 0..vertices.size()) {
         let v = vertices[i]
         let eText = "${boxId}:${portPrefix}${i}"
-        DrawConnection(v.GetVertex(), eText, isLeft, connectionContent, v.GetFeedback())
+        DrawConnection(v.GetVertex(), eText, isLeft, connectionContent, v.IsFeedback())
     }
 }
 func DrawInterface<T>(
