@@ -15,22 +15,22 @@ main(){
     SetNumberRepresentation(DEC)
     SetDebugDot(true)
 
-    let circ = Accumulator(width: 2, initial: 1)
-    WriteDotToFile(circ, 0, "acc")
-    InstantFeedback(circ)
-    WriteDotToFile(circ, 0, "acc-fb")
-
-    // let zero = InfiniteWaveform(TrueSignal())
-    // let other = MakeWire(1)
-    // let circ = MakeSubcircuit(
-    //     [InterfaceWire(other, "A")],
-    //     [InterfaceWire(zero, "Z"), InterfaceWire(other, "A")],
-    //     "test"
-    // )
-
-    // WriteDotToFile(circ, 0, "test")
+    // let circ = Accumulator(width: 2, initial: 1)
+    // WriteDotToFile(circ, 0, "acc")
     // InstantFeedback(circ)
-    // WriteDotToFile(circ, 0, "test-fb")
+    // WriteDotToFile(circ, 0, "acc-fb")
+
+    let zero = InfiniteWaveform(TrueSignal())
+    let other = MakeWire(1)
+    let circ = MakeSubcircuit(
+        [InterfaceWire(other, "A")],
+        [InterfaceWire(zero, "Z"), InterfaceWire(other, "A")],
+        "test"
+    )
+
+    WriteDotToFile(circ, 0, "test")
+    InstantFeedback(circ)
+    WriteDotToFile(circ, 0, "test-fb")
 
     return 0
 }
