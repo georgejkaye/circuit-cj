@@ -27,7 +27,7 @@ func AssertWireHasNoInEdge(w : Wire) {
     AssertVertexHasNoInEdge(w.GetVertex())
 }
 func AssertWireArrayNonEmpty(ws : Array<Wire>) : Unit {
-    AssertArrayNonEmpty(ws)
+    AssertNonEmpty(ws, "wires")
 }
 func AssertWireWidth<T>(t : T, i : Int64) : Unit where T <: ContainsWire, T <: ToString {
     AssertObjectHasParameter<T, Int64>(

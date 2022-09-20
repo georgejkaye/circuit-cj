@@ -14,8 +14,7 @@ public func Accumulator(width!: Int64, initial!: Int64){
     let prev = MakeWire(width)
     let zero = ConstantZero()
     let (sum, carry) = RippleAdder(prev, input, zero)
-    let reg = SimpleRegister(initial: initial, signed: false, input: sum)
-    Feedback(reg, prev)
+    RegisterGuardedFeedback(prev, initial: initial, signed: false, input: sum)
     MakeSubcircuit([
             InterfaceWire(input, "A")
         ], [

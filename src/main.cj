@@ -15,10 +15,11 @@ main(){
     SetNumberRepresentation(DEC)
     SetDebugDot(true)
 
-    // let circ = Accumulator(width: 2, initial: 1)
-    // WriteDotToFile(circ, 0, "acc")
-    // InstantFeedback(circ)
-    // WriteDotToFile(circ, 0, "acc-fb")
+    let circ = Accumulator(width: 2, initial: 1)
+    WriteDotToFile(circ, 0, "acc")
+    InstantFeedback(circ)
+    Unfold(circ)
+    WriteDotToFile(circ, 0, "acc-fb")
 
     // let zero = InfiniteWaveform(TrueSignal())
     // let other = MakeWire(1)
@@ -33,18 +34,19 @@ main(){
     // Feedback(and, w)
     // let circ = MakeSubcircuit([], [InterfaceWire(and, "Z")], "test")
 
-    let a = MakeWire(1)
-    let b = MakeWire(1)
-    let not1 = Not(b)
-    let not2 = Not(a)
-    Feedback(not1, a)
-    let
+    // let a = MakeWire(1)
+    // let b = MakeWire(1)
+    // let c = MakeWire(1)
+    // let not1 = Not(b)
+    // let not2 = Not(a)
+    // Feedback(not1, a)
+    // let circ = MakeSubcircuit([InterfaceWire(b, "B"), InterfaceWire(c, "C")], [InterfaceWire(c, "C"), InterfaceWire(not2, "Z")], "test")
 
-    let circ = MakeSubcircuit([InterfaceWire(b, "B")], [InterfaceWire(not2, "Z")], "test")
-
-    WriteDotToFile(circ, 0, "test")
-    InstantFeedback(circ)
-    WriteDotToFile(circ, 0, "test-fb")
+    // WriteDotToFile(circ, 0, "test")
+    // InstantFeedback(circ)
+    // WriteDotToFile(circ, 0, "test-fb")
+    // Unfold(circ)
+    // WriteDotToFile(circ, 0, "test-uf")
 
     return 0
 }

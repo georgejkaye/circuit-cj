@@ -38,7 +38,7 @@ extend Value <: ToString {
  * @return The bitstring corresponding to the array
  */
 public func BitString(bits : Array<Value>) : String {
-    AssertArrayNonEmpty(bits)
+    AssertNonEmpty(bits, "values")
     fold_right({acc : String, v : Value => "${acc}${v}"}, "", bits)
 }
 
@@ -57,7 +57,7 @@ public func PrintValue(
     signed : Bool,
     rep : NumberRepresentation
 ) : String {
-    AssertArrayNonEmpty(vs)
+    AssertNonEmpty(vs, "values")
     match(rep) {
         case BIN => BitString(vs)
         case DEC =>

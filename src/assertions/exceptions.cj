@@ -82,9 +82,14 @@ class IncompatibleParameterException<T> <: Exception where T <: ToString {
 /**
  * Exception for when an array is unexpectedly empty
  */
-class EmptyArrayException <: Exception {
-    public init() {
-        ErrorMsg("Encountered an empty array when a non-empty one was expected")
+class EmptyException <: Exception {
+    public init(contents : String) {
+        ErrorMsg("Encountered an empty array of ${contents} when a non-empty one was expected")
+    }
+}
+class NonEmptyException <: Exception {
+    public init(contents : String) {
+        ErrorMsg("Encountered a non-empty array of ${contents} when an empty one was expected")
     }
 }
 

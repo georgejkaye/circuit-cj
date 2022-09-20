@@ -78,7 +78,7 @@ public func MakeWires(n : Int64, width : Int64) : Array<Wire> {
  * @return The array of wires
  */
 public func MakeWires(widths : Array<Int64>) : Array<Wire> {
-    AssertArrayNonEmpty(widths)
+    AssertNonEmpty(widths, "widths")
     map({ i : Int64 => MakeWire(i) }, widths)
 }
 /**

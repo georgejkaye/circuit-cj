@@ -37,9 +37,14 @@ public func AssertAtLeast(i : Int64, t : Int64) : Unit {
         throw InsufficientParameterException(i, t)
     }
 }
-public func AssertArrayNonEmpty<T>(array : Array<T>) : Unit {
-    if(array.size() == 0) {
-        throw EmptyArrayException()
+public func AssertNonEmpty<T>(collection : Collection<T>, contents : String) : Unit {
+    if(collection.size() == 0) {
+        throw EmptyException(contents)
+    }
+}
+public func AssertEmpty<T>(collection : Collection<T>, contents : String) : Unit {
+    if(collection.size() != 0) {
+        throw NonEmptyException(contents)
     }
 }
 public func AssertIsNone<T>(
@@ -114,7 +119,7 @@ public func AssertArrayAllSameParameter<T, U>(
     fn : (T) -> U,
     paramType : ParamType
 ) : U where T <: ToString, U <: ToString, U <: Equatable<U> {
-    AssertArrayNonEmpty(xs)
+    AssertNonEmpty(xs, "${paramType}")
     let targetParam = fn(xs[0])
     for(i in 1..xs.size()) {
         let current = xs[i]
