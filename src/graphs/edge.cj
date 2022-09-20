@@ -212,6 +212,10 @@ public class Edge <: Specifiable & Equatable<Edge> & Identifiable & ToString & H
             {v => v.SetInEdge(this, i)}
         )
     }
+    public func RemoveFeedback(i : Int64) : Unit {
+        this.SetSource(i, this.GetSource(i).vertex, false)
+        this.owner.RemoveFeedbackConnection(EdgeConnection(this, i, SOURCE))
+    }
     public func GetSource(i : Int64) : Tentacle {
         this.sources[i]
     }

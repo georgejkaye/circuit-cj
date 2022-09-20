@@ -62,6 +62,23 @@ func SimpleRegisterWithInitial(initial: Wire, input : Wire){
     )[0]
 }
 /**
+ * Join two wires together to form a feedback loop. Variant for internal use
+ * only, allows the specification of whether this in an 'instant' or a
+ * 'delay-guarded' loop, which is crucial for rewriting.
+ *
+ * @param outgoing The wire to bend back
+ * @param incoming The wire to feed back into, must not have an incoming edge
+ * @param instant Whether this is instant feedback or not.
+ */
+func PerformFeedback(outgoing : Wire, incoming : Wire, instant : Bool) {
+    AssertWireHasNoInEdge(incoming)
+    let width = outgoing.GetWidth()
+    AssertWiresSameWidth(outgoing, incoming)
+    MergeWires(outgoing, incoming, instant)
+}
+
+
+/**
  * Create a feedback loop: join a wire to a wire that is not connected
  * to anything on the left
  *
@@ -69,21 +86,30 @@ func SimpleRegisterWithInitial(initial: Wire, input : Wire){
  * @param incoming The wire to feed back into, must not have an incoming edge
  */
 public func Feedback(outgoing : Wire, incoming : Wire) : Unit {
-    AssertWireHasNoInEdge(incoming)
-    let width = outgoing.GetWidth()
-    AssertWiresSameWidth(outgoing, incoming)
-    MergeWires(outgoing, incoming, true)
+    PerformFeedback(outgoing, incoming, true)
 }
 /**
- * Create a delayed feedback loop: join a wire to a wire that is not connected
- * to anything on the left, and insert a delay of one tick on the loop
+ * Create a feedback loop guarded by a delay: join a wire to a wire that is
+ * not connected to anything on the left, and insert a delay of one tick on the loop
  *
  * @param outgoing The wire to bend back
  * @param incoming The wire to feed back into, must not have an incoming edge
  */
-public func DelayedFeedback(outgoing : Wire, incoming : Wire) : Unit {
+public func DelayGuardedFeedback(outgoing : Wire, incoming : Wire) : Unit {
     let delay = Delay(outgoing)
-    Feedback(delay, incoming)
+    PerformFeedback(delay, incoming, false)
+}
+/**
+ * Create a feedback loop guarded by a delay: join a wire to a wire that is
+ * not connected to anything on the left, and insert a register with some initial
+ * value on the loop
+ *
+ * @param outgoing The wire to bend back
+ * @param incoming The wire to feed back into, must not have an incoming edge
+ */
+public func RegisterGuardedFeedback(incoming : Wire, initial!: Int64, signed!: Bool, input!: Wire) : Unit {
+    let reg = SimpleRegister(initial: initial, signed: signed, input: input)
+    PerformFeedback(reg, incoming, false)
 }
 /**
  * Create an infinite waveform: a construct that outputs the same thing for
@@ -95,7 +121,7 @@ public func DelayedFeedback(outgoing : Wire, incoming : Wire) : Unit {
 public func InfiniteWaveform(initial : Wire) : Wire {
     let input = MakeWire(initial.GetWidth())
     let reg = SimpleRegisterWithInitial(initial, input)
-    Feedback(reg, input)
+    PerformFeedback(reg, input, false)
     reg
 }
 /**

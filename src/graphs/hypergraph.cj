@@ -166,6 +166,9 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
     public func RemoveVertex(v : Vertex) : Unit {
         this.vertices.remove(v)
     }
+    public func RemoveFeedbackConnection(ec : EdgeConnection) : Unit {
+        this.sequentialData.feedbackConnections.remove(ec)
+    }
     public func RemoveEdge(e : Edge) : Unit {
         this.edges.remove(e)
         for(t in e.GetSources()){

@@ -38,7 +38,7 @@ func ComputedBits(bit : Wire, width : Int64) : Wire {
     let prev = MakeWire(width)
     let msbs = Msbs(prev)
     let combined = Combine([bit, msbs])
-    DelayedFeedback(combined, prev)
+    DelayGuardedFeedback(combined, prev)
     combined
 }
 
