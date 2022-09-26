@@ -116,3 +116,15 @@ func AssertCircuitOutputs(c : InterfacedHypergraph, n : Int64) {
         Outputs
     )
 }
+func AssertArgumentsCompatible(f : InterfacedHypergraph, args : Array<InterfacedHypergraph>) : Unit {
+    AssertArrayElementsHaveParameters(
+        args,
+        f.GetInputVertices(),
+        { ih : InterfacedHypergraph =>
+            AssertArrayHasLength(ih.GetOutputVertices(), 1)
+            ih.GetOutput(0).GetWidth()
+        },
+        { iv : InterfaceVertex => iv.GetWidth() },
+        Width
+    )
+}

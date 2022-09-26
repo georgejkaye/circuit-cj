@@ -19,11 +19,12 @@ main(){
     WriteDotToFile(wf, 0, "wf-0")
     WriteDotToFile(wf, 1, "wf-1")
 
-    // let circ = Accumulator(width: 2, initial: 1)
-    // WriteDotToFile(circ, 0, "acc")
-    // InstantFeedback(circ)
-    // Unfold(circ)
-    // WriteDotToFile(circ, 0, "acc-fb")
+    let acc = Accumulator(width: 4, initial: 1)
+    let applied = Apply(acc, [wf])
+    WriteDotToFile(applied, 1, "acc")
+    InstantFeedback(applied)
+    Unfold(applied)
+    WriteDotToFile(applied, 1, "acc-fb")
 
     // let zero = InfiniteWaveform(TrueSignal())
     // let other = UseWire(1)

@@ -215,7 +215,9 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
     }
     public func toString() : String {
         let string = f.toString()
-        "${string} (${this.inputs} -> ${this.outputs})"
+        let inputString = PrintWidthArray(this.GetInputVertices())
+        let outputString = PrintWidthArray(this.GetOutputVertices())
+        "${string} (${inputString} -> ${outputString})"
     }
     public func toLongString() : String {
         let string = f.toLongString()

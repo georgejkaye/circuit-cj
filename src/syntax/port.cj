@@ -79,3 +79,14 @@ func GeneratePortArray(n : Int64, w : Int64) : Array<Socket> {
         i : Int64 => Port(w, numToUppercaseLetter(i+1))
     }
 }
+
+public func PrintWidthArray<T>(array : Array<T>) : String where T <: HasWidth {
+    printArray<T>(
+        array,
+        "[",
+        "]",
+        ", ",
+        { t : T => "${t.GetWidth()}" },
+        false
+    )
+}

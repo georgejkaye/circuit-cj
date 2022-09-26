@@ -152,15 +152,14 @@ public struct Waveform <: ToString & HasName & HasWidth {
         this.width = AssertSignalsSameWidth(signals)
     }
     public func toString() : String {
-        foldi_left({ acc : String, cur : Signal, i : Int64 =>
-            let currentString = cur.GetName()
-            let delimiter = if(i != this.signals.size() - 1) {
-                " :: "
-            } else {
-                ""
-            }
-            "${acc}${currentString}${delimiter}"
-        }, "", this.signals)
+        printArray(
+            this.signals,
+            "",
+            "",
+            " :: ",
+            { s : Signal => s.GetName() },
+            true
+        )
     }
     public func GetName() : String {
         this.toString()

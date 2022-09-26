@@ -283,3 +283,25 @@ public func UseInternalRippleGate(prim : Primitive, w : Wire) : Wire {
         [w]
     )
 }
+/**
+ * 'Apply' several arguments, interfaced hypergraphs with exactly one output,
+ * to another interfaced hypergraph
+ *
+ * @param circuit The circuit to apply to
+ * @param args The array of arguments
+ * @return The applied hypergraph
+ */
+public func Apply(circuit : InterfacedHypergraph, args : Array<InterfacedHypergraph>) : InterfacedHypergraph {
+    AssertArgumentsCompatible(circuit, args)
+    let wires = map(
+        {ih : InterfacedHypergraph =>
+            InterfaceWire(UseSubcircuit_1(ih, Array<Wire>()), ih.GetOutput(0).GetName())
+        }, args)
+    let argString = printArray(args, "(", ")", ", ", { ih : InterfacedHypergraph => ih.GetName() }, false)
+    let outputWires = UseSubcircuit(circuit, wires)
+    MakeSubcircuit(
+        Array<InterfaceWire>(),
+        mapi({w : Wire, i : Int64 => InterfaceWire(w, circuit.GetOutput(i).GetName())}, outputWires),
+        "${circuit.GetName()}${argString}"
+    )
+}

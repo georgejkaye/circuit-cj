@@ -23,12 +23,16 @@ public func fold_right<T,U>(f : (U, T) -> U, initial : U,  xs : Array<T>) : U {
     }
     acc
 }
-public func foldi_left<T,U>(f : (U, T, Int64) -> U, initial : U, xs : Array<T>) : U {
+public func foldi_left<T,U>(f : (U, T, Int64) -> U, initial : U, xs : Array<T>, reverse!: Bool = false) : U {
     var acc = initial
-    var i = 0
-    for (x in xs) {
-        acc = f(acc, x, i)
-        i++
+    for(i in 0..xs.size()){
+        let j = if(reverse) {
+            xs.size() - 1 - i
+        } else {
+            i
+        }
+        let cur = xs[i]
+        acc = f(acc, cur, i)
     }
     acc
 }
@@ -120,6 +124,27 @@ public func printOptString(str : Option<String>) : String {
         case Some(s) => s
         case None => ""
     }
+}
+public func printArray<T>(
+    arr : Array<T>,
+    openBracket : String,
+    closeBracket : String,
+    delim : String,
+    print : (T) -> String,
+    reverse : Bool
+) : String {
+    let str = foldi_left(
+        {acc : String, cur : T, i : Int64 =>
+            let delimiter = if(i != arr.size() - 1) {
+                delim
+            } else {
+                ""
+            }
+            "${acc}${print(cur)}${delimiter}"
+
+        }, "", arr
+    )
+    "${openBracket}${str}${closeBracket}"
 }
 public func concatArray<T,U,V>(
     arr1 : Array<T>,
