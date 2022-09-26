@@ -86,11 +86,11 @@ func SignedDecToBin(x : Int64, w : Int64) : Array<Bool> {
  */
 func ConstructValue(vs : Array<Value>, signed : Bool) : Wire {
     if(vs.size() == 1) {
-        Signal(vs[0])
+        UseSignal(vs[0])
     } else {
         let wires = map(
             { v : Value =>
-                MakeEdgeWithNewOutputs(
+                UseWireWithNewOutputs(
                     VALUE(v),
                     Array<Vertex>(),
                     None<InterfacedHypergraph>
@@ -129,7 +129,7 @@ public func UseValueFromBool(vs : Array<Bool>, signed : Bool) : Wire {
  * @param width The width of the resulting bitstring
  * @return The wire of the value
  */
-public func UnsignedValueFromInt(x : Int64, width!: Int64) : Wire {
+public func UseUnsignedValueFromInt(x : Int64, width!: Int64) : Wire {
     let bin = UnsignedDecToBin(x, width)
     UseValueFromBool(bin, false)
 }
@@ -139,9 +139,23 @@ public func UnsignedValueFromInt(x : Int64, width!: Int64) : Wire {
  * @param width The width of the resulting bitstring
  * @return The wire of the value
  */
-public func SignedValueFromInt(x : Int64, width!: Int64) : Wire {
+public func UseSignedValueFromInt(x : Int64, width!: Int64) : Wire {
     let bin = SignedDecToBin(x, width)
     UseValueFromBool(bin, true)
+}
+/**
+ * Use a value for a given number
+ * @param x The number to convert
+ * @param signed Whether the number is signed or not
+ * @param width The width of the resulting bitstring
+ * @return The wire of the value
+ */
+public func UseValueFromInt(x : Int64, signed: Bool, width!: Int64) : Wire {
+    if(signed){
+        UseSignedValueFromInt(x, width: width)
+    } else {
+        UseUnsignedValueFromInt(x, width: width)
+    }
 }
 /**
  * Create a zero value for a given width, i.e. all falses

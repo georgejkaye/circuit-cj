@@ -57,7 +57,7 @@ extend Wire <: ContainsWire {
  * @param width The width of the wire
  * @return The wire
  */
-public func MakeWire(width : Int64) : Wire {
+public func UseWire(width : Int64) : Wire {
     let vertex = Vertex(width)
     let f = Hypergraph(HashSet<Vertex>([ vertex ]), HashSet<Edge>())
     Wire(vertex)
@@ -68,18 +68,18 @@ public func MakeWire(width : Int64) : Wire {
  * @param width The width of the wire
  * @return The array of wires
  */
-public func MakeWires(n : Int64, width : Int64) : Array<Wire> {
+public func UseWires(n : Int64, width : Int64) : Array<Wire> {
     AssertStrictlyPositive(n)
-    Array<Wire>(n, { i : Int64 => MakeWire(width) })
+    Array<Wire>(n, { i : Int64 => UseWire(width) })
 }
 /**
  * Make an array of wires of given widths
  * @param widths The array of widths for the wires
  * @return The array of wires
  */
-public func MakeWires(widths : Array<Int64>) : Array<Wire> {
+public func UseWires(widths : Array<Int64>) : Array<Wire> {
     AssertNonEmpty(widths, "widths")
-    map({ i : Int64 => MakeWire(i) }, widths)
+    map({ i : Int64 => UseWire(i) }, widths)
 }
 /**
  * An interface wire is a wire with an optional name. These are
@@ -167,7 +167,7 @@ func MakeEdge(
  * @param graph The optional owner of this edge
  * @return The array of wires corresponding to the new edge's targets
  */
-public func MakeEdgeWithNewOutputs<T>(
+public func UseWireWithNewOutputs<T>(
     label : Label,
     sources : Array<T>,
     graph : Option<InterfacedHypergraph>
@@ -197,7 +197,7 @@ public func MergeWires(v : Wire, w : Wire, feedback: Bool) : Unit {
  */
 public func Split<T>(t : T, vs : Array<Int64>) : Array<Wire> where T <: ContainsWire, T <: ToString {
     AssertWireWidth<T>(t, Sum(vs))
-    MakeEdgeWithNewOutputs<T>(
+    UseWireWithNewOutputs<T>(
         BUNDLER([t.GetWidth()], vs),
         [t],
         None<InterfacedHypergraph>
@@ -230,7 +230,7 @@ public func Split(w : Wire) : Array<Wire> {
  */
 public func Combine(ws : Array<Wire>) : Wire {
     let widths = map({ w : Wire => w.GetWidth() }, ws)
-    MakeEdgeWithNewOutputs(
+    UseWireWithNewOutputs(
         BUNDLER(widths, [Sum(widths)]),
         ws,
         None

@@ -1,6 +1,6 @@
 /**
  * examples/cpu.cj
- * A simple 8 bit CPU 
+ * A simple 8 bit CPU
  * http://www.simplecpudesign.com/simple_cpu_v1/
  *
  * @author George Kaye
@@ -13,13 +13,13 @@ import syntax.*
 import graphs.*
 
 func ALU() {
-    let a = MakeWire(8)
-    let s0 = MakeWire(1)
-    let s1 = MakeWire(1)
-    let s2 = MakeWire(1)
-    let s3 = MakeWire(1)
-    let s4 = MakeWire(1)
-    let b = MakeWire(8)
+    let a = UseWire(8)
+    let s0 = UseWire(1)
+    let s1 = UseWire(1)
+    let s2 = UseWire(1)
+    let s3 = UseWire(1)
+    let s4 = UseWire(1)
+    let b = UseWire(8)
 
     let not1 = Not(s4)
     let rep1 = Replicate(not1, 8)
@@ -99,10 +99,10 @@ func Register(w : Int64) : InterfacedHypergraph {
     if (w % 2 == 1) {
         Todo("Odd bit registers not implemented")
     }
-    let d = MakeWire(w)
-    let clr = MakeWire(1)
-    let ce = MakeWire(1)
-    let clk = MakeWire(1)
+    let d = UseWire(w)
+    let clr = UseWire(1)
+    let ce = UseWire(1)
+    let clk = UseWire(1)
     let splitWidth = w / 2
     let (l, r) = Split(d, splitWidth, splitWidth)
     let outputs = if (splitWidth == 1) {
@@ -128,10 +128,10 @@ func Register(w : Int64) : InterfacedHypergraph {
 }
 
 func SequenceGenerator() {
-    let clr = MakeWire(1)
-    let clk = MakeWire(1)
-    let ce = MakeWire(1)
-    let fb = MakeWire(1)
+    let clr = UseWire(1)
+    let clk = UseWire(1)
+    let ce = UseWire(1)
+    let fb = UseWire(1)
 
     let reg1 = FDPE(clr, fb, ce, clk)
     let reg2 = FDCE(reg1, ce, clk, clr)
@@ -154,9 +154,9 @@ func SequenceGenerator() {
 }
 
 func InstructionDecoder() {
-    let a = MakeWire(8)
+    let a = UseWire(8)
     let bits = Split(a)
-    
+
     let input = And([bits[7], Not(bits[6]), bits[5], Not(bits[4])])
     let output = And([bits[7], bits[6], bits[5], Not(bits[4])])
     let load = And([Not(bits[7]), Not(bits[6]), Not(bits[5]), Not(bits[4])])
@@ -220,7 +220,7 @@ func Decoder_SequenceGenerator(clk : Wire, ce : Wire, clr : Wire, carry : Wire, 
 }
 
 func Decoder_Jump(
-    clk : Wire, clr : Wire, increment : Wire, execute : Wire, 
+    clk : Wire, clr : Wire, increment : Wire, execute : Wire,
     jumpz : Wire, zero_reg : Wire, jumpnz : Wire, jumpc : Wire,
     carry_reg : Wire, jumpnc : Wire, jump : Wire
 ) {
@@ -243,15 +243,15 @@ func Decoder_Jump(
 
 func Decoder() {
     // Inputs
-    let ir = MakeWire(8)
-    let clk = MakeWire(1)
-    let ce = MakeWire(1)
-    let clr = MakeWire(1)
-    let carry = MakeWire(1)
-    let zero = MakeWire(1)
+    let ir = UseWire(8)
+    let clk = UseWire(1)
+    let ce = UseWire(1)
+    let clr = UseWire(1)
+    let carry = UseWire(1)
+    let zero = UseWire(1)
     // Declare inputs for feedback
-    let decodeFb = MakeWire(1)
-    let executeFb = MakeWire(1)
+    let decodeFb = UseWire(1)
+    let executeFb = UseWire(1)
 
     let (add, load, output, input, jumpz, jump, jumpnz, jumpc, jumpnc, sub, bitand) =
         Decoder_InstructionDecoder(ir, decodeFb, executeFb)
@@ -302,22 +302,22 @@ func Decoder() {
 }
 
 public func SimpleCPU() {
-    let nclr = MakeWire(1)
-    let clk = MakeWire(1)
-    let vcc = MakeWire(1)
+    let nclr = UseWire(1)
+    let clk = UseWire(1)
+    let vcc = UseWire(1)
     let clr = FD(Not(nclr), clk)
     // Instruction register
-    let instruction = MakeWire(16)
-    let en_in = MakeWire(1)
+    let instruction = UseWire(16)
+    let en_in = UseWire(1)
     let ir = UseSubcircuit_1(Register(16), [instruction, clk, en_in, clr])
     let (ir_muxi, ir_decoder) = Split(ir, 8, 8)
     // Program counter
-    let en_pc = MakeWire(1)
-    let counter_d = MakeWire(8)
+    let en_pc = UseWire(1)
+    let counter_d = UseWire(8)
     let pc = UseSubcircuit_1(Register(8), [counter_d, clk, en_pc, clr])
     // Decoder
-    let carry = MakeWire(1)
-    let zero = MakeWire(1)
+    let carry = UseWire(1)
+    let zero = UseWire(1)
     let decoder = UseSubcircuit(Decoder(), [ir_decoder, carry, zero, clk, Buf(vcc), clr])
     let muxa = decoder[0]
     let muxb = decoder[1]
@@ -335,7 +335,7 @@ public func SimpleCPU() {
     let muxi = Mux2(muxa, ir_muxi, pc)
     // Mux_D
     let (instruction_muxd, _) = Split(instruction, 8, 8)
-    let acc_fb = MakeWire(8)
+    let acc_fb = UseWire(8)
     let muxd = Mux2(muxb, instruction_muxd, acc_fb)
     // Mux_A
     let addr = Mux2(muxc, pc, ir_muxi)

@@ -24,7 +24,7 @@ public func BlackBox(
     codomain : Array<Port>,
     inputs: Array<Wire>
 ) : Array<Wire> {
-    MakeEdgeWithNewOutputs<Wire>(
+    UseWireWithNewOutputs<Wire>(
         BLACKBOX(
             Specification(
                 name,
@@ -119,8 +119,8 @@ public func Xnor(w : Wire) : Wire {
  * @return A half adder subcircuit
  */
 public func MakeHalfAdder() : InterfacedHypergraph {
-    let a = MakeWire(1)
-    let b = MakeWire(1)
+    let a = UseWire(1)
+    let b = UseWire(1)
     let s = XorGate(a, b)
     let c = AndGate(a, b)
     MakeSubcircuit(
@@ -153,9 +153,9 @@ public func HalfAdder(a : Wire, b : Wire) : (Wire, Wire) {
  * @return A full adder subcircuit
  */
 public func MakeFullAdder() : InterfacedHypergraph {
-    let a = MakeWire(1)
-    let b = MakeWire(1)
-    let cin = MakeWire(1)
+    let a = UseWire(1)
+    let b = UseWire(1)
+    let cin = UseWire(1)
     let inputXor = XorGate(a, b)
     let carryXor = XorGate(inputXor, cin)
     let carryAnd = AndGate(inputXor, cin)
@@ -195,9 +195,9 @@ public func FullAdder(a : Wire, b : Wire, c : Wire) : (Wire, Wire) {
  * @return A ripple adder subcircuit
  */
 public func MakeRippleAdder(width : Int64) : InterfacedHypergraph {
-    let a = MakeWire(width)
-    let b = MakeWire(width)
-    let c = MakeWire(1)
+    let a = UseWire(width)
+    let b = UseWire(width)
+    let c = UseWire(1)
     let (sum, carry) = Bitwise<Wire, Wire>(
         [a, b],
         Array<Wire>(),
@@ -243,9 +243,9 @@ public func RippleAdder(a : Wire, b : Wire, c : Wire) : (Wire, Wire) {
  * that produces one of two outputs depending on a control signal.
  */
 func Mux2_1_1() : InterfacedHypergraph {
-    let a = MakeWire(1)
-    let b = MakeWire(1)
-    let c = MakeWire(1)
+    let a = UseWire(1)
+    let b = UseWire(1)
+    let c = UseWire(1)
     let z = OrGate(
         AndGate(a, NotGate(c)),
         AndGate(c, b)

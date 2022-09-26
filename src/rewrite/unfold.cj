@@ -58,13 +58,20 @@ public func InstantFeedback(f : InterfacedHypergraph) : Unit {
     // we can eliminate this since a delay is already implicitly on a big
     // feedback loop and an additional loop is redundant
     YankDelays(f)
-    if(f.GetSequentialData().feedbackConnections.size() != 0) {
+    if(f.HasNonDelayGuardedFeedback()) {
         Debug("Non-delay-guarded feedback found, unrolling it...")
         UnrollInstantFeedback(f)
     } else {
         Debug("No non-delay-guarded feedback, skipping instant feedback unrolling...")
     }
 }
+/**
+ * Based on some vertex map, get the vertex that a copy of a tentacle should
+ * attach to.
+ *
+ * @param t The tentacle
+ * @param vertexMap The vertex map
+ */
 func CopyTentacle(t : Tentacle, vertexMap : HashMap<Vertex, Vertex>) : Vertex {
     let v = t.GetVertex()
     match(vertexMap.get(v)) {
@@ -72,6 +79,13 @@ func CopyTentacle(t : Tentacle, vertexMap : HashMap<Vertex, Vertex>) : Vertex {
         case None => v
     }
 }
+/**
+ * Given an edge, either get a copy of its subgraph, or None if there is
+ * no such subgraph
+ *
+ * @param e The edge
+ * @return An option potentially containing a copy of the edge's subgraph
+ */
 func CopySubgraph(e : Edge) : Option<InterfacedHypergraph> {
     match(e.GetSubgraph()){
         case Some(g) =>
@@ -81,7 +95,10 @@ func CopySubgraph(e : Edge) : Option<InterfacedHypergraph> {
     }
 }
 /**
- * Perform the 'instant feedback' equation
+ * Perform the 'instant feedback' equation. The underlying combinational circuit
+ * is copied some number of times (for the usual lattice it is 3) and the feedback
+ * inputs and outputs chained together. The first feedback input is initialised with
+ * a bottom signal, and thus a least fixed point is computed.
  *
  * @param f The circuit to replace 'instant feedback' in
  */
@@ -139,7 +156,14 @@ func UnrollInstantFeedback(f : InterfacedHypergraph) : Unit {
     }
     PostUnrollInstantFeedback(f, vertexMap)
 }
-
+/**
+ * Get the 'input vertices' when performing a global rewrite of an entire graph
+ * These input vertices of course include the inputs of the graph, but can also
+ * include the targets of delays and values if we are rewriting combinationally
+ *
+ * @param f The interfaced hypergraph
+ * @param sequential Whether to include delay and value edges
+ */
 func GetInputVertices(f : InterfacedHypergraph, sequential : Bool) : HashSet<Vertex> {
     let sequentialData = f.GetSequentialData()
     let inputVertices = HashSet<Vertex>()
@@ -163,6 +187,12 @@ func GetInputVertices(f : InterfacedHypergraph, sequential : Bool) : HashSet<Ver
     }
     inputVertices
 }
+/**
+ * Populate a map from edge connections to vertices, representing where the feedback
+ * connections in a graph currently connect to
+ *
+ * @param f The interfaced hypergraph
+ */
 func GetFeedbackMap(f : InterfacedHypergraph) : HashMap<EdgeConnection, Vertex> {
     let sequentialData = f.GetSequentialData()
     let feedbackMap = HashMap<EdgeConnection, Vertex>()
@@ -171,6 +201,15 @@ func GetFeedbackMap(f : InterfacedHypergraph) : HashMap<EdgeConnection, Vertex> 
     }
     feedbackMap
 }
+/**
+ * Operations to apply after unrolling instant feedback.
+ * 1) 'Initialise' each feedback connection with a bottom signal
+ * 2) Set each delay edge to connect to the last unrolling
+ * 3) Replace each output with its latest iteration
+ *
+ * @param f The interfaced hypergraph
+ * @param vertexMap The vertex map
+ */
 func PostUnrollInstantFeedback(
     f : InterfacedHypergraph,
     vertexMap : HashMap<Vertex, Vertex>
@@ -192,7 +231,13 @@ func PostUnrollInstantFeedback(
     }
     ReplaceOutputs(f, vertexMap)
 }
-
+/**
+ * After performing an operation that involves populating a vertex map, replace the
+ * output vertices in an interfaced hypergraph with the new ones
+ *
+ * @param f The interfaced hypergraph to update
+ * @param vertexMap the vertex map
+ */
 func ReplaceOutputs(f : InterfacedHypergraph, vertexMap : HashMap<Vertex,Vertex>) : Unit {
     // Replace each output with its latest iteration
     for(i in 0..f.GetOutputs()) {
@@ -203,25 +248,35 @@ func ReplaceOutputs(f : InterfacedHypergraph, vertexMap : HashMap<Vertex,Vertex>
         }
     }
 }
-
+/**
+ * Unfold an interfaced hypergraph with no non-delay-guarded feedback.
+ * View the graph in a form in which the delay guarded feedback is all
+ * 'global feedback', then copy the underlying circuit so one copy has
+ * no feedback.
+ *
+ * @param f The interfaced hypergraph to unfold
+ */
 public func Unfold(f : InterfacedHypergraph) : Unit {
-
-    let vertexMap = HashMap<Vertex, Vertex>()
-    let vertices = HashSet<Vertex>(f.GetVertices())
-    let edges = HashSet<Edge>(f.GetEdges())
-    let inputVertices = GetInputVertices(f, false)
-    CopyVertices(vertices, inputVertices, vertexMap)
-    for(e in edges) {
-        let newSources = map({t : Tentacle =>
-            if(e.GetLabel().IsDelay()) {
-                t.GetVertex()
-            } else {
-                CopyTentacle(t, vertexMap)
-            }
-        }, e.GetSources())
-        let newTargets = map({t : Tentacle => CopyTentacle(t, vertexMap)}, e.GetTargets())
-        let subgraph = CopySubgraph(e)
-        Edge(e.GetLabel(), newSources, newTargets, subgraph, f.GetGraph())
+    if(f.HasNonDelayGuardedFeedback()) {
+        Debug("Cannot unfold circuits with non-delay-guarded feedback, please unroll it first")
+    } else {
+        let vertexMap = HashMap<Vertex, Vertex>()
+        let vertices = HashSet<Vertex>(f.GetVertices())
+        let edges = HashSet<Edge>(f.GetEdges())
+        let inputVertices = GetInputVertices(f, false)
+        CopyVertices(vertices, inputVertices, vertexMap)
+        for(e in edges) {
+            let newSources = map({t : Tentacle =>
+                if(e.GetLabel().IsDelay()) {
+                    t.GetVertex()
+                } else {
+                    CopyTentacle(t, vertexMap)
+                }
+            }, e.GetSources())
+            let newTargets = map({t : Tentacle => CopyTentacle(t, vertexMap)}, e.GetTargets())
+            let subgraph = CopySubgraph(e)
+            Edge(e.GetLabel(), newSources, newTargets, subgraph, f.GetGraph())
+        }
+        ReplaceOutputs(f, vertexMap)
     }
-    ReplaceOutputs(f, vertexMap)
 }

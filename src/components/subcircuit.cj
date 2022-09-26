@@ -179,7 +179,7 @@ public func UseSubcircuit<T>(
 ) : Array<Wire> where T <: ToString, T <: ContainsWire {
     AssertWiresHaveWidths<T, Port>(inputs, circuit.GetInputPorts())
     let (newGraph, _, _) = circuit.CloneGraph()
-    MakeEdgeWithNewOutputs<T>(
+    UseWireWithNewOutputs<T>(
         circuit.GetLabel(),
         inputs,
         newGraph

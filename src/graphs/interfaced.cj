@@ -150,6 +150,9 @@ public class InterfacedHypergraph <: Identifiable & ToString & Specifiable & Equ
     public func GetSequentialData() : SequentialData {
         this.f.GetSequentialData()
     }
+    public func HasNonDelayGuardedFeedback() : Bool {
+        this.GetSequentialData().feedbackConnections.size() != 0
+    }
     public func GetInput(i : Int64) : InterfaceVertex {
         AssertGraphHasMinimumInputs(this, i)
         this.inputs[i]

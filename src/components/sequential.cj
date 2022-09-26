@@ -20,7 +20,7 @@ public func Delay(input: Wire, duration!: Int64 = 1) : Wire {
     let width = input.GetWidth()
     var inputWire = input
     for(i in 0..duration) {
-        inputWire = MakeEdgeWithNewOutputs<Wire>(
+        inputWire = UseWireWithNewOutputs<Wire>(
             DELAY(1, width),
             [input],
             None<InterfacedHypergraph>
@@ -39,9 +39,9 @@ public func Delay(input: Wire, duration!: Int64 = 1) : Wire {
 public func SimpleRegister(initial! : Int64, signed! : Bool, input! : Wire) : Wire {
     let width = input.GetWidth()
     let value = if (signed) {
-        SignedValueFromInt(initial, width: width)
+        UseSignedValueFromInt(initial, width: width)
     } else {
-        UnsignedValueFromInt(initial, width: width)
+        UseUnsignedValueFromInt(initial, width: width)
     }
     SimpleRegisterWithInitial(value, input)
 }
@@ -55,7 +55,7 @@ public func SimpleRegister(initial! : Int64, signed! : Bool, input! : Wire) : Wi
 func SimpleRegisterWithInitial(initial: Wire, input : Wire){
     let width = initial.GetWidth()
     let delay = Delay(input)
-    MakeEdgeWithNewOutputs(
+    UseWireWithNewOutputs(
         JOIN(width),
         [initial, delay],
         None
@@ -119,7 +119,7 @@ public func RegisterGuardedFeedback(incoming : Wire, initial!: Int64, signed!: B
  * @return The output of the waveform
  */
 public func InfiniteWaveform(initial : Wire) : Wire {
-    let input = MakeWire(initial.GetWidth())
+    let input = UseWire(initial.GetWidth())
     let reg = SimpleRegisterWithInitial(initial, input)
     PerformFeedback(reg, input, false)
     reg
@@ -132,5 +132,23 @@ public func InfiniteWaveform(initial : Wire) : Wire {
  * @return The output of the waveform
  */
 public func InfiniteWaveform(value : Value) : Wire {
-    InfiniteWaveform(Signal(value))
+    InfiniteWaveform(UseSignal(value))
+}
+
+public func MakeWaveform(vs : Array<Int64>, signed: Bool, width: Int64, closed!: Bool = true) : InterfacedHypergraph {
+    var (currentWire, inputs) = if(closed) {
+        (UseBottomSignal(), Array<InterfaceWire>())
+    } else {
+        let wire = UseWire(width)
+        (wire, [InterfaceWire(wire)])
+    }
+    for(v in vs) {
+        let value = UseValueFromInt(v, signed, width: width)
+
+    }
+    MakeSubcircuit(
+        inputs,
+        [InterfaceWire(currentWire)],
+        "waveform"
+    )
 }

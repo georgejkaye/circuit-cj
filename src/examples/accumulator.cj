@@ -10,8 +10,8 @@ package examples
 import components.*
 
 public func Accumulator(width!: Int64, initial!: Int64){
-    let input = MakeWire(width)
-    let prev = MakeWire(width)
+    let input = UseWire(width)
+    let prev = UseWire(width)
     let zero = ConstantZero()
     let (sum, carry) = RippleAdder(prev, input, zero)
     RegisterGuardedFeedback(prev, initial: initial, signed: false, input: sum)

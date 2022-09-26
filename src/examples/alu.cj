@@ -1,6 +1,6 @@
 /**
  * examples/alu.cj
- * 
+ *
  * A simple ALU with AND, OR and ADD/SUB.
  * Follows a tutorial http://www.csc.villanova.edu/~mdamian/Past/csc2400fa13/assign/ALU.html
  *
@@ -17,9 +17,9 @@ import components.*
  * @return A full adder subcircuit
  */
 func FullAdder() {
-    let inputA = MakeWire(1)
-    let inputB = MakeWire(1)
-    let inputC = MakeWire(1)
+    let inputA = UseWire(1)
+    let inputB = UseWire(1)
+    let inputC = UseWire(1)
     let inputXor = XorGate(inputA, inputB)
     let inputAnd = AndGate(inputA, inputB)
     let carryXor = XorGate(inputC, inputXor)
@@ -42,13 +42,13 @@ func FullAdder() {
  * @return A multibit full adder subcircuit
  */
 func MultibitFullAdder(width : Int64) {
-    let a = MakeWire(width)
-    let b = MakeWire(width)
-    let c = MakeWire(1)
+    let a = UseWire(width)
+    let b = UseWire(width)
+    let c = UseWire(1)
     let (sum, carry) = Bitwise(
         [a, b],
         c,
-        { ws : Array<Wire>, c : Wire => 
+        { ws : Array<Wire>, c : Wire =>
             UseSubcircuit_2(FullAdder(), [ws[0], ws[1], c])
         }
     )
@@ -70,9 +70,9 @@ func MultibitFullAdder(width : Int64) {
  */
 public func AddSub(width : Int64) {
     // Input wires
-    let a = MakeWire(width)
-    let b = MakeWire(width)
-    let c = MakeWire(1)
+    let a = UseWire(width)
+    let b = UseWire(width)
+    let c = UseWire(1)
     // To allow subtraction
     let xorGates = Xor(b, Replicate(c, width))
     let (sum, carry) = UseSubcircuit_2(MultibitFullAdder(width), [a, b, c])
@@ -81,8 +81,8 @@ public func AddSub(width : Int64) {
     let finalBitSum = Msb(sum)
     let overflow = Or(
         And([
-            NotGate(finalBitSum), 
-            finalBitB, 
+            NotGate(finalBitSum),
+            finalBitB,
             finalBitA
         ]),
         And([
@@ -110,10 +110,10 @@ public func AddSub(width : Int64) {
  * @return The ALU subcircuit
  */
 public func ALU(w : Int64){
-    let a = MakeWire(w)
-    let b = MakeWire(w)
-    let c0 = MakeWire(1)
-    let c1 = MakeWire(1)
+    let a = UseWire(w)
+    let b = UseWire(w)
+    let c0 = UseWire(1)
+    let c1 = UseWire(1)
     let and = And(a, b)
     let or = Or(a, b)
     let (sum, overflow, carry) = UseSubcircuit_3(AddSub(w), [a, b, c0])

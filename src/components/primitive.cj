@@ -23,7 +23,7 @@ import syntax.*
 func Gate(prim : Primitive, inputs: Array<Wire>) : Wire {
     AssertAllWiresWidth(inputs, 1)
     AssertNumberOfWires(inputs, prim.GetInputPorts().size())
-    MakeEdgeWithNewOutputs(
+    UseWireWithNewOutputs(
         PRIMITIVE(prim),
         inputs,
         None
@@ -36,7 +36,7 @@ func Gate(prim : Primitive, inputs: Array<Wire>) : Wire {
  * @return The output wire of the value
  */
 func ValueGenerator(v : Value) : Wire {
-    MakeEdgeWithNewOutputs<Vertex>(
+    UseWireWithNewOutputs<Vertex>(
         VALUE(v),
         Array<Vertex>(),
         None<InterfacedHypergraph>
@@ -68,25 +68,25 @@ func BinaryGate(prim : Primitive, a : Wire, b : Wire) : Wire {
  * Nullary gates
  */
 
-public func Signal(v : Value) : Wire {
+public func UseSignal(v : Value) : Wire {
     match(v) {
-        case Bottom => BottomSignal()
-        case False => FalseSignal()
-        case True => TrueSignal()
-        case Top => TopSignal()
+        case Bottom => UseBottomSignal()
+        case False => UseFalseSignal()
+        case True => UseTrueSignal()
+        case Top => UseTopSignal()
     }
 }
-public func BottomSignal() : Wire {
+public func UseBottomSignal() : Wire {
     ValueGenerator(Bottom)
 }
-public func FalseSignal() : Wire {
+public func UseFalseSignal() : Wire {
     ValueGenerator(False)
 }
-public func TrueSignal() : Wire {
+public func UseTrueSignal() : Wire {
     let w = ValueGenerator(True)
     w
 }
-public func TopSignal() : Wire {
+public func UseTopSignal() : Wire {
     ValueGenerator(Top)
 }
 

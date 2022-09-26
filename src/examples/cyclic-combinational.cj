@@ -12,10 +12,10 @@
 package examples
 
 public func CyclicCombinational() {
-    let x = MakeWire(1)
-    let c = MakeWire(1)
+    let x = UseWire(1)
+    let c = UseWire(1)
 
-    let bottom = MakeWire(1)
+    let bottom = UseWire(1)
 
     let muxa = Mux2(c, x, bottom)
     let f = BlackBox(
