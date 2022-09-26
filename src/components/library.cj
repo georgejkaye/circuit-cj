@@ -24,7 +24,7 @@ public func BlackBox(
     codomain : Array<Port>,
     inputs: Array<Wire>
 ) : Array<Wire> {
-    UseWireWithNewOutputs<Wire>(
+    UseEdgeWithNewOutputs<Wire>(
         BLACKBOX(
             Specification(
                 name,

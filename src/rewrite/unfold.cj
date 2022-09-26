@@ -217,7 +217,7 @@ func PostUnrollInstantFeedback(
     let sequentialData = f.GetSequentialData()
     // Initialise each feedback connection with a disconnected bottom edge
     for(ec in sequentialData.feedbackConnections) {
-        let bot = UseValue(Bottom, ec.GetWidth())
+        let bot = UseSignal(Bottom, ec.GetWidth())
         let v = bot.GetVertex()
         ec.edge.SetSource(ec.index, v, false)
     }

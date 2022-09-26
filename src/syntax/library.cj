@@ -32,35 +32,10 @@ public func numToUppercaseLetter(n : Int64) : String {
     ASCIIToString(65 + UInt32(n))
 }
 
-public class ValueSpec <: ToString & HasName & Specifiable {
-    public ValueSpec(
-        let values : Array<Value>,
-        let signed : Bool
-    ){}
-    public func GetName() : String {
-        PrintValue(this.values, this.signed, GetNumberRepresentation())
-    }
-    public func GetValueAsRepresentation(rep : NumberRepresentation) : String {
-        PrintValue(this.values, this.signed, rep)
-    }
-    public func toString() : String {
-        "${values}"
-    }
-    public func GetInputPorts() : Array<Port> {
-        []
-    }
-    public func GetOutputPorts() : Array<Port> {
-        [Port(values.size())]
-    }
-    public func GetSize() : Int64 {
-        this.values.size()
-    }
-}
-
-public let BOTTOM : ValueSpec = ValueSpec([Bottom], false)
-public let TRUE   : ValueSpec = ValueSpec([True], false)
-public let FALSE  : ValueSpec = ValueSpec([False], false)
-public let TOP    : ValueSpec = ValueSpec([Top], false)
+public let BOTTOM = Signal([Bottom], false)
+public let TRUE   = Signal([True], false)
+public let FALSE  = Signal([False], false)
+public let TOP    = Signal([Top], false)
 
 /**
  * Primitives are the basic building blocks of circuits, i.e.

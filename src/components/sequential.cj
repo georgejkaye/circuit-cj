@@ -16,11 +16,11 @@ package components
  * @param input The input wire
  * @return The output of the delay
  */
-public func Delay(input: Wire, duration!: Int64 = 1) : Wire {
+public func UseDelay(input: Wire, duration!: Int64 = 1) : Wire {
     let width = input.GetWidth()
     var inputWire = input
     for(i in 0..duration) {
-        inputWire = UseWireWithNewOutputs<Wire>(
+        inputWire = UseEdgeWithNewOutputs<Wire>(
             DELAY(1, width),
             [input],
             None<InterfacedHypergraph>
@@ -39,9 +39,9 @@ public func Delay(input: Wire, duration!: Int64 = 1) : Wire {
 public func SimpleRegister(initial! : Int64, signed! : Bool, input! : Wire) : Wire {
     let width = input.GetWidth()
     let value = if (signed) {
-        UseSignedValueFromInt(initial, width: width)
+        UseSignedSignalFromInt(initial, width: width)
     } else {
-        UseUnsignedValueFromInt(initial, width: width)
+        UseUnsignedSignalFromInt(initial, width: width)
     }
     SimpleRegisterWithInitial(value, input)
 }
@@ -54,8 +54,8 @@ public func SimpleRegister(initial! : Int64, signed! : Bool, input! : Wire) : Wi
  */
 func SimpleRegisterWithInitial(initial: Wire, input : Wire){
     let width = initial.GetWidth()
-    let delay = Delay(input)
-    UseWireWithNewOutputs(
+    let delay = UseDelay(input)
+    UseEdgeWithNewOutputs(
         JOIN(width),
         [initial, delay],
         None
@@ -96,7 +96,7 @@ public func Feedback(outgoing : Wire, incoming : Wire) : Unit {
  * @param incoming The wire to feed back into, must not have an incoming edge
  */
 public func DelayGuardedFeedback(outgoing : Wire, incoming : Wire) : Unit {
-    let delay = Delay(outgoing)
+    let delay = UseDelay(outgoing)
     PerformFeedback(delay, incoming, false)
 }
 /**
@@ -115,7 +115,7 @@ public func RegisterGuardedFeedback(incoming : Wire, initial!: Int64, signed!: B
  * Create an infinite waveform: a construct that outputs the same thing for
  * every tick of the clock
  *
- * @param initial The value of the waveform
+ * @param initial The circuit that will be output for each tick of the clock
  * @return The output of the waveform
  */
 public func InfiniteWaveform(initial : Wire) : Wire {
@@ -128,27 +128,40 @@ public func InfiniteWaveform(initial : Wire) : Wire {
  * Create an infinite waveform: a construct that outputs the same value for
  * every tick of the clock
  *
- * @param value The value of the waveform
+ * @param value The value that will be output for each tick of the clock
  * @return The output of the waveform
  */
 public func InfiniteWaveform(value : Value) : Wire {
-    InfiniteWaveform(UseSignal(value))
+    InfiniteWaveform(UseValue(value))
 }
 
-public func MakeWaveform(vs : Array<Int64>, signed: Bool, width: Int64, closed!: Bool = true) : InterfacedHypergraph {
-    var (currentWire, inputs) = if(closed) {
-        (UseBottomSignal(), Array<InterfaceWire>())
+public func MakeWaveform(
+    vs : Array<Int64>,
+    width!: Int64,
+    signed!: Bool = true,
+    closed!: Bool = true
+) : InterfacedHypergraph {
+    let specs = map({v : Int64 => DecToBin(v, width, signed) }, vs)
+    MakeWaveform(Waveform(specs), closed: closed)
+}
+
+public func MakeWaveform(wf : Waveform, closed!: Bool = true) : InterfacedHypergraph {
+    let width = wf.GetWidth()
+    let vs = wf.signals
+    var (currentWire, inputs, startingIndex) = if(closed) {
+        (UseSignal(vs[vs.size() - 1]), Array<InterfaceWire>(), 1)
     } else {
         let wire = UseWire(width)
-        (wire, [InterfaceWire(wire)])
+        (wire, [InterfaceWire(wire)], 0)
     }
-    for(v in vs) {
-        let value = UseValueFromInt(v, signed, width: width)
-
+    for(i in startingIndex..vs.size()) {
+        let value = UseSignal(vs[vs.size() - 1 - i])
+        let delay = UseDelay(currentWire)
+        currentWire = Join(value, delay)
     }
     MakeSubcircuit(
         inputs,
         [InterfaceWire(currentWire)],
-        "waveform"
+        wf.toString()
     )
 }

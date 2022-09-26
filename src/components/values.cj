@@ -17,6 +17,13 @@ from std import math.abs
 import prelude.*
 import syntax.*
 
+func DecToBin(x : Int64, w : Int64, signed : Bool) : Signal {
+    if(signed) {
+        SignedDecToBin(x, w)
+    } else {
+        UnsignedDecToBin(x, w)
+    }
+}
 /**
  * Convert a decimal number to a list of truth values
  * The list is ordered with the lsb first
@@ -25,33 +32,33 @@ import syntax.*
  * @param w      The width of the resulting list
  * @param x      The decimal number to convert
  */
-func UnsignedDecToBin(x : Int64, w : Int64) : Array<Bool> {
+func UnsignedDecToBin(x : Int64, w : Int64) : Signal {
     AssertNonNegative(x)
     let required = log2Ceil(x+1)
     AssertEnoughBits(w, required)
     // Set up the list
-    let bin = Array<Bool>(w, {x : Int64 => false})
+    let bin = Array<Value>(w, {x : Int64 => False})
     var num = x
     // Divide by two w times, setting the remainder to the ith bit of the list
     // If we run out of w before we run out of list, the msbs will be ignored
     for(i in 0..w){
-        let rem = num % 2 == 1
+        let rem = if(num % 2 == 1){ True } else { False }
         bin.set(i, rem)
         num = num / 2
     }
-    return bin
+    return Signal(bin, false)
 }
 /**
  * 'Add one' to an array of booleans, i.e. flip the lowest bit and
  * propagate the changes throughout the list
  * @param x The array of booleans
  */
-func AddOne(x : Array<Bool>) : Unit {
+func AddOne(x : Array<Value>) : Unit {
     for (i in 0..(x.size() - 1)) {
-        if (x[i]) {
-            x[i] = false
+        if (x[i].IsTrue()) {
+            x[i] = False
         } else {
-            x[i] = true
+            x[i] = True
             return
         }
     }
@@ -60,9 +67,9 @@ func AddOne(x : Array<Bool>) : Unit {
  * Invert an array of bools, i.e. flip each bit
  * @param x The array of booleans
  */
-func Invert(x : Array<Bool>) : Unit {
+func Invert(x : Array<Value>) : Unit {
     for (i in 0..(x.size())){
-        x[i] = !x[i]
+        x[i] = x[i].Negate()
     }
 }
 /**
@@ -72,56 +79,49 @@ func Invert(x : Array<Bool>) : Unit {
  * @param w The width of the bitstring
  * @return The corresponding bitstring
  */
-func SignedDecToBin(x : Int64, w : Int64) : Array<Bool> {
-    let bin = UnsignedDecToBin(abs(x), w)
+func SignedDecToBin(x : Int64, w : Int64) : Signal {
+    let bin = UnsignedDecToBin(abs(x), w).values
     Invert(bin)
     AddOne(bin)
-    bin
+    Signal(bin, true)
 }
 /**
- * Create an edge for a given value
+ * Create an edge for a given array of values
  * @param vs The array of values
  * @param signed Whether the number is signed
  * @return The output wire
  */
-func ConstructValue(vs : Array<Value>, signed : Bool) : Wire {
-    if(vs.size() == 1) {
-        UseSignal(vs[0])
+func MakeSignal(spec : Signal) : InterfacedHypergraph {
+    let vs = spec.values
+    let wires = map(
+        { v : Value =>
+            UseEdgeWithNewOutputs(
+                VALUE(v),
+                Array<Vertex>(),
+                None<InterfacedHypergraph>
+            )[0]
+        },
+        vs
+    )
+    MakeSubcircuit(
+        Array<InterfaceWire>(),
+        [InterfaceWire(Combine(wires))],
+        VALUES(spec)
+    )
+}
+func UseSignal(spec : Signal) : Wire {
+    if(spec.GetWidth() == 1) {
+        UseValue(spec.values[0])
     } else {
-        let wires = map(
-            { v : Value =>
-                UseWireWithNewOutputs(
-                    VALUE(v),
-                    Array<Vertex>(),
-                    None<InterfacedHypergraph>
-                )[0]
-            },
-            vs
-        )
         UseSubcircuit_1<Wire>(
-            MakeSubcircuit(
-                Array<InterfaceWire>(),
-                [InterfaceWire(Combine(wires))],
-                VALUES(
-                    ValueSpec(vs, signed)
-                )
-            ),
+            MakeSignal(spec),
             Array<Wire>()
         )
     }
 }
-public func UseValue(v : Value, i : Int64) : Wire {
+public func UseSignal(v : Value, i : Int64) : Wire {
     let array : Array<Value> = Array<Value>(i, {i : Int64 => v})
-    ConstructValue(array, false)
-}
-/**
- * Create an edge for a given value
- * @param vs The array of booleans
- * @param signed Whether the number is signed
- * @return The output wire
- */
-public func UseValueFromBool(vs : Array<Bool>, signed : Bool) : Wire {
-    ConstructValue(map({ b : Bool => if(b){ True } else { False }}, vs), signed)
+    UseSignal(Signal(array, false))
 }
 /**
  * Use an unsigned value for a given number
@@ -129,9 +129,9 @@ public func UseValueFromBool(vs : Array<Bool>, signed : Bool) : Wire {
  * @param width The width of the resulting bitstring
  * @return The wire of the value
  */
-public func UseUnsignedValueFromInt(x : Int64, width!: Int64) : Wire {
+public func UseUnsignedSignalFromInt(x : Int64, width!: Int64) : Wire {
     let bin = UnsignedDecToBin(x, width)
-    UseValueFromBool(bin, false)
+    UseSignal(bin)
 }
 /**
  * Use a signed value for a given number
@@ -139,9 +139,9 @@ public func UseUnsignedValueFromInt(x : Int64, width!: Int64) : Wire {
  * @param width The width of the resulting bitstring
  * @return The wire of the value
  */
-public func UseSignedValueFromInt(x : Int64, width!: Int64) : Wire {
+public func UseSignedSignalFromInt(x : Int64, width!: Int64) : Wire {
     let bin = SignedDecToBin(x, width)
-    UseValueFromBool(bin, true)
+    UseSignal(bin)
 }
 /**
  * Use a value for a given number
@@ -152,9 +152,9 @@ public func UseSignedValueFromInt(x : Int64, width!: Int64) : Wire {
  */
 public func UseValueFromInt(x : Int64, signed: Bool, width!: Int64) : Wire {
     if(signed){
-        UseSignedValueFromInt(x, width: width)
+        UseSignedSignalFromInt(x, width: width)
     } else {
-        UseUnsignedValueFromInt(x, width: width)
+        UseUnsignedSignalFromInt(x, width: width)
     }
 }
 /**
@@ -164,7 +164,7 @@ public func UseValueFromInt(x : Int64, signed: Bool, width!: Int64) : Wire {
  */
 public func Zero(width: Int64) : Wire {
     let values = Array<Value>(width, { i : Int64 => False })
-    ConstructValue(values, false)
+    UseSignal(Signal(values, false))
 }
 /**
  * Create a constant zero waveform for a given width, i.e. all falses

@@ -167,7 +167,7 @@ func MakeEdge(
  * @param graph The optional owner of this edge
  * @return The array of wires corresponding to the new edge's targets
  */
-public func UseWireWithNewOutputs<T>(
+public func UseEdgeWithNewOutputs<T>(
     label : Label,
     sources : Array<T>,
     graph : Option<InterfacedHypergraph>
@@ -197,7 +197,7 @@ public func MergeWires(v : Wire, w : Wire, feedback: Bool) : Unit {
  */
 public func Split<T>(t : T, vs : Array<Int64>) : Array<Wire> where T <: ContainsWire, T <: ToString {
     AssertWireWidth<T>(t, Sum(vs))
-    UseWireWithNewOutputs<T>(
+    UseEdgeWithNewOutputs<T>(
         BUNDLER([t.GetWidth()], vs),
         [t],
         None<InterfacedHypergraph>
@@ -230,7 +230,7 @@ public func Split(w : Wire) : Array<Wire> {
  */
 public func Combine(ws : Array<Wire>) : Wire {
     let widths = map({ w : Wire => w.GetWidth() }, ws)
-    UseWireWithNewOutputs(
+    UseEdgeWithNewOutputs(
         BUNDLER(widths, [Sum(widths)]),
         ws,
         None

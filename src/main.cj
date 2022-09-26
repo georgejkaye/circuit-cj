@@ -15,11 +15,15 @@ main(){
     SetNumberRepresentation(DEC)
     SetDebugDot(true)
 
-    let circ = Accumulator(width: 2, initial: 1)
-    WriteDotToFile(circ, 0, "acc")
-    InstantFeedback(circ)
-    Unfold(circ)
-    WriteDotToFile(circ, 0, "acc-fb")
+    let wf = MakeWaveform([1,2,3,4], width: 4, signed: false, closed: true)
+    WriteDotToFile(wf, 0, "wf-0")
+    WriteDotToFile(wf, 1, "wf-1")
+
+    // let circ = Accumulator(width: 2, initial: 1)
+    // WriteDotToFile(circ, 0, "acc")
+    // InstantFeedback(circ)
+    // Unfold(circ)
+    // WriteDotToFile(circ, 0, "acc-fb")
 
     // let zero = InfiniteWaveform(TrueSignal())
     // let other = UseWire(1)

@@ -20,27 +20,23 @@ import syntax.*
  * @param inputs The array of inputs
  * @return The output wire of the gate
  */
-func Gate(prim : Primitive, inputs: Array<Wire>) : Wire {
-    AssertAllWiresWidth(inputs, 1)
-    AssertNumberOfWires(inputs, prim.GetInputPorts().size())
-    UseWireWithNewOutputs(
-        PRIMITIVE(prim),
+func UseOperation(label : Label, inputs: Array<Wire>) : Wire {
+    AssertNumberOfWires(inputs, label.GetInputPorts().size())
+    UseEdgeWithNewOutputs(
+        label,
         inputs,
         None
     )[0]
 }
 /**
- * Use a value generator
+ * Use a primitive gate
  *
- * @param spec The value spec to use
- * @return The output wire of the value
+ * @param prim The primitive to apply
+ * @param inputs The input wires
  */
-func ValueGenerator(v : Value) : Wire {
-    UseWireWithNewOutputs<Vertex>(
-        VALUE(v),
-        Array<Vertex>(),
-        None<InterfacedHypergraph>
-    )[0]
+func UseGate(prim : Primitive, inputs : Array<Wire>) : Wire {
+    AssertAllWiresWidth(inputs, 1)
+    UseOperation(PRIMITIVE(prim), inputs)
 }
 /**
  * Use a unary primitive gate
@@ -49,8 +45,8 @@ func ValueGenerator(v : Value) : Wire {
  * @param a The input wire
  * @return The output wire of the gate
  */
-func UnaryGate(prim : Primitive, a : Wire) : Wire {
-    Gate(prim, [a])
+func UseUnaryGate(prim : Primitive, a : Wire) : Wire {
+    UseGate(prim, [a])
 }
 /**
  * Use a binary primitive gate
@@ -60,34 +56,20 @@ func UnaryGate(prim : Primitive, a : Wire) : Wire {
  * @param a The second input wire
  * @return The output wire of the gate
  */
-func BinaryGate(prim : Primitive, a : Wire, b : Wire) : Wire {
-    Gate(prim, [a,b])
+func UseBinaryGate(prim : Primitive, a : Wire, b : Wire) : Wire {
+    UseGate(prim, [a,b])
 }
 
 /**
  * Nullary gates
  */
 
-public func UseSignal(v : Value) : Wire {
-    match(v) {
-        case Bottom => UseBottomSignal()
-        case False => UseFalseSignal()
-        case True => UseTrueSignal()
-        case Top => UseTopSignal()
-    }
-}
-public func UseBottomSignal() : Wire {
-    ValueGenerator(Bottom)
-}
-public func UseFalseSignal() : Wire {
-    ValueGenerator(False)
-}
-public func UseTrueSignal() : Wire {
-    let w = ValueGenerator(True)
-    w
-}
-public func UseTopSignal() : Wire {
-    ValueGenerator(Top)
+public func UseValue(v : Value) : Wire {
+    UseEdgeWithNewOutputs<Vertex>(
+        VALUE(v),
+        Array<Vertex>(),
+        None<InterfacedHypergraph>
+    )[0]
 }
 
 /**
@@ -95,10 +77,10 @@ public func UseTopSignal() : Wire {
  */
 
 public func BufGate(a : Wire) : Wire {
-    UnaryGate(BUF, a)
+    UseUnaryGate(BUF, a)
 }
 public func NotGate(a : Wire) : Wire {
-    UnaryGate(NOT, a)
+    UseUnaryGate(NOT, a)
 }
 
 /**
@@ -106,23 +88,25 @@ public func NotGate(a : Wire) : Wire {
  */
 
 public func AndGate(a : Wire, b : Wire) : Wire {
-    let w = BinaryGate(AND, a, b)
-    w
+    UseBinaryGate(AND, a, b)
 }
 public func OrGate(a : Wire, b : Wire) : Wire {
-    BinaryGate(OR, a, b)
+    UseBinaryGate(OR, a, b)
 }
 public func NandGate(a : Wire, b : Wire) : Wire {
-    BinaryGate(NAND, a, b)
+    UseBinaryGate(NAND, a, b)
 }
 public func NorGate(a : Wire, b : Wire) : Wire {
-    BinaryGate(NOR, a, b)
+    UseBinaryGate(NOR, a, b)
 }
 public func XorGate(a : Wire, b : Wire) : Wire {
-    BinaryGate(XOR, a, b)
+    UseBinaryGate(XOR, a, b)
 }
 public func XnorGate(a : Wire, b : Wire) : Wire {
-    BinaryGate(XNOR, a, b)
+    UseBinaryGate(XNOR, a, b)
+}
+public func Join(a : Wire, b : Wire) : Wire {
+    UseOperation(JOIN(a.GetWidth()), [a, b])
 }
 
 extend Primitive {

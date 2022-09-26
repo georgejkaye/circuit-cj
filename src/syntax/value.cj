@@ -27,6 +27,20 @@ extend Value <: ToString {
             case Top => "\u{22A4}"
         }
     }
+    public func IsTrue() : Bool {
+        match(this){
+            case True => true
+            case _ => false
+        }
+    }
+    public func Negate() : Value {
+        match(this) {
+            case Bottom => Bottom
+            case False => True
+            case True => False
+            case Top => Top
+        }
+    }
 }
 
 /**
@@ -102,5 +116,56 @@ public func PrintValue(
                 }
             }
             "${negative}${x}"
+    }
+}
+
+public struct Signal <: ToString & HasName & Specifiable & HasWidth {
+    public Signal(
+        public let values : Array<Value>,
+        public let signed : Bool
+    ){}
+    public func GetName() : String {
+        PrintValue(this.values, this.signed, GetNumberRepresentation())
+    }
+    public func GetValueAsRepresentation(rep : NumberRepresentation) : String {
+        PrintValue(this.values, this.signed, rep)
+    }
+    public func toString() : String {
+        "${values}"
+    }
+    public func GetInputPorts() : Array<Port> {
+        []
+    }
+    public func GetOutputPorts() : Array<Port> {
+        [Port(values.size())]
+    }
+    public func GetWidth() : Int64 {
+        this.values.size()
+    }
+}
+
+public struct Waveform <: ToString & HasName & HasWidth {
+    let width : Int64
+    public Waveform(
+        public let signals : Array<Signal>
+    ){
+        this.width = AssertSignalsSameWidth(signals)
+    }
+    public func toString() : String {
+        foldi_left({ acc : String, cur : Signal, i : Int64 =>
+            let currentString = cur.GetName()
+            let delimiter = if(i != this.signals.size() - 1) {
+                " :: "
+            } else {
+                ""
+            }
+            "${acc}${currentString}${delimiter}"
+        }, "", this.signals)
+    }
+    public func GetName() : String {
+        this.toString()
+    }
+    public func GetWidth() : Int64 {
+        this.width
     }
 }

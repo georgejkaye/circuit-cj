@@ -20,7 +20,7 @@ from std import collection.ArrayList
  */
 public enum Label {
     | VALUE(Value)                        // A basic value 0 -> 1
-    | VALUES(ValueSpec)                   // A collection of values 0 -> n, which could be signed or unsigned
+    | VALUES(Signal)                   // A collection of values 0 -> n, which could be signed or unsigned
     | BUNDLER(Array<Int64>, Array<Int64>) // A bundler changes how wires are bundled
     | JOIN(Int64)                         // Join two wires together
     | PRIMITIVE(Primitive)                // The simplest building blocks of circuits
