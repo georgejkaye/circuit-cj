@@ -15,7 +15,7 @@ main(){
     SetNumberRepresentation(DEC)
     SetDebugDot(true)
 
-    let wf = MakeWaveform([1,2,3,4], width: 4, signed: false, closed: true)
+    let wf = MakeWaveform([1,2], width: 4, signed: false, closed: true)
     WriteDotToFile(wf, 0, "wf-0")
     WriteDotToFile(wf, 1, "wf-1")
 
@@ -24,7 +24,7 @@ main(){
     WriteDotToFile(applied, 0, "acc-0")
     WriteDotToFile(applied, 1, "acc-1")
     RunCycle(applied)
-    WriteDotToFile(applied, 1, "acc-fb")
+    WriteDotToFile(applied, 0, "acc-uf")
 
     // let zero = InfiniteWaveform(TrueSignal())
     // let other = UseWire(1)

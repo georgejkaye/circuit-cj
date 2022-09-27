@@ -67,7 +67,7 @@ let fork = RewriteRule(
     VALUE,
     {
         e : Edge, f : InterfacedHypergraph =>
-        // VALUE or VALUES edges can only have one target
+        // VALUE or SIGNAL edges can only have one target
         // although it may be of arbitrary width
         let v = e.GetTargets()[0].vertex
         v.GetOutEdges().size() + f.GetOutputPositions(v).size() > 1

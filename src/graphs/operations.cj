@@ -20,6 +20,7 @@ package graphs
  * @return A pair (new,old) of the merged vertex and the old vertex
  */
 public func MergeVertices<T, U>(t : T, u : U, feedback: Bool) : (Vertex, Vertex) where T <: ContainsVertex, U <: ContainsVertex {
+    println("Merging ${t.GetVertex()} and ${u.GetVertex()}")
     let inEdge = AssertAtMostOneInEdge(t, u)
     let v = t.GetVertex()
     let w = u.GetVertex()

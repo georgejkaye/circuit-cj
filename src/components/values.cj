@@ -106,7 +106,7 @@ func MakeSignal(spec : Signal) : InterfacedHypergraph {
     MakeSubcircuit(
         Array<InterfaceWire>(),
         [InterfaceWire(Combine(wires))],
-        VALUES(spec)
+        SIGNAL(spec)
     )
 }
 func UseSignal(spec : Signal) : Wire {

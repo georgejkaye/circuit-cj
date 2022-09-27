@@ -220,21 +220,21 @@ func MakePorts<T>(
  */
 func DrawEdgeNode(e : Edge, elementContent : ArrayList<DotLine>, connectionContent : ArrayList<DotLine>) : Unit {
     let style = match(e.GetLabel()){
-        case VALUE(v) =>
+        case VALUE(_) =>
             valueStyle
-        case VALUES(spec) =>
+        case SIGNAL(_) =>
             valuesStyle
-        case BUNDLER(ms,ns) =>
+        case BUNDLER(_,_) =>
             compressorStyle
-        case JOIN(width) =>
+        case JOIN(_) =>
             structuralStyle
-        case PRIMITIVE(spec) =>
+        case PRIMITIVE(_) =>
             primitiveStyle
-        case COMPOSITE(spec) =>
+        case COMPOSITE(_) =>
             compositeStyle
-        case BLACKBOX(spec) =>
+        case BLACKBOX(_) =>
             blackboxStyle
-        case DELAY(dur, width) =>
+        case DELAY(_) =>
             delayStyle
     }
     DrawBoxNode(

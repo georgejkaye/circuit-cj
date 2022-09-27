@@ -124,6 +124,9 @@ public struct Signal <: ToString & HasName & Specifiable & HasWidth {
         public let values : Array<Value>,
         public let signed : Bool
     ){}
+    public init(v: Value, n : Int64) {
+        this(Array<Value>(n, {i : Int64 => v}), false)
+    }
     public func GetName() : String {
         PrintValue(this.values, this.signed, GetNumberRepresentation())
     }

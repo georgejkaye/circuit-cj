@@ -21,7 +21,7 @@ public func UseDelay(input: Wire, duration!: Int64 = 1) : Wire {
     var inputWire = input
     for(i in 0..duration) {
         inputWire = UseEdgeWithNewOutputs<Wire>(
-            DELAY(1, width),
+            DELAY(width),
             [input],
             None<InterfacedHypergraph>
         )[0]

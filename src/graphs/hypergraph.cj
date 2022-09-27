@@ -65,9 +65,9 @@ func AddEdgeToHypergraphData(
     // We keep track of delay and value edges since these represent
     // sequential components
     match(e.GetLabel()){
-        case DELAY(_, _) => sequentialData.delayEdges.put(e)
+        case DELAY(_) => sequentialData.delayEdges.put(e)
         case VALUE(_) => sequentialData.valueEdges.put(e)
-        case VALUES(_) => sequentialData.valueEdges.put(e)
+        case SIGNAL(_) => sequentialData.valueEdges.put(e)
         case _ =>
             match(e.GetSubgraph()){
                 case Some(g) => if(g.IsCombinational()) {

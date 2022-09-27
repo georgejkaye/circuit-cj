@@ -20,25 +20,25 @@ from std import collection.ArrayList
  */
 public enum Label {
     | VALUE(Value)                        // A basic value 0 -> 1
-    | VALUES(Signal)                   // A collection of values 0 -> n, which could be signed or unsigned
+    | SIGNAL(Signal)                      // A collection of values 0 -> n, which could be signed or unsigned
     | BUNDLER(Array<Int64>, Array<Int64>) // A bundler changes how wires are bundled
     | JOIN(Int64)                         // Join two wires together
     | PRIMITIVE(Primitive)                // The simplest building blocks of circuits
     | COMPOSITE(Specification)            // A composite of primitives
     | BLACKBOX(Specification)             // A black box with arbitrary name and codomain
-    | DELAY(Int64, Int64)                 // A delay parameterised by a duration and a width
+    | DELAY(Int64)                        // A delay parameterised by a width
 }
 extend Label <: HasName & Specifiable & ToString {
     public func GetInputPorts() : Array<Port> {
         match(this) {
             case VALUE(_)               => []
-            case VALUES(spec)           => []
+            case SIGNAL(spec)           => []
             case BUNDLER(ms, _)         => map({ i : Int64 => Port(i)}, ms)
             case JOIN(w)                => [Port(w), Port(w)]
             case PRIMITIVE(prim)        => prim.GetInputPorts()
             case COMPOSITE(spec)        => spec.GetInputPorts()
             case BLACKBOX(spec)         => spec.GetInputPorts()
-            case DELAY(d, w)            => [Port(w)]
+            case DELAY(w)               => [Port(w)]
 
         }
     }
@@ -48,13 +48,13 @@ extend Label <: HasName & Specifiable & ToString {
     public func GetOutputPorts() : Array<Port> {
         match(this) {
             case VALUE(_)               => [Port(1)]
-            case VALUES(spec)           => spec.GetOutputPorts()
+            case SIGNAL(spec)           => spec.GetOutputPorts()
             case BUNDLER(ms,ns)         => map({ i : Int64 => Port(i)}, ns)
             case JOIN(w)                => [Port(w)]
             case PRIMITIVE(prim)        => prim.GetOutputPorts()
             case COMPOSITE(spec)        => spec.GetOutputPorts()
             case BLACKBOX(spec)         => spec.GetOutputPorts()
-            case DELAY(d, w)            => [Port(w)]
+            case DELAY(w)               => [Port(w)]
         }
     }
     public func GetNoOutputs() : Int64 {
@@ -63,13 +63,13 @@ extend Label <: HasName & Specifiable & ToString {
     public func GetName() : String {
         match(this) {
             case VALUE(v)               => "${v}"
-            case VALUES(spec)           => spec.GetName()
+            case SIGNAL(spec)           => spec.GetName()
             case BUNDLER(ms, ns)        => if (ms.size() < ns.size()) { "\u{25C1}" } else { "\u{25B7}" }
             case JOIN(w)                => "\u{2207}_${w}"
             case PRIMITIVE(prim)        => prim.GetName()
             case COMPOSITE(spec)        => spec.GetName()
             case BLACKBOX(spec)         => spec.GetName()
-            case DELAY(d, w)            => "delay_${d}_${w}"
+            case DELAY(w)               => "delay_${w}"
         }
     }
     public func toString() : String {
@@ -78,7 +78,7 @@ extend Label <: HasName & Specifiable & ToString {
     public func IsValue() : Bool {
         match(this) {
             case VALUE(_) => true
-            case VALUES(_) => true
+            case SIGNAL(_) => true
             case _ => false
         }
     }
@@ -102,8 +102,17 @@ extend Label <: HasName & Specifiable & ToString {
     }
     public func IsDelay() : Bool {
         match(this) {
-            case DELAY(_,_) => true
+            case DELAY(_) => true
             case _ => false
         }
+    }
+}
+
+public func GetSignalLabel(v : Value, w : Int64){
+    if(w == 1) {
+        VALUE(v)
+    } else {
+        let signal = Signal(v, w)
+        SIGNAL(signal)
     }
 }
