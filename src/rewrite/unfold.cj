@@ -10,6 +10,29 @@
 
 package rewrite
 
+public func RunCycle(f : InterfacedHypergraph){
+    BurstSequentialGraphs(f)
+    WriteDotToFile(f, 0, "test")
+    InstantFeedback(f)
+    Unfold(f)
+}
+
+/**
+ * 'Burst' edges that have sequential subgraphs. This is because all of the delays
+ * in the subgraph must be dealt with separately, and cannot remain in their subgraphs
+ *
+ * @param f The interfaced hypergraph
+ */
+func BurstSequentialGraphs(f : InterfacedHypergraph) : Unit {
+    var sequentialEdges = f.GetSequentialData().sequentialEdges.size()
+    while(sequentialEdges != 0) {
+        let edges = HashSet<Edge>(f.GetSequentialData().sequentialEdges)
+        for(e in edges) {
+            e.BurstSubgraph()
+        }
+        sequentialEdges = f.GetSequentialData().sequentialEdges.size()
+    }
+}
 /**
  * Remove feedback designations from tentacles immediately
  * adjacent to a delay edge
@@ -53,7 +76,7 @@ func CopyVertices(
  *
  * @param f The circuit to replace 'instant feedback' in
  */
-public func InstantFeedback(f : InterfacedHypergraph) : Unit {
+func InstantFeedback(f : InterfacedHypergraph) : Unit {
     // If the tentacles adjacent to a delay edge are marked as feedback,
     // we can eliminate this since a delay is already implicitly on a big
     // feedback loop and an additional loop is redundant
@@ -256,7 +279,7 @@ func ReplaceOutputs(f : InterfacedHypergraph, vertexMap : HashMap<Vertex,Vertex>
  *
  * @param f The interfaced hypergraph to unfold
  */
-public func Unfold(f : InterfacedHypergraph) : Unit {
+func Unfold(f : InterfacedHypergraph) : Unit {
     if(f.HasNonDelayGuardedFeedback()) {
         Debug("Cannot unfold circuits with non-delay-guarded feedback, please unroll it first")
     } else {

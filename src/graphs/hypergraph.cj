@@ -169,19 +169,29 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
     public func RemoveFeedbackConnection(ec : EdgeConnection) : Unit {
         this.sequentialData.feedbackConnections.remove(ec)
     }
-    public func RemoveEdge(e : Edge) : Unit {
+    func RemoveEdge(e : Edge, removeVertices : Bool) {
         this.edges.remove(e)
+        RemoveEdgeFromHypergraphData(this.startingEdges, this.sequentialData, e)
         for(t in e.GetSources()){
             let v = t.GetVertex()
             v.RemoveOutEdge(e)
-            this.RemoveVertex(v)
+            if(removeVertices){
+                this.RemoveVertex(v)
+            }
         }
         for(t in e.GetTargets()){
             let v = t.GetVertex()
             v.RemoveInEdge(e)
-            this.RemoveVertex(v)
+            if(removeVertices){
+                this.RemoveVertex(v)
+            }
         }
-        RemoveEdgeFromHypergraphData(this.startingEdges, this.sequentialData, e)
+    }
+    public func RemoveEdge(e : Edge) : Unit {
+        RemoveEdge(e, true)
+    }
+    public func RemoveEdgeWithoutVertices(e : Edge) : Unit {
+        RemoveEdge(e, false)
     }
     public func IsCombinational() : Bool {
         this.sequentialData.IsCombinational()

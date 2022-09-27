@@ -27,8 +27,6 @@ public class Wire <: Identifiable & ToString & ContainsVertex & HasWidth {
     }
 public func SetVertex(v : Vertex) : Unit {
         let owner = v.GetOwner()
-        owner.RemoveVertex(this.vertex)
-        owner.AddVertex(v)
         this.vertex = v
     }
     public func GetId() : Int64 {

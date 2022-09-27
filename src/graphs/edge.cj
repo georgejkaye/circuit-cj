@@ -244,7 +244,6 @@ public class Edge <: Specifiable & Equatable<Edge> & Identifiable & ToString & H
         match(this.GetSubgraph()){
             case None => ()
             case Some(f) =>
-                this.owner.RemoveEdge(this)
                 func MergeInterfaces(
                     parentVertices : Array<Tentacle>,
                     childVertices : Array<InterfaceVertex>
@@ -253,6 +252,7 @@ public class Edge <: Specifiable & Equatable<Edge> & Identifiable & ToString & H
                         MergeVertices(parentVertices[i].vertex, childVertices[i].GetVertex(), false)
                     }
                 }
+                this.owner.RemoveEdgeWithoutVertices(this)
                 MergeInterfaces(this.GetSources(), f.GetInputVertices())
                 MergeInterfaces(this.GetTargets(), f.GetOutputVertices())
                 this.owner.IncludeHypergraph(f.GetGraph())

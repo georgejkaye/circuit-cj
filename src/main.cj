@@ -21,9 +21,9 @@ main(){
 
     let acc = Accumulator(width: 4, initial: 1)
     let applied = Apply(acc, [wf])
-    WriteDotToFile(applied, 1, "acc")
-    InstantFeedback(applied)
-    Unfold(applied)
+    WriteDotToFile(applied, 0, "acc-0")
+    WriteDotToFile(applied, 1, "acc-1")
+    RunCycle(applied)
     WriteDotToFile(applied, 1, "acc-fb")
 
     // let zero = InfiniteWaveform(TrueSignal())
