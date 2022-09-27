@@ -1,8 +1,7 @@
 /**
- * rewrite/instant.cj
+ * rewrite/global.cj
  *
- * Methods for unfolding circuits, either to eliminate
- * 'instant feedback' or to simulate a cycle of the circuit
+ * Global rewrites of a circuit
  *
  * @author George Kaye
  * @since 0.3
@@ -16,7 +15,9 @@ public func RunCycle(f : InterfacedHypergraph){
     BurstSequentialGraphs(f)
     InstantFeedback(f)
     WriteDotToFile(f, 0, "before-uf")
-    Unfold(f)
+    let startingEdges = ArrayList<EdgeAtDepth>()
+    Unfold(f, startingEdges)
+    RewriteCombinational(f, startingEdges)
 }
 
 /**
@@ -279,7 +280,8 @@ func MakeCopy(
     inputVertices : HashSet<Vertex>,
     vertexMap : HashMap<Vertex, Vertex>,
     edges : HashSet<Edge>,
-    now : Bool
+    now : Bool,
+    valueEdges : Option<ArrayList<EdgeAtDepth>>
 ) : Unit {
     CopyVertices(vertices, inputVertices, vertexMap)
     for(e in edges) {
@@ -313,6 +315,12 @@ func MakeCopy(
                     (sources, targets, label)
                 }
             let subgraph = CopySubgraph(e)
+            if(newLabel.IsValue()){
+                match(valueEdges){
+                    case Some(es) => es.append(EdgeAtDepth(e, 0))
+                    case None => ()
+                }
+            }
             Edge(newLabel, newSources, newTargets, subgraph, f.GetGraph())
             ()
         }
@@ -326,7 +334,7 @@ func MakeCopy(
  *
  * @param f The interfaced hypergraph to unfold
  */
-func Unfold(f : InterfacedHypergraph) : Unit {
+func Unfold(f : InterfacedHypergraph, es : ArrayList<EdgeAtDepth>) : Unit {
     if(f.HasNonDelayGuardedFeedback()) {
         Debug("Cannot unfold circuits with non-delay-guarded feedback, please unroll it first")
     } else {
@@ -336,12 +344,12 @@ func Unfold(f : InterfacedHypergraph) : Unit {
         // Make a copy for what is happening 'now'
         // Replace any delays with bottom values
         let nowVertexMap = HashMap<Vertex, Vertex>()
-        MakeCopy(f, vertices, inputVertices, nowVertexMap, edges, true)
+        MakeCopy(f, vertices, inputVertices, nowVertexMap, edges, true, es)
         // Make a copy for what is happening 'later'
         // Replace any values with bottom values and remove any delays
         // The output of the later copy will be delayed instead
         let laterVertexMap = HashMap<Vertex, Vertex>()
-        MakeCopy(f, vertices, inputVertices, laterVertexMap, edges, false)
+        MakeCopy(f, vertices, inputVertices, laterVertexMap, edges, false, None<ArrayList<EdgeAtDepth>>)
         // Update the outputs by joining the outputs of the two copies
         let outputs = Array<InterfaceVertex>(f.GetOutputVertices())
         for(i in 0..outputs.size()){

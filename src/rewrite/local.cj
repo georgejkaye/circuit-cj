@@ -1,7 +1,7 @@
 /**
- * rewrite/rewriter.cj
+ * rewrite/local.cj
  *
- * Contains the definition of the rewriter
+ * Local rewrites of hypergraphs
  *
  * @author George Kaye
  * @since 0.3
@@ -16,7 +16,7 @@ import debug.Debug
 from std import collection.HashMap
 from std import collection.HashSet
 
-public func RewriteCombinational(f : InterfacedHypergraph) : Unit {
+public func RewriteCombinational(f : InterfacedHypergraph, starting : ArrayList<EdgeAtDepth>) : Unit {
     let actionAtEdge = {
         ed : EdgeAtDepth, data : TraversalData =>
             let nexts = ArrayList<EdgeAtDepth>()
@@ -27,11 +27,10 @@ public func RewriteCombinational(f : InterfacedHypergraph) : Unit {
                         nexts.append(EdgeAtDepth(e, ed.depth))
                     }
                     return nexts
-                } else {
                 }
             }
             GetUniqueNextEdges(ed, nexts)
             nexts
     }
-    Traverse(f, 0, actionAtEdge)
+    Traverse(starting, 0, actionAtEdge)
 }

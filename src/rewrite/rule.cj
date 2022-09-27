@@ -30,7 +30,7 @@ struct RewriteRule {
         let label = e.GetLabel()
         let validLabel = match(this.entryPoint) {
             case VALUE => label.IsValue()
-            case PRIMITIVE => label.IsPrimitive()
+            case EDGE(l) => label == l
         }
         validLabel && this.canRewrite(e, f)
     }

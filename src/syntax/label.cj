@@ -28,7 +28,7 @@ public enum Label {
     | BLACKBOX(Specification)             // A black box with arbitrary name and codomain
     | DELAY(Int64)                        // A delay parameterised by a width
 }
-extend Label <: HasName & Specifiable & ToString {
+extend Label <: HasName & Specifiable & ToString & Equatable<Label> {
     public func GetInputPorts() : Array<Port> {
         match(this) {
             case VALUE(_)               => []
@@ -74,6 +74,45 @@ extend Label <: HasName & Specifiable & ToString {
     }
     public func toString() : String {
         this.GetName()
+    }
+    public operator func==(rhs : Label) : Bool {
+        match(this) {
+            case VALUE(v) => match(rhs) {
+                case VALUE(w) => v == w
+                case _ => false
+            }
+            case SIGNAL(s) => match(rhs) {
+                case SIGNAL(t) => s == t
+                case _ => false
+            }
+            case BUNDLER(ms, ns) => match(rhs) {
+                case BUNDLER(ms2, ns2) => ms == ms2 && ns == ns2
+                case _ => false
+            }
+            case JOIN(w) => match(rhs) {
+                case JOIN(w2) => w == w2
+                case _ => false
+            }
+            case PRIMITIVE(p1) => match(rhs) {
+                case PRIMITIVE(p2) => p1 == p2
+                case _ => false
+            }
+            case COMPOSITE(s1) => match(rhs) {
+                case COMPOSITE(s2) => s1 == s2
+                case _ => false
+            }
+            case BLACKBOX(s1) => match(rhs) {
+                case BLACKBOX(s2) => s1 == s2
+                case _ => false
+            }
+            case DELAY(w1) => match(rhs) {
+                case DELAY(w2) => w1 == w2
+                case _ => false
+            }
+        }
+    }
+    public operator func !=(rhs : Label) : Bool {
+        !(this == rhs)
     }
     public func IsValue() : Bool {
         match(this) {

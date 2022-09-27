@@ -113,15 +113,16 @@ extend Primitive {
     func UseGate() : (Array<Wire>) -> Wire {
         {
             ws : Array<Wire> =>
-                match(this) {
-                    case BUF  => BufGate(ws[0])
-                    case NOT  => NotGate(ws[0])
-                    case AND  => AndGate(ws[0], ws[1])
-                    case OR   => OrGate(ws[0], ws[1])
-                    case NAND => NandGate(ws[0], ws[1])
-                    case NOR  => NorGate(ws[0], ws[1])
-                    case XOR  => XorGate(ws[0], ws[1])
-                    case XNOR => XnorGate(ws[0], ws[1])
+                match(this.GetName()) {
+                    case "BUF"  => BufGate(ws[0])
+                    case "NOT"  => NotGate(ws[0])
+                    case "AND"  => AndGate(ws[0], ws[1])
+                    case "OR"   => OrGate(ws[0], ws[1])
+                    case "NAND" => NandGate(ws[0], ws[1])
+                    case "NOR"  => NorGate(ws[0], ws[1])
+                    case "XOR"  => XorGate(ws[0], ws[1])
+                    case "XNOR" => XnorGate(ws[0], ws[1])
+                    case s => throw NotImplemented("The primitive ${s} has not been implemented")
                 }
         }
     }

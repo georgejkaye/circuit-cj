@@ -18,7 +18,7 @@ import assertions.*
  * True and False are standard.
  */
 public enum Value { Bottom | False | True | Top }
-extend Value <: ToString {
+extend Value <: ToString & Equatable<Value> {
     public func toString() : String {
         match(this) {
             case Bottom => "\u{22A5}"
@@ -40,6 +40,29 @@ extend Value <: ToString {
             case True => False
             case Top => Top
         }
+    }
+    public operator func ==(rhs : Value) : Bool {
+        match(this) {
+            case Bottom => match(rhs) {
+                case Bottom => true
+                case _ => false
+            }
+            case False => match(rhs) {
+                case False => true
+                case _ => false
+            }
+            case True => match(rhs) {
+                case True => true
+                case _ => false
+            }
+            case Top => match(rhs) {
+                case Top => true
+                case _ => false
+            }
+        }
+    }
+    public operator func !=(rhs : Value) : Bool {
+        !(this == rhs)
     }
 }
 
@@ -119,7 +142,7 @@ public func PrintValue(
     }
 }
 
-public struct Signal <: ToString & HasName & Specifiable & HasWidth {
+public struct Signal <: ToString & HasName & Specifiable & HasWidth & Equatable<Signal> {
     public Signal(
         public let values : Array<Value>,
         public let signed : Bool
@@ -144,6 +167,12 @@ public struct Signal <: ToString & HasName & Specifiable & HasWidth {
     }
     public func GetWidth() : Int64 {
         this.values.size()
+    }
+    public operator func ==(rhs : Signal) : Bool {
+        this.values == rhs.values
+    }
+    public operator func !=(rhs : Signal) : Bool {
+        !(this == rhs)
     }
 }
 

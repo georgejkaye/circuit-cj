@@ -105,15 +105,16 @@ extend Primitive {
     func GetOperation() : (Array<Value>) -> Value {
         {
             vs : Array<Value> =>
-                match(this) {
-                    case BUF  => vs[0]
-                    case NOT  => not(vs[0])
-                    case AND  => and(vs[0], vs[1])
-                    case OR   => or(vs[0], vs[1])
-                    case NAND => not(and(vs[0], vs[1]))
-                    case NOR  => not(or(vs[0], vs[1]))
-                    case XOR  => xor(vs[0], vs[1])
-                    case XNOR => not(xor(vs[0], vs[1]))
+                match(this.GetName()) {
+                    case "BUF"  => vs[0]
+                    case "NOT"  => not(vs[0])
+                    case "AND"  => and(vs[0], vs[1])
+                    case "OR"   => or(vs[0], vs[1])
+                    case "NAND" => not(and(vs[0], vs[1]))
+                    case "NOR"  => not(or(vs[0], vs[1]))
+                    case "XOR"  => xor(vs[0], vs[1])
+                    case "XNOR" => not(xor(vs[0], vs[1]))
+                    case s => throw NotImplemented("Operation ${s} not implemented")
                 }
         }
     }
