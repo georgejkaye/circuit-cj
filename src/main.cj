@@ -1,21 +1,18 @@
 import graphs.WriteDotToFile
 import rewrite.RewriteCombinational
-
 import settings.*
 import components.*
 import debug.SetDebugMessages
 import rewrite.*
-
 import examples.*
 
-main(){
-
+main() {
     SetDebugMessages(true)
     SetDotDir("dot")
     SetNumberRepresentation(DEC)
     SetDebugDot(true)
 
-    let wf = MakeWaveform([1,2], width: 4, signed: false, closed: true)
+    let wf = MakeWaveform([1, 2], width: 4, signed: false, closed: true)
     WriteDotToFile(wf, 0, "wf-0")
     WriteDotToFile(wf, 1, "wf-1")
 
@@ -52,6 +49,5 @@ main(){
     // WriteDotToFile(circ, 0, "test-fb")
     // Unfold(circ)
     // WriteDotToFile(circ, 0, "test-uf")
-
     return 0
 }

@@ -149,13 +149,13 @@ public func MakeWaveform(wf : Waveform, closed!: Bool = true) : InterfacedHyperg
     let width = wf.GetWidth()
     let vs = wf.signals
     var (currentWire, inputs, startingIndex) = if(closed) {
-        (UseSignal(vs[vs.size() - 1]), Array<InterfaceWire>(), 1)
+        (UseSignal(vs[vs.size - 1]), Array<InterfaceWire>(), 1)
     } else {
         let wire = UseWire(width)
         (wire, [InterfaceWire(wire)], 0)
     }
-    for(i in startingIndex..vs.size()) {
-        let value = UseSignal(vs[vs.size() - 1 - i])
+    for(i in startingIndex..vs.size) {
+        let value = UseSignal(vs[vs.size - 1 - i])
         let delay = UseDelay(currentWire)
         currentWire = Join(value, delay)
     }

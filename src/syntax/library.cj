@@ -47,13 +47,13 @@ public class Specification <: Specifiable & HasName & Equatable<Specification> {
         this.inputPorts
     }
     public func GetNoInputs() : Int64 {
-        this.GetInputPorts().size()
+        this.GetInputPorts().size
     }
     public func GetOutputPorts() : Array<Port> {
         this.outputPorts
     }
     public func GetNoOutputs() : Int64 {
-        this.GetOutputPorts().size()
+        this.GetOutputPorts().size
     }
     public func toString() : String {
         this.GetName()
@@ -65,87 +65,3 @@ public class Specification <: Specifiable & HasName & Equatable<Specification> {
         !(this == rhs)
     }
 }
-/**
- * Primitives are the basic building blocks of circuits, i.e.
- * the logic gates that take one bit inputs and return one output
- * of one bit
- */
-public struct Primitive <: ToString & Specifiable & HasName & Equatable<Primitive> {
-    let spec : Specification
-    public init(
-        name : String,
-        inputs : Array<String>,
-        output : String
-    ){
-        this.spec = Specification(
-            name,
-            map({ s : String => Port(1, s) }, inputs),
-            [Port(1, output)]
-        )
-    }
-    public func GetName() : String {
-        this.spec.GetName()
-    }
-    public func GetInputPorts() : Array<Port> {
-        this.spec.GetInputPorts()
-    }
-    public func GetNoInputs() : Int64 {
-        this.spec.GetNoInputs()
-    }
-    public func GetOutputPorts() : Array<Port> {
-        this.spec.GetOutputPorts()
-    }
-    public func GetNoOutputs() : Int64 {
-        this.spec.GetNoOutputs()
-    }
-    public func toString() : String {
-        this.spec.toString()
-    }
-    /**
-    * Get a name for an 'enhanced' version of this primitive, i.e. one
-    * with thicker input wires (where the primitive will be applied bitwise)
-    * and multiple input wires (where the primitive will be folded across them)
-    *
-    * @param n The number of inputs to the composite gate
-    * @param w The width of each input to the composite gate
-    * @return The name of the composite gate
-    */
-    public func GetEnhancedName(n : Int64, w : Int64) : String {
-        "${this.GetName()}${n}_${w}"
-    }
-    public operator func ==(rhs : Primitive) : Bool {
-        this.spec == rhs.spec
-    }
-    public operator func !=(rhs : Primitive) : Bool {
-        !(this == rhs)
-    }
-}
-
-public func GetMuxName(n : Int64, c : Int64, w : Int64) : String {
-    "MUX${n}_${c}_${w}"
-}
-
-public func MuxSpec(n : Int64, c : Int64, w: Int64) : Specification {
-    Specification(
-        "MUX${n}_1_${w}",
-        Array<Port>(c + n, {
-            i : Int64 =>
-                let (width, name) = if (i < c) {
-                    (1, "SEL${i}")
-                } else {
-                    (w, numToUppercaseLetter(i - c))
-                }
-                Port(width, name: name)
-        }),
-        [Port(w, "Z")]
-    )
-}
-
-public let BUF  = Primitive("BUF" , ["A"], "Z")
-public let NOT  = Primitive("BUF" , ["A"], "Z")
-public let AND  = Primitive("AND" , ["A", "B"], "Z")
-public let OR   = Primitive("OR"  , ["A", "B"], "Z")
-public let NAND = Primitive("NAND", ["A", "B"], "Z")
-public let NOR  = Primitive("NOR" , ["A", "B"], "Z")
-public let XOR  = Primitive("XOR" , ["A", "B"], "Z")
-public let XNOR = Primitive("XNOR", ["A", "B"], "Z")

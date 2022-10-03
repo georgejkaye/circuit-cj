@@ -48,7 +48,7 @@ public func Bitwise<T, U>(
     f : (Array<Wire>, Array<U>, Array<Wire>) -> (Array<Wire>, Array<Wire>),
     direction!: Direction = TOP_TO_BOTTOM
 ) : (Array<Wire>, Array<Wire>) where T <: ToString, T <: ContainsWire, U <: ToString, T <: ContainsWire {
-    let size = ws.size()
+    let size = ws.size
     let width = AssertWiresSameWidth<T>(ws)
     // An array of arrays containing the wires of ws split explicitly into their
     // constituent bits: splitWires[i][j] is the jth bit of ws[i]
@@ -79,8 +79,8 @@ public func Bitwise<T, U>(
     }
     // Compress the individual bits back into thicker wires
     let outputWires = Array<Wire>(
-        outputs[0].size(),
-        { i : Int64 => Combine(Array<Wire>(outputs.size(), { j : Int64 => outputs[j][i] })) }
+        outputs[0].size,
+        { i : Int64 => Combine(Array<Wire>(outputs.size, { j : Int64 => outputs[j][i] })) }
     )
     (outputWires, aux)
 }
@@ -205,13 +205,13 @@ public func Ripple<T>(
     let outputs = ArrayList<Wire>()
     let first = match(direction) {
         case TOP_TO_BOTTOM => 0
-        case BOTTOM_TO_TOP => ws.size() - 1
+        case BOTTOM_TO_TOP => ws.size - 1
     }
     var prev = ws[first].GetWire()
-    for (i in 1..ws.size()) {
+    for (i in 1..ws.size) {
         let j = match(direction) {
             case TOP_TO_BOTTOM => i
-            case BOTTOM_TO_TOP => ws.size() - i - 1
+            case BOTTOM_TO_TOP => ws.size - i - 1
         }
         // The second input to the gate is the next wire
         let cur = ws[j].GetWire()
@@ -250,13 +250,13 @@ public func Ripple<T>(
     // The first gate is performed on inputs 0 and 1
     let first = match(direction) {
         case TOP_TO_BOTTOM => 0
-        case BOTTOM_TO_TOP => ws.size() - 1
+        case BOTTOM_TO_TOP => ws.size - 1
     }
     var prev = ws[first].GetWire()
-    for (i in 1..ws.size()) {
+    for (i in 1..ws.size) {
         let j = match(direction) {
             case TOP_TO_BOTTOM => i
-            case BOTTOM_TO_TOP => ws.size() - 1 - i
+            case BOTTOM_TO_TOP => ws.size - 1 - i
         }
         let cur = ws[j].GetWire()
         // Apply the gate to the previous output and the current input

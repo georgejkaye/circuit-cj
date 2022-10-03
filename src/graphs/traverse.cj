@@ -182,7 +182,7 @@ func VisitEdge(ed : EdgeAtDepth, data : TraversalData) : Unit {
 func PerformTraversal(
     data : TraversalData
 ) : Unit {
-    while(data.frontier.size() != 0){
+    while(data.frontier.size != 0){
         let currentEdge = data.frontier.remove(0)
         VisitEdge(currentEdge, data)
     }

@@ -45,7 +45,7 @@ func ReplaceTargets(
     f : InterfacedHypergraph
 ) : Unit {
     AssertArraysSameLength(oldTargets, newTargets)
-    for (i in 0..oldTargets.size()){
+    for (i in 0..oldTargets.size){
         let oldTarget = oldTargets[i]
         let newTarget = newTargets[i]
         // Replace sources of edges
@@ -53,7 +53,7 @@ func ReplaceTargets(
             ec.edge.SetSource(ec.index, newTarget, oldTarget.feedback)
         }
         let outputs = f.GetOutputVertices()
-        for(j in 0..outputs.size()) {
+        for(j in 0..outputs.size) {
             let iv = outputs[j]
             if(iv.vertex == oldTarget.vertex) {
                 f.GetOutputVertices()[j] = InterfaceVertex(newTarget, iv.name)
@@ -70,7 +70,7 @@ let fork = RewriteRule(
         // VALUE or SIGNAL edges can only have one target
         // although it may be of arbitrary width
         let v = e.GetTargets()[0].vertex
-        v.GetOutEdges().size() + f.GetOutputPositions(v).size() > 1
+        v.GetOutEdges().size + f.GetOutputPositions(v).size > 1
     },
     {
         e : Edge, f : InterfacedHypergraph =>
@@ -114,7 +114,7 @@ let apply = RewriteRule(
             // Check that none of the values are forked
             // If they are, we need to fork them first!
             for (v in sources) {
-                if(v.vertex.GetOutEdges().size() != 1){
+                if(v.vertex.GetOutEdges().size != 1){
                     return false
                 }
             }
@@ -140,7 +140,7 @@ let apply = RewriteRule(
             // We also know all the inputs are values
             let es = map({ t : Tentacle => t.vertex.GetInEdge() }, e.GetSources())
             let values = Array<Value>(
-                es.size(),
+                es.size,
                 { i : Int64 => es[i].getOrThrow().edge.GetLabel().GetValue()}
             )
             for(ei in es) {

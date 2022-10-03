@@ -43,7 +43,7 @@ extend Label <: HasName & Specifiable & ToString & Equatable<Label> {
         }
     }
     public func GetNoInputs() : Int64 {
-        this.GetInputPorts().size()
+        this.GetInputPorts().size
     }
     public func GetOutputPorts() : Array<Port> {
         match(this) {
@@ -58,13 +58,13 @@ extend Label <: HasName & Specifiable & ToString & Equatable<Label> {
         }
     }
     public func GetNoOutputs() : Int64 {
-        this.GetOutputPorts().size()
+        this.GetOutputPorts().size
     }
     public func GetName() : String {
         match(this) {
             case VALUE(v)               => "${v}"
             case SIGNAL(spec)           => spec.GetName()
-            case BUNDLER(ms, ns)        => if (ms.size() < ns.size()) { "\u{25C1}" } else { "\u{25B7}" }
+            case BUNDLER(ms, ns)        => if (ms.size < ns.size) { "\u{25C1}" } else { "\u{25B7}" }
             case JOIN(w)                => "\u{2207}_${w}"
             case PRIMITIVE(prim)        => prim.GetName()
             case COMPOSITE(spec)        => spec.GetName()

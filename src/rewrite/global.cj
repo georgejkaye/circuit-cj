@@ -27,13 +27,13 @@ public func RunCycle(f : InterfacedHypergraph){
  * @param f The interfaced hypergraph
  */
 func BurstSequentialGraphs(f : InterfacedHypergraph) : Unit {
-    var sequentialEdges = f.GetSequentialData().sequentialEdges.size()
+    var sequentialEdges = f.GetSequentialData().sequentialEdges.size
     while(sequentialEdges != 0) {
         let edges = HashSet<Edge>(f.GetSequentialData().sequentialEdges)
         for(e in edges) {
             e.BurstSubgraph()
         }
-        sequentialEdges = f.GetSequentialData().sequentialEdges.size()
+        sequentialEdges = f.GetSequentialData().sequentialEdges.size
     }
 }
 /**
@@ -352,7 +352,7 @@ func Unfold(f : InterfacedHypergraph, es : ArrayList<EdgeAtDepth>) : Unit {
         MakeCopy(f, vertices, inputVertices, laterVertexMap, edges, false, None<ArrayList<EdgeAtDepth>>)
         // Update the outputs by joining the outputs of the two copies
         let outputs = Array<InterfaceVertex>(f.GetOutputVertices())
-        for(i in 0..outputs.size()){
+        for(i in 0..outputs.size){
             let v = outputs[i].GetVertex()
             let width = v.GetWidth()
             // Get the corresponding output from the now circuit

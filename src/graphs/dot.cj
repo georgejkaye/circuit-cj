@@ -13,7 +13,7 @@ import debug.*
 import settings.*
 import prelude.*
 
-from std import io.*
+from std import fs.*
 
 let tableStyle = [
     ("border", "0"),
@@ -190,7 +190,7 @@ func MakePorts<T>(
 ) : Unit where T <: Socket {
     MakeElem("td", [], elementContent, false, {elementContent, inline =>
         MakeElem("table", [], elementContent, false, {elementContent, inline =>
-            for (i in 0..ports.size()) {
+            for (i in 0..ports.size) {
                 MakeElem("tr", [], elementContent, true, {elementContent, inline =>
                         let portStyle =  [
                             ("height", "${portHeight}"),
@@ -284,7 +284,7 @@ func DrawBoxNode<T1, U1, T2, U2>(
         // There is one row in the node
         MakeElem("tr", [], elementContent, false, {elementContent, inline =>
             // Draw left ports, if there are any
-            if(leftVertices.size() > 0) {
+            if(leftVertices.size > 0) {
                 MakePorts(leftPorts, "w", elementContent)
                 DrawConnections(id, leftVertices, true, SOURCE, connectionContent)
             }
@@ -301,7 +301,7 @@ func DrawBoxNode<T1, U1, T2, U2>(
                 })
             }
             // Draw right ports, if there are any
-            if(rightVertices.size() > 0) {
+            if(rightVertices.size > 0) {
                 MakePorts(rightPorts, "e", elementContent)
                 DrawConnections(id, rightVertices, false, TARGET, connectionContent)
             }
@@ -326,7 +326,7 @@ func DrawSubgraphInterfaceConnections(
     vertexType : VertexType,
     connectionContent : ArrayList<DotLine>
 ) : Unit {
-    for(i in 0..parentVertices.size()) {
+    for(i in 0..parentVertices.size) {
         let v = parentVertices[i]
         let (interfaceText, portPrefix, vertexFirst) = match(vertexType) {
             case SOURCE => ("inputs", "e", true)
@@ -454,7 +454,7 @@ func DrawConnections<T>(
         case SOURCE => "w"
         case TARGET => "e"
     }
-    for(i in 0..vertices.size()) {
+    for(i in 0..vertices.size) {
         let v = vertices[i]
         let eText = "${boxId}:${portPrefix}${i}"
         DrawConnection(v.GetVertex(), eText, isLeft, connectionContent, v.IsFeedback())
@@ -690,13 +690,7 @@ public func WriteDotToFile(f : InterfacedHypergraph, depth : Int64, file : Strin
     let filename = GetDotFile(file)
     Info("Writing dot file ${filename}")
     let dot = DotGraph(f, depth)
-    let fs = FileStream(filename, OpenMode.ForceCreate)
-    if(fs.openFile()){
-        fs.write(dot)
-        fs.flush()
-        fs.close()
-    } else {
-        fs.close()
-        throw IOException("Could not open ${filename}")
-    }
+    let fs = File(filename, Open(false, true))
+    fs.write(dot.toUtf8Array())
+    fs.close()
 }

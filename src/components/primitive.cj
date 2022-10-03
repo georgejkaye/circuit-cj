@@ -21,7 +21,7 @@ import syntax.*
  * @return The output wire of the gate
  */
 func UseOperation(label : Label, inputs: Array<Wire>) : Wire {
-    AssertNumberOfWires(inputs, label.GetInputPorts().size())
+    AssertNumberOfWires(inputs, label.GetInputPorts().size)
     UseEdgeWithNewOutputs(
         label,
         inputs,

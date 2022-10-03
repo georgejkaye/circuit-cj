@@ -16,18 +16,27 @@ public func fold_left<T,U>(f : (U, T) -> U, initial : U,  xs : Iterable<T>) : U 
     }
     acc
 }
+public func fold_left2<T, U, V>(f : (V, T, U) -> V, initial : V, xs : Array<T>, ys : Array<U>) : V {
+    var acc = initial
+    for(i in 0..xs.size) {
+        let x = xs[i]
+        let y = ys[i]
+        acc = f(acc, x, y)
+    }
+    acc
+}
 public func fold_right<T,U>(f : (U, T) -> U, initial : U,  xs : Array<T>) : U {
     var acc = initial
-    for (i in 0..xs.size()) {
-        acc = f(acc, xs[xs.size() - 1 - i])
+    for (i in 0..xs.size) {
+        acc = f(acc, xs[xs.size - 1 - i])
     }
     acc
 }
 public func foldi_left<T,U>(f : (U, T, Int64) -> U, initial : U, xs : Array<T>, reverse!: Bool = false) : U {
     var acc = initial
-    for(i in 0..xs.size()){
+    for(i in 0..xs.size){
         let j = if(reverse) {
-            xs.size() - 1 - i
+            xs.size - 1 - i
         } else {
             i
         }
@@ -46,30 +55,30 @@ public func foldi_left<T,U>(f : (U, T, Int64) -> U, initial : U, xs : Iterable<T
     acc
 }
 public func map<T, U>(f : (T) -> U, xs : Array<T>) : Array<U> {
-    Array<U>(xs.size(), { i : Int64 => f(xs[i]) })
+    Array<U>(xs.size, { i : Int64 => f(xs[i]) })
 }
 public func map2<T, U, V>(f : (T, U) -> V, xs : Array<T>, ys : Array<U>) : Array<V> {
-    Array<V>(xs.size(), { i : Int64 => f(xs[i], ys[i]) })
+    Array<V>(xs.size, { i : Int64 => f(xs[i], ys[i]) })
 }
 public func map<T, U>(f : (T) -> U, xs : ArrayList<T>) : ArrayList<U> {
-    let acc = ArrayList<U>(xs.size())
+    let acc = ArrayList<U>(xs.size)
     for (x in xs){
         acc.append(f(x))
     }
     acc
 }
 public func map_list<T, U>(f : (T) -> U, xs : Array<T>) : ArrayList<U> {
-    let acc = ArrayList<U>(xs.size())
+    let acc = ArrayList<U>(xs.size)
     for (x in xs){
         acc.append(f(x))
     }
     acc
 }
 public func mapi<T, U>(f : (T, Int64) -> U, xs : Array<T>) : Array<U> {
-    Array<U>(xs.size(), { i : Int64 => f(xs[i], i) })
+    Array<U>(xs.size, { i : Int64 => f(xs[i], i) })
 }
 public func map_acc<T, U, V>(f : (T, V) -> (U, V), xs : Array<T>, initial : V) : (ArrayList<U>, V) {
-    let acc = ArrayList<U>(xs.size())
+    let acc = ArrayList<U>(xs.size)
     var helper = initial
     for (x in xs) {
         let (t, v) = f(x, helper)
@@ -79,9 +88,9 @@ public func map_acc<T, U, V>(f : (T, V) -> (U, V), xs : Array<T>, initial : V) :
     (acc, helper)
 }
 public func map_acc_2<T,U,V,W>(f : (T, U, V) -> (W, V), xs : Array<T>, ys : Array<U>, initial : V) : (Array<W>, V) {
-    let acc = ArrayList<W>(xs.size())
+    let acc = ArrayList<W>(xs.size)
     var helper = initial
-    for (i in 0..xs.size()) {
+    for (i in 0..xs.size) {
         let (w, v) = f(xs[i], ys[i], helper)
         acc.append(w)
         helper = v
@@ -109,12 +118,12 @@ public func Sum(ns : Array<Int64>) : Int64 {
 }
 
 public func concat<T>(xs : Array<T>, ys : Array<T>){
-    Array<T>(xs.size() + ys.size(), {
+    Array<T>(xs.size + ys.size, {
         i : Int64 =>
-            if (i < xs.size()) {
+            if (i < xs.size) {
                 xs[i]
             } else {
-                ys[i - xs.size()]
+                ys[i - xs.size]
             }
     })
 }
@@ -135,7 +144,7 @@ public func printArray<T>(
 ) : String {
     let str = foldi_left(
         {acc : String, cur : T, i : Int64 =>
-            let delimiter = if(i != arr.size() - 1) {
+            let delimiter = if(i != arr.size - 1) {
                 delim
             } else {
                 ""
@@ -153,13 +162,13 @@ public func concatArray<T,U,V>(
     fu : (U) -> V
 ) : Array<V> {
     Array<V>(
-        arr1.size() + arr2.size(),
+        arr1.size + arr2.size,
     ){
             i : Int64 =>
-                if(i < arr1.size()) {
+                if(i < arr1.size) {
                     ft(arr1[i])
                 } else {
-                    fu(arr2[i - arr1.size()])
+                    fu(arr2[i - arr1.size])
                 }
     }
 }

@@ -54,7 +54,7 @@ func UnsignedDecToBin(x : Int64, w : Int64) : Signal {
  * @param x The array of booleans
  */
 func AddOne(x : Array<Value>) : Unit {
-    for (i in 0..(x.size() - 1)) {
+    for (i in 0..(x.size - 1)) {
         if (x[i].IsTrue()) {
             x[i] = False
         } else {
@@ -68,7 +68,7 @@ func AddOne(x : Array<Value>) : Unit {
  * @param x The array of booleans
  */
 func Invert(x : Array<Value>) : Unit {
-    for (i in 0..(x.size())){
+    for (i in 0..(x.size)){
         x[i] = x[i].Negate()
     }
 }

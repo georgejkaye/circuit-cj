@@ -286,7 +286,7 @@ public func Mux2_1_W(width : Int64) : InterfacedHypergraph {
     MakeSubcircuit(
         [sel, a, b],
         [InterfaceWire(output, "Z")],
-        GetMuxName(2, 1, width)
+        "MUX2_1_${width}"
     )
 }
 /**

@@ -103,13 +103,13 @@ public func PrintValue(
             if (signed) {
                 // In a signed number, the first bit indicates if
                 // the number is negative
-                match(vs[vs.size() - 1]) {
+                match(vs[vs.size - 1]) {
                     case Bottom => return BitString(vs)
                     case True => negative = "-"
                     case False => ()
                     case Top => return BitString(vs)
                 }
-                for (i in 0..vs.size()) {
+                for (i in 0..vs.size) {
                     var carry = true
                     match(vs[i]) {
                         case Bottom => return BitString(vs)
@@ -126,7 +126,7 @@ public func PrintValue(
                     }
                 }
             } else {
-                for (i in 0..vs.size()) {
+                for (i in 0..vs.size) {
                     match(vs[i]) {
                         // Only a 1 contributes to the total sum
                         case True   => x += 2**UInt64(i)
@@ -163,10 +163,10 @@ public struct Signal <: ToString & HasName & Specifiable & HasWidth & Equatable<
         []
     }
     public func GetOutputPorts() : Array<Port> {
-        [Port(values.size())]
+        [Port(values.size)]
     }
     public func GetWidth() : Int64 {
-        this.values.size()
+        this.values.size
     }
     public operator func ==(rhs : Signal) : Bool {
         this.values == rhs.values

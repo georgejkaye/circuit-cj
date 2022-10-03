@@ -102,7 +102,7 @@ class NonEmptyException <: Exception {
 class IncompatibleArrayLengthException<T> <: Exception where T <: ToString {
     public init(xs : Array<T>, n : Int64, exact : Bool) {
         let exactText = if (exact) { "" } else { " at least"}
-        ErrorMsg("Expected an array of ${exactText}length ${n} but ${xs} is of length ${xs.size()}")
+        ErrorMsg("Expected an array of ${exactText}length ${n} but ${xs} is of length ${xs.size}")
     }
 }
 

@@ -45,10 +45,10 @@ public struct SequentialData {
     public let feedbackConnections : HashSet<EdgeConnection> = HashSet<EdgeConnection>()
     public let combinationalEdges : HashSet<Edge> = HashSet<Edge>()
     public func IsCombinational() : Bool {
-        delayEdges.size() == 0 &&
-            valueEdges.size() == 0 &&
-            feedbackConnections.size() == 0 &&
-            sequentialEdges.size() == 0
+        delayEdges.size == 0 &&
+            valueEdges.size == 0 &&
+            feedbackConnections.size == 0 &&
+            sequentialEdges.size == 0
     }
 }
 
@@ -198,7 +198,7 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
     }
     public func IsWellFormed() : Bool {
         let issues = this.WellFormednessCheck()
-        issues.size() == 0
+        issues.size == 0
     }
     public func WellFormednessCheck() : ArrayList<WellformednessIssue> {
 
@@ -209,7 +209,7 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
             array : Array<Tentacle>,
             notPresent : (Edge, Int64, Vertex) -> WellformednessIssue
         ){
-            for (i in 0..array.size()) {
+            for (i in 0..array.size) {
                 let v = array[i].GetVertex()
                 if (!this.vertices.contains(v)) {
                     issues.append(notPresent(e, i, v))

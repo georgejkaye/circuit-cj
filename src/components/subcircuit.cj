@@ -29,17 +29,17 @@ public func MakeSubcircuit(
     outputs : Array<InterfaceWire>,
     label : Label
 ) : InterfacedHypergraph {
-    let (first, inputsStart, outputsStart) = if(inputs.size() > 0) {
+    let (first, inputsStart, outputsStart) = if(inputs.size > 0) {
         (inputs[0], 1, 0)
     } else {
         (outputs[0], 0, 1)
     }
     let owner = first.GetVertex().GetOwner()
-    for(i in inputsStart..inputs.size()) {
+    for(i in inputsStart..inputs.size) {
         let v = inputs[i].GetVertex()
         owner.IncludeHypergraph(v.GetOwner())
     }
-    for(i in outputsStart..outputs.size()) {
+    for(i in outputsStart..outputs.size) {
         let v = outputs[i].GetVertex()
         owner.IncludeHypergraph(v.GetOwner())
     }
@@ -262,7 +262,7 @@ public func UseRippleGate(prim : Primitive, ws : Array<Wire>) : Wire {
     UseSubcircuit_1<Wire>(
         MakeRippleGate(
             prim,
-            ws.size(),
+            ws.size,
             width
         ),
         ws
