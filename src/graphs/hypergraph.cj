@@ -13,18 +13,19 @@ from std import collection.ArrayList
 from std import collection.HashMap
 from std import collection.HashSet
 
-public enum WellformednessIssue {
+public enum WellformednessIssue<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     | InputNotAssigned(Int64)
     | OutputNotAssigned(Int64)
-    | InputNotInGraph(Int64, InterfaceVertex)
-    | OutputNotInGraph(Int64, InterfaceVertex)
-    | SourceNotAssigned(Edge, Int64)
-    | TargetNotAssigned(Edge, Int64)
-    | SourceNotInGraph(Edge, Int64, Vertex)
-    | TargetNotInGraph(Edge, Int64, Vertex)
+    | InputNotInGraph(Int64, InterfaceVertex<V, G>)
+    | OutputNotInGraph(Int64, InterfaceVertex<V, G>)
+    | SourceNotAssigned(Edge<V, G>, Int64)
+    | TargetNotAssigned(Edge<V, G>, Int64)
+    | SourceNotInGraph(Edge<V, G>, Int64, Vertex<V, G>)
+    | TargetNotInGraph(Edge<V, G>, Int64, Vertex<V, G>)
 }
-
-extend WellformednessIssue <: ToString {
+extend WellformednessIssue<V, G> <: ToString {
     public func toString() : String {
         match(this) {
             case InputNotAssigned(i) => "Input ${i} is unassigned"
@@ -38,12 +39,14 @@ extend WellformednessIssue <: ToString {
         }
     }
 }
-public struct SequentialData {
-    public let delayEdges : HashSet<Edge> = HashSet<Edge>()
-    public let valueEdges : HashSet<Edge> = HashSet<Edge>()
-    public let sequentialEdges : HashSet<Edge> = HashSet<Edge>()
-    public let feedbackConnections : HashSet<EdgeConnection> = HashSet<EdgeConnection>()
-    public let combinationalEdges : HashSet<Edge> = HashSet<Edge>()
+public struct SequentialData<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    public let delayEdges : HashSet<Edge<V, G>> = HashSet<Edge<V, G>>()
+    public let valueEdges : HashSet<Edge<V, G>> = HashSet<Edge<V, G>>()
+    public let sequentialEdges : HashSet<Edge<V, G>> = HashSet<Edge<V, G>>()
+    public let feedbackConnections : HashSet<EdgeConnection<V, G>> = HashSet<EdgeConnection<V, G>>()
+    public let combinationalEdges : HashSet<Edge<V, G>> = HashSet<Edge<V, G>>()
     public func IsCombinational() : Bool {
         delayEdges.size == 0 &&
             valueEdges.size == 0 &&
@@ -52,14 +55,14 @@ public struct SequentialData {
     }
 }
 
-func AddEdgeToHypergraphData(
-    startingEdges : HashSet<Edge>,
-    sequentialData : SequentialData,
-    e : Edge
-) {
+func AddEdgeToHypergraphData<V, G>(
+    startingEdges : HashSet<Edge<V, G>>,
+    sequentialData : SequentialData<V, G>,
+    e : Edge<V, G>
+) where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     // We keep track of edges with no sources so that we can
     // start traversing the graph from there later
-    if(e.GetNoSources() == 0) {
+    if(e.GetArity() == 0) {
         startingEdges.put(e)
     }
     // We keep track of delay and value edges since these represent
@@ -79,23 +82,23 @@ func AddEdgeToHypergraphData(
             }
     }
     // We keep track of any tentacle that has been marked as a feedback loop
-    for(i in 0..e.GetNoSources()) {
+    for(i in 0..e.GetArity()) {
         let t = e.GetSource(i)
         if(t.feedback) {
             sequentialData.feedbackConnections.put(EdgeConnection(e, i, SOURCE))
         }
     }
 }
-func RemoveEdgeFromHypergraphData(
-    startingEdges : HashSet<Edge>,
-    sequentialData : SequentialData,
-    e : Edge
-) {
+func RemoveEdgeFromHypergraphData<V, G>(
+    startingEdges : HashSet<Edge<V, G>>,
+    sequentialData : SequentialData<V, G>,
+    e : Edge<V, G>
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     startingEdges.remove(e)
     sequentialData.delayEdges.remove(e)
     sequentialData.valueEdges.remove(e)
     sequentialData.sequentialEdges.remove(e)
-    sequentialData.feedbackConnections.removeIf({ ec : EdgeConnection => ec.edge == e})
+    sequentialData.feedbackConnections.removeIf({ ec : EdgeConnection<V, G> => ec.edge == e})
     sequentialData.combinationalEdges.remove(e)
 }
 
@@ -103,18 +106,20 @@ func RemoveEdgeFromHypergraphData(
  * A hypergraph contains a set of (hyper)edges and vertices.
  * These hypergraphs are not interfaced.
  */
-public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Hashable {
+public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<V, G>> & Hashable
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     let id : Int64 = GetNextId()
     let name : String
-    let vertices : HashSet<Vertex>
-    let edges : HashSet<Edge>
+    let vertices : HashSet<Vertex<V, G>>
+    let edges : HashSet<Edge<V, G>>
     // We keep track of edges with no sources, as these
     // are where we begin traversing the graph
-    let startingEdges : HashSet<Edge> = HashSet<Edge>()
+    let startingEdges : HashSet<Edge<V, G>> = HashSet<Edge<V, G>>()
     // We also keep track of 'sequential' components as
     // these have different status when rewriting
-    let sequentialData : SequentialData = SequentialData()
-    public init (vertices : HashSet<Vertex>, edges : HashSet<Edge>){
+    let sequentialData : SequentialData<V, G> = SequentialData<V, G>()
+    public init (vertices : HashSet<Vertex<V, G>>, edges : HashSet<Edge<V, G>>){
         this.vertices = vertices
         this.edges = edges
         this.name = "h${this.id}"
@@ -127,49 +132,47 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
         }
     }
     public init () {
-        this(HashSet<Vertex>(), HashSet<Edge>())
+        this(HashSet<Vertex<V, G>>(), HashSet<Edge<V, G>>())
     }
     public func hashCode() : Int64 {
         this.id
     }
-    public func GetEdges() : HashSet<Edge> {
+    public func GetEdges() : HashSet<Edge<V, G>> {
         this.edges
     }
-    public func GetStartingEdges() : HashSet<Edge> {
+    public func GetStartingEdges() : HashSet<Edge<V, G>> {
         this.startingEdges
     }
-    public func GetSequentialData() : SequentialData {
+    public func GetSequentialData() : SequentialData<V, G> {
         this.sequentialData
     }
-    public func AddEdgeAndVertices(e : Edge) : Unit {
+    public func AddEdgeAndVertices(e : Edge<V, G>) : Unit {
         this.IncludeHypergraph(e.GetOwner())
-        // AddEdge(e)
-        // e.ForEachSourceAndTarget({ v : Vertex, i : Int64 => AddVertex(v)})
     }
-    public func AddEdge(e : Edge) : Unit {
+    public func AddEdge(e : Edge<V, G>) : Unit {
         this.edges.put(e)
         e.SetOwner(this)
         AddEdgeToHypergraphData(startingEdges, sequentialData, e)
     }
-    public func AddEdges(es : Iterable<Edge>) {
+    public func AddEdges(es : Iterable<Edge<V, G>>) {
         for (e in es) {
             this.AddEdge(e)
         }
     }
-    public func GetVertices() : HashSet<Vertex> {
+    public func GetVertices() : HashSet<Vertex<V, G>> {
         this.vertices
     }
-    public func AddVertex(v : Vertex) : Unit {
+    public func AddVertex(v : Vertex<V, G>) : Unit {
         this.vertices.put(v)
         v.SetOwner(this)
     }
-    public func RemoveVertex(v : Vertex) : Unit {
+    public func RemoveVertex(v : Vertex<V, G>) : Unit {
         this.vertices.remove(v)
     }
-    public func RemoveFeedbackConnection(ec : EdgeConnection) : Unit {
+    public func RemoveFeedbackConnection(ec : EdgeConnection<V, G>) : Unit {
         this.sequentialData.feedbackConnections.remove(ec)
     }
-    func RemoveEdge(e : Edge, removeVertices : Bool) {
+    func RemoveEdge(e : Edge<V, G>, removeVertices : Bool) {
         this.edges.remove(e)
         RemoveEdgeFromHypergraphData(this.startingEdges, this.sequentialData, e)
         for(t in e.GetSources()){
@@ -187,10 +190,10 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
             }
         }
     }
-    public func RemoveEdge(e : Edge) : Unit {
+    public func RemoveEdge(e : Edge<V, G>) : Unit {
         RemoveEdge(e, true)
     }
-    public func RemoveEdgeWithoutVertices(e : Edge) : Unit {
+    public func RemoveEdgeWithoutVertices(e : Edge<V, G>) : Unit {
         RemoveEdge(e, false)
     }
     public func IsCombinational() : Bool {
@@ -200,14 +203,14 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
         let issues = this.WellFormednessCheck()
         issues.size == 0
     }
-    public func WellFormednessCheck() : ArrayList<WellformednessIssue> {
+    public func WellFormednessCheck() : ArrayList<WellformednessIssue<V, G>> {
 
-        let issues = ArrayList<WellformednessIssue>()
+        let issues = ArrayList<WellformednessIssue<V, G>>()
 
         func EdgeVertexCheck(
-            e : Edge,
-            array : Array<Tentacle>,
-            notPresent : (Edge, Int64, Vertex) -> WellformednessIssue
+            e : Edge<V, G>,
+            array : Array<Tentacle<V, G>>,
+            notPresent : (Edge<V, G>, Int64, Vertex<V, G>) -> WellformednessIssue<V, G>
         ){
             for (i in 0..array.size) {
                 let v = array[i].GetVertex()
@@ -230,11 +233,11 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
         }
         issues
     }
-    public func ReplaceVertex(v : Vertex, w : Vertex) : Unit {
+    public func ReplaceVertex(v : Vertex<V, G>, w : Vertex<V, G>) : Unit {
         this.vertices.remove(v)
         this.vertices.put(w)
     }
-    public func IncludeHypergraph(f : Hypergraph) : Unit {
+    public func IncludeHypergraph(f : Hypergraph<V, G>) : Unit {
         for(e in f.GetEdges()) {
             this.AddEdge(e)
         }
@@ -249,13 +252,13 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
         let vertexString = this.vertices.toString()
         let edgeString = this.edges.toString()
         let sourceTargetString = fold_left(
-            { acc : String , e : Edge =>
+            { acc : String , e : Edge<V, G> =>
                 func EdgeVertexString (
                     name : String,
-                    array: Array<Tentacle>
+                    array: Array<Tentacle<V, G>>
                 ){
                     foldi_left(
-                        { acc : String , t : Tentacle, i : Int64 =>
+                        { acc : String , t : Tentacle<V, G>, i : Int64 =>
                             let str = "${t.GetVertex()}"
                             let acc = if (acc == "") {
                                 ""
@@ -287,10 +290,10 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
     public func GetName() : String {
         "hg${this.id}"
     }
-    public operator func ==(right: Hypergraph) : Bool {
+    public operator func ==(right: Hypergraph<V, G>) : Bool {
         this.GetId() == right.GetId()
     }
-    public operator func !=(right : Hypergraph) : Bool {
+    public operator func !=(right : Hypergraph<V, G>) : Bool {
         this.GetId() != right.GetId()
     }
     /**
@@ -299,24 +302,24 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
      * @return A tuple (hypergraph, vertex map, edge map) where the two hashmaps
      * relate the original versions of vertices/edges with the new copies
      */
-    public func Clone() : (Hypergraph, HashMap<Vertex, Vertex>, HashMap<Edge, Edge>) {
+    public func Clone() : (Hypergraph<V, G>, HashMap<Vertex<V, G>, Vertex<V, G>>, HashMap<Edge<V, G>, Edge<V, G>>) {
         Debug("Cloning ${this}")
-        let newVertices = HashSet<Vertex>()
-        let vertexMap = HashMap<Vertex,Vertex>()
-        let newEdges = HashSet<Edge>()
-        let edgeMap = HashMap<Edge,Edge>()
+        let newVertices = HashSet<Vertex<V, G>>()
+        let vertexMap = HashMap<Vertex<V, G>,Vertex<V, G>>()
+        let newEdges = HashSet<Edge<V, G>>()
+        let edgeMap = HashMap<Edge<V, G>, Edge<V, G>>()
         for (vertex in this.vertices) {
-            let newVertex = Vertex(vertex.GetWidth())
+            let newVertex = Vertex<V, G>(vertex.GetWidth())
             newVertices.put(newVertex)
             vertexMap.put(vertex, newVertex)
         }
         for (edge in this.edges) {
             let newSources = map(
-                { t : Tentacle => Tentacle(unsafeGet(vertexMap, t.GetVertex()), t.feedback, t.delay)},
+                { t : Tentacle<V, G> => Tentacle(unsafeGet(vertexMap, t.GetVertex()), t.feedback, t.delay)},
                 edge.GetSources()
             )
             let newTargets = map(
-                { t : Tentacle => Tentacle(unsafeGet(vertexMap, t.GetVertex()), t.feedback, t.delay)},
+                { t : Tentacle<V, G> => Tentacle(unsafeGet(vertexMap, t.GetVertex()), t.feedback, t.delay)},
                 edge.GetTargets()
             )
             let newEdge = Edge(edge.GetLabel(), newSources, newTargets, edge.GetSubgraph())
@@ -326,9 +329,11 @@ public class Hypergraph <: Identifiable & ToString & Equatable<Hypergraph> & Has
         (Hypergraph(newVertices, newEdges), vertexMap, edgeMap)
     }
 }
-public func EmptyGraph() : Hypergraph {
+public func EmptyGraph<V, G>() : Hypergraph<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     Hypergraph(
-        HashSet<Vertex>(),
-        HashSet<Edge>()
+        HashSet<Vertex<V, G>>(),
+        HashSet<Edge<V, G>>()
     )
 }

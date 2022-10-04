@@ -1,8 +1,8 @@
 /**
- * syntax/library.cj
+ * syntax/spec.cj
  *
- * This file is a library of components that make up
- * our circuits
+ * Contains the definition of a Specification, which determines
+ * the name and interfaces of components
  *
  * @author George Kaye
  * @since 0.2
@@ -34,34 +34,36 @@ public func numToUppercaseLetter(n : Int64) : String {
 /**
  * A specification defines an arbitrary label with a name and arrays of input/output ports
  */
-public class Specification <: Specifiable & HasName & Equatable<Specification> {
+public class Specification<V> <: Specifiable<V> & HasName & Equatable<Specification<V>> where V <: ValueSymbol, V <: Equatable<V> {
     public Specification(
         public let name : String,
-        public let inputPorts : Array<Port>,
-        public let outputPorts : Array<Port>
+        public let inputPorts : Array<Port<V>>,
+        public let outputPorts : Array<Port<V>>
     ){}
     public func GetName() : String {
         this.name
     }
-    public func GetInputPorts() : Array<Port> {
+    public func GetInputPorts() : Array<Port<V>> {
         this.inputPorts
     }
-    public func GetNoInputs() : Int64 {
+    public func GetArity() : Int64 {
         this.GetInputPorts().size
     }
-    public func GetOutputPorts() : Array<Port> {
+    public func GetOutputPorts() : Array<Port<V>> {
         this.outputPorts
     }
-    public func GetNoOutputs() : Int64 {
+    public func GetCoarity() : Int64 {
         this.GetOutputPorts().size
     }
     public func toString() : String {
         this.GetName()
     }
-    public operator func ==(rhs : Specification) {
-        this.name == rhs.name && this.inputPorts == rhs.inputPorts && this.outputPorts == rhs.outputPorts
+    public operator func ==(rhs : Specification<V>) {
+        this.name == rhs.name &&
+            this.inputPorts == rhs.inputPorts &&
+            this.outputPorts == rhs.outputPorts
     }
-    public operator func !=(rhs : Specification) {
+    public operator func !=(rhs : Specification<V>) {
         !(this == rhs)
     }
 }

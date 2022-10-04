@@ -19,14 +19,15 @@ extend VertexType <: ToString {
         }
     }
 }
-
 /**
  * An EdgeConnection specifies an edge that a vertex
  * is a source or target of, and which index it is.
  */
-public struct EdgeConnection <: ToString & Equatable<EdgeConnection> & Hashable {
+public struct EdgeConnection<V, G> <: ToString & Equatable<EdgeConnection<V, G>> & Hashable
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     public EdgeConnection(
-        public let edge : Edge,
+        public let edge : Edge<V, G>,
         public let index : Int64,
         public let vertexType : VertexType
     ) {}
@@ -37,10 +38,10 @@ public struct EdgeConnection <: ToString & Equatable<EdgeConnection> & Hashable 
         }
         "${edge}.${initial}${index}"
     }
-    public operator func ==(right: EdgeConnection) : Bool {
+    public operator func ==(right: EdgeConnection<V, G>) : Bool {
         this.edge == right.edge && this.index == right.index
     }
-    public operator func !=(right : EdgeConnection) : Bool {
+    public operator func !=(right : EdgeConnection<V, G>) : Bool {
         !(this == right)
     }
     // HACK: This won't be unique if you have something with more than
@@ -66,19 +67,16 @@ public struct EdgeConnection <: ToString & Equatable<EdgeConnection> & Hashable 
  * Vertices can be the source at most one edge, but the target of an
  * arbitrary number of edges, which represents forking wires.
  */
-public class Vertex <: Identifiable &
-                        Equatable<Vertex> &
-                        Hashable &
-                        ToString &
-                        HasWidth &
-                        Socket
+public class Vertex<V, G>
+    <: Identifiable & Equatable<Vertex<V, G>> & Hashable & ToString & HasWidth & Socket
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let width : Int64
     let id : Int64 = GetNextId()
-    var inEdge : Option<EdgeConnection> = None
-    var outEdges : HashSet<EdgeConnection> = HashSet<EdgeConnection>()
+    var inEdge : Option<EdgeConnection<V, G>> = None
+    var outEdges : HashSet<EdgeConnection<V, G>> = HashSet<EdgeConnection<V, G>>()
     var feedback : Int64 = 0
-    var owner : Hypergraph = Hypergraph()
+    var owner : Hypergraph<V, G> = Hypergraph<V, G>()
     public init(width: Int64){
         this.width = width
         this.owner.AddVertex(this)
@@ -92,19 +90,19 @@ public class Vertex <: Identifiable &
     public func GetWidth() : Int64 {
         this.width
     }
-    public func GetInEdge() : Option<EdgeConnection> {
+    public func GetInEdge() : Option<EdgeConnection<V, G>> {
         this.inEdge
     }
-    public func GetOutEdges() : HashSet<EdgeConnection> {
+    public func GetOutEdges() : HashSet<EdgeConnection<V, G>> {
         this.outEdges
     }
-    public func SetInEdge(e : Edge, i : Int64) : Unit {
+    public func SetInEdge(e : Edge<V, G>, i : Int64) : Unit {
         SetInEdge(EdgeConnection(e, i, TARGET))
     }
-    public func SetInEdge(ec : EdgeConnection) : Unit {
+    public func SetInEdge(ec : EdgeConnection<V, G>) : Unit {
         inEdge = ec
     }
-    public func RemoveInEdge(e : Edge) : Unit {
+    public func RemoveInEdge(e : Edge<V, G>) : Unit {
         match(this.inEdge) {
             case None => ()
             case Some(ec) =>
@@ -113,13 +111,13 @@ public class Vertex <: Identifiable &
                 }
         }
     }
-    public func RemoveOutEdge(e : Edge) : Unit {
-        this.outEdges.removeIf({ec : EdgeConnection => ec.edge == e})
+    public func RemoveOutEdge(e : Edge<V, G>) : Unit {
+        this.outEdges.removeIf({ec : EdgeConnection<V, G> => ec.edge == e})
     }
-    public func AddOutEdge(e : Edge, i : Int64) : Unit {
+    public func AddOutEdge(e : Edge<V, G>, i : Int64) : Unit {
         outEdges.put(EdgeConnection(e, i, SOURCE))
     }
-    public func AddAllOutEdges(es : HashSet<EdgeConnection>) {
+    public func AddAllOutEdges(es : HashSet<EdgeConnection<V, G>>) {
         outEdges.putAll(es)
     }
     func IncrementFeedback() : Unit {
@@ -131,16 +129,16 @@ public class Vertex <: Identifiable &
     public func toString() : String {
         "v${this.GetId()}"
     }
-    public operator func ==(right: Vertex) : Bool {
+    public operator func ==(right: Vertex<V, G>) : Bool {
         this.GetId() == right.GetId()
     }
-    public operator func !=(right : Vertex) : Bool {
+    public operator func !=(right : Vertex<V, G>) : Bool {
         this.GetId() != right.GetId()
     }
-    public func GetOwner() : Hypergraph {
+    public func GetOwner() : Hypergraph<V, G> {
         this.owner
     }
-    public func SetOwner(f : Hypergraph) : Unit {
+    public func SetOwner(f : Hypergraph<V, G>) : Unit {
         this.owner = f
     }
     public func hashCode() : Int64 {
@@ -151,21 +149,13 @@ public class Vertex <: Identifiable &
     }
 }
 
-public interface ContainsVertex {
-    func GetVertex() : Vertex
+public interface ContainsVertex<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    func GetVertex() : Vertex<V, G>
 }
-extend Vertex <: ContainsVertex {
-    public func GetVertex() : Vertex {
+extend Vertex<V, G> <: ContainsVertex<V, G> {
+    public func GetVertex() : Vertex<V, G> {
         this
-    }
-}
-extend Int64 <: ContainsVertex {
-    public func GetVertex() : Vertex {
-        Vertex(this)
-    }
-}
-extend Port <: ContainsVertex {
-    public func GetVertex() : Vertex {
-        Vertex(this.width)
     }
 }

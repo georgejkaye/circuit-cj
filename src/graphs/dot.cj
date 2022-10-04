@@ -218,7 +218,11 @@ func MakePorts<T>(
  * @param e The edge
  * @param content The list of dotlines to append to
  */
-func DrawEdgeNode(e : Edge, elementContent : ArrayList<DotLine>, connectionContent : ArrayList<DotLine>) : Unit {
+func DrawEdgeNode<V, G>(
+    e : Edge<V, G>,
+    elementContent : ArrayList<DotLine>,
+    connectionContent : ArrayList<DotLine>
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     let style = match(e.GetLabel()){
         case VALUE(_) =>
             valueStyle
@@ -263,7 +267,7 @@ func DrawEdgeNode(e : Edge, elementContent : ArrayList<DotLine>, connectionConte
  * @param elementContent The element content list
  * @param connectionContent The connection content list
  */
-func DrawBoxNode<T1, U1, T2, U2>(
+func DrawBoxNode<T1, U1, T2, U2, V, G>(
     id : String,
     style : Array<(String, String)>,
     leftVertices : Array<T1>,
@@ -274,8 +278,10 @@ func DrawBoxNode<T1, U1, T2, U2>(
     elementContent : ArrayList<DotLine>,
     connectionContent : ArrayList<DotLine>
 ) : Unit where
-    T1 <: HasTentacle, U1 <: Socket,
-    T2 <: HasTentacle, U2 <: Socket {
+    T1 <: HasTentacle<V, G>, U1 <: Socket,
+    T2 <: HasTentacle<V, G>, U2 <: Socket,
+    V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     // Add the edge identifier
     let declaration = DotLine("${id} [label=<", Indent)
     elementContent.append(declaration)
@@ -320,12 +326,12 @@ func DrawBoxNode<T1, U1, T2, U2>(
  * @param vertexType The type of vertex
  * @param connectionContent The list of connection content
  */
-func DrawSubgraphInterfaceConnections(
-    g : InterfacedHypergraph,
-    parentVertices : Array<Tentacle>,
+func DrawSubgraphInterfaceConnections<V, G>(
+    g : InterfacedHypergraph<V, G>,
+    parentVertices : Array<Tentacle<V, G>>,
     vertexType : VertexType,
     connectionContent : ArrayList<DotLine>
-) : Unit {
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     for(i in 0..parentVertices.size) {
         let v = parentVertices[i]
         let (interfaceText, portPrefix, vertexFirst) = match(vertexType) {
@@ -345,13 +351,13 @@ func DrawSubgraphInterfaceConnections(
  * @param elementContent The list of element dotlines so far
  * @param connectionContent The list of connection dotlines
  */
-func DrawEdge(
-    e : Edge,
+func DrawEdge<V, G>(
+    e : Edge<V, G>,
     depth : Int64,
     omittedEdges : HashSet<Int64>,
     elementContent : ArrayList<DotLine>,
     connectionContent : ArrayList<DotLine>
-) : Unit {
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     if (depth != 0) {
         match (e.GetSubgraph()) {
             case None => DrawEdgeNode(e, elementContent, connectionContent)
@@ -403,10 +409,10 @@ func DrawOptions(selector : String, opts : Array<(String, String)>) : DotLine {
  * @param content The list of dotlines to append to
  * @param vertexMap A map sending vertices to vertices that have subsumed it
  */
-func DrawVertex(
-    v : Vertex,
+func DrawVertex<V, G>(
+    v : Vertex<V, G>,
     content : ArrayList<DotLine>
-) : Unit {
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     let text = if(IsDebugDot()){
         "${v.GetId()}"
     } else {
@@ -423,13 +429,13 @@ func DrawVertex(
                         target) or vice versa (i.e. source)
  * @return The connection string
  */
-func DrawConnection<T>(
+func DrawConnection<T, V, G>(
     vertex : T,
     eText : String,
     vertexFirst : Bool,
     connectionContent : ArrayList<DotLine>,
     feedback : Bool
-) : Unit where T <: Vertex {
+) : Unit where T <: Vertex<V, G>, V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     let vText = "v${vertex.GetVertex().GetId()}"
     let connectionString = if(vertexFirst) {
         "${vText}:e -- ${eText}:w"
@@ -443,13 +449,13 @@ func DrawConnection<T>(
     }
     connectionContent.append(DotLine(fullConnectionString, Preserve))
 }
-func DrawConnections<T>(
+func DrawConnections<T, V, G>(
     boxId : String,
     vertices : Array<T>,
     isLeft : Bool,
     vertexType : VertexType,
     connectionContent : ArrayList<DotLine>
-) : Unit where T <: HasTentacle {
+) : Unit where T <: HasTentacle<V, G>, V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     let portPrefix = match(vertexType) {
         case SOURCE => "w"
         case TARGET => "e"
@@ -460,18 +466,18 @@ func DrawConnections<T>(
         DrawConnection(v.GetVertex(), eText, isLeft, connectionContent, v.IsFeedback())
     }
 }
-func DrawInterface<T>(
+func DrawInterface<V, G>(
     id : String,
-    childVertices : Array<InterfaceVertex>,
+    childVertices : Array<InterfaceVertex<V, G>>,
     isInputs : Bool,
     elementContent : ArrayList<DotLine>,
     connectionContent : ArrayList<DotLine>
-) : Unit where T <: ContainsVertex {
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     let interfaceName = "\"${id}_${ if(isInputs) { "inputs" } else { "outputs" }}\""
     let (leftVertices, rightVertices) = if(isInputs) {
-        (Array<InterfaceVertex>(), childVertices)
+        (Array<InterfaceVertex<V, G>>(), childVertices)
     } else {
-        (childVertices, Array<InterfaceVertex>())
+        (childVertices, Array<InterfaceVertex<V, G>>())
     }
     DrawBoxNode(
         interfaceName,
@@ -491,8 +497,6 @@ func DrawInterface<T>(
  * subgraph. A small node is used to 'mount' the interfaces at the left and the right
  * of the cluster box.
  *
- * TODO: generalise sufficiently so that this can be used on the shallowest graph
- *
  * @param f The interfaced hypergraph
  * @param parent The edge that this subgraph belongs to
  * @param depth The maximum depth of subgraphs to expand
@@ -501,13 +505,13 @@ func DrawInterface<T>(
  * @param elementContent The list of graph element dotlines so far
  * @param connectionContent The list of connection element dotlines so far
  */
-func DrawInterfacedHypergraph(
-    f : InterfacedHypergraph,
-    parent : Option<Edge>,
+func DrawInterfacedHypergraph<V, G>(
+    f : InterfacedHypergraph<V, G>,
+    parent : Option<Edge<V, G>>,
     depth : Int64,
     omittedEdges : HashSet<Int64>,
     elementContent : ArrayList<DotLine>
-) : Unit {
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     let id = f.GetId()
     let label = f.GetLabel()
     // If there isn't a parent, declare that this is a graph
@@ -534,13 +538,13 @@ func DrawInterfacedHypergraph(
         connectionContent
     )
     // Draw the inputs
-    if(f.GetInputs() > 0) {
+    if(f.GetArity() > 0) {
         DrawSubgraph(minSubgraphOpts, elementContent, connectionContent, { elementContent, connectionContent =>
             DrawInterface("${id}", f.GetInputVertices(), true, elementContent, connectionContent)
         })
     }
     // Draw the outputs
-    if(f.GetOutputs() > 0){
+    if(f.GetCoarity() > 0){
         DrawSubgraph(maxSubgraphOpts, elementContent, connectionContent, { elementContent, connectionContent =>
             DrawInterface("${id}", f.GetOutputVertices(), false, elementContent, connectionContent)
         })
@@ -559,13 +563,13 @@ func DrawInterfacedHypergraph(
  * @param elementContent    The list containing the existing element dotlines so far
  * @param connectionContent The list containing the existing connection dotlines so far
  */
-public func DrawHypergraph(
-    f : Hypergraph,
+public func DrawHypergraph<V, G>(
+    f : Hypergraph<V, G>,
     depth : Int64,
     omittedEdges : HashSet<Int64>,
     elementContent : ArrayList<DotLine>,
     connectionContent : ArrayList<DotLine>
-) : Unit {
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     let vertexOptionsString = DrawOptions("node", vertexNodeOpts)
     elementContent.append(vertexOptionsString)
     for(v in f.GetVertices()){
@@ -602,11 +606,13 @@ func DrawSubgraph(
  * @param f The interfaced hypergraph
  * @param depth The maximum depth of subgraphs to expand
  */
-public func DotGraph(f : InterfacedHypergraph, depth : Int64) : String {
+public func DotGraph<V, G>(f : InterfacedHypergraph<V, G>, depth : Int64) : String
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     let elementContent = ArrayList<DotLine>()
     DrawInterfacedHypergraph(
         f,
-        None<Edge>,
+        None<Edge<V, G>>,
         depth,
         HashSet<Int64>(),
         elementContent
@@ -686,7 +692,11 @@ public func ConvertStringIndentListToString(list : ArrayList<DotLine>) : String 
  * @param depth The maximum depth of subgraphs to draw
  * @param file The file name to write to
  */
-public func WriteDotToFile(f : InterfacedHypergraph, depth : Int64, file : String) : Unit {
+public func WriteDotToFile<V, G>(
+    f : InterfacedHypergraph<V, G>,
+    depth : Int64,
+    file : String
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     let filename = GetDotFile(file)
     Info("Writing dot file ${filename}")
     let dot = DotGraph(f, depth)

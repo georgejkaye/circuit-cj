@@ -266,7 +266,7 @@ func PostUnrollInstantFeedback(
  */
 func ReplaceOutputs(f : InterfacedHypergraph, vertexMap : HashMap<Vertex,Vertex>) : Unit {
     // Replace each output with its latest iteration
-    for(i in 0..f.GetOutputs()) {
+    for(i in 0..f.GetCoarity()) {
         let v = f.GetOutput(i).GetVertex()
         match(vertexMap.get(v)) {
             case Some(w) => f.ReplaceOutput(i, w)

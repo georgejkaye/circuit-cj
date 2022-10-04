@@ -12,15 +12,17 @@ package graphs
 /**
  * An edge and the depth it occupies
  */
-public struct EdgeAtDepth <: Equatable<EdgeAtDepth> & ToString {
+public struct EdgeAtDepth<V, G> <: Equatable<EdgeAtDepth<V, G>> & ToString
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     public EdgeAtDepth(
-        public let edge : Edge,
+        public let edge : Edge<V, G>,
         public let depth : Int64
     ){}
-    public operator func ==(rhs : EdgeAtDepth) : Bool {
+    public operator func ==(rhs : EdgeAtDepth<V, G>) : Bool {
         this.edge == rhs.edge
     }
-    public operator func !=(rhs : EdgeAtDepth) : Bool {
+    public operator func !=(rhs : EdgeAtDepth<V, G>) : Bool {
         !(this == rhs)
     }
     public func toString() : String {
@@ -36,19 +38,19 @@ public struct EdgeAtDepth <: Equatable<EdgeAtDepth> & ToString {
  * @param currentDepth The depth of this graph
  * @param nexts The arraylist to fill
  */
-func GetStartingEdges(
-    f : InterfacedHypergraph,
+func GetStartingEdges<V, G>(
+    f : InterfacedHypergraph<V, G>,
     currentDepth : Int64,
-    nexts : ArrayList<EdgeAtDepth>
-) : Unit {
+    nexts : ArrayList<EdgeAtDepth<V, G>>
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     for(e in f.GetStartingEdges()){
         AddEdge(e, nexts, currentDepth)
     }
 }
-public func GetUniqueNextEdges(
-    ed : EdgeAtDepth,
-    nexts : ArrayList<EdgeAtDepth>
-) : Unit {
+public func GetUniqueNextEdges<V, G>(
+    ed : EdgeAtDepth<V, G>,
+    nexts : ArrayList<EdgeAtDepth<V, G>>
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     for(v in ed.edge.GetTargets()){
         for(e in v.GetVertex().GetOutEdges()){
             let edd = EdgeAtDepth(e.edge, ed.depth)
@@ -58,10 +60,10 @@ public func GetUniqueNextEdges(
         }
     }
 }
-public func GetUniqueNextEdges(
-    e : Edge,
-    nexts : ArrayList<Edge>
-) : Unit {
+public func GetUniqueNextEdges<V, G>(
+    e : Edge<V, G>,
+    nexts : ArrayList<Edge<V, G>>
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     for(v in e.GetTargets()) {
         for(ec in v.GetVertex().GetOutEdges()) {
             if(!nexts.contains(ec.edge)) {
@@ -76,11 +78,11 @@ public func GetUniqueNextEdges(
  * @param nexts The arraylist to append the edge and depth to
  * @param currentDepth The current depth
  */
-func AddEdge(
-    e : Edge,
-    nexts : ArrayList<EdgeAtDepth>,
+func AddEdge<V, G>(
+    e : Edge<V, G>,
+    nexts : ArrayList<EdgeAtDepth<V, G>>,
     currentDepth : Int64
-) : Unit {
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     let ed = EdgeAtDepth(e, currentDepth)
     if (!nexts.contains(ed)){
         nexts.append(ed)
@@ -92,11 +94,11 @@ func AddEdge(
  * @param nexts The arraylist to append the edge and depth to
  * @param currentDepth The current depth
  */
-func AddEdgeConnection(
-    ec : EdgeConnection,
-    nexts : ArrayList<EdgeAtDepth>,
+func AddEdgeConnection<V, G>(
+    ec : EdgeConnection<V, G>,
+    nexts : ArrayList<EdgeAtDepth<V, G>>,
     currentDepth : Int64
-) : Unit {
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     AddEdge(ec.edge, nexts, currentDepth)
 }
 /**
@@ -107,18 +109,18 @@ func AddEdgeConnection(
  * @param edgeAction A function that, given an edge and its depth, performs some action
  * @param maxDepth The maximum depth, i.e. how many layers of edges to expand
  */
-public func TraverseAll(
-    f : InterfacedHypergraph,
-    edgeAction : (Edge, Int64) -> Unit,
+public func TraverseAll<V, G>(
+    f : InterfacedHypergraph<V, G>,
+    edgeAction : (Edge<V, G>, Int64) -> Unit,
     maxDepth : Int64
-) : Unit {
-    let actionAtEdge = { ed : EdgeAtDepth, data : TraversalData =>
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+    let actionAtEdge = { ed : EdgeAtDepth<V, G>, data : TraversalData<V, G> =>
         let edge = ed.edge
         let depth = ed.depth
         // Perform user specified edge action
         edgeAction(ed.edge, ed.depth)
         // Compute next edges
-        let nexts = ArrayList<EdgeAtDepth>()
+        let nexts = ArrayList<EdgeAtDepth<V, G>>()
         // Check if there is a subgraph inside this edge
         match(edge.GetSubgraph()) {
             case None => ()
@@ -147,16 +149,18 @@ public func TraverseAll(
 /**
  * Data to keep track of while traversing a graph
  */
-public struct TraversalData {
+public struct TraversalData<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     public TraversalData(
         // Edges to explore next
-        let frontier : ArrayList<EdgeAtDepth>,
+        let frontier : ArrayList<EdgeAtDepth<V, G>>,
         // Edges that have been visited, and therefore not to visit again
-        let visitedEdges : ArrayList<Edge>,
+        let visitedEdges : ArrayList<Edge<V, G>>,
         // Maximum depth to explore
         let maxDepth : Int64,
         // The action to perform at each edge
-        let actionAtEdge : (EdgeAtDepth, TraversalData) -> ArrayList<EdgeAtDepth>
+        let actionAtEdge : (EdgeAtDepth<V, G>, TraversalData<V, G>) -> ArrayList<EdgeAtDepth<V, G>>
     ){}
 }
 /**
@@ -165,7 +169,9 @@ public struct TraversalData {
  * @param ed The edge to visit and its depth
  * @param data The traversal data
  */
-func VisitEdge(ed : EdgeAtDepth, data : TraversalData) : Unit {
+func VisitEdge<V, G>(ed : EdgeAtDepth<V, G>, data : TraversalData<V, G>) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     data.visitedEdges.append(ed.edge)
     let nexts = data.actionAtEdge(ed, data)
     for(edd in nexts) {
@@ -179,34 +185,34 @@ func VisitEdge(ed : EdgeAtDepth, data : TraversalData) : Unit {
  *
  * @param data The traversal data
  */
-func PerformTraversal(
-    data : TraversalData
-) : Unit {
+func PerformTraversal<V, G>(
+    data : TraversalData<V, G>
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     while(data.frontier.size != 0){
         let currentEdge = data.frontier.remove(0)
         VisitEdge(currentEdge, data)
     }
 }
-public func Traverse(
-    starting : ArrayList<EdgeAtDepth>,
+public func Traverse<V, G>(
+    starting : ArrayList<EdgeAtDepth<V, G>>,
     maxDepth : Int64,
-    actionAtEdge : (EdgeAtDepth, TraversalData) -> ArrayList<EdgeAtDepth>
-) : Unit {
+    actionAtEdge : (EdgeAtDepth<V, G>, TraversalData<V, G>) -> ArrayList<EdgeAtDepth<V, G>>
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     PerformTraversal(
         TraversalData(
             starting,
-            ArrayList<Edge>(),
+            ArrayList<Edge<V, G>>(),
             maxDepth,
             actionAtEdge
         )
     )
 }
-public func Traverse(
-    f : InterfacedHypergraph,
+public func Traverse<V, G>(
+    f : InterfacedHypergraph<V, G>,
     maxDepth : Int64,
-    actionAtEdge : (EdgeAtDepth, TraversalData) -> ArrayList<EdgeAtDepth>
-) : Unit {
-    let startingList = ArrayList<EdgeAtDepth>()
+    actionAtEdge : (EdgeAtDepth<V, G>, TraversalData<V, G>) -> ArrayList<EdgeAtDepth<V, G>>
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+    let startingList = ArrayList<EdgeAtDepth<V, G>>()
     GetStartingEdges(f, 0, startingList)
     Traverse(
         startingList,

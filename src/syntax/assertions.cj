@@ -9,12 +9,12 @@
 
 package syntax
 
-func AssertSignalsSameWidth(
-    vs : Array<Signal>
-) : Int64 {
-    AssertArrayAllSameParameter<Signal, Int64>(
+func AssertSignalsSameWidth<V>(
+    vs : Array<Signal<V>>
+) : Int64 where V <: ValueSymbol, V <: Equatable<V> {
+    AssertArrayAllSameParameter<Signal<V>, Int64>(
         vs,
-        { v : Signal => v.GetWidth() },
+        { v : Signal<V> => v.GetWidth() },
         Width
     )
 }
@@ -25,11 +25,11 @@ class NonMonotoneFunctionException<T> <: Exception where T <: ToString {
     }
 }
 
-func AssertTableMonotone<T>(
-    lattice : FiniteLattice<T>,
+func AssertTableMonotone<V>(
+    lattice : FiniteLattice<V>,
     arity : Int64,
-    table : (Array<T>) -> Array<T>
-) : Unit where T <: Equatable<T>, T <: LE<T>, T <: Hashable, T <: ToString {
+    table : (Array<V>) -> Array<V>
+) : Unit where V <: ValueSymbol & Equatable<V> {
     let inputs = lattice.EnumeratePowers(arity)
     for(input1 in inputs) {
         for(input2 in inputs) {

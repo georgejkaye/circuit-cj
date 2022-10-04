@@ -18,21 +18,21 @@ from std import collection.ArrayList
 /**
  * Enum for the different types of generators
  */
-public enum Label {
-    | VALUE(Value)                        // A basic value 0 -> 1
-    | SIGNAL(Signal)                      // A collection of values 0 -> n, which could be signed or unsigned
+public enum Label<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+    | VALUE(V)                            // A basic value 0 -> 1
+    | SIGNAL(Signal<V>)                   // A collection of values 0 -> n, which could be signed or unsigned
     | BUNDLER(Array<Int64>, Array<Int64>) // A bundler changes how wires are bundled
     | JOIN(Int64)                         // Join two wires together
-    | PRIMITIVE(Primitive)                // The simplest building blocks of circuits
-    | COMPOSITE(Specification)            // A composite of primitives
-    | BLACKBOX(Specification)             // A black box with arbitrary name and codomain
+    | PRIMITIVE(G)                        // The simplest building blocks of circuits
+    | COMPOSITE(Specification<V>)         // A composite of primitives
+    | BLACKBOX(Specification<V>)          // A black box with arbitrary name and codomain
     | DELAY(Int64)                        // A delay parameterised by a width
 }
-extend Label <: HasName & Specifiable & ToString & Equatable<Label> {
-    public func GetInputPorts() : Array<Port> {
+extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G>> {
+    public func GetInputPorts() : Array<Port<V>> {
         match(this) {
-            case VALUE(_)               => []
-            case SIGNAL(spec)           => []
+            case VALUE(_)          => []
+            case SIGNAL(spec)      => []
             case BUNDLER(ms, _)         => map({ i : Int64 => Port(i)}, ms)
             case JOIN(w)                => [Port(w), Port(w)]
             case PRIMITIVE(prim)        => prim.GetInputPorts()
@@ -42,10 +42,10 @@ extend Label <: HasName & Specifiable & ToString & Equatable<Label> {
 
         }
     }
-    public func GetNoInputs() : Int64 {
+    public func GetArity() : Int64 {
         this.GetInputPorts().size
     }
-    public func GetOutputPorts() : Array<Port> {
+    public func GetOutputPorts() : Array<Port<V>> {
         match(this) {
             case VALUE(_)               => [Port(1)]
             case SIGNAL(spec)           => spec.GetOutputPorts()
@@ -57,7 +57,7 @@ extend Label <: HasName & Specifiable & ToString & Equatable<Label> {
             case DELAY(w)               => [Port(w)]
         }
     }
-    public func GetNoOutputs() : Int64 {
+    public func GetCoarity() : Int64 {
         this.GetOutputPorts().size
     }
     public func GetName() : String {
@@ -75,7 +75,7 @@ extend Label <: HasName & Specifiable & ToString & Equatable<Label> {
     public func toString() : String {
         this.GetName()
     }
-    public operator func==(rhs : Label) : Bool {
+    public operator func==(rhs : Label<V, G>) : Bool {
         match(this) {
             case VALUE(v) => match(rhs) {
                 case VALUE(w) => v == w
@@ -111,7 +111,7 @@ extend Label <: HasName & Specifiable & ToString & Equatable<Label> {
             }
         }
     }
-    public operator func !=(rhs : Label) : Bool {
+    public operator func !=(rhs : Label<V, G>) : Bool {
         !(this == rhs)
     }
     public func IsValue() : Bool {
@@ -121,7 +121,7 @@ extend Label <: HasName & Specifiable & ToString & Equatable<Label> {
             case _ => false
         }
     }
-    public func GetValue() : Value {
+    public func GetValue() : V {
         match(this) {
             case VALUE(v) => v
             case _ => throw IncompatibleVariantException(this, "VALUE")
@@ -133,7 +133,7 @@ extend Label <: HasName & Specifiable & ToString & Equatable<Label> {
             case _ => false
         }
     }
-    public func GetPrimitive() : Primitive {
+    public func GetPrimitive() : G {
         match(this) {
             case PRIMITIVE(prim) => prim
             case _ => throw IncompatibleVariantException(this, "PRIMITIVE")
@@ -147,11 +147,11 @@ extend Label <: HasName & Specifiable & ToString & Equatable<Label> {
     }
 }
 
-public func GetSignalLabel(v : Value, w : Int64){
+public func GetSignalLabel<V, G>(v : V, w : Int64, base : Int64) : Label<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     if(w == 1) {
         VALUE(v)
     } else {
-        let signal = Signal(v, w)
+        let signal = Signal(v, w, base)
         SIGNAL(signal)
     }
 }

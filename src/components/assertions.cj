@@ -14,7 +14,7 @@ public func Todo(msg : String){
     throw TodoException(msg)
 }
 
-func AssertNonNegative(x : Int64) {
+public func AssertNonNegative(x : Int64) {
     AssertAtLeast(x, 0)
 }
 func AssertStrictlyPositive(x : Int64) {
@@ -23,13 +23,20 @@ func AssertStrictlyPositive(x : Int64) {
 func AssertEnoughBits(current : Int64, desired : Int64) {
     AssertAtLeast(current, desired)
 }
-func AssertWireHasNoInEdge(w : Wire) {
+func AssertWireHasNoInEdge<V, G>(w : Wire<V, G>)
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     AssertVertexHasNoInEdge(w.GetVertex())
 }
-func AssertWireArrayNonEmpty(ws : Array<Wire>) : Unit {
+func AssertWireArrayNonEmpty<V, G>(ws : Array<Wire<V, G>>) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     AssertNonEmpty(ws, "wires")
 }
-func AssertWireWidth<T>(t : T, i : Int64) : Unit where T <: ContainsWire, T <: ToString {
+func AssertWireWidth<T, V, G>(t : T, i : Int64) : Unit
+    where T <: ContainsWire<V, G>, T <: ToString,
+            V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     AssertObjectHasParameter<T, Int64>(
         t,
         i,
@@ -37,7 +44,10 @@ func AssertWireWidth<T>(t : T, i : Int64) : Unit where T <: ContainsWire, T <: T
         Width
     )
 }
-func AssertWireHasWidthAtLeast<T>(t : T, i : Int64) : Unit where T <: ContainsWire, T <: ToString {
+func AssertWireHasWidthAtLeast<T, V, G>(t : T, i : Int64) : Unit
+    where T <: ContainsWire<V, G>, T <: ToString,
+            V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     AssertHasAtLeastParameter<T, Int64>(
         t,
         i,
@@ -64,7 +74,9 @@ func AssertWiresSameWidth<T,U>(
         Width
     )
 }
-func AssertWireArraysCompatible(ws : Array<Wire>, vs : Array<Wire>) : Array<Int64> {
+func AssertWireArraysCompatible<V, G>(ws : Array<Wire<V, G>>, vs : Array<Wire<V, G>>) : Array<Int64>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     AssertArraysSameLength(ws, vs)
     Array<Int64>(ws.size) {
         i : Int64 =>
@@ -91,40 +103,55 @@ func AssertAllWiresWidth<T>(ws : Array<T>, n: Int64) : Unit where T <: ToString,
         Width
     )
 }
-public func AssertNumberOfWires<T>(ws : Array<T>, n : Int64) : Unit where T <: ContainsWire, T <: ToString {
+public func AssertNumberOfWires<T, V, G>(ws : Array<T>, n : Int64) : Unit
+    where T <: ContainsWire<V, G>, T <: ToString,
+            V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     AssertArrayHasLength<T>(ws, n)
 }
-func AssertMinNumberOfWires<T>(
+func AssertMinNumberOfWires<T, V, G>(
     ws : Array<T>,
     n : Int64
-) : Unit where T <: ContainsWire, T <: ToString {
+) : Unit
+    where T <: ContainsWire<V, G>, T <: ToString,
+            V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     AssertArrayHasMinimumLength<T>(ws, n)
 }
-func AssertCircuitInputs(c : InterfacedHypergraph, n : Int64) {
+func AssertCircuitInputs<V, G>(c : InterfacedHypergraph<V, G>, n : Int64) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     AssertHasParameter(
         c,
         n,
-        { c : InterfacedHypergraph => c.GetInputs() },
+        { c : InterfacedHypergraph<V, G> => c.GetArity() },
         Inputs
     )
 }
-func AssertCircuitOutputs(c : InterfacedHypergraph, n : Int64) {
+func AssertCircuitOutputs<V, G>(c : InterfacedHypergraph<V, G>, n : Int64) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     AssertHasParameter(
         c,
         n,
-        { c : InterfacedHypergraph => c.GetOutputs() },
+        { c : InterfacedHypergraph<V, G> => c.GetCoarity() },
         Outputs
     )
 }
-func AssertArgumentsCompatible(f : InterfacedHypergraph, args : Array<InterfacedHypergraph>) : Unit {
+func AssertArgumentsCompatible<V, G>(
+    f : InterfacedHypergraph<V, G>,
+    args : Array<InterfacedHypergraph<V, G>>
+) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     AssertArrayElementsHaveParameters(
         args,
         f.GetInputVertices(),
-        { ih : InterfacedHypergraph =>
+        { ih : InterfacedHypergraph<V, G> =>
             AssertArrayHasLength(ih.GetOutputVertices(), 1)
             ih.GetOutput(0).GetWidth()
         },
-        { iv : InterfaceVertex => iv.GetWidth() },
+        { iv : InterfaceVertex<V, G> => iv.GetWidth() },
         Width
     )
 }

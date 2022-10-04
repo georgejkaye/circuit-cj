@@ -25,20 +25,21 @@ public interface HasOptionalName {
     func GetName() : Option<String>
 }
 public interface Socket <: HasWidth & HasOptionalName & ToString {}
-public interface Specifiable {
-    func GetInputPorts() : Array<Port>
-    func GetOutputPorts() : Array<Port>
+public interface Specifiable<V> where V <: ValueSymbol, V <: Equatable<V> {
+    func GetInputPorts() : Array<Port<V>>
+    func GetArity() : Int64
+    func GetOutputPorts() : Array<Port<V>>
+    func GetCoarity() : Int64
 }
 extend Int64 <: HasWidth {
     public func GetWidth() : Int64 {
         this
     }
 }
-
 /**
  * A port has a width and an optional name
  */
-public class Port <: ToString & Equatable<Port> & Socket {
+public class Port<V> <: ToString & Equatable<Port<V>> & Socket where V <: ValueSymbol, V <: Equatable<V> {
     public Port(
         public let width : Int64,
         public let name!: Option<String> = None
@@ -53,10 +54,10 @@ public class Port <: ToString & Equatable<Port> & Socket {
         }
         "${width}${nameString}"
     }
-    public operator func ==(rhs : Port) : Bool {
+    public operator func ==(rhs : Port<V>) : Bool {
         this.width == rhs.GetWidth() && this.name == rhs.GetName()
     }
-    public operator func !=(rhs : Port) : Bool {
+    public operator func !=(rhs : Port<V>) : Bool {
         !(this == rhs)
     }
     public func GetWidth() : Int64 {
@@ -66,20 +67,6 @@ public class Port <: ToString & Equatable<Port> & Socket {
         this.name
     }
 }
-
-/**
- * Generate an array of ports all with a given width
- *
- * @param n The number of ports in the array
- * @param w The width of each port
- * @return The port of arrays
- */
-func GeneratePortArray(n : Int64, w : Int64) : Array<Socket> {
-    Array<Socket>(n) {
-        i : Int64 => Port(w, numToUppercaseLetter(i+1))
-    }
-}
-
 public func PrintWidthArray<T>(array : Array<T>) : String where T <: HasWidth {
     printArray<T>(
         array,

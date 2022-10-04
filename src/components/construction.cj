@@ -41,18 +41,21 @@ public class NotImplemented <: Exception {
  *                bits, the second is the control, and the third if the auxiliary
  * @return The output wire and the final aux value
  */
-public func Bitwise<T, U>(
+public func Bitwise<T, U, V, G>(
     ws : Array<T>,
     control : Array<U>,
-    initial : Array<Wire>,
-    f : (Array<Wire>, Array<U>, Array<Wire>) -> (Array<Wire>, Array<Wire>),
+    initial : Array<Wire<V, G>>,
+    f : (Array<Wire<V, G>>, Array<U>, Array<Wire<V, G>>) -> (Array<Wire<V, G>>, Array<Wire<V, G>>),
     direction!: Direction = TOP_TO_BOTTOM
-) : (Array<Wire>, Array<Wire>) where T <: ToString, T <: ContainsWire, U <: ToString, T <: ContainsWire {
+) : (Array<Wire<V, G>>, Array<Wire<V, G>>)
+    where T <: ToString, T <: ContainsWire<V, G>, U <: ToString, U <: ContainsWire<V, G>,
+            V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     let size = ws.size
     let width = AssertWiresSameWidth<T>(ws)
     // An array of arrays containing the wires of ws split explicitly into their
     // constituent bits: splitWires[i][j] is the jth bit of ws[i]
-    let splitWires = Array<Array<Wire>>(size, {
+    let splitWires = Array<Array<Wire<V, G>>>(size, {
         i : Int64 =>
             let wire = ws[i].GetWire()
             Split(
@@ -63,14 +66,14 @@ public func Bitwise<T, U>(
     // Set the auxiliary wires as the initial
     var aux = initial
     // For each bit of the primary inputs, apply the circuit function
-    let outputs = ArrayList<Array<Wire>>(width)
+    let outputs = ArrayList<Array<Wire<V, G>>>(width)
     for (i in 0..width) {
         let j = match(direction) {
             case TOP_TO_BOTTOM => i
             case BOTTOM_TO_TOP => width - 1 - i
         }
         // Get the ith bit of the jth input wire
-        let inputs = Array<Wire>(size, { k : Int64 => splitWires[k][j] })
+        let inputs = Array<Wire<V, G>>(size, { k : Int64 => splitWires[k][j] })
         // Apply the function to transform this into output and a new aux
         let (output, carry) = f(inputs, control, aux)
         outputs.append(output)
@@ -78,9 +81,9 @@ public func Bitwise<T, U>(
         aux = carry
     }
     // Compress the individual bits back into thicker wires
-    let outputWires = Array<Wire>(
+    let outputWires = Array<Wire<V, G>>(
         outputs[0].size,
-        { i : Int64 => Combine(Array<Wire>(outputs.size, { j : Int64 => outputs[j][i] })) }
+        { i : Int64 => Combine(Array<Wire<V, G>>(outputs.size, { j : Int64 => outputs[j][i] })) }
     )
     (outputWires, aux)
 }
@@ -95,17 +98,19 @@ public func Bitwise<T, U>(
  *                bits and the second is the auxiliary
  * @return The output wire and the final aux value
  */
-public func Bitwise<T>(
+public func Bitwise<T, V, G>(
     ws : Array<T>,
-    initial : Array<Wire>,
-    f : (Array<Wire>, Array<Wire>) -> (Array<Wire>, Array<Wire>),
+    initial : Array<Wire<V, G>>,
+    f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> (Array<Wire<V, G>>, Array<Wire<V, G>>),
     direction!: Direction = TOP_TO_BOTTOM
-) : (Array<Wire>, Array<Wire>) where T <: ToString, T <: ContainsWire {
-    Bitwise<T, Wire>(
+) : (Array<Wire<V, G>>, Array<Wire<V, G>>)
+    where T <: ToString, T <: ContainsWire<V, G>,
+            V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+    Bitwise<T, Wire<V, G>, V, G>(
         ws,
-        Array<Wire>(),
+        Array<Wire<V, G>>(),
         initial,
-        {ws : Array<Wire>, ctl : Array<Wire>, aux : Array<Wire> => f(ws, aux)}
+        {ws : Array<Wire<V, G>>, ctl : Array<Wire<V, G>>, aux : Array<Wire<V, G>> => f(ws, aux)}
     )
 }
 /**
@@ -119,17 +124,20 @@ public func Bitwise<T>(
  *                bits and the second is the auxiliary
  * @return The output wire and the final aux value
  */
-public func Bitwise<T>(
+public func Bitwise<T, V, G>(
     ws : Array<T>,
-    initial : Wire,
-    f : (Array<Wire>, Wire) -> (Wire, Wire),
+    initial : Wire<V, G>,
+    f : (Array<Wire<V, G>>, Wire<V, G>) -> (Wire<V, G>, Wire<V, G>),
     direction!: Direction = TOP_TO_BOTTOM
-) : (Wire, Wire) where T <: ToString, T <: ContainsWire {
-    let (finalOutput, finalAux) = Bitwise<T, Wire>(
+) : (Wire<V, G>, Wire<V, G>)
+    where T <: ToString, T <: ContainsWire<V, G>,
+            V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    let (finalOutput, finalAux) = Bitwise<T, Wire<V, G>, V, G>(
         ws,
-        Array<Wire>(),
+        Array<Wire<V, G>>(),
         [initial],
-        {ws : Array<Wire>, ctl : Array<Wire>, aux : Array<Wire> =>
+        {ws : Array<Wire<V, G>>, ctl : Array<Wire<V, G>>, aux : Array<Wire<V, G>> =>
             let (currentOutput, currentAux) = f(ws, aux[0])
             ([currentOutput], [currentAux])
         },
@@ -145,16 +153,19 @@ public func Bitwise<T>(
  * @param f       The function to perform for the ith bit of each wire
  * @return The output wire and the final aux value
  */
-public func Bitwise<T>(
+public func Bitwise<T, V, G>(
     ws : Array<T>,
-    f : (Array<Wire>) -> Array<Wire>,
+    f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
     direction!: Direction = TOP_TO_BOTTOM
-) : Array<Wire> where T <: ToString, T <: ContainsWire {
-    Bitwise<T, Wire>(
+) : Array<Wire<V, G>>
+    where T <: ToString, T <: ContainsWire<V, G>,
+        V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    Bitwise<T, Wire<V, G>, V, G>(
         ws,
-        Array<Wire>(),
-        Array<Wire>(),
-        {ws : Array<Wire>, ctl : Array<Wire>, aux : Array<Wire> => (f(ws), aux) },
+        Array<Wire<V, G>>(),
+        Array<Wire<V, G>>(),
+        {ws : Array<Wire<V, G>>, ctl : Array<Wire<V, G>>, aux : Array<Wire<V, G>> => (f(ws), aux) },
         direction: direction,
     )[0]
 }
@@ -166,16 +177,19 @@ public func Bitwise<T>(
  * @param f       The function to perform for the ith bit of each wire
  * @return The output wire and the final aux value
  */
-public func Bitwise<T>(
+public func Bitwise<T, V, G>(
     ws : Array<T>,
-    f : (Array<Wire>) -> Wire,
+    f : (Array<Wire<V, G>>) -> Wire<V, G>,
     direction!: Direction = TOP_TO_BOTTOM
-) : Wire where T <: ToString, T <: ContainsWire {
-    Bitwise<T, Wire>(
+) : Wire<V, G>
+    where T <: ToString, T <: ContainsWire<V, G>,
+            V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    Bitwise<T, Wire<V, G>, V, G>(
         ws,
-        Array<Wire>(),
-        Array<Wire>(),
-        {ws : Array<Wire>, ctl : Array<Wire>, aux : Array<Wire> => ([f(ws)], aux) },
+        Array<Wire<V, G>>(),
+        Array<Wire<V, G>>(),
+        {ws : Array<Wire<V, G>>, ctl : Array<Wire<V, G>>, aux : Array<Wire<V, G>> => ([f(ws)], aux) },
         direction: direction
     )[0][0]
 }
@@ -189,20 +203,24 @@ public func Bitwise<T>(
  * some general framework. Also there's lots of repeated code
  *
  * @param ws The array of input wires
- * @param f The binary operation (Wire, Wire) -> (Wire, Wire) on wires to compute
+ * @param f The binary operation (Wire<V, G>, Wire<V, G>) -> (Wire<V, G>, Wire<V, G>)
+                on wires to compute
  *              The inputs to the function are (previous carry, current input)
  *              The outputs to the function are (current output, current carry)
  * @return The wires that carries the outputs of each operation
  */
-public func Ripple<T>(
+public func Ripple<T, V, G>(
     ws : Array<T>,
-    f : (Wire, Wire) -> (Wire, Wire),
+    f : (Wire<V, G>, Wire<V, G>) -> (Wire<V, G>, Wire<V, G>),
     direction!: Direction = TOP_TO_BOTTOM
-) : Array<Wire> where T <: ToString, T <: ContainsWire {
+) : Array<Wire<V, G>> where
+    T <: ToString, T <: ContainsWire<V, G>,
+        V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     AssertMinNumberOfWires<T>(ws, 2)
     AssertWiresSameWidth<T>(ws)
     // The first gate is performed on inputs 0 and 1
-    let outputs = ArrayList<Wire>()
+    let outputs = ArrayList<Wire<V, G>>()
     let first = match(direction) {
         case TOP_TO_BOTTOM => 0
         case BOTTOM_TO_TOP => ws.size - 1
@@ -240,11 +258,14 @@ public func Ripple<T>(
  *              The outputs to the function are (current output)
  * @return The wire that carries the output of the final ripple operation
  */
-public func Ripple<T>(
+public func Ripple<T, V, G>(
     ws : Array<T>,
-    f : (Wire, Wire) -> Wire,
+    f : (Wire<V, G>, Wire<V, G>) -> Wire<V, G>,
     direction!: Direction = TOP_TO_BOTTOM
-) : Wire where T <: ToString, T <: ContainsWire {
+) : Wire<V, G>
+    where T <: ToString, T <: ContainsWire<V, G>,
+        V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     AssertMinNumberOfWires<T>(ws, 2)
     AssertWiresSameWidth<T>(ws)
     // The first gate is performed on inputs 0 and 1
@@ -272,14 +293,17 @@ public func Ripple<T>(
  * @param f The binary operation on wires to compute
  * @return The wire that carries the data of the complete ripple operation
  */
-public func InternalRipple<T>(
+public func InternalRipple<T, V, G>(
     w : T,
-    f : (Wire, Wire) -> (Wire)
-) : Wire where T <: ContainsWire, T <: ToString {
+    f : (Wire<V, G>, Wire<V, G>) -> Wire<V, G>
+) : Wire<V, G>
+    where T <: ContainsWire<V, G>, T <: ToString,
+            V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     AssertWireHasWidthAtLeast<T>(w, 2)
     let width = w.GetWidth()
     // Split the input wire into each bit
-    let splitWires = Split<T>(
+    let splitWires = Split<T, V, G>(
         w,
         Array<Int64>(width, { i : Int64 => 1 })
     )

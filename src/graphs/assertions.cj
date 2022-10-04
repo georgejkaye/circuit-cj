@@ -12,47 +12,58 @@ import assertions.*
 func AssertOwned<T,U>(t : T) : U where T <: Ownable<U>, U <: ToString {
     AssertIsNotNone<U>(t.GetOwner(), Owner)
 }
-func AssertAtMostOneInEdge<T, U>(t : T, u : U) : Option<EdgeConnection> where T <: ContainsVertex, U <: ContainsVertex {
+func AssertAtMostOneInEdge<T, U, V, G>(t : T, u : U) : Option<EdgeConnection<V, G>>
+    where T <: ContainsVertex<V, G>, U <: ContainsVertex<V, G>, V <: ValueSymbol,
+            V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     let v = t.GetVertex()
     let w = u.GetVertex()
     match(v.GetInEdge()) {
         case None    => w.GetInEdge()
         case Some(ev) =>
-            AssertHasParameter<Vertex, Option<EdgeConnection>>(
+            AssertHasParameter<Vertex<V, G>, Option<EdgeConnection<V, G>>>(
                 w,
                 None,
-                { w : Vertex => w.GetInEdge() },
+                { w : Vertex<V, G> => w.GetInEdge() },
                 InEdge
             )
             Some(ev)
     }
 }
-public func AssertVertexHasNoInEdge(v : Vertex) : Unit {
+public func AssertVertexHasNoInEdge<V, G>(v : Vertex<V, G>) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     AssertIsNone(v.GetInEdge(), InEdge)
 }
-func AssertTargetsUnassigned<T>(targets : Array<T>) : Unit where T <: ContainsVertex, T <: ToString {
-    AssertArrayElementsHaveParameter<T, Option<EdgeConnection>>(
+func AssertTargetsUnassigned<T, V, G>(targets : Array<T>) : Unit
+    where T <: ContainsVertex<V,G>, T <: ToString, V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    AssertArrayElementsHaveParameter<T, Option<EdgeConnection<V, G>>>(
         targets,
         None,
         { t : T => t.GetVertex().GetInEdge() },
         InEdge
     )
 }
-func AssertCompatibleInputOutput(
-    f : InterfacedHypergraph,
-    g : InterfacedHypergraph
-) : Unit {
-    AssertArrayElementsHaveParameters<Port, Port, Port>(
+func AssertCompatibleInputOutput<V, G>(
+    f : InterfacedHypergraph<V, G>,
+    g : InterfacedHypergraph<V, G>
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+    AssertArrayElementsHaveParameters<Port<V>, Port<V>, Port<V>>(
         g.GetInputPorts(),
         f.GetOutputPorts(),
-        { p : Port => p },
-        { p : Port => p },
+        { p : Port<V> => p },
+        { p : Port<V> => p },
         Width
     )
 }
-func AssertGraphHasMinimumInputs(f : InterfacedHypergraph, i : Int64) : Unit {
+func AssertGraphHasMinimumInputs<V, G>(f : InterfacedHypergraph<V, G>, i : Int64) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     AssertArrayHasMinimumLength(f.GetInputPorts(), i)
 }
-func AssertGraphHasMinimumOutputs(f : InterfacedHypergraph, i : Int64) : Unit {
+func AssertGraphHasMinimumOutputs<V, G>(f : InterfacedHypergraph<V, G>, i : Int64) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     AssertArrayHasMinimumLength(f.GetOutputPorts(), i)
 }

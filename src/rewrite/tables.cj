@@ -28,7 +28,7 @@ class TruthTable {
     * @param args The list of arguments
      */
     func Eval(args : Array<Value>) : Array<Value> {
-        AssertArrayHasLength(args, generator.GetNoInputs())
+        AssertArrayHasLength(args, generator.GetArity())
         table(args)
     }
 }
