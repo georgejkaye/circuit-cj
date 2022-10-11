@@ -212,18 +212,14 @@ public func MakeRippleAdder(width : Int64) : InterfacedHypergraph<GateLevelValue
     let a = sig.UseWire(width)
     let b = sig.UseWire(width)
     let c = sig.UseWire(1)
-    let (sum, carry) = Bitwise(
-        [a, b],
-        Array<Wire<GateLevelValue, GateLevelPrimitive>>(),
+    let (sum, carry) = BitwiseRipple(
+        { acc : Array<Wire<GateLevelValue, GateLevelPrimitive>>, cur : Array<Wire<GateLevelValue, GateLevelPrimitive>> =>
+            let (sum, carry) = FullAdder(acc[0], cur[0], cur[1])
+            ([sum], [carry])
+        },
         [c],
-        {
-            ws : Array<Wire<GateLevelValue, GateLevelPrimitive>>, ctl : Array<Wire<GateLevelValue, GateLevelPrimitive>>, aux : Array<Wire<GateLevelValue, GateLevelPrimitive>> =>
-                let (s, cout) = UseSubcircuit_2(
-                    MakeFullAdder(),
-                    [ws[0], ws[1], aux[0]]
-                )
-                ([s], [cout])
-        }
+        [[a], [b]],
+        TOP_TO_BOTTOM
     )
     MakeSubcircuit(
         [
@@ -238,24 +234,24 @@ public func MakeRippleAdder(width : Int64) : InterfacedHypergraph<GateLevelValue
         "ripple_adder"
     )
 }
-// /**
-//  * Apply a ripple adder. The width is determined from
-//  * the first two input wires.
-//  * @param a Input A (w)
-//  * @param b Input B (w)
-//  * @param c Input Cin (1)
-//  * @return (Output S (w), Output Cout (1))
-//  */
-// public func RippleAdder(
-//     a : Wire<GateLevelValue, GateLevelPrimitive>,
-//     b : Wire<GateLevelValue, GateLevelPrimitive>,
-//     c : Wire<GateLevelValue, GateLevelPrimitive>
-// ) : (Wire<GateLevelValue, GateLevelPrimitive>, Wire<GateLevelValue, GateLevelPrimitive>) {
-//     AssertWiresSameWidth(a, b)
-//     let width = a.GetWidth()
-//     AssertWireWidth(c, 1)
-//     UseSubcircuit_2(MakeRippleAdder(width), [a, b, c])
-// }
+/**
+ * Apply a ripple adder. The width is determined from
+ * the first two input wires.
+ * @param a Input A (w)
+ * @param b Input B (w)
+ * @param c Input Cin (1)
+ * @return (Output S (w), Output Cout (1))
+ */
+public func RippleAdder(
+    a : Wire<GateLevelValue, GateLevelPrimitive>,
+    b : Wire<GateLevelValue, GateLevelPrimitive>,
+    c : Wire<GateLevelValue, GateLevelPrimitive>
+) : (Wire<GateLevelValue, GateLevelPrimitive>, Wire<GateLevelValue, GateLevelPrimitive>) {
+    AssertWiresSameWidth(a, b)
+    let width = a.GetWidth()
+    AssertWireWidth(c, 1)
+    UseSubcircuit_2(MakeRippleAdder(width), [a, b, c])
+}
 /**
  * Create a 2-multiplexer subcircuit for inputs of one bit: a circuit
  * that produces one of two outputs depending on a control signal.
@@ -287,21 +283,13 @@ public func Mux2_1_W(width : Int64) : InterfacedHypergraph<GateLevelValue, GateL
     let sel = sig.UseWire(1)
     let a = sig.UseWire(width)
     let b = sig.UseWire(width)
+    let ctls = Replicate(sel, width)
     let output = Bitwise(
-        [a, b],
-        [sel],
-        { ws : Array<Wire<GateLevelValue, GateLevelPrimitive>>,
-            ctl : Array<Wire<GateLevelValue, GateLevelPrimitive>>
-            =>
-            UseSubcircuit<
-                Wire<GateLevelValue, GateLevelPrimitive>,
-                GateLevelValue,
-                GateLevelPrimitive
-            >(
-                Mux2_1_1(),
-                [ctl[0].GetWire(), ws[0], ws[1]]
-            )
-        }
+        { ws : Array<Wire<GateLevelValue, GateLevelPrimitive>> => UseSubcircuit(
+            Mux2_1_1(),
+            ws
+        )},
+        [ctls, a, b]
     )[0]
     MakeSubcircuit(
         [
