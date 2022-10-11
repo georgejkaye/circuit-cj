@@ -45,7 +45,7 @@ public func SortingNetwork(width : Int64, inputs : Int64) : InterfacedHypergraph
     if(inputs == 0){
         throw NotImplemented("Sorting network cannot have 0 inputs")
     }
-    let inputWires = UseWires(inputs, width)
+    let inputWires = sig.UseWires(inputs, width)
     let outputWires =
         // A sorting network on one wire is just the identity
         if(inputs == 1){

@@ -2,6 +2,7 @@ package signatures.gate
 
 import syntax.*
 import components.*
+import prelude.*
 
 from std import math.abs
 
@@ -89,7 +90,7 @@ func UnsignedDecToBin(x : Int64, w : Int64) : Signal<GateLevelValue> {
         bin.set(i, rem)
         num = num / 2
     }
-    return Signal(bin, false)
+    return Signal(bin)
 }
 /**
  * 'Add one' to an array of booleans, i.e. flip the lowest bit and
@@ -126,7 +127,7 @@ func SignedDecToBin(x : Int64, w : Int64) : Signal<GateLevelValue> {
     let bin = UnsignedDecToBin(abs(x), w).values
     Invert(bin)
     AddOne(bin)
-    Signal(bin, true)
+    Signal(bin)
 }
 /**
  * Use an unsigned value for a given number
@@ -136,7 +137,7 @@ func SignedDecToBin(x : Int64, w : Int64) : Signal<GateLevelValue> {
  */
 public func UseUnsignedSignalFromInt(x : Int64, width!: Int64) : Wire<GateLevelValue, GateLevelPrimitive> {
     let bin = UnsignedDecToBin(x, width)
-    UseSignal<GateLevelValue, GateLevelPrimitive>(bin)
+    UseSignal(bin)
 }
 /**
  * Use a signed value for a given number
@@ -144,7 +145,7 @@ public func UseUnsignedSignalFromInt(x : Int64, width!: Int64) : Wire<GateLevelV
  * @param width The width of the resulting bitstring
  * @return The wire of the value
  */
-public func UseSignedSignalFromInt(x : Int64, width!: Int64) : Wire {
+public func UseSignedSignalFromInt(x : Int64, width!: Int64) : Wire<GateLevelValue, GateLevelPrimitive> {
     let bin = SignedDecToBin(x, width)
     UseSignal(bin)
 }
@@ -155,7 +156,11 @@ public func UseSignedSignalFromInt(x : Int64, width!: Int64) : Wire {
  * @param width The width of the resulting bitstring
  * @return The wire of the value
  */
-public func UseValueFromInt(x : Int64, signed: Bool, width!: Int64) : Wire {
+public func UseSignalFromInt(
+    x : Int64,
+    signed: Bool,
+    width!: Int64
+) : Wire<GateLevelValue, GateLevelPrimitive> {
     if(signed){
         UseSignedSignalFromInt(x, width: width)
     } else {
@@ -167,16 +172,16 @@ public func UseValueFromInt(x : Int64, signed: Bool, width!: Int64) : Wire {
  * @param width The width of the bitstring
  * @return The wire of the value
  */
-public func Zero(width: Int64) : Wire {
-    let values = Array<GateLevelValue>(width, { i : Int64 => False })
-    UseSignal(Signal(values, false))
+public func Zero(width: Int64) : Wire<GateLevelValue, GateLevelPrimitive> {
+    let values = Array<GateLevelValue>(width, { i : Int64 => FALSE })
+    UseSignal(Signal(values))
 }
 /**
  * Create a constant zero waveform for a given width, i.e. all falses
  * @param width The width of the bitstring
  * @return The wire of the value
  */
-public func ConstantZero(width: Int64) : Wire {
+public func ConstantZero(width: Int64) : Wire<GateLevelValue, GateLevelPrimitive> {
     let value = Zero(width)
     InfiniteWaveform(value)
 }
@@ -184,7 +189,7 @@ public func ConstantZero(width: Int64) : Wire {
  * Create a constant zero waveform for one bit, i.e. a false
  * @return The wire of the value
  */
-public func ConstantZero() : Wire {
+public func ConstantZero() : Wire<GateLevelValue, GateLevelPrimitive> {
     ConstantZero(1)
 }
 /**
@@ -192,7 +197,19 @@ public func ConstantZero() : Wire {
  * @param w The input wire
  * @return The wire with an extra bit
  */
-public func UnsignedExtend(w : Wire) : Wire {
-    let value = InfiniteWaveform(False)
+public func UnsignedExtend(
+    w : Wire<GateLevelValue, GateLevelPrimitive>
+) : Wire<GateLevelValue, GateLevelPrimitive> {
+    let value = InfiniteWaveform<GateLevelValue, GateLevelPrimitive>(FALSE)
     Combine([value, w])
+}
+
+public func MakeWaveform(
+    vs : Array<Int64>,
+    width!: Int64,
+    signed!: Bool = true,
+    closed!: Bool = true
+) : InterfacedHypergraph<GateLevelValue, GateLevelPrimitive> {
+    let specs = map({v : Int64 => DecToBin(v, width, signed) }, vs)
+    MakeWaveform(Waveform(specs), closed: closed)
 }

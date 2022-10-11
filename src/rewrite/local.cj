@@ -16,11 +16,17 @@ import debug.Debug
 from std import collection.HashMap
 from std import collection.HashSet
 
-public func RewriteCombinational(f : InterfacedHypergraph, starting : ArrayList<EdgeAtDepth>) : Unit {
+public func RewriteCombinational<V, G>(
+    signature : Signature<V, G>,
+    f : InterfacedHypergraph<V, G>,
+    starting : ArrayList<EdgeAtDepth<V, G>>
+) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     let actionAtEdge = {
-        ed : EdgeAtDepth, data : TraversalData =>
-            let nexts = ArrayList<EdgeAtDepth>()
-            for(rule in rules) {
+        ed : EdgeAtDepth<V, G>, data : TraversalData<V, G> =>
+            let nexts = ArrayList<EdgeAtDepth<V, G>>()
+            for(rule in GetRules(signature)) {
                 if(rule.CanRewrite(ed.edge, f)) {
                     Debug("Rewriting ${ed.edge} with ${rule.name}")
                     for(e in rule.Rewrite(ed.edge, f)){

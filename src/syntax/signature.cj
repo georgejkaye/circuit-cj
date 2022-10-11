@@ -71,4 +71,7 @@ public struct Signature<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: Pr
     public func LTEPowers(v: Array<V>, u: Array<V>): Bool {
         latticeStructure.LTEPowers(v, u)
     }
+    public func GetBottom() : V {
+        latticeStructure.bot
+    }
 }

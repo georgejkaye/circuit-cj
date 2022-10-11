@@ -27,7 +27,7 @@ public class Wire<V, G> <: Identifiable & ToString & ContainsVertex<V, G> & HasW
     init(i : Int64) {
         this(Vertex<V, G>(i))
     }
-public func SetVertex(v : Vertex<V, G>) : Unit {
+    public func SetVertex(v : Vertex<V, G>) : Unit {
         let owner = v.GetOwner()
         this.vertex = v
     }
@@ -52,6 +52,16 @@ public interface ContainsWire<V, G> <: HasWidth & ContainsVertex<V, G>
 extend Wire<V, G> <: ContainsWire<V, G> {
     public func GetWire() : Wire<V, G> {
         this
+    }
+}
+public interface WireBuilder<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    func UseWire(w : Int64) : Wire<V, G>
+}
+extend Signature<V, G> <: WireBuilder<V, G> {
+    public func UseWire(w : Int64) : Wire<V, G> {
+        UseWire<V, G>(w)
     }
 }
 /**
@@ -189,7 +199,7 @@ func MakeEdge<V, G>(
  * @param graph The optional owner of this edge
  * @return The array of wires corresponding to the new edge's targets
  */
-public func UseEdgeWithNewOutputs<T, V, G>(
+public func UseEdgeWithNewOutputs<V, G, T>(
     label : Label<V, G>,
     sources : Array<T>,
     graph : Option<InterfacedHypergraph<V, G>>
@@ -221,13 +231,14 @@ public func MergeWires<V, G>(v : Wire<V, G>, w : Wire<V, G>, feedback: Bool) : U
  * @param vs The array of widths to split this wire into
  * @return The array of split wires
  */
-public func Split<T, V, G>(t : T, vs : Array<Int64>) : Array<Wire<V, G>>
-    where T <: ContainsWire<V, G>, T <: ToString, V <: ValueSymbol, V <: Equatable<V>,
-            G <: PrimitiveSymbol<V>, G <: Equatable<G> {
-    AssertWireWidth<T>(t, Sum(vs))
-    UseEdgeWithNewOutputs<T, V, G>(
-        BUNDLER([t.GetWidth()], vs),
-        [t],
+public func Split<V, G, T>(w : T, vs : Array<Int64>) : Array<Wire<V, G>>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>,
+            T <: ContainsWire<V, G>, T <: ToString
+{
+    AssertWireWidth<V, G, T>(w, Sum(vs))
+    UseEdgeWithNewOutputs<V, G, T>(
+        BUNDLER([w.GetWidth()], vs),
+        [w],
         None<InterfacedHypergraph<V, G>>
     )
 }
@@ -239,8 +250,9 @@ public func Split<T, V, G>(t : T, vs : Array<Int64>) : Array<Wire<V, G>>
  * @param r The width of the 'right' output wire
  * @return The two output wires
  */
-public func Split<V, G>(w : Wire<V, G>, l : Int64, r : Int64) : (Wire<V, G>, Wire<V, G>)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+public func Split<V, G, T>(w : T, l : Int64, r : Int64) : (Wire<V, G>, Wire<V, G>)
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>,
+            T <: ContainsWire<V, G>, T <: ToString
 {
     let split = Split(w, [l, r])
     (split[0], split[1])
@@ -250,8 +262,9 @@ public func Split<V, G>(w : Wire<V, G>, l : Int64, r : Int64) : (Wire<V, G>, Wir
  * @param w The wire to split
  * @return The array of split wires
  */
-public func Split<V, G>(w : Wire<V, G>) : Array<Wire<V, G>>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+public func Split<V, G, T>(w : T) : Array<Wire<V, G>>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>,
+        T <: ContainsWire<V, G>, T <: ToString
 {
     Split(w, Array<Int64>(w.GetWidth(), { i : Int64 => 1}))
 }
@@ -260,10 +273,11 @@ public func Split<V, G>(w : Wire<V, G>) : Array<Wire<V, G>>
  * @param ws The array of wires to combine
  * @return The combined wire
  */
-public func Combine<V, G>(ws : Array<Wire<V, G>>) : Wire<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+public func Combine<V, G, T>(ws : Array<T>) : Wire<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>,
+            T <: ContainsWire<V, G>, T <: ToString
 {
-    let widths = map({ w : Wire<V, G> => w.GetWidth() }, ws)
+    let widths = map({ t : T => t.GetWidth() }, ws)
     UseEdgeWithNewOutputs(
         BUNDLER(widths, [Sum(widths)]),
         ws,
@@ -276,10 +290,11 @@ public func Combine<V, G>(ws : Array<Wire<V, G>>) : Wire<V, G>
  * @param rhs The 'right' wire to combine
  * @return The combined wire
  */
-public func Combine<V, G>(lhs : Wire<V, G>, rhs : Wire<V, G>) : Wire<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+public func Combine<V, G, T>(lhs : T, rhs : T) : Wire<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>,
+            T <: ContainsWire<V, G>, T <: ToString
 {
-    Combine([lhs, rhs])
+    Combine<V, G, T>([lhs, rhs])
 }
 /**
  * Extract a given bit from a wire by splitting it into its constituent bits and
@@ -291,7 +306,7 @@ public func Combine<V, G>(lhs : Wire<V, G>, rhs : Wire<V, G>) : Wire<V, G>
 public func GetBit<V, G>(w : Wire<V, G>, i : Int64) : Wire<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    AssertWireHasWidthAtLeast<Wire<V, G>>(w, i)
+    AssertWireHasWidthAtLeast<V, G, Wire<V, G>>(w, i)
     let width = w.GetWidth()
     if (i == 0) {
         let ws = Split(w, [1, width - 1])

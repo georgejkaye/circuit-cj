@@ -147,11 +147,23 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
     }
 }
 
-public func GetSignalLabel<V, G>(v : V, w : Int64, base : Int64) : Label<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+public func GetSignalLabel<V, G>(v : V, w : Int64) : Label<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     if(w == 1) {
         VALUE(v)
     } else {
-        let signal = Signal(v, w, base)
+        let signal = Signal(v, w)
         SIGNAL(signal)
+    }
+}
+
+public func GetSignalLabel<V, G>(values : Array<V>) : Label<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    if(values.size == 1) {
+        VALUE(values[0])
+    } else {
+        SIGNAL(Signal(values))
     }
 }

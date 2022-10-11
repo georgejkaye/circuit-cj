@@ -26,7 +26,7 @@ func RunningSum(first : Wire, prev_sum: Wire, a: Wire, b0: Wire) : Wire {
 }
 
 func RunningSumLoop(first: Wire, a : Wire, b0 : Wire) : (Wire, Wire) {
-    let prev_sum = UseWire(a.GetWidth())
+    let prev_sum = sig.UseWire(a.GetWidth())
     let sum = RunningSum(first, prev_sum, a, b0)
     let (lsb, msbs) = LsbAndMsbs(sum)
     Feedback(msbs, prev_sum)
@@ -35,7 +35,7 @@ func RunningSumLoop(first: Wire, a : Wire, b0 : Wire) : (Wire, Wire) {
 
 
 func ComputedBits(bit : Wire, width : Int64) : Wire {
-    let prev = UseWire(width)
+    let prev = sig.UseWire(width)
     let msbs = Msbs(prev)
     let combined = Combine([bit, msbs])
     DelayGuardedFeedback(combined, prev)
@@ -43,9 +43,9 @@ func ComputedBits(bit : Wire, width : Int64) : Wire {
 }
 
 public func SerialMultiplierBit(width : Int64) {
-    let first = UseWire(1)
-    let a = UseWire(width)
-    let b0 = UseWire(1)
+    let first = sig.UseWire(1)
+    let a = sig.UseWire(width)
+    let b0 = sig.UseWire(1)
     let (sum, bit) = RunningSumLoop(first, a, b0)
     let computedBits = ComputedBits(bit, width)
     let output = Combine([sum, computedBits])

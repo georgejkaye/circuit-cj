@@ -8,10 +8,13 @@
 package examples
 
 import components.*
+import signatures.gate.*
+
+let sig = gateLevelSignature
 
 public func Accumulator(width!: Int64, initial!: Int64){
-    let input = UseWire(width)
-    let prev = UseWire(width)
+    let input = sig.UseWire(width)
+    let prev = sig.UseWire(width)
     let zero = ConstantZero()
     let (sum, carry) = RippleAdder(prev, input, zero)
     RegisterGuardedFeedback(prev, initial: initial, signed: false, input: sum)

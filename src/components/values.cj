@@ -65,8 +65,8 @@ public func UseBinaryGate<V, G>(prim : G, a : Wire<V, G>, b : Wire<V, G>) : Wire
 public func UseValue<V, G>(v : V) : Wire<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    UseEdgeWithNewOutputs<Vertex<V, G>, V, G>(
-        VALUE(v),
+    UseEdgeWithNewOutputs<V, G, Vertex<V, G>>(
+        Label<V, G>.VALUE(v),
         Array<Vertex<V, G>>(),
         None<InterfacedHypergraph<V, G>>
     )[0]
@@ -84,7 +84,7 @@ public func Join<V, G>(a : Wire<V, G>, b : Wire<V, G>) : Wire<V, G>
  * @param signed Whether the number is signed
  * @return The output wire
  */
-func MakeSignal<V, G>(spec : Signal<V>) : InterfacedHypergraph
+func MakeSignal<V, G>(spec : Signal<V>) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let vs = spec.values
@@ -104,7 +104,7 @@ func MakeSignal<V, G>(spec : Signal<V>) : InterfacedHypergraph
         SIGNAL(spec)
     )
 }
-func UseSignal<V, G>(spec : Signal<V>) : Wire<V, G>
+public func UseSignal<V, G>(spec : Signal<V>) : Wire<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     if(spec.GetWidth() == 1) {
@@ -112,7 +112,7 @@ func UseSignal<V, G>(spec : Signal<V>) : Wire<V, G>
     } else {
         UseSubcircuit_1<Wire<V, G>, V, G>(
             MakeSignal(spec),
-            Array<Wire>()
+            Array<Wire<V, G>>()
         )
     }
 }
@@ -120,5 +120,5 @@ public func UseSignal<V, G>(v : V, i : Int64) : Wire<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let array : Array<V> = Array<V>(i, {i : Int64 => v})
-    UseSignal(Signal(array, false))
+    UseSignal(Signal(array))
 }

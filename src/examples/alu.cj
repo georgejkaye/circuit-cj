@@ -17,9 +17,9 @@ import components.*
  * @return A full adder subcircuit
  */
 func FullAdder() {
-    let inputA = UseWire(1)
-    let inputB = UseWire(1)
-    let inputC = UseWire(1)
+    let inputA = sig.UseWire(1)
+    let inputB = sig.UseWire(1)
+    let inputC = sig.UseWire(1)
     let inputXor = XorGate(inputA, inputB)
     let inputAnd = AndGate(inputA, inputB)
     let carryXor = XorGate(inputC, inputXor)
@@ -42,9 +42,9 @@ func FullAdder() {
  * @return A multibit full adder subcircuit
  */
 func MultibitFullAdder(width : Int64) {
-    let a = UseWire(width)
-    let b = UseWire(width)
-    let c = UseWire(1)
+    let a = sig.UseWire(width)
+    let b = sig.UseWire(width)
+    let c = sig.UseWire(1)
     let (sum, carry) = Bitwise(
         [a, b],
         c,
@@ -70,9 +70,9 @@ func MultibitFullAdder(width : Int64) {
  */
 public func AddSub(width : Int64) {
     // Input wires
-    let a = UseWire(width)
-    let b = UseWire(width)
-    let c = UseWire(1)
+    let a = sig.UseWire(width)
+    let b = sig.UseWire(width)
+    let c = sig.UseWire(1)
     // To allow subtraction
     let xorGates = Xor(b, Replicate(c, width))
     let (sum, carry) = UseSubcircuit_2(MultibitFullAdder(width), [a, b, c])
@@ -110,10 +110,10 @@ public func AddSub(width : Int64) {
  * @return The ALU subcircuit
  */
 public func ALU(w : Int64){
-    let a = UseWire(w)
-    let b = UseWire(w)
-    let c0 = UseWire(1)
-    let c1 = UseWire(1)
+    let a = sig.UseWire(w)
+    let b = sig.UseWire(w)
+    let c0 = sig.UseWire(1)
+    let c1 = sig.UseWire(1)
     let and = And(a, b)
     let or = Or(a, b)
     let (sum, overflow, carry) = UseSubcircuit_3(AddSub(w), [a, b, c0])

@@ -11,13 +11,18 @@ package rewrite
 
 import syntax.*
 
-public func RunCycle(f : InterfacedHypergraph){
+public func RunCycle<V, G>(
+    signature : Signature<V, G>,
+    f : InterfacedHypergraph<V, G>
+) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     BurstSequentialGraphs(f)
-    InstantFeedback(f)
+    InstantFeedback(signature, f)
     WriteDotToFile(f, 0, "before-uf")
-    let startingEdges = ArrayList<EdgeAtDepth>()
-    Unfold(f, startingEdges)
-    RewriteCombinational(f, startingEdges)
+    let startingEdges = ArrayList<EdgeAtDepth<V, G>>()
+    Unfold(signature, f, startingEdges)
+    RewriteCombinational(signature, f, startingEdges)
 }
 
 /**
@@ -26,10 +31,12 @@ public func RunCycle(f : InterfacedHypergraph){
  *
  * @param f The interfaced hypergraph
  */
-func BurstSequentialGraphs(f : InterfacedHypergraph) : Unit {
+func BurstSequentialGraphs<V, G>(f : InterfacedHypergraph<V, G>) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     var sequentialEdges = f.GetSequentialData().sequentialEdges.size
     while(sequentialEdges != 0) {
-        let edges = HashSet<Edge>(f.GetSequentialData().sequentialEdges)
+        let edges = HashSet<Edge<V, G>>(f.GetSequentialData().sequentialEdges)
         for(e in edges) {
             e.BurstSubgraph()
         }
@@ -42,7 +49,9 @@ func BurstSequentialGraphs(f : InterfacedHypergraph) : Unit {
  *
  * @param f The hypergraph to yank delays from
  */
-func YankDelays(f : InterfacedHypergraph) : Unit {
+func YankDelays<V, G>(f : InterfacedHypergraph<V, G>) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     for(e in f.GetSequentialData().delayEdges){
         if(e.GetSource(0).feedback){
             e.RemoveFeedback(0)
@@ -58,14 +67,16 @@ func YankDelays(f : InterfacedHypergraph) : Unit {
         }
     }
 }
-func CopyVertices(
-    vertices : HashSet<Vertex>,
-    inputVertices : HashSet<Vertex>,
-    vertexMap : HashMap<Vertex, Vertex>
-) : Unit {
+func CopyVertices<V, G>(
+    vertices : HashSet<Vertex<V, G>>,
+    inputVertices : HashSet<Vertex<V, G>>,
+    vertexMap : HashMap<Vertex<V, G>, Vertex<V, G>>
+) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     for(v in vertices) {
         if(!inputVertices.contains(v)) {
-            let w = Vertex(v.GetWidth())
+            let w = Vertex<V, G>(v.GetWidth())
             vertexMap.put(v, w)
         }
     }
@@ -79,14 +90,16 @@ func CopyVertices(
  *
  * @param f The circuit to replace 'instant feedback' in
  */
-func InstantFeedback(f : InterfacedHypergraph) : Unit {
+func InstantFeedback<V, G>(signature : Signature<V, G>, f : InterfacedHypergraph<V, G>) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     // If the tentacles adjacent to a delay edge are marked as feedback,
     // we can eliminate this since a delay is already implicitly on a big
     // feedback loop and an additional loop is redundant
     YankDelays(f)
     if(f.HasNonDelayGuardedFeedback()) {
         Debug("Non-delay-guarded feedback found, unrolling it...")
-        UnrollInstantFeedback(f)
+        UnrollInstantFeedback(signature, f)
     } else {
         Debug("No non-delay-guarded feedback, skipping instant feedback unrolling...")
     }
@@ -98,7 +111,12 @@ func InstantFeedback(f : InterfacedHypergraph) : Unit {
  * @param t The tentacle
  * @param vertexMap The vertex map
  */
-func CopyTentacle(t : Tentacle, vertexMap : HashMap<Vertex, Vertex>) : Vertex {
+func CopyTentacle<V, G>(
+    t : Tentacle<V, G>,
+    vertexMap : HashMap<Vertex<V, G>, Vertex<V, G>>
+) : Vertex<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     let v = t.GetVertex()
     match(vertexMap.get(v)) {
         case Some(w) => w
@@ -112,12 +130,14 @@ func CopyTentacle(t : Tentacle, vertexMap : HashMap<Vertex, Vertex>) : Vertex {
  * @param e The edge
  * @return An option potentially containing a copy of the edge's subgraph
  */
-func CopySubgraph(e : Edge) : Option<InterfacedHypergraph> {
+func CopySubgraph<V, G>(e : Edge<V, G>) : Option<InterfacedHypergraph<V, G>>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     match(e.GetSubgraph()){
         case Some(g) =>
             let (h, _, _) = g.CloneGraph()
             Some(h)
-        case None => None<InterfacedHypergraph>
+        case None => None<InterfacedHypergraph<V, G>>
     }
 }
 /**
@@ -128,7 +148,9 @@ func CopySubgraph(e : Edge) : Option<InterfacedHypergraph> {
  *
  * @param f The circuit to replace 'instant feedback' in
  */
-func UnrollInstantFeedback(f : InterfacedHypergraph) : Unit {
+func UnrollInstantFeedback<V, G>(signature : Signature<V, G>, f : InterfacedHypergraph<V, G>) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     // How many iterations we need to perform in order to guarantee a fixpoint
     // This is the longest chain in the value lattice so if we introduce
     // alternative lattices then this will not be fixed
@@ -141,10 +163,10 @@ func UnrollInstantFeedback(f : InterfacedHypergraph) : Unit {
     let feedbackMap = GetFeedbackMap(f)
     // We need a map to keep track of the most recently copied vertex that corresponds
     // to each vertex in the original graph
-    let vertexMap = HashMap<Vertex, Vertex>()
+    let vertexMap = HashMap<Vertex<V, G>, Vertex<V, G>>()
     // We will be adding elements to the graph so we need a static copy to iterate over
-    let vertices = HashSet<Vertex>(f.GetVertices())
-    let edges = HashSet<Edge>(f.GetSequentialData().combinationalEdges)
+    let vertices = HashSet<Vertex<V, G>>(f.GetVertices())
+    let edges = HashSet<Edge<V, G>>(f.GetSequentialData().combinationalEdges)
     for(i in 0..(iterations - 1)) {
         // Any non-input, non-value, non-delay vertex must be copied, we keep track
         // of the original vertex each vertex corresponds to in the vertex map
@@ -153,7 +175,7 @@ func UnrollInstantFeedback(f : InterfacedHypergraph) : Unit {
             // Source tentacles can be marked as 'feedback' tentacles: if
             // this is the case then we need to connect it to the corresponding
             // vertex from the previous iteration
-            let newSources = mapi({ t : Tentacle, i : Int64 =>
+            let newSources = mapi({ t : Tentacle<V, G>, i : Int64 =>
                 let ec = EdgeConnection(e, i, SOURCE)
                 match(feedbackMap.get(ec)){
                     // If this was originally feedback, hook it up to
@@ -166,7 +188,7 @@ func UnrollInstantFeedback(f : InterfacedHypergraph) : Unit {
             }, e.GetSources())
             // Targets are less complicated, just map them to the
             // corresponding vertex in this iteration
-            let newTargets = map({ t : Tentacle => CopyTentacle(t, vertexMap)}, e.GetTargets())
+            let newTargets = map({ t : Tentacle<V, G> => CopyTentacle(t, vertexMap)}, e.GetTargets())
             let subgraph = CopySubgraph(e)
             // Finally create the edge
             Edge(e.GetLabel(), newSources, newTargets, subgraph, f.GetGraph())
@@ -180,7 +202,7 @@ func UnrollInstantFeedback(f : InterfacedHypergraph) : Unit {
             }
         }
     }
-    PostUnrollInstantFeedback(f, vertexMap)
+    PostUnrollInstantFeedback(signature, f, vertexMap)
 }
 /**
  * Get the 'input vertices' when performing a global rewrite of an entire graph
@@ -190,9 +212,11 @@ func UnrollInstantFeedback(f : InterfacedHypergraph) : Unit {
  * @param f The interfaced hypergraph
  * @param sequential Whether to include delay and value edges
  */
-func GetInputVertices(f : InterfacedHypergraph, sequential : Bool) : HashSet<Vertex> {
+func GetInputVertices<V, G>(f : InterfacedHypergraph<V, G>, sequential : Bool) : HashSet<Vertex<V, G>>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     let sequentialData = f.GetSequentialData()
-    let inputVertices = HashSet<Vertex>()
+    let inputVertices = HashSet<Vertex<V, G>>()
     // Input vertices don't need to be copied, edges can just be connected to them
     for(v in f.GetInputVertices()) {
         inputVertices.put(v.GetVertex())
@@ -219,9 +243,11 @@ func GetInputVertices(f : InterfacedHypergraph, sequential : Bool) : HashSet<Ver
  *
  * @param f The interfaced hypergraph
  */
-func GetFeedbackMap(f : InterfacedHypergraph) : HashMap<EdgeConnection, Vertex> {
+func GetFeedbackMap<V, G>(f : InterfacedHypergraph<V, G>) : HashMap<EdgeConnection<V, G>, Vertex<V, G>>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     let sequentialData = f.GetSequentialData()
-    let feedbackMap = HashMap<EdgeConnection, Vertex>()
+    let feedbackMap = HashMap<EdgeConnection<V, G>, Vertex<V, G>>()
     for(ec in sequentialData.feedbackConnections) {
         feedbackMap.put(ec, ec.edge.GetSource(ec.index).GetVertex())
     }
@@ -236,14 +262,15 @@ func GetFeedbackMap(f : InterfacedHypergraph) : HashMap<EdgeConnection, Vertex> 
  * @param f The interfaced hypergraph
  * @param vertexMap The vertex map
  */
-func PostUnrollInstantFeedback(
-    f : InterfacedHypergraph,
-    vertexMap : HashMap<Vertex, Vertex>
-) : Unit {
+func PostUnrollInstantFeedback<V, G>(
+    signature : Signature<V, G>,
+    f : InterfacedHypergraph<V, G>,
+    vertexMap : HashMap<Vertex<V, G>, Vertex<V, G>>
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     let sequentialData = f.GetSequentialData()
     // Initialise each feedback connection with a disconnected bottom edge
     for(ec in sequentialData.feedbackConnections) {
-        let bot = UseSignal(Bottom, ec.GetWidth())
+        let bot = UseSignal<V, G>(signature.GetBottom(), ec.GetWidth())
         let v = bot.GetVertex()
         ec.edge.SetSource(ec.index, v, false)
     }
@@ -264,7 +291,10 @@ func PostUnrollInstantFeedback(
  * @param f The interfaced hypergraph to update
  * @param vertexMap the vertex map
  */
-func ReplaceOutputs(f : InterfacedHypergraph, vertexMap : HashMap<Vertex,Vertex>) : Unit {
+func ReplaceOutputs<V, G>(
+    f : InterfacedHypergraph<V, G>,
+    vertexMap : HashMap<Vertex<V, G>, Vertex<V, G>>
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     // Replace each output with its latest iteration
     for(i in 0..f.GetCoarity()) {
         let v = f.GetOutput(i).GetVertex()
@@ -274,15 +304,16 @@ func ReplaceOutputs(f : InterfacedHypergraph, vertexMap : HashMap<Vertex,Vertex>
         }
     }
 }
-func MakeCopy(
-    f : InterfacedHypergraph,
-    vertices : HashSet<Vertex>,
-    inputVertices : HashSet<Vertex>,
-    vertexMap : HashMap<Vertex, Vertex>,
-    edges : HashSet<Edge>,
+func MakeCopy<V, G>(
+    signature : Signature<V, G>,
+    f : InterfacedHypergraph<V, G>,
+    vertices : HashSet<Vertex<V, G>>,
+    inputVertices : HashSet<Vertex<V, G>>,
+    vertexMap : HashMap<Vertex<V, G>, Vertex<V, G>>,
+    edges : HashSet<Edge<V, G>>,
     now : Bool,
-    valueEdges : Option<ArrayList<EdgeAtDepth>>
-) : Unit {
+    valueEdges : Option<ArrayList<EdgeAtDepth<V, G>>>
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     CopyVertices(vertices, inputVertices, vertexMap)
     for(e in edges) {
         let label = e.GetLabel()
@@ -299,19 +330,19 @@ func MakeCopy(
         } else {
             let (newSources, newTargets, newLabel) =
                 if(now && label.IsDelay() || !now && label.IsValue()) {
-                    let sources = Array<Vertex>()
-                    let targets = map({t : Tentacle => CopyTentacle(t, vertexMap)}, e.GetTargets())
-                    let botLabel = GetSignalLabel(Bottom, label.GetOutputPorts()[0].GetWidth())
+                    let sources = Array<Vertex<V, G>>()
+                    let targets = map({t : Tentacle<V, G> => CopyTentacle(t, vertexMap)}, e.GetTargets())
+                    let botLabel = GetSignalLabel<V, G>(signature.GetBottom(), label.GetOutputPorts()[0].GetWidth())
                     (sources, targets, botLabel)
                 } else {
-                    let sources = map({t : Tentacle =>
+                    let sources = map({t : Tentacle<V, G> =>
                         if(e.GetLabel().IsDelay()) {
                             t.GetVertex()
                         } else {
                             CopyTentacle(t, vertexMap)
                         }
                     }, e.GetSources())
-                    let targets = map({t : Tentacle => CopyTentacle(t, vertexMap)}, e.GetTargets())
+                    let targets = map({t : Tentacle<V, G> => CopyTentacle(t, vertexMap)}, e.GetTargets())
                     (sources, targets, label)
                 }
             let subgraph = CopySubgraph(e)
@@ -334,24 +365,39 @@ func MakeCopy(
  *
  * @param f The interfaced hypergraph to unfold
  */
-func Unfold(f : InterfacedHypergraph, es : ArrayList<EdgeAtDepth>) : Unit {
+func Unfold<V, G>(
+    signature : Signature<V, G>,
+    f : InterfacedHypergraph<V, G>,
+    es : ArrayList<EdgeAtDepth<V, G>>
+) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     if(f.HasNonDelayGuardedFeedback()) {
         Debug("Cannot unfold circuits with non-delay-guarded feedback, please unroll it first")
     } else {
-        let vertices = HashSet<Vertex>(f.GetVertices())
-        let edges = HashSet<Edge>(f.GetEdges())
+        let vertices = HashSet<Vertex<V, G>>(f.GetVertices())
+        let edges = HashSet<Edge<V, G>>(f.GetEdges())
         let inputVertices = GetInputVertices(f, false)
         // Make a copy for what is happening 'now'
         // Replace any delays with bottom values
-        let nowVertexMap = HashMap<Vertex, Vertex>()
-        MakeCopy(f, vertices, inputVertices, nowVertexMap, edges, true, es)
+        let nowVertexMap = HashMap<Vertex<V, G>, Vertex<V, G>>()
+        MakeCopy(signature, f, vertices, inputVertices, nowVertexMap, edges, true, es)
         // Make a copy for what is happening 'later'
         // Replace any values with bottom values and remove any delays
         // The output of the later copy will be delayed instead
-        let laterVertexMap = HashMap<Vertex, Vertex>()
-        MakeCopy(f, vertices, inputVertices, laterVertexMap, edges, false, None<ArrayList<EdgeAtDepth>>)
+        let laterVertexMap = HashMap<Vertex<V, G>, Vertex<V, G>>()
+        MakeCopy(
+            signature,
+            f,
+            vertices,
+            inputVertices,
+            laterVertexMap,
+            edges,
+            false,
+            None<ArrayList<EdgeAtDepth<V, G>>>
+        )
         // Update the outputs by joining the outputs of the two copies
-        let outputs = Array<InterfaceVertex>(f.GetOutputVertices())
+        let outputs = Array<InterfaceVertex<V, G>>(f.GetOutputVertices())
         for(i in 0..outputs.size){
             let v = outputs[i].GetVertex()
             let width = v.GetWidth()
@@ -360,10 +406,22 @@ func Unfold(f : InterfacedHypergraph, es : ArrayList<EdgeAtDepth>) : Unit {
             // Get the corresponding output from the later circuit
             let laterOutput = laterVertexMap[v]
             // The later source must be delayed to make it truly 'later'
-            let delayTarget = Vertex(width)
-            let delayEdge = Edge(DELAY(width), [laterOutput], [delayTarget], None<InterfacedHypergraph>, f.GetGraph())
-            let joinTarget = Vertex(width)
-            let joinEdge = Edge(JOIN(width), [nowOutput, delayTarget], [joinTarget], None<InterfacedHypergraph>, f.GetGraph())
+            let delayTarget = Vertex<V, G>(width)
+            let delayEdge = Edge(
+                DELAY(width),
+                [laterOutput],
+                [delayTarget],
+                None<InterfacedHypergraph<V, G>>,
+                f.GetGraph()
+            )
+            let joinTarget = Vertex<V, G>(width)
+            let joinEdge = Edge(
+                JOIN(width),
+                [nowOutput, delayTarget],
+                [joinTarget],
+                None<InterfacedHypergraph<V, G>>,
+                f.GetGraph()
+            )
             f.ReplaceOutput(i, joinTarget)
         }
     }

@@ -15,13 +15,12 @@ import assertions.*
 public struct Signal<V> <: ToString & HasName & Specifiable<V> & HasWidth & Equatable<Signal<V>>
     where V <: ValueSymbol, V <: Equatable<V> {
     public Signal(
-        public let values : Array<V>,
-        public let signed : Bool
+        public let values : Array<V>
     ){
         AssertNonEmpty(values, "values")
     }
     public init(v: V, n : Int64) {
-        this(Array<V>(n, {i : Int64 => v}), false)
+        this(Array<V>(n, {i : Int64 => v}))
     }
     public func GetName() : String {
         fold_right({acc : String, v : V => "${acc}${v}"}, "", values)

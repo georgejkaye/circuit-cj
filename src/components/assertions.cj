@@ -20,7 +20,7 @@ public func AssertNonNegative(x : Int64) {
 func AssertStrictlyPositive(x : Int64) {
     AssertAtLeast(x, 1)
 }
-func AssertEnoughBits(current : Int64, desired : Int64) {
+public func AssertEnoughBits(current : Int64, desired : Int64) {
     AssertAtLeast(current, desired)
 }
 func AssertWireHasNoInEdge<V, G>(w : Wire<V, G>)
@@ -33,7 +33,7 @@ func AssertWireArrayNonEmpty<V, G>(ws : Array<Wire<V, G>>) : Unit
 {
     AssertNonEmpty(ws, "wires")
 }
-func AssertWireWidth<T, V, G>(t : T, i : Int64) : Unit
+public func AssertWireWidth<V, G, T>(t : T, i : Int64) : Unit
     where T <: ContainsWire<V, G>, T <: ToString,
             V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
@@ -44,7 +44,7 @@ func AssertWireWidth<T, V, G>(t : T, i : Int64) : Unit
         Width
     )
 }
-func AssertWireHasWidthAtLeast<T, V, G>(t : T, i : Int64) : Unit
+func AssertWireHasWidthAtLeast<V, G, T>(t : T, i : Int64) : Unit
     where T <: ContainsWire<V, G>, T <: ToString,
             V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
@@ -55,14 +55,14 @@ func AssertWireHasWidthAtLeast<T, V, G>(t : T, i : Int64) : Unit
         Width
     )
 }
-func AssertWiresSameWidth<T>(ws : Array<T>) : Int64 where T <: ToString, T <: HasWidth {
+public func AssertWiresSameWidth<T>(ws : Array<T>) : Int64 where T <: ToString, T <: HasWidth {
     AssertArrayAllSameParameter<T, Int64>(
         ws,
         { t : T => t.GetWidth() },
         Width
     )
 }
-func AssertWiresSameWidth<T,U>(
+public func AssertWiresSameWidth<T,U>(
     t : T,
     u : U
 ) : Int64 where T <: ToString, U <: ToString, T <: HasWidth, U <: HasWidth {
@@ -82,6 +82,17 @@ func AssertWireArraysCompatible<V, G>(ws : Array<Wire<V, G>>, vs : Array<Wire<V,
         i : Int64 =>
             AssertWiresSameWidth(ws[i], vs[i])
     }
+}
+func AssertWireArrayArraysCompatible<V, G>(wss : Array<Array<Wire<V, G>>>) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    if(wss.size > 0) {
+        let size = AssertArraysSameLength(wss)
+        for(i in 0..size){
+            AssertWiresSameWidth(Array<Wire<V, G>>(wss.size){ j : Int64 => wss[j][i] })
+        }
+    }
+
 }
 func AssertWiresHaveWidths<T,U>(
     ws : Array<T>,

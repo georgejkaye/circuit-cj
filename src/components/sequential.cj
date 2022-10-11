@@ -16,34 +16,19 @@ package components
  * @param input The input wire
  * @return The output of the delay
  */
-public func UseDelay(input: Wire, duration!: Int64 = 1) : Wire {
+public func UseDelay<V, G>(input: Wire<V, G>, duration!: Int64 = 1) : Wire<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     let width = input.GetWidth()
     var inputWire = input
     for(i in 0..duration) {
-        inputWire = UseEdgeWithNewOutputs<Wire>(
-            DELAY(width),
+        inputWire = UseEdgeWithNewOutputs(
+            Label<V,G>.DELAY(width),
             [input],
-            None<InterfacedHypergraph>
+            None<InterfacedHypergraph<V, G>>
         )[0]
     }
     inputWire
-}
-/**
- * Use a simple register: a join of some value and a delay
- *
- * @param initial The initial value of the register
- * @param signed Whether the initial value is signed
- * @param input The input to the register
- * @return The output wire of the register
- */
-public func SimpleRegister(initial! : Int64, signed! : Bool, input! : Wire) : Wire {
-    let width = input.GetWidth()
-    let value = if (signed) {
-        UseSignedSignalFromInt(initial, width: width)
-    } else {
-        UseUnsignedSignalFromInt(initial, width: width)
-    }
-    SimpleRegisterWithInitial(value, input)
 }
 /**
  * Use a simple register with an initial wire
@@ -52,11 +37,13 @@ public func SimpleRegister(initial! : Int64, signed! : Bool, input! : Wire) : Wi
  * @param input The input wire to the register
  * @return The output wire of the register
  */
-func SimpleRegisterWithInitial(initial: Wire, input : Wire){
+public func SimpleRegister<V, G>(initial: Wire<V, G>, input : Wire<V, G>) : Wire<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     let width = initial.GetWidth()
     let delay = UseDelay(input)
     UseEdgeWithNewOutputs(
-        JOIN(width),
+        Label<V,G>.JOIN(width),
         [initial, delay],
         None
     )[0]
@@ -70,7 +57,9 @@ func SimpleRegisterWithInitial(initial: Wire, input : Wire){
  * @param incoming The wire to feed back into, must not have an incoming edge
  * @param instant Whether this is instant feedback or not.
  */
-func PerformFeedback(outgoing : Wire, incoming : Wire, instant : Bool) {
+func PerformFeedback<V, G>(outgoing : Wire<V, G>, incoming : Wire<V, G>, instant : Bool) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     AssertWireHasNoInEdge(incoming)
     let width = outgoing.GetWidth()
     AssertWiresSameWidth(outgoing, incoming)
@@ -85,7 +74,9 @@ func PerformFeedback(outgoing : Wire, incoming : Wire, instant : Bool) {
  * @param outgoing The wire to bend back
  * @param incoming The wire to feed back into, must not have an incoming edge
  */
-public func Feedback(outgoing : Wire, incoming : Wire) : Unit {
+public func Feedback<V, G>(outgoing : Wire<V, G>, incoming : Wire<V, G>) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     PerformFeedback(outgoing, incoming, true)
 }
 /**
@@ -95,21 +86,22 @@ public func Feedback(outgoing : Wire, incoming : Wire) : Unit {
  * @param outgoing The wire to bend back
  * @param incoming The wire to feed back into, must not have an incoming edge
  */
-public func DelayGuardedFeedback(outgoing : Wire, incoming : Wire) : Unit {
+public func DelayGuardedFeedback<V, G>(outgoing : Wire<V, G>, incoming : Wire<V, G>) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     let delay = UseDelay(outgoing)
     PerformFeedback(delay, incoming, false)
 }
-/**
- * Create a feedback loop guarded by a delay: join a wire to a wire that is
- * not connected to anything on the left, and insert a register with some initial
- * value on the loop
- *
- * @param outgoing The wire to bend back
- * @param incoming The wire to feed back into, must not have an incoming edge
- */
-public func RegisterGuardedFeedback(incoming : Wire, initial!: Int64, signed!: Bool, input!: Wire) : Unit {
-    let reg = SimpleRegister(initial: initial, signed: signed, input: input)
-    PerformFeedback(reg, incoming, false)
+
+public func RegisterGuardedFeedback<V, G>(
+    incoming : Wire<V, G>,
+    initial : Wire<V, G>,
+    input : Wire<V, G>
+) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+        let reg = SimpleRegister(initial, input)
+        PerformFeedback(reg, incoming, false)
 }
 /**
  * Create an infinite waveform: a construct that outputs the same thing for
@@ -118,9 +110,11 @@ public func RegisterGuardedFeedback(incoming : Wire, initial!: Int64, signed!: B
  * @param initial The circuit that will be output for each tick of the clock
  * @return The output of the waveform
  */
-public func InfiniteWaveform(initial : Wire) : Wire {
-    let input = UseWire(initial.GetWidth())
-    let reg = SimpleRegisterWithInitial(initial, input)
+public func InfiniteWaveform<V, G>(initial : Wire<V, G>) : Wire<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    let input = UseWire<V, G>(initial.GetWidth())
+    let reg = SimpleRegister(initial, input)
     PerformFeedback(reg, input, false)
     reg
 }
@@ -131,31 +125,28 @@ public func InfiniteWaveform(initial : Wire) : Wire {
  * @param value The value that will be output for each tick of the clock
  * @return The output of the waveform
  */
-public func InfiniteWaveform(value : Value) : Wire {
+public func InfiniteWaveform<V, G>(value : V) : Wire<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     InfiniteWaveform(UseValue(value))
 }
 
-public func MakeWaveform(
-    vs : Array<Int64>,
-    width!: Int64,
-    signed!: Bool = true,
+public func MakeWaveform<V, G>(
+    wf : Waveform<V>,
     closed!: Bool = true
-) : InterfacedHypergraph {
-    let specs = map({v : Int64 => DecToBin(v, width, signed) }, vs)
-    MakeWaveform(Waveform(specs), closed: closed)
-}
-
-public func MakeWaveform(wf : Waveform, closed!: Bool = true) : InterfacedHypergraph {
+) : InterfacedHypergraph<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     let width = wf.GetWidth()
     let vs = wf.signals
     var (currentWire, inputs, startingIndex) = if(closed) {
-        (UseSignal(vs[vs.size - 1]), Array<InterfaceWire>(), 1)
+        (UseSignal<V, G>(vs[vs.size - 1]), Array<InterfaceWire<V, G>>(), 1)
     } else {
-        let wire = UseWire(width)
+        let wire = UseWire<V, G>(width)
         (wire, [InterfaceWire(wire)], 0)
     }
     for(i in startingIndex..vs.size) {
-        let value = UseSignal(vs[vs.size - 1 - i])
+        let value = UseSignal<V, G>(vs[vs.size - 1 - i])
         let delay = UseDelay(currentWire)
         currentWire = Join(value, delay)
     }

@@ -82,6 +82,19 @@ public func AssertArraysSameLength<T, U>(
         throw IncompatibleArrayLengthException<T>(xs, ys.size, true)
     }
 }
+public func AssertArraysSameLength<T>(
+    xss : Array<Array<T>>
+) : Int64 where T <: ToString {
+    if(xss.size > 0) {
+        let size = xss[0].size
+        for(i in 1..xss.size) {
+            AssertArrayHasLength(xss[i], size)
+        }
+        size
+    } else {
+        0
+    }
+}
 public func AssertArrayHasLength<T>(
     xs : Array<T>,
     n : Int64

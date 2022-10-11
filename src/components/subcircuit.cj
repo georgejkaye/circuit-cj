@@ -102,19 +102,11 @@ public func MakeBitwiseGate<V, G>(
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    let inputs = Array<InterfaceWire<V, G>>(prim.GetArity()) {
-        i : Int64 => InterfaceWire(w, numToUppercaseLetter(i))
-    }
-    let output = InterfaceWire(
-        Bitwise<InterfaceWire<V, G>, V, G>(
-            inputs,
-            { ws : Array<Wire<V, G>> => [UseGate<V, G>(prim, ws)] }
-        )[0]
-        , "Z"
-    )
+    let inputs = Array<Wire<V, G>>(prim.GetArity()) {i : Int64 => UseWire<V, G>(w) }
+    let output = Bitwise({ ws : Array<Wire<V, G>> => [UseGate(prim, ws)] }, inputs)[0]
     MakeSubcircuit(
-        inputs,
-        [output],
+        mapi({ w : Wire<V, G>, i : Int64 => InterfaceWire(w, numToUppercaseLetter(i)) }, inputs),
+        [InterfaceWire(output, "Z")],
         prim.GetEnhancedName(prim.GetArity(), w)
     )
 }
@@ -134,19 +126,15 @@ func MakeRippleGate<V, G>(
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    let inputs = Array<InterfaceWire<V, G>>(n) {
-        i : Int64 => InterfaceWire(w, numToUppercaseLetter(i))
-    }
-    let output = InterfaceWire(
-        Ripple<InterfaceWire<V, G>, V, G>(
-            inputs,
-            { w : Wire<V, G>, v : Wire<V, G> => UseGate(prim, [w, v]) }
-        ),
-        "Z"
-    )
-    MakeSubcircuit(
+    let inputs = Array<Array<Wire<V, G>>>(n) {i : Int64 => [UseWire<V, G>(w)] }
+    let output = Ripple(
+        { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> => [UseGate(prim, [acc[0], cur[0]])]},
         inputs,
-        [output],
+        TOP_TO_BOTTOM
+    )[0]
+    MakeSubcircuit(
+        mapi({ws : Array<Wire<V, G>>, i : Int64 => InterfaceWire(ws[0], numToUppercaseLetter(i)) }, inputs),
+        [InterfaceWire(output, "Z")],
         prim.GetEnhancedName(n, w)
     )
 }
@@ -164,17 +152,15 @@ func MakeInternalRippleGate<V, G>(
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    let input = InterfaceWire<V, G>(w, "A")
-    let output = InterfaceWire(
-        InternalRipple<InterfaceWire<V, G>, V, G>(
-            input,
-            { w : Wire<V, G>, v : Wire<V, G> => (UseGate(prim, [w, v])) }
-        ),
-        "Z"
-    )
-    MakeSubcircuit(
+    let input = UseWire<V, G>(w)
+    let output = InternalRipple(
+        { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> => [UseGate(prim, [acc[0], cur[0]])] },
         [input],
-        [output],
+        TOP_TO_BOTTOM
+    )[0]
+    MakeSubcircuit(
+        [InterfaceWire(input, "A")],
+        [InterfaceWire(output, "Z")],
         prim.GetEnhancedName(1, w)
     )
 }
@@ -193,7 +179,7 @@ public func UseSubcircuit<T, V, G>(
 {
     AssertWiresHaveWidths<T, Port<V>>(inputs, circuit.GetInputPorts())
     let (newGraph, _, _) = circuit.CloneGraph()
-    UseEdgeWithNewOutputs<T, V, G>(
+    UseEdgeWithNewOutputs<V, G, T>(
         circuit.GetLabel(),
         inputs,
         newGraph

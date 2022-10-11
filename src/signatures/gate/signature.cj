@@ -301,7 +301,7 @@ func gateLevelInterpretation(g: GateLevelPrimitive): (Array<GateLevelValue>) -> 
             [output]
     }
 }
-let gateLevelSignature = Signature<GateLevelValue, GateLevelPrimitive>(
+public let gateLevelSignature = Signature<GateLevelValue, GateLevelPrimitive>(
     gateLevelLatticeStructure,
     gateLevelInterpretation,
     GateLevelValueToDec
