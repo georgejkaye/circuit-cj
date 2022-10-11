@@ -51,7 +51,34 @@ public struct Signal<V> <: ToString & HasName & Specifiable<V> & HasWidth & Equa
     }
 }
 
-public struct Waveform<V> <: ToString & HasName & HasWidth where V <: ValueSymbol, V <: Equatable<V> {
+public func GetSignal<V>(v : V, w : Int64) : Signal<V> where V <: ValueSymbol, V <: Equatable<V> {
+    Signal(Array<V>(w){ i : Int64 => v })
+}
+
+public enum WaveformType {
+    | FINITE_OPEN
+    | FINITE_CLOSED
+    | INFINITE
+}
+extend WaveformType <: Hashable & Equatable<WaveformType> {
+    public func hashCode() : Int64 {
+        match(this) {
+            case FINITE_OPEN => 0
+            case FINITE_CLOSED => 1
+            case INFINITE => 2
+        }
+    }
+    public operator func == (rhs : WaveformType) {
+        this.hashCode() == rhs.hashCode()
+    }
+    public operator func != (rhs : WaveformType) {
+        !(this == rhs)
+    }
+}
+
+public struct Waveform<V> <: ToString & HasName & HasWidth & Specifiable<V> & Equatable<Waveform<V>>
+    where V <: ValueSymbol, V <: Equatable<V>
+{
     let width : Int64
     public Waveform(
         public let signals : Array<Signal<V>>
@@ -73,5 +100,23 @@ public struct Waveform<V> <: ToString & HasName & HasWidth where V <: ValueSymbo
     }
     public func GetWidth() : Int64 {
         this.width
+    }
+    public func GetInputPorts() : Array<Port<V>> {
+        [Port(width)]
+    }
+    public func GetArity() : Int64 {
+        1
+    }
+    public func GetOutputPorts() : Array<Port<V>> {
+        [Port(width)]
+    }
+    public func GetCoarity() : Int64 {
+        1
+    }
+    public operator func == (rhs : Waveform<V>) {
+        this.signals == rhs.signals
+    }
+    public operator func != (rhs : Waveform<V>) {
+        !(this == rhs)
     }
 }

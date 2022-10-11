@@ -129,8 +129,7 @@ func MakeRippleGate<V, G>(
     let inputs = Array<Array<Wire<V, G>>>(n) {i : Int64 => [UseWire<V, G>(w)] }
     let output = Ripple(
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> => [UseGate(prim, [acc[0], cur[0]])]},
-        inputs,
-        TOP_TO_BOTTOM
+        inputs
     )[0]
     MakeSubcircuit(
         mapi({ws : Array<Wire<V, G>>, i : Int64 => InterfaceWire(ws[0], numToUppercaseLetter(i)) }, inputs),
@@ -155,8 +154,7 @@ func MakeInternalRippleGate<V, G>(
     let input = UseWire<V, G>(w)
     let output = InternalRipple(
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> => [UseGate(prim, [acc[0], cur[0]])] },
-        [input],
-        TOP_TO_BOTTOM
+        [input]
     )[0]
     MakeSubcircuit(
         [InterfaceWire(input, "A")],

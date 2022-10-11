@@ -5,16 +5,15 @@
  * The initial value can also be specified.
  */
 
-package examples
+package examples.gate
 
 import components.*
 import signatures.gate.*
 
-let sig = gateLevelSignature
-
-public func Accumulator(width!: Int64, initial!: Int64){
+public func Accumulator(width!: Int64, initial!: Int64) : Circuit_ {
     let input = sig.UseWire(width)
     let prev = sig.UseWire(width)
+    println("prev ${prev.GetWidth()}")
     let zero = ConstantZero()
     let (sum, carry) = RippleAdder(prev, input, zero)
     RegisterGuardedFeedback(prev, initial: initial, signed: false, input: sum)

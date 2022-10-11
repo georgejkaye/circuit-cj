@@ -100,45 +100,22 @@ public func RegisterGuardedFeedback<V, G>(
 ) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
+        AssertWiresSameWidth(incoming, input)
         let reg = SimpleRegister(initial, input)
         PerformFeedback(reg, incoming, false)
 }
-/**
- * Create an infinite waveform: a construct that outputs the same thing for
- * every tick of the clock
- *
- * @param initial The circuit that will be output for each tick of the clock
- * @return The output of the waveform
- */
-public func InfiniteWaveform<V, G>(initial : Wire<V, G>) : Wire<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
-{
-    let input = UseWire<V, G>(initial.GetWidth())
-    let reg = SimpleRegister(initial, input)
-    PerformFeedback(reg, input, false)
-    reg
-}
-/**
- * Create an infinite waveform: a construct that outputs the same value for
- * every tick of the clock
- *
- * @param value The value that will be output for each tick of the clock
- * @return The output of the waveform
- */
-public func InfiniteWaveform<V, G>(value : V) : Wire<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
-{
-    InfiniteWaveform(UseValue(value))
-}
-
 public func MakeWaveform<V, G>(
     wf : Waveform<V>,
-    closed!: Bool = true
+    wfType : WaveformType
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let width = wf.GetWidth()
     let vs = wf.signals
+    let closed = match(wfType) {
+        case FINITE_CLOSED => true
+        case _ => false
+    }
     var (currentWire, inputs, startingIndex) = if(closed) {
         (UseSignal<V, G>(vs[vs.size - 1]), Array<InterfaceWire<V, G>>(), 1)
     } else {
@@ -150,9 +127,79 @@ public func MakeWaveform<V, G>(
         let delay = UseDelay(currentWire)
         currentWire = Join(value, delay)
     }
+    let infinite = match(wfType) {
+        case INFINITE => true
+        case _ => false
+    }
+    if(infinite) {
+        Feedback(currentWire, inputs[0].GetWire())
+        inputs = Array<InterfaceWire<V, G>>()
+    }
     MakeSubcircuit(
         inputs,
         [InterfaceWire(currentWire)],
-        wf.toString()
+        WAVEFORM(wf, wfType)
+    )
+}
+public func MakeInfiniteWaveform<V, G>(
+    wf : Waveform<V>
+) : InterfacedHypergraph<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    MakeWaveform(wf, INFINITE)
+}
+public func MakeClosedWaveform<V, G>(
+    wf : Waveform<V>
+) : InterfacedHypergraph<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    MakeWaveform(wf, FINITE_CLOSED)
+}
+public func MakeOpenWaveform<V, G>(
+    wf : Waveform<V>
+) : InterfacedHypergraph<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    MakeWaveform(wf, FINITE_OPEN)
+}
+public func UseInfiniteWaveform<V, G>(
+    wf : Waveform<V>
+) : Wire<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    UseSubcircuit_1(
+        MakeInfiniteWaveform(wf),
+        Array<InterfaceWire<V, G>>()
+    )
+}
+public func UseInfiniteWaveform<V, G>(signals : Array<Signal<V>>) : Wire<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    UseInfiniteWaveform(Waveform(signals))
+}
+public func UseInfiniteWaveform<V, G>(signal : Signal<V>) : Wire<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    UseInfiniteWaveform([signal])
+}
+public func UseClosedWaveform<V, G>(
+    wf : Waveform<V>
+) : Wire<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    UseSubcircuit_1(
+        MakeClosedWaveform(wf),
+        Array<InterfaceWire<V, G>>()
+    )
+}
+public func UseOpenWaveform<V, G>(
+    wf : Waveform<V>,
+    inputs : Wire<V, G>
+) : Wire<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    UseSubcircuit_1(
+        MakeOpenWaveform(wf),
+        [inputs]
     )
 }

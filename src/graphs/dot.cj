@@ -72,9 +72,12 @@ let delayStyle = [
     bgColour("yellow")
 ]
 let valueStyle = [
+    bgColour("darkolivegreen1")
+]
+let signalStyle = [
     bgColour("green")
 ]
-let valuesStyle = [
+let waveformStyle = [
     bgColour("forestgreen")
 ]
 let blackboxStyle = [
@@ -227,7 +230,9 @@ func DrawEdgeNode<V, G>(
         case VALUE(_) =>
             valueStyle
         case SIGNAL(_) =>
-            valuesStyle
+            signalStyle
+        case WAVEFORM(_, _) =>
+            waveformStyle
         case BUNDLER(_,_) =>
             compressorStyle
         case JOIN(_) =>
@@ -700,7 +705,7 @@ public func WriteDotToFile<V, G>(
     let filename = GetDotFile(file)
     Info("Writing dot file ${filename}")
     let dot = DotGraph(f, depth)
-    let fs = File(filename, Open(false, true))
+    let fs = File(filename, CreateOrTruncate(false))
     fs.write(dot.toUtf8Array())
     fs.close()
 }

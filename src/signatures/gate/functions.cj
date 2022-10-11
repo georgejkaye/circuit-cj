@@ -11,13 +11,13 @@ from std import math.abs
  */
 
 public func BufGate(
-    a : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    a : BelnapWire
+) : BelnapWire {
     UseUnaryGate(BUF, a)
 }
 public func NotGate(
-    a : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    a : BelnapWire
+) : BelnapWire {
     UseUnaryGate(NOT, a)
 }
 
@@ -26,39 +26,39 @@ public func NotGate(
  */
 
 public func AndGate(
-    a : Wire<GateLevelValue, GateLevelPrimitive>,
-    b : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    a : BelnapWire,
+    b : BelnapWire
+) : BelnapWire {
     UseBinaryGate(AND, a, b)
 }
 public func OrGate(
-    a : Wire<GateLevelValue, GateLevelPrimitive>,
-    b : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    a : BelnapWire,
+    b : BelnapWire
+) : BelnapWire {
     UseBinaryGate(OR, a, b)
 }
 public func NandGate(
-    a : Wire<GateLevelValue, GateLevelPrimitive>,
-    b : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    a : BelnapWire,
+    b : BelnapWire
+) : BelnapWire {
     UseBinaryGate(NAND, a, b)
 }
 public func NorGate(
-    a : Wire<GateLevelValue, GateLevelPrimitive>,
-    b : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    a : BelnapWire,
+    b : BelnapWire
+) : BelnapWire {
     UseBinaryGate(NOR, a, b)
 }
 public func XorGate(
-    a : Wire<GateLevelValue, GateLevelPrimitive>,
-    b : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    a : BelnapWire,
+    b : BelnapWire
+) : BelnapWire {
     UseBinaryGate(XOR, a, b)
 }
 public func XnorGate(
-    a : Wire<GateLevelValue, GateLevelPrimitive>,
-    b : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    a : BelnapWire,
+    b : BelnapWire
+) : BelnapWire {
     UseBinaryGate(XNOR, a, b)
 }
 func DecToBin(x : Int64, w : Int64, signed : Bool) : Signal<GateLevelValue> {
@@ -77,6 +77,7 @@ func DecToBin(x : Int64, w : Int64, signed : Bool) : Signal<GateLevelValue> {
  * @param x      The decimal number to convert
  */
 func UnsignedDecToBin(x : Int64, w : Int64) : Signal<GateLevelValue> {
+    println("Making ${x} in ${w} bits")
     AssertNonNegative(x)
     let required = log2Ceil(x+1)
     AssertEnoughBits(w, required)
@@ -135,7 +136,7 @@ func SignedDecToBin(x : Int64, w : Int64) : Signal<GateLevelValue> {
  * @param width The width of the resulting bitstring
  * @return The wire of the value
  */
-public func UseUnsignedSignalFromInt(x : Int64, width!: Int64) : Wire<GateLevelValue, GateLevelPrimitive> {
+public func UseUnsignedSignalFromInt(x : Int64, width!: Int64) : BelnapWire {
     let bin = UnsignedDecToBin(x, width)
     UseSignal(bin)
 }
@@ -145,7 +146,7 @@ public func UseUnsignedSignalFromInt(x : Int64, width!: Int64) : Wire<GateLevelV
  * @param width The width of the resulting bitstring
  * @return The wire of the value
  */
-public func UseSignedSignalFromInt(x : Int64, width!: Int64) : Wire<GateLevelValue, GateLevelPrimitive> {
+public func UseSignedSignalFromInt(x : Int64, width!: Int64) : BelnapWire {
     let bin = SignedDecToBin(x, width)
     UseSignal(bin)
 }
@@ -160,7 +161,7 @@ public func UseSignalFromInt(
     x : Int64,
     signed: Bool,
     width!: Int64
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+) : BelnapWire {
     if(signed){
         UseSignedSignalFromInt(x, width: width)
     } else {
@@ -172,7 +173,7 @@ public func UseSignalFromInt(
  * @param width The width of the bitstring
  * @return The wire of the value
  */
-public func Zero(width: Int64) : Wire<GateLevelValue, GateLevelPrimitive> {
+public func Zero(width: Int64) : BelnapWire {
     let values = Array<GateLevelValue>(width, { i : Int64 => FALSE })
     UseSignal(Signal(values))
 }
@@ -181,15 +182,15 @@ public func Zero(width: Int64) : Wire<GateLevelValue, GateLevelPrimitive> {
  * @param width The width of the bitstring
  * @return The wire of the value
  */
-public func ConstantZero(width: Int64) : Wire<GateLevelValue, GateLevelPrimitive> {
-    let value = Zero(width)
-    InfiniteWaveform(value)
+public func ConstantZero(width: Int64) : BelnapWire {
+    let signal = GetSignal(FALSE, width)
+    UseInfiniteWaveform(signal)
 }
 /**
  * Create a constant zero waveform for one bit, i.e. a false
  * @return The wire of the value
  */
-public func ConstantZero() : Wire<GateLevelValue, GateLevelPrimitive> {
+public func ConstantZero() : BelnapWire {
     ConstantZero(1)
 }
 /**
@@ -198,18 +199,18 @@ public func ConstantZero() : Wire<GateLevelValue, GateLevelPrimitive> {
  * @return The wire with an extra bit
  */
 public func UnsignedExtend(
-    w : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
-    let value = InfiniteWaveform<GateLevelValue, GateLevelPrimitive>(FALSE)
-    Combine([value, w])
+    w : BelnapWire
+) : BelnapWire {
+    let waveform = UseInfiniteWaveform<GateLevelValue, GateLevelPrimitive>(Signal([FALSE]))
+    Combine([waveform, w])
 }
 
 public func MakeWaveform(
     vs : Array<Int64>,
+    wfType : WaveformType,
     width!: Int64,
-    signed!: Bool = true,
-    closed!: Bool = true
-) : InterfacedHypergraph<GateLevelValue, GateLevelPrimitive> {
-    let specs = map({v : Int64 => DecToBin(v, width, signed) }, vs)
-    MakeWaveform(Waveform(specs), closed: closed)
+    signed!: Bool = true
+) : BelnapCircuit {
+    let signals = map({v : Int64 => DecToBin(v, width, signed) }, vs)
+    MakeWaveform(Waveform(signals), wfType)
 }

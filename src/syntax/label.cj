@@ -20,7 +20,8 @@ from std import collection.ArrayList
  */
 public enum Label<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     | VALUE(V)                            // A basic value 0 -> 1
-    | SIGNAL(Signal<V>)                   // A collection of values 0 -> n, which could be signed or unsigned
+    | SIGNAL(Signal<V>)                   // A collection of values 0 -> n
+    | WAVEFORM(Waveform<V>, WaveformType) // A sequence of signals over time, which can be closed or infinite
     | BUNDLER(Array<Int64>, Array<Int64>) // A bundler changes how wires are bundled
     | JOIN(Int64)                         // Join two wires together
     | PRIMITIVE(G)                        // The simplest building blocks of circuits
@@ -31,14 +32,18 @@ public enum Label<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: Primitiv
 extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G>> {
     public func GetInputPorts() : Array<Port<V>> {
         match(this) {
-            case VALUE(_)          => []
-            case SIGNAL(spec)      => []
-            case BUNDLER(ms, _)         => map({ i : Int64 => Port(i)}, ms)
-            case JOIN(w)                => [Port(w), Port(w)]
-            case PRIMITIVE(prim)        => prim.GetInputPorts()
-            case COMPOSITE(spec)        => spec.GetInputPorts()
-            case BLACKBOX(spec)         => spec.GetInputPorts()
-            case DELAY(w)               => [Port(w)]
+            case VALUE(_)                       => []
+            case SIGNAL(spec)                   => []
+            case WAVEFORM(wf, wfType) => match(wfType) {
+                case FINITE_OPEN => wf.GetInputPorts()
+                case _ => Array<Port<V>>()
+            }
+            case BUNDLER(ms, _)                 => map({ i : Int64 => Port(i)}, ms)
+            case JOIN(w)                        => [Port(w), Port(w)]
+            case PRIMITIVE(prim)                => prim.GetInputPorts()
+            case COMPOSITE(spec)                => spec.GetInputPorts()
+            case BLACKBOX(spec)                 => spec.GetInputPorts()
+            case DELAY(w)                       => [Port(w)]
 
         }
     }
@@ -49,7 +54,8 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
         match(this) {
             case VALUE(_)               => [Port(1)]
             case SIGNAL(spec)           => spec.GetOutputPorts()
-            case BUNDLER(ms,ns)         => map({ i : Int64 => Port(i)}, ns)
+            case WAVEFORM(wf, wfType)   => wf.GetOutputPorts()
+            case BUNDLER(ms, ns)        => map({ i : Int64 => Port(i)}, ns)
             case JOIN(w)                => [Port(w)]
             case PRIMITIVE(prim)        => prim.GetOutputPorts()
             case COMPOSITE(spec)        => spec.GetOutputPorts()
@@ -64,6 +70,11 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
         match(this) {
             case VALUE(v)               => "${v}"
             case SIGNAL(spec)           => spec.GetName()
+            case WAVEFORM(wf, wfType)   => match(wfType) {
+                case FINITE_OPEN   => "${wf} ::"
+                case FINITE_CLOSED => "${wf}"
+                case INFINITE      => "(${wf})\u{03C9}"
+            }
             case BUNDLER(ms, ns)        => if (ms.size < ns.size) { "\u{25C1}" } else { "\u{25B7}" }
             case JOIN(w)                => "\u{2207}_${w}"
             case PRIMITIVE(prim)        => prim.GetName()
@@ -84,6 +95,11 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             case SIGNAL(s) => match(rhs) {
                 case SIGNAL(t) => s == t
                 case _ => false
+            }
+            case WAVEFORM(wf1, wfType1) => match(rhs) {
+                case WAVEFORM(wf2, wfType2) => wf1 == wf2 && wfType1 == wfType2
+                case _ => false
+
             }
             case BUNDLER(ms, ns) => match(rhs) {
                 case BUNDLER(ms2, ns2) => ms == ms2 && ns == ns2

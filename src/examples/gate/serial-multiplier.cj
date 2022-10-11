@@ -8,15 +8,16 @@
  * @since 0.1
  */
 
-package examples
+package examples.gate
 
 import components.*
+import signatures.gate.*
 
-func PartialProduct(a : Wire, b0: Wire) : Wire {
+func PartialProduct(a : Wire_, b0: Wire_) : Wire_ {
     Mux2(a, ConstantZero(a.GetWidth()), b0)
 }
 
-func RunningSum(first : Wire, prev_sum: Wire, a: Wire, b0: Wire) : Wire {
+func RunningSum(first : Wire_, prev_sum: Wire_, a: Wire_, b0: Wire_) : Wire_ {
     let lhs = Mux2(ConstantZero(a.GetWidth()), prev_sum, first)
     let rhs = PartialProduct(a, b0)
     let a = UnsignedExtend(lhs)
@@ -25,7 +26,7 @@ func RunningSum(first : Wire, prev_sum: Wire, a: Wire, b0: Wire) : Wire {
     sum
 }
 
-func RunningSumLoop(first: Wire, a : Wire, b0 : Wire) : (Wire, Wire) {
+func RunningSumLoop(first: Wire_, a : Wire_, b0 : Wire_) : (Wire_, Wire_) {
     let prev_sum = sig.UseWire(a.GetWidth())
     let sum = RunningSum(first, prev_sum, a, b0)
     let (lsb, msbs) = LsbAndMsbs(sum)
@@ -34,7 +35,7 @@ func RunningSumLoop(first: Wire, a : Wire, b0 : Wire) : (Wire, Wire) {
 }
 
 
-func ComputedBits(bit : Wire, width : Int64) : Wire {
+func ComputedBits(bit : Wire_, width : Int64) : Wire_ {
     let prev = sig.UseWire(width)
     let msbs = Msbs(prev)
     let combined = Combine([bit, msbs])

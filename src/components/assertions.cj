@@ -83,7 +83,7 @@ func AssertWireArraysCompatible<V, G>(ws : Array<Wire<V, G>>, vs : Array<Wire<V,
             AssertWiresSameWidth(ws[i], vs[i])
     }
 }
-func AssertWireArrayArraysCompatible<V, G>(wss : Array<Array<Wire<V, G>>>) : Unit
+func AssertWireArrayArraysCompatible<V, G>(wss : Array<Array<Wire<V, G>>>) : Int64
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     if(wss.size > 0) {
@@ -91,8 +91,10 @@ func AssertWireArrayArraysCompatible<V, G>(wss : Array<Array<Wire<V, G>>>) : Uni
         for(i in 0..size){
             AssertWiresSameWidth(Array<Wire<V, G>>(wss.size){ j : Int64 => wss[j][i] })
         }
+        size
+    } else {
+        0
     }
-
 }
 func AssertWiresHaveWidths<T,U>(
     ws : Array<T>,

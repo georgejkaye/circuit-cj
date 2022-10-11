@@ -8,7 +8,7 @@
  * @since 0.1
  */
 
-package examples
+package examples.gate
 
 import components.*
 

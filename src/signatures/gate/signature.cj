@@ -9,12 +9,18 @@ from std import collection.ArrayList, collection.HashSet
 import syntax.*
 import components.*
 
+/**
+ * Enum of Belnap values (four valued logic)
+ */
 public enum GateLevelValue {
     | NONE
     | TRUE
     | FALSE
     | BOTH
 }
+/**
+ * Instantiate Belnap values as a type of value symbols
+ */
 extend GateLevelValue <: ValueSymbol & Equatable<GateLevelValue> {
     public func hashCode(): Int64 {
         match (this) {
@@ -56,9 +62,21 @@ extend GateLevelValue <: ValueSymbol & Equatable<GateLevelValue> {
         }
     }
 }
+/**
+ * Enum of Belnap gates
+ */
 public enum GateLevelPrimitive {
     BUF | NOT | AND | OR | NAND | NOR | XOR | XNOR
 }
+/**
+ * Internal package type aliases
+ */
+type BelnapWire = Wire<GateLevelValue, GateLevelPrimitive>
+type BelnapPort = Port<GateLevelValue>
+type BelnapCircuit = InterfacedHypergraph<GateLevelValue, GateLevelPrimitive>
+/**
+ * Instantiate GateLevelPrimitive as a type of gate symbols
+ */
 extend GateLevelPrimitive <: PrimitiveSymbol<GateLevelValue> & Equatable<GateLevelPrimitive> {
     public func hashCode() {
         match (this) {
@@ -90,7 +108,7 @@ extend GateLevelPrimitive <: PrimitiveSymbol<GateLevelValue> & Equatable<GateLev
             case XNOR => "XNOR"
         }
     }
-    public func GetInputPorts(): Array<Port<GateLevelValue>> {
+    public func GetInputPorts(): Array<BelnapPort> {
         match (this) {
             case BUF => [Port(1, "A")]
             case NOT => [Port(1, "A")]
@@ -105,7 +123,7 @@ extend GateLevelPrimitive <: PrimitiveSymbol<GateLevelValue> & Equatable<GateLev
     public func GetArity(): Int64 {
         this.GetInputPorts().size
     }
-    public func GetOutputPorts(): Array<Port<GateLevelValue>> {
+    public func GetOutputPorts(): Array<BelnapPort> {
         match (this) {
             case BUF => [Port(1, "Z")]
             case NOT => [Port(1, "Z")]
@@ -127,47 +145,12 @@ extend GateLevelPrimitive <: PrimitiveSymbol<GateLevelValue> & Equatable<GateLev
         "${this.GetName()}${n}_${w}"
     }
 }
-func GateLevelValueToDec(values : Array<GateLevelValue>, signed : Bool) : Option<Int64> {
-    var x = 0
-    var negative = false
-    if (signed) {
-        // In a signed number, the first bit indicates if
-        // the number is negative
-        match(values[values.size - 1]) {
-            case TRUE => negative = true
-            case FALSE => ()
-            case _ => return None<Int64>
-        }
-        for (i in 0..values.size) {
-            var carry = true
-            match(values[i]) {
-                case TRUE =>
-                    if(!carry) {
-                        x += 2**UInt64(i)
-                    }
-                case FALSE =>
-                    if(carry) {
-                        x += 2**UInt64(i)
-                        carry = false
-                    }
-                case _ => return None<Int64>
-            }
-        }
-    } else {
-        for (i in 0..values.size) {
-            match(values[i]) {
-                case TRUE =>
-                    x += 2**UInt64(i)
-                case FALSE => ()
-                case _ => return None<Int64>
-            }
-        }
-    }
-    if(negative){
-        x = -x
-    }
-    Some(x)
-}
+/**
+ * Given two Belnap values, get their join in the lattice A4
+ * @param lhs The left value
+ * @param rhs The right value
+ * @return The result of lhs v rhs in A4
+ */
 func GateLevelJoin(lhs: GateLevelValue, rhs: GateLevelValue): GateLevelValue {
     match (lhs) {
         case BOTH => BOTH
@@ -186,6 +169,13 @@ func GateLevelJoin(lhs: GateLevelValue, rhs: GateLevelValue): GateLevelValue {
             }
     }
 }
+/**
+ * Given two Belnap values, find if the left value is less than or equal
+ * to the right in the lattice A4
+ * @param lhs The left value
+ * @param rhs The right value
+ * @return Whether lhs <= rhs in A4
+ */
 func GateLevelLTE(lhs: GateLevelValue, rhs: GateLevelValue): Bool {
     match (lhs) {
         case NONE => true
@@ -208,6 +198,9 @@ func GateLevelLTE(lhs: GateLevelValue, rhs: GateLevelValue): Bool {
             }
     }
 }
+/**
+ * The lattice A4 on the Belnap values
+ */
 let gateLevelLatticeStructure = FiniteLattice<GateLevelValue>(
     HashSet<GateLevelValue>([NONE, TRUE, FALSE, BOTH]),
     NONE,
@@ -285,6 +278,11 @@ func xor(lhs: GateLevelValue, rhs: GateLevelValue) {
             }
     }
 }
+/**
+ * Given a Belnap gate, interpret it as an appropriate function on Belnap values
+ * @param g The Belnap gate
+ * @return The function from an array of Belnap values to an array of Belnap values
+ */
 func gateLevelInterpretation(g: GateLevelPrimitive): (Array<GateLevelValue>) -> Array<GateLevelValue> {
     {
         ws: Array<GateLevelValue> =>
@@ -301,6 +299,56 @@ func gateLevelInterpretation(g: GateLevelPrimitive): (Array<GateLevelValue>) -> 
             [output]
     }
 }
+/**
+ * Convert an array of Belnap values to the corresponding number, if appropriate
+ * @param values The array of Belnap values
+ * @param signed Whether to interpret this as a signed value
+ * @return An option containing the number represented, if appropriate
+ */
+func GateLevelValueToDec(values : Array<GateLevelValue>, signed : Bool) : Option<Int64> {
+    var x = 0
+    var negative = false
+    if (signed) {
+        // In a signed number, the first bit indicates if
+        // the number is negative
+        match(values[values.size - 1]) {
+            case TRUE => negative = true
+            case FALSE => ()
+            case _ => return None<Int64>
+        }
+        for (i in 0..values.size) {
+            var carry = true
+            match(values[i]) {
+                case TRUE =>
+                    if(!carry) {
+                        x += 2**UInt64(i)
+                    }
+                case FALSE =>
+                    if(carry) {
+                        x += 2**UInt64(i)
+                        carry = false
+                    }
+                case _ => return None<Int64>
+            }
+        }
+    } else {
+        for (i in 0..values.size) {
+            match(values[i]) {
+                case TRUE =>
+                    x += 2**UInt64(i)
+                case FALSE => ()
+                case _ => return None<Int64>
+            }
+        }
+    }
+    if(negative){
+        x = -x
+    }
+    Some(x)
+}
+/**
+ * Signature for Belnap circuits
+ */
 public let gateLevelSignature = Signature<GateLevelValue, GateLevelPrimitive>(
     gateLevelLatticeStructure,
     gateLevelInterpretation,

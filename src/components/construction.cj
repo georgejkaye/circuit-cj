@@ -28,7 +28,10 @@ public class NotImplemented <: Exception {
         ErrorMsg("Not implemented: ${msg}")
     }
 }
-public func Bitwise<V, G>(f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>, ws : Array<Wire<V, G>>) : Array<Wire<V, G>>
+public func Bitwise<V, G>(
+    f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
+    ws : Array<Wire<V, G>>
+) : Array<Wire<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let width = AssertWiresSameWidth(ws)
@@ -37,28 +40,39 @@ public func Bitwise<V, G>(f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>, ws : Arr
     let joinedWires = map({ ws : Array<Wire<V, G>> => Combine(ws) }, outputWires)
     joinedWires
 }
-public func Bitwise<V, G>(f : InterfacedHypergraph<V, G>, ws : Array<Wire<V, G>>) : Array<Wire<V, G>>
+public func Bitwise<V, G>(
+    f : InterfacedHypergraph<V, G>,
+    ws : Array<Wire<V, G>>
+) : Array<Wire<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     Bitwise({ ws : Array<Wire<V, G>> => UseSubcircuit(f, ws) }, ws)
+}
+public func Bitwise<V, G>(
+    f : (Array<Wire<V, G>>) -> Wire<V, G>,
+    ws : Array<Wire<V, G>>
+) : Wire<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    Bitwise({ ws : Array<Wire<V, G>> => [f(ws)] }, ws)[0]
 }
 public func GeneralRipple<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V,G>>) -> (Array<Wire<V, G>>, Array<Wire<V, G>>),
     initial : Array<Wire<V, G>>,
     wss : Array<Array<Wire<V, G>>>,
-    direction : Direction
+    direction!: Direction = TOP_TO_BOTTOM
 ) : (Array<Array<Wire<V, G>>>, Array<Wire<V, G>>)
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let width = AssertWireArrayArraysCompatible(wss)
     var acc = initial
     let outputs = ArrayList<Array<Wire<V, G>>>()
-    for(i in 0..wss.size) {
+    for(i in 0..width) {
         let j = match(direction) {
             case TOP_TO_BOTTOM => i
             case BOTTOM_TO_TOP => wss.size - 1 - i
         }
-        let cur = wss[j]
+        let cur = Array<Wire<V, G>>(wss.size){ k : Int64 => wss[k][i] }
         let (curRes, curAcc) = f(acc, cur)
         outputs.append(curRes)
         acc = curAcc
@@ -70,7 +84,7 @@ public func Ripple<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V,G>>) -> Array<Wire<V, G>>,
     initial : Array<Wire<V, G>>,
     wss : Array<Array<Wire<V, G>>>,
-    direction : Direction
+    direction!: Direction = TOP_TO_BOTTOM
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
@@ -78,7 +92,7 @@ public func Ripple<V, G>(
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> => (Array<Wire<V, G>>(), f(acc, cur)) },
         initial,
         wss,
-        direction
+        direction: direction
     )
     acc
 }
@@ -86,42 +100,45 @@ public func Ripple<V, G>(
     f : InterfacedHypergraph<V, G>,
     initial : Array<Wire<V, G>>,
     wss : Array<Array<Wire<V, G>>>,
-    direction : Direction
+    direction!: Direction = TOP_TO_BOTTOM
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    Ripple({ acc : Array<Wire<V, G>>, cur : Array<Wire<V,G>> => UseSubcircuit(f, concat(acc, cur)) }, initial, wss, direction)
+    Ripple({ acc : Array<Wire<V, G>>, cur : Array<Wire<V,G>> => UseSubcircuit(f, concat(acc, cur)) }, initial, wss, direction: direction)
 }
 public func Ripple<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V,G>>) -> Array<Wire<V, G>>,
     wss : Array<Array<Wire<V, G>>>,
-    direction : Direction
+    direction!: Direction = TOP_TO_BOTTOM
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     AssertArrayHasMinimumLength(wss, 1)
     let initial = wss[0]
     let rest = Array<Array<Wire<V, G>>>(wss.size - 1){ i : Int64 => wss[i+1]}
-    Ripple(f, initial, rest, direction)
+    Ripple(f, initial, rest, direction: direction)
 }
 public func Ripple<V, G>(
     f : InterfacedHypergraph<V, G>,
     wss : Array<Array<Wire<V, G>>>,
-    direction : Direction
+    direction!: Direction = TOP_TO_BOTTOM
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    Ripple({ acc : Array<Wire<V, G>>, cur : Array<Wire<V,G>> => UseSubcircuit(f, concat(acc, cur)) }, wss, direction)
+    Ripple({ acc : Array<Wire<V, G>>, cur : Array<Wire<V,G>> => UseSubcircuit(f, concat(acc, cur)) }, wss, direction: direction)
 }
 public func BitwiseRipple<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> (Array<Wire<V, G>>, Array<Wire<V, G>>),
     initial : Array<Wire<V, G>>,
-    wss : Array<Array<Wire<V, G>>>,
-    direction : Direction
+    ws : Array<Wire<V, G>>,
+    direction!: Direction = TOP_TO_BOTTOM
 ) : (Array<Wire<V, G>>, Array<Wire<V, G>>)
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    let (outputs, acc) = GeneralRipple(f, initial, wss, direction)
+    let width = AssertWiresSameWidth(ws)
+    let splitInputs = map({ w : Wire<V, G> => Split(w) }, ws)
+    println("There are ${splitInputs.size} wires")
+    let (outputs, acc) = GeneralRipple(f, initial, splitInputs, direction: direction)
     let size = outputs[0].size
     let joinedOutputs = Array<Wire<V, G>>(size){
         i : Int64 => Combine(Array<Wire<V, G>>(outputs.size){
@@ -130,25 +147,44 @@ public func BitwiseRipple<V, G>(
     }
     (joinedOutputs, acc)
 }
+public func BitwiseRipple<V, G>(
+    f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> (Wire<V, G>, Wire<V, G>),
+    initial : Array<Wire<V, G>>,
+    ws : Array<Wire<V, G>>,
+    direction!: Direction = TOP_TO_BOTTOM
+) : (Wire<V, G>, Wire<V, G>)
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    let (finalRes, finalAcc) = BitwiseRipple(
+        { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
+            let (newCur, newAcc) = f(acc, cur)
+            ([newCur], [newAcc])
+        },
+        initial,
+        ws,
+        direction: direction
+    )
+    (finalRes[0], finalAcc[0])
+}
 public func InternalRipple<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> Array<Wire<V, G>>,
     initial : Array<Wire<V, G>>,
     ws : Array<Wire<V, G>>,
-    direction : Direction
+    direction!: Direction = TOP_TO_BOTTOM
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let splitWires = map({ w : Wire<V, G> => Split(w) }, ws)
-    Ripple(f, initial, splitWires, direction)
+    Ripple(f, initial, splitWires, direction: direction)
 }
 public func InternalRipple<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> Array<Wire<V, G>>,
     ws : Array<Wire<V, G>>,
-    direction : Direction
+    direction!: Direction = TOP_TO_BOTTOM
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let splitWires = map({ w : Wire<V, G> => Split(w) }, ws)
-    Ripple(f, splitWires, direction)
+    Ripple(f, splitWires, direction: direction)
 }
 

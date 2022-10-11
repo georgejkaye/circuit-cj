@@ -6,7 +6,8 @@
  * @author George Kaye
  * @since 2022-06-21
  */
-package examples
+
+package examples.gate
 
 import syntax.*
 import graphs.*
@@ -48,7 +49,7 @@ func ALU() {
     )
 }
 
-func FDCE(d: Wire, ce: Wire, c: Wire, clr: Wire) {
+func FDCE(d: Wire_, ce: Wire_, c: Wire_, clr: Wire_) {
     BlackBox(
         "FDCE",
         [
@@ -61,7 +62,7 @@ func FDCE(d: Wire, ce: Wire, c: Wire, clr: Wire) {
         [d, ce, c, clr]
     )[0]
 }
-func FDPE(pre: Wire, d: Wire, ce: Wire, c: Wire) {
+func FDPE(pre: Wire_, d: Wire_, ce: Wire_, c: Wire_) {
     BlackBox(
         "FDPE",
         [
@@ -74,7 +75,7 @@ func FDPE(pre: Wire, d: Wire, ce: Wire, c: Wire) {
         [pre, d, ce, c]
     )[0]
 }
-func FDC(d: Wire, c: Wire, clr: Wire) {
+func FDC(d: Wire_, c: Wire_, clr: Wire_) {
     BlackBox(
         "FDC",
         [
@@ -86,7 +87,7 @@ func FDC(d: Wire, c: Wire, clr: Wire) {
         [d, c, clr]
     )[0]
 }
-func FD(d: Wire, c: Wire) {
+func FD(d: Wire_, c: Wire_) {
     BlackBox(
         "FD",
         [
@@ -97,7 +98,7 @@ func FD(d: Wire, c: Wire) {
         [d, c]
     )[0]
 }
-func RAM(cpu_do: Wire, addr: Wire, ram_we: Wire, clk: Wire) {
+func RAM(cpu_do: Wire_, addr: Wire_, ram_we: Wire_, clk: Wire_) {
     BlackBox(
         "ram",
         [
@@ -111,7 +112,7 @@ func RAM(cpu_do: Wire, addr: Wire, ram_we: Wire, clk: Wire) {
     )[0]
 }
 
-func Register(w: Int64): InterfacedHypergraph {
+func Register(w: Int64): Circuit_ {
     if (w % 2 == 1) {
         Todo("Odd bit registers not implemented")
     }
@@ -123,8 +124,8 @@ func Register(w: Int64): InterfacedHypergraph {
     let (l, r) = Split(d, splitWidth, splitWidth)
     let outputs = if (splitWidth == 1) {
         Bitwise(
-            [d],
-            {w: Array<Wire> => FDCE(w[0], ce, clk, clr)}
+            { ws: Array<Wire_> => FDCE(ws[0], ce, clk, clr) },
+            [d]
         )
     } else {
         let lhs = UseSubcircuit_1(Register(splitWidth), [l, clr, ce, clk])
@@ -206,7 +207,7 @@ func InstructionDecoder() {
     )
 }
 
-func Decoder_InstructionDecoder(ir: Wire, decode: Wire, execute: Wire) {
+func Decoder_InstructionDecoder(ir: Wire_, decode: Wire_, execute: Wire_) {
     let instruction_decoder = UseSubcircuit(InstructionDecoder(), [ir])
     let phase = Or(decode, execute)
     let add = And(instruction_decoder[0], phase)
@@ -223,8 +224,8 @@ func Decoder_InstructionDecoder(ir: Wire, decode: Wire, execute: Wire) {
     (add, load, output, input, jumpz, jump, jumpnz, jumpc, jumpnc, sub, bitand)
 }
 
-func Decoder_SequenceGenerator(clk: Wire, ce: Wire, clr: Wire, carry: Wire, zero: Wire, add: Wire, sub: Wire,
-    bitand: Wire) {
+func Decoder_SequenceGenerator(clk: Wire_, ce: Wire_, clr: Wire_, carry: Wire_, zero: Wire_, add: Wire_, sub: Wire_,
+    bitand: Wire_) {
     let sequence = UseSubcircuit(SequenceGenerator(), [clk, ce, clr])
     let fetch = sequence[0]
     let decode = sequence[1]
@@ -239,17 +240,17 @@ func Decoder_SequenceGenerator(clk: Wire, ce: Wire, clr: Wire, carry: Wire, zero
 }
 
 func Decoder_Jump(
-    clk: Wire,
-    clr: Wire,
-    increment: Wire,
-    execute: Wire,
-    jumpz: Wire,
-    zero_reg: Wire,
-    jumpnz: Wire,
-    jumpc: Wire,
-    carry_reg: Wire,
-    jumpnc: Wire,
-    jump: Wire
+    clk: Wire_,
+    clr: Wire_,
+    increment: Wire_,
+    execute: Wire_,
+    jumpz: Wire_,
+    zero_reg: Wire_,
+    jumpnz: Wire_,
+    jumpc: Wire_,
+    carry_reg: Wire_,
+    jumpnc: Wire_,
+    jump: Wire_
 ) {
     let is_jump = Or(
         [

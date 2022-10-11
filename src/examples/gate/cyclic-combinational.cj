@@ -9,7 +9,7 @@
  * @since 0.1
  */
 
-package examples
+package examples.gate
 
 public func CyclicCombinational() {
     let x = sig.UseWire(1)

@@ -58,10 +58,17 @@ public interface WireBuilder<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     func UseWire(w : Int64) : Wire<V, G>
+    func UseWires(w : Int64, n : Int64) : Array<Wire<V, G>>
 }
 extend Signature<V, G> <: WireBuilder<V, G> {
     public func UseWire(w : Int64) : Wire<V, G> {
         UseWire<V, G>(w)
+    }
+    public func UseWires(w : Int64, n : Int64) : Array<Wire<V, G>> {
+        UseWires<V, G>(w, n)
+    }
+    public func NameWire(w : Wire<V, G>, name : String) : InterfaceWire<V, G> {
+        InterfaceWire(w, name)
     }
 }
 /**
@@ -82,7 +89,7 @@ public func UseWire<V, G>(width : Int64) : Wire<V, G>
  * @param width The width of the wire
  * @return The array of wires
  */
-public func UseWires<V, G>(n : Int64, width : Int64) : Array<Wire<V, G>>
+public func UseWires<V, G>(width : Int64, n : Int64) : Array<Wire<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     AssertStrictlyPositive(n)

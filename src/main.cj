@@ -1,10 +1,11 @@
 import graphs.WriteDotToFile
-import rewrite.RewriteCombinational
 import settings.*
 import components.*
 import debug.SetDebugMessages
-import rewrite.*
-import examples.*
+import examples.gate.*
+
+import syntax.WaveformType
+import signatures.gate.*
 
 main() {
     SetDebugMessages(true)
@@ -12,16 +13,18 @@ main() {
     SetNumberRepresentation(DEC)
     SetDebugDot(true)
 
-    let wf = MakeWaveform([1, 2], width: 4, signed: false, closed: true)
+    let wf = MakeWaveform([1, 2], FINITE_CLOSED, width: 4, signed: false)
     WriteDotToFile(wf, 0, "wf-0")
     WriteDotToFile(wf, 1, "wf-1")
 
     let acc = Accumulator(width: 4, initial: 1)
-    let applied = Apply(acc, [wf])
-    WriteDotToFile(applied, 0, "acc-0")
-    WriteDotToFile(applied, 1, "acc-1")
-    RunCycle(applied)
-    WriteDotToFile(applied, 0, "acc-uf")
+    WriteDotToFile(acc, 0, "acc-0")
+    WriteDotToFile(acc, 1, "acc-1")
+    // let applied = Apply(acc, [wf])
+    // WriteDotToFile(applied, 0, "acc-0")
+    // WriteDotToFile(applied, 1, "acc-1")
+    // RunCycle(applied)
+    // WriteDotToFile(applied, 0, "acc-uf")
 
     // let zero = InfiniteWaveform(TrueSignal())
     // let other = UseWire(1)

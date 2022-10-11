@@ -13,110 +13,110 @@ let sig = gateLevelSignature
  */
 
 public func Buf(
-    a : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    a : BelnapWire
+) : BelnapWire {
     UseBitwiseGate(BUF, [a])
 }
 public func Not(
-    a : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    a : BelnapWire
+) : BelnapWire {
     UseBitwiseGate(NOT, [a])
 }
 public func And(
-    a : Wire<GateLevelValue, GateLevelPrimitive>,
-    b : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    a : BelnapWire,
+    b : BelnapWire
+) : BelnapWire {
     UseBitwiseGate(AND, [a, b])
 }
 public func Or(
-    a : Wire<GateLevelValue, GateLevelPrimitive>,
-    b : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    a : BelnapWire,
+    b : BelnapWire
+) : BelnapWire {
     UseBitwiseGate(OR, [a, b])
 }
 public func Nand(
-    a : Wire<GateLevelValue, GateLevelPrimitive>,
-    b : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    a : BelnapWire,
+    b : BelnapWire
+) : BelnapWire {
     UseBitwiseGate(NAND, [a, b])
 }
 public func Nor(
-    a : Wire<GateLevelValue, GateLevelPrimitive>,
-    b : Wire<GateLevelValue, GateLevelPrimitive>) : Wire<GateLevelValue, GateLevelPrimitive> {
+    a : BelnapWire,
+    b : BelnapWire) : BelnapWire {
     UseBitwiseGate(NOR, [a, b])
 }
 public func Xor(
-    a : Wire<GateLevelValue, GateLevelPrimitive>,
-    b : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    a : BelnapWire,
+    b : BelnapWire
+) : BelnapWire {
     UseBitwiseGate(XOR, [a, b])
 }
 public func Xnor(
-    a : Wire<GateLevelValue, GateLevelPrimitive>,
-    b : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    a : BelnapWire,
+    b : BelnapWire
+) : BelnapWire {
     UseBitwiseGate(XNOR, [a, b])
 }
 
 public func And(
-    ws : Array<Wire<GateLevelValue, GateLevelPrimitive>>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    ws : Array<BelnapWire>
+) : BelnapWire {
     UseRippleGate(AND, ws)
 }
 public func Or(
-    ws : Array<Wire<GateLevelValue, GateLevelPrimitive>>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    ws : Array<BelnapWire>
+) : BelnapWire {
     UseRippleGate(OR, ws)
 }
 public func Nand(
-    ws : Array<Wire<GateLevelValue, GateLevelPrimitive>>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    ws : Array<BelnapWire>
+) : BelnapWire {
     UseRippleGate(NAND, ws)
 }
 public func Nor(
-    ws : Array<Wire<GateLevelValue, GateLevelPrimitive>>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    ws : Array<BelnapWire>
+) : BelnapWire {
     UseRippleGate(NOR, ws)
 }
 public func Xor(
-    ws : Array<Wire<GateLevelValue, GateLevelPrimitive>>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    ws : Array<BelnapWire>
+) : BelnapWire {
     UseRippleGate(XOR, ws)
 }
 public func Xnor(
-    ws : Array<Wire<GateLevelValue, GateLevelPrimitive>>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    ws : Array<BelnapWire>
+) : BelnapWire {
     UseRippleGate(XNOR, ws)
 }
 
 public func And(
-    w : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    w : BelnapWire
+) : BelnapWire {
     UseInternalRippleGate(AND, w)
 }
 public func Or(
-    w : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    w : BelnapWire
+) : BelnapWire {
     UseInternalRippleGate(OR, w)
 }
 public func Nand(
-    w : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    w : BelnapWire
+) : BelnapWire {
     UseInternalRippleGate(NAND, w)
 }
 public func Nor(
-    w : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    w : BelnapWire
+) : BelnapWire {
     UseInternalRippleGate(NOR, w)
 }
 public func Xor(
-    w : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    w : BelnapWire
+) : BelnapWire {
     UseInternalRippleGate(XOR, w)
 }
 public func Xnor(
-    w : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    w : BelnapWire
+) : BelnapWire {
     UseInternalRippleGate(XNOR, w)
 }
 /**
@@ -125,7 +125,7 @@ public func Xnor(
  * a sum and carry.
  * @return A half adder subcircuit
  */
-public func MakeHalfAdder() : InterfacedHypergraph<GateLevelValue, GateLevelPrimitive> {
+public func MakeHalfAdder() : BelnapCircuit {
     let a = sig.UseWire(1)
     let b = sig.UseWire(1)
     let s = XorGate(a, b)
@@ -149,9 +149,9 @@ public func MakeHalfAdder() : InterfacedHypergraph<GateLevelValue, GateLevelPrim
  * @return (Output S (1), Output C (1))
  */
 public func HalfAdder(
-    a : Wire<GateLevelValue, GateLevelPrimitive>,
-    b : Wire<GateLevelValue, GateLevelPrimitive>
-) : (Wire<GateLevelValue, GateLevelPrimitive>, Wire<GateLevelValue, GateLevelPrimitive>) {
+    a : BelnapWire,
+    b : BelnapWire
+) : (BelnapWire, BelnapWire) {
     AssertWireWidth(a, 1)
     AssertWireWidth(b, 1)
     UseSubcircuit_2(MakeHalfAdder(), [a, b])
@@ -162,7 +162,7 @@ public func HalfAdder(
  * and outputs a sum and a new carry.
  * @return A full adder subcircuit
  */
-public func MakeFullAdder() : InterfacedHypergraph<GateLevelValue, GateLevelPrimitive> {
+public func MakeFullAdder() : BelnapCircuit {
     let a = sig.UseWire(1)
     let b = sig.UseWire(1)
     let cin = sig.UseWire(1)
@@ -192,14 +192,14 @@ public func MakeFullAdder() : InterfacedHypergraph<GateLevelValue, GateLevelPrim
  * @return (Output S (1), Output Cout (1))
  */
 public func FullAdder(
-    a : Wire<GateLevelValue, GateLevelPrimitive>,
-    b : Wire<GateLevelValue, GateLevelPrimitive>,
-    c : Wire<GateLevelValue, GateLevelPrimitive>
-) : (Wire<GateLevelValue, GateLevelPrimitive>, Wire<GateLevelValue, GateLevelPrimitive>) {
+    a : BelnapWire,
+    b : BelnapWire,
+    c : BelnapWire
+) : (BelnapWire, BelnapWire) {
     AssertWireWidth(a, 1)
     AssertWireWidth(b, 1)
     AssertWireWidth(c, 1)
-    UseSubcircuit_2(MakeFullAdder(), [a, b])
+    UseSubcircuit_2(MakeFullAdder(), [a, b, c])
 }
 /**
  * Create a ripple adder subcircuit for a given width: a circuit that
@@ -208,19 +208,19 @@ public func FullAdder(
  * @param width The width of the input bits
  * @return A ripple adder subcircuit
  */
-public func MakeRippleAdder(width : Int64) : InterfacedHypergraph<GateLevelValue, GateLevelPrimitive> {
+public func MakeRippleAdder(width : Int64) : BelnapCircuit {
     let a = sig.UseWire(width)
     let b = sig.UseWire(width)
     let c = sig.UseWire(1)
     let (sum, carry) = BitwiseRipple(
-        { acc : Array<Wire<GateLevelValue, GateLevelPrimitive>>, cur : Array<Wire<GateLevelValue, GateLevelPrimitive>> =>
-            let (sum, carry) = FullAdder(acc[0], cur[0], cur[1])
-            ([sum], [carry])
+        { acc : Array<BelnapWire>, cur : Array<BelnapWire> =>
+            let (sum, carry) = FullAdder(cur[0], cur[1], acc[0])
+            (sum, carry)
         },
         [c],
-        [[a], [b]],
-        TOP_TO_BOTTOM
+        [a, b]
     )
+    println("sum ${sum.GetWidth()} carry ${sum.GetWidth()}")
     MakeSubcircuit(
         [
             InterfaceWire(a, "A"),
@@ -228,8 +228,8 @@ public func MakeRippleAdder(width : Int64) : InterfacedHypergraph<GateLevelValue
             InterfaceWire(c, "Cin")
         ],
         [
-            InterfaceWire(sum[0], "S"),
-            InterfaceWire(carry[0], "Cout")
+            InterfaceWire(sum, "S"),
+            InterfaceWire(carry, "Cout")
         ],
         "ripple_adder"
     )
@@ -243,10 +243,11 @@ public func MakeRippleAdder(width : Int64) : InterfacedHypergraph<GateLevelValue
  * @return (Output S (w), Output Cout (1))
  */
 public func RippleAdder(
-    a : Wire<GateLevelValue, GateLevelPrimitive>,
-    b : Wire<GateLevelValue, GateLevelPrimitive>,
-    c : Wire<GateLevelValue, GateLevelPrimitive>
-) : (Wire<GateLevelValue, GateLevelPrimitive>, Wire<GateLevelValue, GateLevelPrimitive>) {
+    a : BelnapWire,
+    b : BelnapWire,
+    c : BelnapWire
+) : (BelnapWire, BelnapWire) {
+    println("a is ${a.GetWidth()} and b is ${b.GetWidth()}")
     AssertWiresSameWidth(a, b)
     let width = a.GetWidth()
     AssertWireWidth(c, 1)
@@ -256,7 +257,7 @@ public func RippleAdder(
  * Create a 2-multiplexer subcircuit for inputs of one bit: a circuit
  * that produces one of two outputs depending on a control signal.
  */
-func Mux2_1_1() : InterfacedHypergraph<GateLevelValue, GateLevelPrimitive> {
+func Mux2_1_1() : BelnapCircuit {
     let a = sig.UseWire(1)
     let b = sig.UseWire(1)
     let c = sig.UseWire(1)
@@ -279,13 +280,13 @@ func Mux2_1_1() : InterfacedHypergraph<GateLevelValue, GateLevelPrimitive> {
  * Create a 2-multiplexer subcircuit for inputs of arbitrary width:
  * a circuit that produces one of two outputs depending on a control signal.
  */
-public func Mux2_1_W(width : Int64) : InterfacedHypergraph<GateLevelValue, GateLevelPrimitive> {
+public func Mux2_1_W(width : Int64) : BelnapCircuit {
     let sel = sig.UseWire(1)
     let a = sig.UseWire(width)
     let b = sig.UseWire(width)
     let ctls = Replicate(sel, width)
     let output = Bitwise(
-        { ws : Array<Wire<GateLevelValue, GateLevelPrimitive>> => UseSubcircuit(
+        { ws : Array<BelnapWire> => UseSubcircuit(
             Mux2_1_1(),
             ws
         )},
@@ -312,10 +313,10 @@ public func Mux2_1_W(width : Int64) : InterfacedHypergraph<GateLevelValue, GateL
  * @return Output Z (w)
  */
 public func Mux2(
-    s0: Wire<GateLevelValue, GateLevelPrimitive>,
-    a: Wire<GateLevelValue, GateLevelPrimitive>,
-    b: Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    s0: BelnapWire,
+    a: BelnapWire,
+    b: BelnapWire
+) : BelnapWire {
     AssertWireWidth(s0, 1)
     AssertWiresSameWidth(a, b)
     let width = a.GetWidth()
@@ -328,7 +329,7 @@ public func Mux2(
  * Create a 4-multiplexer subcircuit for inputs of arbitrary width:
  * a circuit that produces one of four outputs depending on two control signals.
  */
-func Mux4_1_W(width: Int64) : InterfacedHypergraph<GateLevelValue, GateLevelPrimitive> {
+func Mux4_1_W(width: Int64) : BelnapCircuit {
     let a  = sig.UseWire(width)
     let b  = sig.UseWire(width)
     let c  = sig.UseWire(width)
@@ -374,13 +375,13 @@ func Mux4_1_W(width: Int64) : InterfacedHypergraph<GateLevelValue, GateLevelPrim
  * @return Output Z (w)
  */
 public func Mux4(
-    s0: Wire<GateLevelValue, GateLevelPrimitive>,
-    s1: Wire<GateLevelValue, GateLevelPrimitive>,
-    a: Wire<GateLevelValue, GateLevelPrimitive>,
-    b: Wire<GateLevelValue, GateLevelPrimitive>,
-    c: Wire<GateLevelValue, GateLevelPrimitive>,
-    d: Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    s0: BelnapWire,
+    s1: BelnapWire,
+    a: BelnapWire,
+    b: BelnapWire,
+    c: BelnapWire,
+    d: BelnapWire
+) : BelnapWire {
     AssertWireWidth(s0, 1)
     AssertWireWidth(s1, 1)
     AssertWiresSameWidth(a, b)
@@ -404,8 +405,8 @@ public func Mux4(
 public func SimpleRegister(
     initial! : Int64,
     signed! : Bool,
-    input! : Wire<GateLevelValue, GateLevelPrimitive>
-) : Wire<GateLevelValue, GateLevelPrimitive> {
+    input! : BelnapWire
+) : BelnapWire {
     let value = UseSignalFromInt(initial, signed, width: input.GetWidth())
     SimpleRegister(value, input)
 }
@@ -418,13 +419,13 @@ public func SimpleRegister(
  * @param outgoing The wire to bend back
  * @param incoming The wire to feed back into, must not have an incoming edge
  */
-public func RegisterGuardedFeedback<V, G>(
-    incoming : Wire<V, G>,
+public func RegisterGuardedFeedback(
+    incoming : BelnapWire,
     initial!: Int64,
     signed!: Bool,
-    input!: Wire<V, G>
-) : Unit
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
-{
-
+    input!: BelnapWire
+) : Unit {
+    let value = UseSignalFromInt(initial, signed, width: input.GetWidth())
+    println("Values ${value.GetWidth()}")
+    RegisterGuardedFeedback(incoming, value, input)
 }
