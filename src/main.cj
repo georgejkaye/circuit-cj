@@ -11,15 +11,33 @@ main() {
     SetDebugMessages(true)
     SetDotDir("dot")
     SetNumberRepresentation(DEC)
-    SetDebugDot(true)
+    SetDebugDot(false)
 
-    let wf = MakeWaveform([1, 2], FINITE_CLOSED, width: 4, signed: false)
-    WriteDotToFile(wf, 0, "wf-0")
-    WriteDotToFile(wf, 1, "wf-1")
+    let sig = gateLevelSignature
 
-    let acc = Accumulator(width: 4, initial: 1)
-    WriteDotToFile(acc, 0, "acc-0")
-    WriteDotToFile(acc, 1, "acc-1")
+    // Create a half-adder
+    let a = sig.UseWire(1)
+    let b = sig.UseWire(1)
+    let c = sig.UseWire(1)
+    let and = And([a, b, c])
+
+    let circ = MakeSubcircuit(
+        [InterfaceWire(a, ""), InterfaceWire(b, ""), InterfaceWire(c, "")],
+        [InterfaceWire(and, "")],
+        ""
+    )
+    WriteDotToFile(circ, 0, "and3-0")
+    WriteDotToFile(circ, 1, "and3-1")
+
+
+
+    // let wf = MakeWaveform([1, 2], FINITE_CLOSED, width: 4, signed: false)
+    // WriteDotToFile(wf, 0, "wf-0")
+    // WriteDotToFile(wf, 1, "wf-1")
+
+    // let acc = Accumulator(width: 4, initial: 1)
+    // WriteDotToFile(acc, 0, "acc-0")
+    // WriteDotToFile(acc, 1, "acc-1")
     // let applied = Apply(acc, [wf])
     // WriteDotToFile(applied, 0, "acc-0")
     // WriteDotToFile(applied, 1, "acc-1")

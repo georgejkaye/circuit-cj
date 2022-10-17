@@ -257,10 +257,11 @@ public func Split<V, G, T>(w : T, vs : Array<Int64>) : Array<Wire<V, G>>
  * @param r The width of the 'right' output wire
  * @return The two output wires
  */
-public func Split<V, G, T>(w : T, l : Int64, r : Int64) : (Wire<V, G>, Wire<V, G>)
+public func Split<V, G, T>(w : T, l : Int64) : (Wire<V, G>, Wire<V, G>)
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>,
             T <: ContainsWire<V, G>, T <: ToString
 {
+    let r = w.GetWire().GetWidth() - l
     let split = Split(w, [l, r])
     (split[0], split[1])
 }

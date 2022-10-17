@@ -121,7 +121,7 @@ func Register(w: Int64): Circuit_ {
     let ce = sig.UseWire(1)
     let clk = sig.UseWire(1)
     let splitWidth = w / 2
-    let (l, r) = Split(d, splitWidth, splitWidth)
+    let (l, r) = Split(d, splitWidth)
     let outputs = if (splitWidth == 1) {
         Bitwise(
             { ws: Array<Wire_> => FDCE(ws[0], ce, clk, clr) },
@@ -235,7 +235,7 @@ func Decoder_SequenceGenerator(clk: Wire_, ce: Wire_, clr: Wire_, carry: Wire_, 
     let en_st = Or([add, sub, bitand])
 
     let reg = UseSubcircuit_1(Register(2), [Combine(carry, zero), clk, en_st, clr])
-    let (carry_reg, zero_reg) = Split(reg, 1, 1)
+    let (carry_reg, zero_reg) = Split(reg, 1)
     (fetch, decode, execute, increment, carry_reg, zero_reg)
 }
 
@@ -344,7 +344,7 @@ public func SimpleCPU() {
     let instruction = sig.UseWire(16)
     let en_in = sig.UseWire(1)
     let ir = UseSubcircuit_1(Register(16), [instruction, clk, en_in, clr])
-    let (ir_muxi, ir_decoder) = Split(ir, 8, 8)
+    let (ir_muxi, ir_decoder) = Split(ir, 8)
 
     // Program counter
     let en_pc = sig.UseWire(1)
@@ -372,7 +372,7 @@ public func SimpleCPU() {
     let muxi = Mux2(muxa, ir_muxi, pc)
 
     // Mux_D
-    let (instruction_muxd, _) = Split(instruction, 8, 8)
+    let (instruction_muxd, _) = Split(instruction, 8)
     let acc_fb = sig.UseWire(8)
     let muxd = Mux2(muxb, instruction_muxd, acc_fb)
 

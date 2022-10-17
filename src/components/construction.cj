@@ -64,15 +64,17 @@ public func GeneralRipple<V, G>(
 ) : (Array<Array<Wire<V, G>>>, Array<Wire<V, G>>)
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
+    println("${wss}")
     let width = AssertWireArrayArraysCompatible(wss)
     var acc = initial
     let outputs = ArrayList<Array<Wire<V, G>>>()
-    for(i in 0..width) {
+    for(i in 0..wss.size) {
+        println("Rippling ${i}")
         let j = match(direction) {
             case TOP_TO_BOTTOM => i
             case BOTTOM_TO_TOP => wss.size - 1 - i
         }
-        let cur = Array<Wire<V, G>>(wss.size){ k : Int64 => wss[k][i] }
+        let cur = wss[j]
         let (curRes, curAcc) = f(acc, cur)
         outputs.append(curRes)
         acc = curAcc
@@ -115,7 +117,10 @@ public func Ripple<V, G>(
 {
     AssertArrayHasMinimumLength(wss, 1)
     let initial = wss[0]
+    println("${initial}")
     let rest = Array<Array<Wire<V, G>>>(wss.size - 1){ i : Int64 => wss[i+1]}
+    println("${rest}")
+    println("The rest is ${rest.size}")
     Ripple(f, initial, rest, direction: direction)
 }
 public func Ripple<V, G>(
