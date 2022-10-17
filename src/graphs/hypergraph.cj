@@ -322,7 +322,13 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
                 { t : Tentacle<V, G> => Tentacle(unsafeGet(vertexMap, t.GetVertex()), t.feedback, t.delay)},
                 edge.GetTargets()
             )
-            let newEdge = Edge(edge.GetLabel(), newSources, newTargets, edge.GetSubgraph())
+            let newSubgraph = match(edge.GetSubgraph()){
+                case None => None<InterfacedHypergraph<V, G>>
+                case Some(g) =>
+                    let (newG, _, _) = g.CloneGraph()
+                    newG
+            }
+            let newEdge = Edge(edge.GetLabel(), newSources, newTargets, newSubgraph)
             newEdges.put(newEdge)
             edgeMap.put(edge, newEdge)
         }

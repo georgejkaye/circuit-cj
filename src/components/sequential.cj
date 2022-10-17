@@ -37,7 +37,7 @@ public func UseDelay<V, G>(input: Wire<V, G>, duration!: Int64 = 1) : Wire<V, G>
  * @param input The input wire to the register
  * @return The output wire of the register
  */
-public func SimpleRegister<V, G>(initial: Wire<V, G>, input : Wire<V, G>) : Wire<V, G>
+public func UseSimpleRegister<V, G>(initial: Wire<V, G>, input : Wire<V, G>) : Wire<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let width = initial.GetWidth()
@@ -47,6 +47,12 @@ public func SimpleRegister<V, G>(initial: Wire<V, G>, input : Wire<V, G>) : Wire
         [initial, delay],
         None
     )[0]
+}
+public func UseSimpleRegister<V, G>(initial : Signal<V>, input : Wire<V, G>) : Wire<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    let wire = UseSignal<V, G>(initial)
+    UseSimpleRegister(wire, input)
 }
 /**
  * Join two wires together to form a feedback loop. Variant for internal use
@@ -94,15 +100,24 @@ public func DelayGuardedFeedback<V, G>(outgoing : Wire<V, G>, incoming : Wire<V,
 }
 
 public func RegisterGuardedFeedback<V, G>(
-    incoming : Wire<V, G>,
+    input : Wire<V, G>,
     initial : Wire<V, G>,
-    input : Wire<V, G>
+    incoming : Wire<V, G>
 ) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
         AssertWiresSameWidth(incoming, input)
-        let reg = SimpleRegister(initial, input)
+        let reg = UseSimpleRegister(initial, input)
         PerformFeedback(reg, incoming, false)
+}
+public func RegisterGuardedFeedback<V, G>(
+    input : Wire<V, G>,
+    initial : Signal<V>,
+    incoming: Wire<V, G>
+) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    RegisterGuardedFeedback(input, UseSignal(initial), incoming)
 }
 public func MakeWaveform<V, G>(
     wf : Waveform<V>,

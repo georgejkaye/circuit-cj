@@ -402,13 +402,13 @@ public func Mux4(
  * @param input The input to the register
  * @return The output wire of the register
  */
-public func SimpleRegister(
+public func UseSimpleRegister(
     initial! : Int64,
     signed! : Bool,
     input! : BelnapWire
 ) : BelnapWire {
     let value = UseSignalFromInt(initial, signed, width: input.GetWidth())
-    SimpleRegister(value, input)
+    UseSimpleRegister(value, input)
 }
 
 /**

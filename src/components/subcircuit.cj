@@ -102,8 +102,11 @@ public func MakeBitwiseGate<V, G>(
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
+    println("the width is ${w}")
     let inputs = Array<Wire<V, G>>(prim.GetArity()) {i : Int64 => UseWire<V, G>(w) }
+    println("The inputs to the gate are ${inputs}")
     let output = Bitwise({ ws : Array<Wire<V, G>> => [UseGate(prim, ws)] }, inputs)[0]
+    println("The outputs to the gate are ${output} which has width ${output.GetWidth()}")
     MakeSubcircuit(
         mapi({ w : Wire<V, G>, i : Int64 => InterfaceWire(w, numToUppercaseLetter(i)) }, inputs),
         [InterfaceWire(output, "Z")],
@@ -243,11 +246,13 @@ public func UseSubcircuit_3<T, V, G>(
 public func UseBitwiseGate<V, G>(prim : G, ws : Array<Wire<V, G>>) : Wire<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
+    println("the bitwise array is ${ws}")
     AssertWiresSameWidth(ws)
     AssertNumberOfWires(ws, prim.GetArity())
     if(ws[0].GetWidth() == 1) {
         UseGate(prim, ws)
     } else {
+        println("the width is ${ws[0].GetWidth()}")
         UseSubcircuit_1(
             MakeBitwiseGate(
                 prim,

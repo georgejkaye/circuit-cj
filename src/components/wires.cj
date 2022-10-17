@@ -70,6 +70,15 @@ extend Signature<V, G> <: WireBuilder<V, G> {
     public func NameWire(w : Wire<V, G>, name : String) : InterfaceWire<V, G> {
         InterfaceWire(w, name)
     }
+    public func UseValue(v : V) : Wire<V, G> {
+        UseValue<V, G>(v)
+    }
+    public func UseSignal(s : Signal<V>) : Wire<V, G> {
+        UseSignal<V, G>(s)
+    }
+    public func UseSignal(vs : Array<V>) : Wire<V, G> {
+        UseSignal<V, G>(Signal(vs))
+    }
 }
 /**
  * Make a wire (and underlying vertex) of a given width

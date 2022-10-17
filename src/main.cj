@@ -4,7 +4,7 @@ import components.*
 import debug.SetDebugMessages
 import examples.gate.*
 
-import syntax.WaveformType
+import syntax.*
 import signatures.gate.*
 
 main() {
@@ -15,17 +15,16 @@ main() {
 
     let sig = gateLevelSignature
 
-    // Create a half-adder
-    let a = sig.UseWire(4)
-    let and = And(a)
-
+    let v = UseUnsignedSignalFromInt(10, width: 4)
     let circ = MakeSubcircuit(
-        [InterfaceWire(a, "")],
-        [InterfaceWire(and, "")],
+        Array<InterfaceWire<GateLevelValue, GateLevelPrimitive>>(),
+        [InterfaceWire(v, "")],
         ""
     )
-    WriteDotToFile(circ, 0, "and4-0")
-    WriteDotToFile(circ, 1, "and4-1")
+
+    WriteDotToFile(circ, 1, "unsigned-1")
+
+
 
 
 

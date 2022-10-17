@@ -36,8 +36,17 @@ public func Bitwise<V, G>(
 {
     let width = AssertWiresSameWidth(ws)
     let splitWires = map({ w : Wire<V, G> => Split(w) }, ws)
-    let outputWires = map({ ws : Array<Wire<V, G>> => f(ws) }, splitWires)
-    let joinedWires = map({ ws : Array<Wire<V, G>> => Combine(ws) }, outputWires)
+    println("The split wires are ${splitWires}")
+    let orderedWires = Array<Array<Wire<V, G>>>(width){ i : Int64 =>
+        Array<Wire<V, G>>(splitWires.size){ j : Int64 => splitWires[j][i] }
+    }
+    println("The ordered wires are ${orderedWires}")
+    let outputWires = map({ ws : Array<Wire<V, G>> => f(ws) }, orderedWires)
+    println("The output wires are ${outputWires}")
+    let joinedWires = Array<Wire<V, G>>(outputWires[0].size){ i : Int64 =>
+        let indexWires = Array<Wire<V, G>>(outputWires.size){ j : Int64 => outputWires[j][i] }
+        Combine(indexWires)
+    }
     joinedWires
 }
 public func Bitwise<V, G>(
