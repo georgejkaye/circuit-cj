@@ -16,18 +16,16 @@ main() {
     let sig = gateLevelSignature
 
     // Create a half-adder
-    let a = sig.UseWire(1)
-    let b = sig.UseWire(1)
-    let c = sig.UseWire(1)
-    let and = And([a, b, c])
+    let a = sig.UseWire(4)
+    let and = And(a)
 
     let circ = MakeSubcircuit(
-        [InterfaceWire(a, ""), InterfaceWire(b, ""), InterfaceWire(c, "")],
+        [InterfaceWire(a, "")],
         [InterfaceWire(and, "")],
         ""
     )
-    WriteDotToFile(circ, 0, "and3-0")
-    WriteDotToFile(circ, 1, "and3-1")
+    WriteDotToFile(circ, 0, "and4-0")
+    WriteDotToFile(circ, 1, "and4-1")
 
 
 

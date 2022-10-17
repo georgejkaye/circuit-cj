@@ -180,7 +180,13 @@ public func InternalRipple<V, G>(
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let splitWires = map({ w : Wire<V, G> => Split(w) }, ws)
-    Ripple(f, initial, splitWires, direction: direction)
+    let size = AssertWireArrayArraysCompatible(splitWires)
+    let orderedWires = Array<Array<Wire<V, G>>>(size){ i : Int64 =>
+        Array<Wire<V, G>>(ws.size){ j : Int64 => splitWires[j][i] }
+    }
+    println("${initial}")
+    println("${orderedWires}")
+    Ripple(f, initial, orderedWires, direction: direction)
 }
 public func InternalRipple<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> Array<Wire<V, G>>,
@@ -190,6 +196,14 @@ public func InternalRipple<V, G>(
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let splitWires = map({ w : Wire<V, G> => Split(w) }, ws)
-    Ripple(f, splitWires, direction: direction)
+    let size = AssertWireArrayArraysCompatible(splitWires)
+    let orderedWires = Array<Array<Wire<V, G>>>(size){ i : Int64 =>
+        Array<Wire<V, G>>(ws.size){ j : Int64 => splitWires[j][i] }
+    }
+    let first = orderedWires[0]
+    let rest = Array<Array<Wire<V, G>>>(orderedWires.size - 1){
+        i : Int64 => orderedWires[i+1]
+    }
+    Ripple(f, first, rest, direction: direction)
 }
 
