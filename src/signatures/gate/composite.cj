@@ -212,7 +212,7 @@ public func MakeRippleAdder(width : Int64) : BelnapCircuit {
     let a = sig.UseWire(width)
     let b = sig.UseWire(width)
     let c = sig.UseWire(1)
-    let (sum, carry) = BitwiseRipple(
+    let (sum, carry) = BitwiseRippleMap(
         { acc : Array<BelnapWire>, cur : Array<BelnapWire> =>
             let (sum, carry) = FullAdder(cur[0], cur[1], acc[0])
             (sum, carry)
@@ -220,7 +220,6 @@ public func MakeRippleAdder(width : Int64) : BelnapCircuit {
         [c],
         [a, b]
     )
-    println("sum ${sum.GetWidth()} carry ${sum.GetWidth()}")
     MakeSubcircuit(
         [
             InterfaceWire(a, "A"),
@@ -247,7 +246,6 @@ public func UseRippleAdder(
     b : BelnapWire,
     c : BelnapWire
 ) : (BelnapWire, BelnapWire) {
-    println("a is ${a.GetWidth()} and b is ${b.GetWidth()}")
     AssertWiresSameWidth(a, b)
     let width = a.GetWidth()
     AssertWireWidth(c, 1)
@@ -420,12 +418,12 @@ public func UseSimpleRegister(
  * @param incoming The wire to feed back into, must not have an incoming edge
  */
 public func RegisterGuardedFeedback(
+    input: BelnapWire,
     incoming : BelnapWire,
     initial!: Int64,
-    signed!: Bool,
-    input!: BelnapWire
+    signed!: Bool
 ) : Unit {
     let value = UseSignalFromInt(initial, signed, width: input.GetWidth())
     println("Values ${value.GetWidth()}")
-    RegisterGuardedFeedback(incoming, value, input)
+    RegisterGuardedFeedback(input, incoming, value)
 }

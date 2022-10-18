@@ -101,8 +101,8 @@ public func DelayGuardedFeedback<V, G>(outgoing : Wire<V, G>, incoming : Wire<V,
 
 public func RegisterGuardedFeedback<V, G>(
     input : Wire<V, G>,
-    initial : Wire<V, G>,
-    incoming : Wire<V, G>
+    incoming : Wire<V, G>,
+    initial : Wire<V, G>
 ) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
@@ -112,12 +112,12 @@ public func RegisterGuardedFeedback<V, G>(
 }
 public func RegisterGuardedFeedback<V, G>(
     input : Wire<V, G>,
-    initial : Signal<V>,
-    incoming: Wire<V, G>
+    incoming: Wire<V, G>,
+    initial : Signal<V>
 ) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    RegisterGuardedFeedback(input, UseSignal(initial), incoming)
+    RegisterGuardedFeedback(input, incoming, UseSignal(initial))
 }
 public func MakeWaveform<V, G>(
     wf : Waveform<V>,

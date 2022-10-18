@@ -86,12 +86,15 @@ public func GeneralRipple<V, G>(
         }
         let cur = wss[j]
         let (curRes, curAcc) = f(acc, cur)
-        outputs.append(curRes)
+        match(direction){
+            case TOP_TO_BOTTOM => outputs.append(curRes)
+            case BOTTOM_TO_TOP => outputs.prepend(curRes)
+        }
         acc = curAcc
     }
+    println("the outputs are ${outputs}")
     (outputs.toArray(), acc)
 }
-
 public func Ripple<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V,G>>) -> Array<Wire<V, G>>,
     initial : Array<Wire<V, G>>,
@@ -142,7 +145,43 @@ public func Ripple<V, G>(
 {
     Ripple({ acc : Array<Wire<V, G>>, cur : Array<Wire<V,G>> => UseSubcircuit(f, concat(acc, cur)) }, wss, direction: direction)
 }
-public func BitwiseRipple<V, G>(
+public func RippleMap<V, G>(
+    f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> (Array<Wire<V, G>>, Array<Wire<V, G>>),
+    initial : Array<Wire<V, G>>,
+    ws : Array<Array<Wire<V, G>>>,
+    direction!: Direction = TOP_TO_BOTTOM
+) : (Array<Array<Wire<V, G>>>, Array<Wire<V, G>>)
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    GeneralRipple<V, G>(f, initial, ws, direction: direction)
+}
+public func RippleMap_1<V, G>(
+    f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> (Array<Wire<V, G>>, Array<Wire<V, G>>),
+    initial : Array<Wire<V, G>>,
+    ws : Array<Wire<V, G>>,
+    direction!: Direction = TOP_TO_BOTTOM
+) : (Array<Array<Wire<V, G>>>, Array<Wire<V, G>>)
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    RippleMap<V, G>(f, initial, map({w : Wire<V, G> => [w]}, ws), direction: direction)
+}
+public func RippleMap_1<V, G>(
+    f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> (Wire<V, G>, Wire<V, G>),
+    initial : Array<Wire<V, G>>,
+    ws : Array<Wire<V, G>>,
+    direction!: Direction = TOP_TO_BOTTOM
+) : (Array<Wire<V, G>>, Array<Wire<V, G>>)
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    let fprime = { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
+        let (newOutput, newAcc) = f(acc, cur)
+        ([newOutput], [newAcc])
+    }
+    let (finalOutput, finalAcc) = RippleMap<V, G>(fprime, initial, map({w : Wire<V, G> => [w]}, ws), direction: direction)
+    let actualOutputs = map({ ws : Array<Wire<V, G>> => ws[0] }, finalOutput)
+    (actualOutputs, finalAcc)
+}
+public func BitwiseRippleMap<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> (Array<Wire<V, G>>, Array<Wire<V, G>>),
     initial : Array<Wire<V, G>>,
     ws : Array<Wire<V, G>>,
@@ -152,8 +191,11 @@ public func BitwiseRipple<V, G>(
 {
     let width = AssertWiresSameWidth(ws)
     let splitInputs = map({ w : Wire<V, G> => Split(w) }, ws)
+    let orderedInputs = Array<Array<Wire<V, G>>>(width){ i : Int64 =>
+        Array<Wire<V, G>>(ws.size){ j : Int64 => splitInputs[j][i] }
+    }
     println("There are ${splitInputs.size} wires")
-    let (outputs, acc) = GeneralRipple(f, initial, splitInputs, direction: direction)
+    let (outputs, acc) = RippleMap(f, initial, orderedInputs, direction: direction)
     let size = outputs[0].size
     let joinedOutputs = Array<Wire<V, G>>(size){
         i : Int64 => Combine(Array<Wire<V, G>>(outputs.size){
@@ -162,7 +204,7 @@ public func BitwiseRipple<V, G>(
     }
     (joinedOutputs, acc)
 }
-public func BitwiseRipple<V, G>(
+public func BitwiseRippleMap<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> (Wire<V, G>, Wire<V, G>),
     initial : Array<Wire<V, G>>,
     ws : Array<Wire<V, G>>,
@@ -170,16 +212,12 @@ public func BitwiseRipple<V, G>(
 ) : (Wire<V, G>, Wire<V, G>)
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    let (finalRes, finalAcc) = BitwiseRipple(
-        { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
-            let (newCur, newAcc) = f(acc, cur)
-            ([newCur], [newAcc])
-        },
-        initial,
-        ws,
-        direction: direction
-    )
-    (finalRes[0], finalAcc[0])
+    let fprime = { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
+        let (newOutput, newAcc) = f(acc, cur)
+        ([newOutput], [newAcc])
+    }
+    let (finalOutput, finalAcc) = BitwiseRippleMap(fprime, initial, ws, direction: direction)
+    (finalOutput[0], finalAcc[0])
 }
 public func InternalRipple<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> Array<Wire<V, G>>,

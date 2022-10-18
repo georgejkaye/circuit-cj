@@ -15,15 +15,12 @@ main() {
 
     let sig = gateLevelSignature
 
-    let a = sig.UseWire(2)
-    let b = sig.UseWire(2)
-    let and = And(a, b)
-    let circ = MakeSubcircuit(
-        [InterfaceWire(a, ""), InterfaceWire(b, "")],
-        [InterfaceWire(and, "")],
-        "add"
-    )
-    WriteDotToFile(circ, 1, "and")
+    let acc = SimpleCPU()
+    WriteDotToFile(acc, 0, "cpu-0")
+    WriteDotToFile(acc, 1, "cpu-1")
+    WriteDotToFile(acc, 2, "cpu-2")
+    WriteDotToFile(acc, 3, "cpu-3")
+    WriteDotToFile(acc, 4, "cpu-4")
 
     // WriteDotToFile(wf, 0, "wf-0")
     // WriteDotToFile(wf, 1, "wf-1")

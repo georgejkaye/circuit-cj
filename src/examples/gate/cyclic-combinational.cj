@@ -14,9 +14,7 @@ package examples.gate
 public func CyclicCombinational() {
     let x = sig.UseWire(1)
     let c = sig.UseWire(1)
-
     let bottom = sig.UseWire(1)
-
     let muxa = Mux2(c, x, bottom)
     let f = BlackBox(
         "F",

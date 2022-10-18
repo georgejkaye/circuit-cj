@@ -70,6 +70,12 @@ extend Signature<V, G> <: WireBuilder<V, G> {
     public func NameWire(w : Wire<V, G>, name : String) : InterfaceWire<V, G> {
         InterfaceWire(w, name)
     }
+    public func NameWires(ws : Array<Wire<V, G>>, names : Array<String>) : Array<InterfaceWire<V, G>> {
+        NameWires<V, G>(ws, names)
+    }
+    public func NameWires(ws : Array<Wire<V, G>>, names : (Int64) -> String) : Array<InterfaceWire<V, G>> {
+        NameWires<V, G>(ws, names)
+    }
     public func UseValue(v : V) : Wire<V, G> {
         UseValue<V, G>(v)
     }

@@ -47,7 +47,7 @@ func MultibitFullAdder(width : Int64) {
     let a = sig.UseWire(width)
     let b = sig.UseWire(width)
     let c = sig.UseWire(1)
-    let (sum, carry) = BitwiseRipple(
+    let (sum, carry) = BitwiseRippleMap(
         { acc : Array<Wire_>, cur : Array<Wire_> =>
             UseSubcircuit_2(
                 FullAdder(),
