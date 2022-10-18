@@ -26,7 +26,7 @@ func ALU() {
     let inv1 = Xor(b, Replicate(s3, 8))
     let and1 = And(rep1, inv1)
 
-    let (sum, carry) = RippleAdder(a, and1, s2)
+    let (sum, carry) = UseRippleAdder(a, and1, s2)
     let and2 = And(a, b)
 
     let mux = Mux4(s1, s0, sum, and2, a, b)

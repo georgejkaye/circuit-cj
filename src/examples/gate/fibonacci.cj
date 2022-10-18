@@ -23,7 +23,7 @@ public func Fibonacci(n : Int64, width : Int64) : Circuit_ {
     } else {
         let fiba = UseSubcircuit_1(Fibonacci(n - 2, width), Array<Wire_>())
         let fibb = UseSubcircuit_1(Fibonacci(n - 1, width), Array<Wire_>())
-        RippleAdder(
+        UseRippleAdder(
             fiba,
             fibb,
             Zero(1)

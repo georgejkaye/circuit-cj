@@ -142,13 +142,11 @@ public func MakeWaveform<V, G>(
         let delay = UseDelay(currentWire)
         currentWire = Join(value, delay)
     }
-    let infinite = match(wfType) {
-        case INFINITE => true
-        case _ => false
-    }
-    if(infinite) {
-        Feedback(currentWire, inputs[0].GetWire())
-        inputs = Array<InterfaceWire<V, G>>()
+    match(wfType) {
+        case INFINITE =>
+            PerformFeedback(currentWire, inputs[0].GetWire(), false)
+            inputs = Array<InterfaceWire<V, G>>()
+        case _ => ()
     }
     MakeSubcircuit(
         inputs,
@@ -207,6 +205,13 @@ public func UseClosedWaveform<V, G>(
         Array<InterfaceWire<V, G>>()
     )
 }
+public func UseClosedWaveform<V, G>(
+    wf : Array<Signal<V>>
+) : Wire<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    UseClosedWaveform(Waveform(wf))
+}
 public func UseOpenWaveform<V, G>(
     wf : Waveform<V>,
     inputs : Wire<V, G>
@@ -217,4 +222,12 @@ public func UseOpenWaveform<V, G>(
         MakeOpenWaveform(wf),
         [inputs]
     )
+}
+public func UseOpenWaveform<V, G>(
+    wf : Array<Signal<V>>,
+    inputs : Wire<V, G>
+) : Wire<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    UseOpenWaveform(Waveform(wf), inputs)
 }

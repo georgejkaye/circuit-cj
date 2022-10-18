@@ -242,7 +242,7 @@ public func MakeRippleAdder(width : Int64) : BelnapCircuit {
  * @param c Input Cin (1)
  * @return (Output S (w), Output Cout (1))
  */
-public func RippleAdder(
+public func UseRippleAdder(
     a : BelnapWire,
     b : BelnapWire,
     c : BelnapWire

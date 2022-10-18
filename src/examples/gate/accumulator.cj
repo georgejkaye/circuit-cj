@@ -15,7 +15,7 @@ public func Accumulator(width!: Int64, initial!: Int64) : Circuit_ {
     let prev = sig.UseWire(width)
     println("prev ${prev.GetWidth()}")
     let zero = ConstantZero()
-    let (sum, carry) = RippleAdder(prev, input, zero)
+    let (sum, carry) = UseRippleAdder(prev, input, zero)
     RegisterGuardedFeedback(prev, initial: initial, signed: false, input: sum)
     MakeSubcircuit([
             InterfaceWire(input, "A")

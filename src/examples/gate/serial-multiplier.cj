@@ -22,7 +22,7 @@ func RunningSum(first : Wire_, prev_sum: Wire_, a: Wire_, b0: Wire_) : Wire_ {
     let rhs = PartialProduct(a, b0)
     let a = UnsignedExtend(lhs)
     let b = UnsignedExtend(rhs)
-    let (sum, carry) = RippleAdder(a, b, ConstantZero())
+    let (sum, carry) = UseRippleAdder(a, b, ConstantZero())
     sum
 }
 

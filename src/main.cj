@@ -15,20 +15,16 @@ main() {
 
     let sig = gateLevelSignature
 
-    let v = UseUnsignedSignalFromInt(10, width: 4)
+    let a = sig.UseWire(2)
+    let b = sig.UseWire(2)
+    let and = And(a, b)
     let circ = MakeSubcircuit(
-        Array<InterfaceWire<GateLevelValue, GateLevelPrimitive>>(),
-        [InterfaceWire(v, "")],
-        ""
+        [InterfaceWire(a, ""), InterfaceWire(b, "")],
+        [InterfaceWire(and, "")],
+        "add"
     )
+    WriteDotToFile(circ, 1, "and")
 
-    WriteDotToFile(circ, 1, "unsigned-1")
-
-
-
-
-
-    // let wf = MakeWaveform([1, 2], FINITE_CLOSED, width: 4, signed: false)
     // WriteDotToFile(wf, 0, "wf-0")
     // WriteDotToFile(wf, 1, "wf-1")
 

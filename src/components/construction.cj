@@ -45,6 +45,7 @@ public func Bitwise<V, G>(
     println("The output wires are ${outputWires}")
     let joinedWires = Array<Wire<V, G>>(outputWires[0].size){ i : Int64 =>
         let indexWires = Array<Wire<V, G>>(outputWires.size){ j : Int64 => outputWires[j][i] }
+        println("Index wires are ${indexWires}")
         Combine(indexWires)
     }
     joinedWires

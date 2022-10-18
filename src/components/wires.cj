@@ -79,6 +79,15 @@ extend Signature<V, G> <: WireBuilder<V, G> {
     public func UseSignal(vs : Array<V>) : Wire<V, G> {
         UseSignal<V, G>(Signal(vs))
     }
+    public func UseOpenWaveform(ws : Array<Signal<V>>, input : Wire<V, G>) : Wire<V, G> {
+        UseOpenWaveform<V, G>(ws, input)
+    }
+    public func UseClosedWaveform(ws : Array<Signal<V>>) : Wire<V, G> {
+        UseClosedWaveform<V, G>(ws)
+    }
+    public func UseInfiniteWaveform(ws : Array<Signal<V>>) : Wire<V, G> {
+        UseInfiniteWaveform<V, G>(ws)
+    }
 }
 /**
  * Make a wire (and underlying vertex) of a given width
