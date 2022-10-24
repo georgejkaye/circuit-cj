@@ -213,11 +213,11 @@ public func MakeRippleAdder(width : Int64) : BelnapCircuit {
     let b = sig.UseWire(width)
     let c = sig.UseWire(1)
     let (sum, carry) = BitwiseRippleMap(
-        { acc : Array<BelnapWire>, cur : Array<BelnapWire> =>
-            let (sum, carry) = FullAdder(cur[0], cur[1], acc[0])
+        { acc : BelnapWire, cur : Array<BelnapWire> =>
+            let (sum, carry) = FullAdder(cur[0], cur[1], acc)
             (sum, carry)
         },
-        [c],
+        c,
         [a, b]
     )
     MakeSubcircuit(
@@ -283,7 +283,7 @@ public func Mux2_1_W(width : Int64) : BelnapCircuit {
     let a = sig.UseWire(width)
     let b = sig.UseWire(width)
     let ctls = Replicate(sel, width)
-    let output = Bitwise(
+    let output = BitwiseMap(
         { ws : Array<BelnapWire> => UseSubcircuit(
             Mux2_1_1(),
             ws

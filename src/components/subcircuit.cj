@@ -105,7 +105,7 @@ public func MakeBitwiseGate<V, G>(
     println("the width is ${w}")
     let inputs = Array<Wire<V, G>>(prim.GetArity()) {i : Int64 => UseWire<V, G>(w) }
     println("The inputs to the gate are ${inputs}")
-    let output = Bitwise({ ws : Array<Wire<V, G>> => [UseGate(prim, ws)] }, inputs)[0]
+    let output = BitwiseMap({ ws : Array<Wire<V, G>> => [UseGate(prim, ws)] }, inputs)[0]
     println("The outputs to the gate are ${output} which has width ${output.GetWidth()}")
     MakeSubcircuit(
         mapi({ w : Wire<V, G>, i : Int64 => InterfaceWire(w, numToUppercaseLetter(i)) }, inputs),
@@ -148,14 +148,14 @@ func MakeRippleGate<V, G>(
  * @param w The width of the input wire
  * @return The internal ripple gate circuit
  */
-func MakeInternalRippleGate<V, G>(
+func MakeBitwiseRippleGate<V, G>(
     prim : G,
     w : Int64
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let input = UseWire<V, G>(w)
-    let output = InternalRipple(
+    let output = BitwiseRipple(
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> => [UseGate(prim, [acc[0], cur[0]])] },
         [input]
     )[0]
@@ -294,7 +294,7 @@ public func UseInternalRippleGate<V, G>(prim : G, w : Wire<V, G>) : Wire<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     UseSubcircuit_1<Wire<V,G>, V, G>(
-        MakeInternalRippleGate(
+        MakeBitwiseRippleGate(
             prim,
             w.GetWidth()
         ),
