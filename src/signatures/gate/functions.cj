@@ -77,7 +77,6 @@ func DecToBin(x : Int64, w : Int64, signed : Bool) : Signal<GateLevelValue> {
  * @param x      The decimal number to convert
  */
 func UnsignedDecToBin(x : Int64, w : Int64) : Signal<GateLevelValue> {
-    println("Making ${x} in ${w} bits")
     AssertNonNegative(x)
     let required = log2Ceil(x+1)
     AssertEnoughBits(w, required)

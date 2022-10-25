@@ -155,17 +155,23 @@ public func MakeWaveform<V, G>(
         case FINITE_CLOSED => true
         case _ => false
     }
-    var (currentWire, inputs, startingIndex) = if(closed) {
-        (UseSignal<V, G>(vs[vs.size - 1]), Array<InterfaceWire<V, G>>(), 1)
-    } else {
-        let wire = UseWire<V, G>(width)
-        (wire, [InterfaceWire(wire)], 0)
+    // If this is a closed waveform, it is capped off on the left
+    // by the last element of the waveform array
+    var (currentWire, inputs, startingIndex) = match(wfType){
+        case FINITE_CLOSED =>
+            (UseSignal<V, G>(vs[vs.size - 1]), Array<InterfaceWire<V, G>>(), 1)
+        case _ =>
+            let wire = UseWire<V, G>(width)
+            (wire, [InterfaceWire(wire)], 0)
     }
+    // From left-to-right, the elements of the waveform
+    // are in reverse order
     for(i in startingIndex..vs.size) {
         let value = UseSignal<V, G>(vs[vs.size - 1 - i])
         let delay = UseDelay(currentWire)
         currentWire = UseJoin(value, delay)
     }
+    // Infinite waveforms need to have a feedback loop
     match(wfType) {
         case INFINITE =>
             PerformFeedback(currentWire, inputs[0].GetWire(), false)

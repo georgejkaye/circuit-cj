@@ -22,7 +22,6 @@ package graphs
 public func MergeVertices<T, U, V, G>(t : T, u : U, feedback: Bool) : (Vertex<V, G>, Vertex<V, G>)
     where T <: ContainsVertex<V, G>, U <: ContainsVertex<V, G>, V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    println("Merging ${t.GetVertex()} and ${u.GetVertex()}")
     let inEdge = AssertAtMostOneInEdge(t, u)
     let v = t.GetVertex()
     let w = u.GetVertex()

@@ -18,6 +18,7 @@ import graphs.*
  * output wires. This circuit can then be used in other subcircuits,
  * where it will be initially displayed as a single edge, but can
  * be expanded to show the components if desired.
+ *
  * @param inputs The inputs of the subcircuit
  * @param outputs The outputs of the subcircuit
  * @param label The label to give the subcircuit, which will be displayed
@@ -36,6 +37,8 @@ public func MakeSubcircuit<V, G>(
     } else {
         (outputs[0], 0, 1)
     }
+    // We need all of the elements captured in this subcircuit to
+    // be part of the same hypergraphs
     let owner = first.GetVertex().GetOwner()
     for(i in inputsStart..inputs.size) {
         let v = inputs[i].GetVertex()
@@ -45,6 +48,8 @@ public func MakeSubcircuit<V, G>(
         let v = outputs[i].GetVertex()
         owner.IncludeHypergraph(v.GetOwner())
     }
+    // Clone the combined hypergraph so that this subcircuit isn't affected
+    // later if we attach more things to the original graph
     let (newF, vertexMap, _) = owner.Clone()
     let newInputs = map({iv : InterfaceWire<V, G> =>
         InterfaceVertex(vertexMap.get(iv.GetVertex()).getOrThrow(), iv.GetName())}, inputs)
@@ -62,6 +67,7 @@ public func MakeSubcircuit<V, G>(
  * output wires. This circuit can then be used in other subcircuits,
  * where it will be initially displayed as a single edge, but can
  * be expanded to show the components if desired.
+ *
  * @param inputs The inputs of the subcircuit
  * @param outputs The outputs of the subcircuit
  * @param label The name of the subcircuit, which will be given a
@@ -87,7 +93,6 @@ public func MakeSubcircuit<V, G>(
         )
     )
 }
-
 /**
  * Make a circuit that applies a given primitive bitwise, i.e. the primitive
  * will be applied to each bit of the input wires independently
@@ -96,17 +101,17 @@ public func MakeSubcircuit<V, G>(
  * @param w The width of the input wires
  * @return The bitwise gate circuit
  */
-public func MakeBitwiseGate<V, G>(
+public func MakeBitwiseMapGate<V, G>(
     prim : G,
     w : Int64
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    println("the width is ${w}")
     let inputs = Array<Wire<V, G>>(prim.GetArity()) {i : Int64 => UseWire<V, G>(w) }
-    println("The inputs to the gate are ${inputs}")
-    let output = BitwiseMap({ ws : Array<Wire<V, G>> => [UseGate(prim, ws)] }, inputs)[0]
-    println("The outputs to the gate are ${output} which has width ${output.GetWidth()}")
+    let output = BitwiseMap(
+        { ws : Array<Wire<V, G>> => [UseGate(prim, ws)] },
+        inputs
+    )[0]
     MakeSubcircuit(
         mapi({ w : Wire<V, G>, i : Int64 => InterfaceWire(w, numToUppercaseLetter(i)) }, inputs),
         [InterfaceWire(output, "Z")],
@@ -167,6 +172,7 @@ func MakeBitwiseRippleGate<V, G>(
 }
 /**
  * Connect a subcircuit to some inputs and get its outputs
+ *
  * @param circuit The circuit to connect
  * @param inputs The inputs to hook up to the circuit
  * @return The array of output wires from the subcircuit
@@ -178,7 +184,7 @@ public func UseSubcircuit<T, V, G>(
     where T <: ToString, T <: ContainsWire<V, G>,
         V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    AssertWiresHaveWidths<T, Port<V>>(inputs, circuit.GetInputPorts())
+    AssertWiresHaveWidths(inputs, circuit.GetInputPorts())
     let (newGraph, _, _) = circuit.CloneGraph()
     UseEdgeWithNewOutputs<V, G, T>(
         circuit.GetLabel(),
@@ -188,6 +194,7 @@ public func UseSubcircuit<T, V, G>(
 }
 /**
  * Connect a subcircuit to some inputs and get its outputs
+ *
  * @param circuit The circuit to connect
  * @param inputs The inputs to hook up to the circuit
  * @return The output wire of the circuit
@@ -204,6 +211,7 @@ public func UseSubcircuit_1<T, V, G>(
 }
 /**
  * Connect a subcircuit to some inputs and get its outputs
+ *
  * @param circuit The circuit to connect
  * @param inputs The inputs to hook up to the circuit
  * @return The pair of output wires from the subcircuit
@@ -216,11 +224,12 @@ public func UseSubcircuit_2<T, V, G>(
             V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     AssertCircuitOutputs(circuit, 2)
-    let outputs = UseSubcircuit<T, V, G>(circuit, inputs)
+    let outputs = UseSubcircuit(circuit, inputs)
     (outputs[0], outputs[1])
 }
 /**
  * Connect a subcircuit to some inputs and get its outputs
+ *
  * @param circuit The circuit to connect
  * @param inputs The inputs to hook up to the circuit
  * @return The 3-tuple of output wires from the subcircuit
@@ -233,28 +242,27 @@ public func UseSubcircuit_3<T, V, G>(
             V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     AssertCircuitOutputs(circuit, 3)
-    let outputs = UseSubcircuit<T, V, G>(circuit, inputs)
+    let outputs = UseSubcircuit(circuit, inputs)
     (outputs[0], outputs[1], outputs[2])
 }
 
 /**
  * Connect some inputs to a bitwise primitive
+ *
  * @param prim The primitive to bitwise
  * @param ws The input wires
  * @return The output wire from the bitwise gate
  */
-public func UseBitwiseGate<V, G>(prim : G, ws : Array<Wire<V, G>>) : Wire<V, G>
+public func UseBitwiseMapGate<V, G>(prim : G, ws : Array<Wire<V, G>>) : Wire<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    println("the bitwise array is ${ws}")
     AssertWiresSameWidth(ws)
     AssertNumberOfWires(ws, prim.GetArity())
     if(ws[0].GetWidth() == 1) {
         UseGate(prim, ws)
     } else {
-        println("the width is ${ws[0].GetWidth()}")
         UseSubcircuit_1(
-            MakeBitwiseGate(
+            MakeBitwiseMapGate(
                 prim,
                 ws[0].GetWidth()
             ),
@@ -265,6 +273,7 @@ public func UseBitwiseGate<V, G>(prim : G, ws : Array<Wire<V, G>>) : Wire<V, G>
 
 /**
  * Connect some inputs to a rippled primitive
+ *
  * @param prim The primitive to ripple
  * @param ws The input wires
  * @return The output wire from the rippled gate
@@ -275,7 +284,7 @@ public func UseRippleGate<V, G>(prim : G, ws : Array<Wire<V, G>>) : Wire<V, G>
     AssertWireArrayNonEmpty(ws)
     AssertMinNumberOfWires(ws, prim.GetArity())
     let width = AssertWiresSameWidth(ws)
-    UseSubcircuit_1<Wire<V, G>, V, G>(
+    UseSubcircuit_1(
         MakeRippleGate(
             prim,
             ws.size,
@@ -286,14 +295,15 @@ public func UseRippleGate<V, G>(prim : G, ws : Array<Wire<V, G>>) : Wire<V, G>
 }
 /**
  * Connect an input to an internally rippled primitive
+ *
  * @param prim The primitive to ripple
  * @param w The input wire
  * @return The output wire from the internally rippled gate
  */
-public func UseInternalRippleGate<V, G>(prim : G, w : Wire<V, G>) : Wire<V, G>
+public func UseBitwiseRippleGate<V, G>(prim : G, w : Wire<V, G>) : Wire<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    UseSubcircuit_1<Wire<V,G>, V, G>(
+    UseSubcircuit_1(
         MakeBitwiseRippleGate(
             prim,
             w.GetWidth()
@@ -318,9 +328,20 @@ public func Apply<V, G>(
     AssertArgumentsCompatible(circuit, args)
     let wires = map(
         {ih : InterfacedHypergraph<V, G> =>
-            InterfaceWire(UseSubcircuit_1(ih, Array<Wire<V, G>>()), ih.GetOutput(0).GetName())
+            InterfaceWire(
+                UseSubcircuit_1(ih, Array<Wire<V, G>>()),
+                ih.GetOutput(0).GetName()
+            )
         }, args)
-    let argString = printArray(args, "(", ")", ", ", { ih : InterfacedHypergraph<V, G> => ih.GetName() }, false)
+    let argString = printArray(
+        args,
+        "(",
+        ")",
+        ","
+        ,
+        { ih : InterfacedHypergraph<V, G> => ih.GetName() },
+        false
+    )
     let outputWires = UseSubcircuit(circuit, wires)
     MakeSubcircuit<V, G>(
         Array<InterfaceWire<V, G>>(),

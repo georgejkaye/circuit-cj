@@ -15,47 +15,47 @@ let sig = gateLevelSignature
 public func Buf(
     a : BelnapWire
 ) : BelnapWire {
-    UseBitwiseGate(BUF, [a])
+    UseBitwiseMapGate(BUF, [a])
 }
 public func Not(
     a : BelnapWire
 ) : BelnapWire {
-    UseBitwiseGate(NOT, [a])
+    UseBitwiseMapGate(NOT, [a])
 }
 public func And(
     a : BelnapWire,
     b : BelnapWire
 ) : BelnapWire {
-    UseBitwiseGate(AND, [a, b])
+    UseBitwiseMapGate(AND, [a, b])
 }
 public func Or(
     a : BelnapWire,
     b : BelnapWire
 ) : BelnapWire {
-    UseBitwiseGate(OR, [a, b])
+    UseBitwiseMapGate(OR, [a, b])
 }
 public func Nand(
     a : BelnapWire,
     b : BelnapWire
 ) : BelnapWire {
-    UseBitwiseGate(NAND, [a, b])
+    UseBitwiseMapGate(NAND, [a, b])
 }
 public func Nor(
     a : BelnapWire,
     b : BelnapWire) : BelnapWire {
-    UseBitwiseGate(NOR, [a, b])
+    UseBitwiseMapGate(NOR, [a, b])
 }
 public func Xor(
     a : BelnapWire,
     b : BelnapWire
 ) : BelnapWire {
-    UseBitwiseGate(XOR, [a, b])
+    UseBitwiseMapGate(XOR, [a, b])
 }
 public func Xnor(
     a : BelnapWire,
     b : BelnapWire
 ) : BelnapWire {
-    UseBitwiseGate(XNOR, [a, b])
+    UseBitwiseMapGate(XNOR, [a, b])
 }
 
 public func And(
@@ -92,32 +92,32 @@ public func Xnor(
 public func And(
     w : BelnapWire
 ) : BelnapWire {
-    UseInternalRippleGate(AND, w)
+    UseBitwiseRippleGate(AND, w)
 }
 public func Or(
     w : BelnapWire
 ) : BelnapWire {
-    UseInternalRippleGate(OR, w)
+    UseBitwiseRippleGate(OR, w)
 }
 public func Nand(
     w : BelnapWire
 ) : BelnapWire {
-    UseInternalRippleGate(NAND, w)
+    UseBitwiseRippleGate(NAND, w)
 }
 public func Nor(
     w : BelnapWire
 ) : BelnapWire {
-    UseInternalRippleGate(NOR, w)
+    UseBitwiseRippleGate(NOR, w)
 }
 public func Xor(
     w : BelnapWire
 ) : BelnapWire {
-    UseInternalRippleGate(XOR, w)
+    UseBitwiseRippleGate(XOR, w)
 }
 public func Xnor(
     w : BelnapWire
 ) : BelnapWire {
-    UseInternalRippleGate(XNOR, w)
+    UseBitwiseRippleGate(XNOR, w)
 }
 /**
  * Create a half adder subcircuit.
@@ -424,6 +424,5 @@ public func RegisterGuardedFeedback(
     signed!: Bool
 ) : Unit {
     let value = UseSignalFromInt(initial, signed, width: input.GetWidth())
-    println("Values ${value.GetWidth()}")
     RegisterGuardedFeedback(input, incoming, value)
 }

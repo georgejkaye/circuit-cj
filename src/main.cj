@@ -15,7 +15,7 @@ main() {
 
     let sig = gateLevelSignature
 
-    let reg = Register(8)
+    let reg = Accumulator(width: 4, initial: 2)
     WriteDotToFile(reg, 0, "cpu-0")
     WriteDotToFile(reg, 1, "cpu-1")
     WriteDotToFile(reg, 2, "cpu-2")
