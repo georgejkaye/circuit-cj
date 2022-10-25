@@ -350,6 +350,7 @@ func GateLevelValueToDec(values : Array<GateLevelValue>, signed : Bool) : Option
  * Signature for Belnap circuits
  */
 public let gateLevelSignature = Signature<GateLevelValue, GateLevelPrimitive>(
+    "Belnap",
     gateLevelLatticeStructure,
     gateLevelInterpretation,
     GateLevelValueToDec

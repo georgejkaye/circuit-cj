@@ -242,3 +242,14 @@ public func AssertHasAtLeastParameter<T, U>(
         )
     }
 }
+public func AssertElementInCollection<T>(
+    t : T,
+    collection : Collection<T>
+) : Unit where T <: ToString, T <: Equatable<T> {
+    for(x in collection) {
+        if(x == t){
+            return
+        }
+    }
+    throw ElementNotInCollectionException(t, collection)
+}

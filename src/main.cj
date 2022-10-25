@@ -14,6 +14,9 @@ main() {
     SetDebugDot(false)
 
     let sig = gateLevelSignature
+    println("The longest chain in ${sig} for 1 is ${sig.GetLongestChain(1)}")
+    println("The longest chain in ${sig} for 2 is ${sig.GetLongestChain(2)}")
+
 
     let reg = Accumulator(width: 4, initial: 2)
     WriteDotToFile(reg, 0, "cpu-0")

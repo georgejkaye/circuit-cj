@@ -123,3 +123,8 @@ public class IncompatibleVariantException<T> <: Exception where T <: ToString {
         ErrorMsg("Expected ${current} to be of variant ${desired} but it is not")
     }
 }
+class ElementNotInCollectionException<T> <: Exception where T <: ToString {
+    public init(wanted : T, collection : Collection<T>) {
+        ErrorMsg("Expected ${wanted} to be in collection but it isn't")
+    }
+}
