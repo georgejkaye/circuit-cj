@@ -17,20 +17,33 @@ import prelude.*
 enum EntryPoint {
     | VALUE
     | PRIMITIVE
+    | NJOIN
+    | ANY
 }
 
 struct RewriteRule<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
-    public RewriteRule(
-        public let name : String,
-        public let entryPoint : EntryPoint,
-        public let canRewrite : (Edge<V, G>, InterfacedHypergraph<V, G>) -> Bool,
-        public let rewrite :  (Edge<V, G>, InterfacedHypergraph<V, G>) -> ArrayList<Edge<V, G>>
-    ){}
+    public let name : String
+    public let entryPoint : EntryPoint
+    public let canRewrite : (Edge<V, G>, InterfacedHypergraph<V, G>) -> Bool
+    public let rewrite : (Edge<V, G>, InterfacedHypergraph<V, G>) -> ArrayList<Edge<V, G>>
+    public init(
+        name : String,
+        entryPoint : EntryPoint,
+        canRewrite : (Edge<V, G>, InterfacedHypergraph<V, G>) -> Bool,
+        rewrite :  (Edge<V, G>, InterfacedHypergraph<V, G>) -> ArrayList<Edge<V, G>>
+    ){
+        this.name = name
+        this.entryPoint = entryPoint
+        this.canRewrite = canRewrite
+        this.rewrite = rewrite
+    }
     public func CanRewrite(e : Edge<V, G>, f : InterfacedHypergraph<V, G>) : Bool {
         let label = e.GetLabel()
         let validLabel = match(this.entryPoint) {
+            case ANY => true
             case VALUE => label.IsValue()
             case PRIMITIVE => label.IsPrimitive()
+            case NJOIN => label.IsJoin()
         }
         validLabel && this.canRewrite(e, f)
     }
@@ -49,7 +62,8 @@ func ReplaceTargets<V, G>(
         let oldTarget = oldTargets[i]
         let newTarget = newTargets[i]
         // Replace sources of edges
-        for(ec in oldTarget.vertex.GetOutEdges()) {
+        let oldTargetEdges = ArrayList<EdgeConnection<V, G>>(oldTarget.vertex.GetOutEdges())
+        for(ec in oldTargetEdges) {
             ec.edge.SetSource(ec.index, newTarget, oldTarget.feedback)
         }
         let outputs = f.GetOutputVertices()
@@ -61,7 +75,6 @@ func ReplaceTargets<V, G>(
         }
     }
 }
-
 func GetForkRule<V, G>() : RewriteRule<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
@@ -89,7 +102,7 @@ func GetForkRule<V, G>() : RewriteRule<V, G>
                     (newEdge, newTarget)
                 }
 
-                let edges = v.GetOutEdges()
+                let edges = HashSet<EdgeConnection<V, G>>(v.GetOutEdges())
                 // For each outgoing tentacle of the vertex
                 for(ec in edges) {
                     let (newEdge, newTarget) = CopyValue()
@@ -108,70 +121,159 @@ func GetForkRule<V, G>() : RewriteRule<V, G>
         }
     )
 }
-
+func GetApplyPreconditions<V, G>() : (Edge<V, G>, InterfacedHypergraph<V, G>) -> Bool
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    {
+        e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
+        let sources = e.GetSources()
+        // Check that none of the values are forked
+        // If they are, we need to fork them first!
+        for (v in sources) {
+            if(v.vertex.GetOutEdges().size != 1){
+                return false
+            }
+        }
+        // Check that the inputs are all values
+        let es = map({ t : Tentacle<V, G> => t.vertex.GetInEdge() }, sources)
+        for(eo in es) {
+            match(eo){
+                case None => return false
+                case Some(ec) =>
+                    if(!ec.edge.GetLabel().IsValue()) {
+                        return false
+                    }
+            }
+        }
+        return true
+    }
+}
 func GetApplyRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
-{ RewriteRule(
-    "apply",
-    PRIMITIVE,
-    {
-        e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
-            let sources = e.GetSources()
-            // Check that none of the values are forked
-            // If they are, we need to fork them first!
-            for (v in sources) {
-                if(v.vertex.GetOutEdges().size != 1){
-                    return false
-                }
-            }
-            // Check that the inputs are all values
-            let es = map({ t : Tentacle<V, G> => t.vertex.GetInEdge() }, sources)
-            for(eo in es) {
-                match(eo){
-                    case None => return false
-                    case Some(ec) =>
-                        if(!ec.edge.GetLabel().IsValue()) {
-                            return false
-                        }
-                }
-            }
-            return true
-    },
-    {
-        e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
-            // We know this edge is a primitive
-            let prim = e.GetLabel().GetPrimitive()
-            let targets = e.GetTargets()
-            f.RemoveEdge(e)
-            // We also know all the inputs are values
-            let es = map({ t : Tentacle<V, G> => t.vertex.GetInEdge() }, e.GetSources())
-            let values = Array<V>(
-                es.size,
-                { i : Int64 => es[i].getOrThrow().edge.GetLabel().GetValue()}
-            )
-            for(ei in es) {
-                f.RemoveEdge(ei.getOrThrow().edge)
-            }
-            // Compute the result of the operation
-            let result = Signal(signature.gateInterpretation(prim)(values))
-            // Create the value edge with this result
-            let newTarget = Vertex<V, G>(1)
-            let resultEdge = Edge(Label<V, G>.SIGNAL(result), Array<Vertex<V, G>>(), [newTarget], None)
-            f.AddEdgeAndVertices(resultEdge)
-            // Hook up the next edges
-            ReplaceTargets(
-                targets,
-                [newTarget],
-                f
-            )
-            // Return them
-            ArrayList<Edge<V, G>>([resultEdge])
-    })
+{
+    RewriteRule<V, G>(
+        "apply",
+        PRIMITIVE,
+        GetApplyPreconditions<V, G>(),
+        {
+            e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
+                // This edge is guaranteed to be a primitive
+                let prim = e.GetLabel().GetPrimitive()
+                let function = signature.gateInterpretation(prim)
+                // Compute the result of the operation
+                let args = map(
+                    { t : Tentacle<V, G> => t.vertex.GetInEdge().getOrThrow().edge },
+                    e.GetSources()
+                )
+                let values = Array<V>(
+                    args.size,
+                    { i : Int64 => args[i].GetLabel().GetValue()}
+                )
+                let result = function(values)
+                let newEdges = ComputeEdge(f, e, args, [result])
+                newEdges
+        }
+    )
 }
 
-func GetRules<V, G>(signature : Signature<V, G>) : Array<RewriteRule<V, G>> where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+func GetStubRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    RewriteRule<V, G>(
+        "stub",
+        ANY,
+        {
+            e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
+                let targets = e.GetTargets()
+                for(t in targets) {
+                    let v = t.vertex
+                    // We can only discard if there are no outgoing tentacles
+                    if(v.GetOutEdges().size != 0 || f.GetOutputPositions(v).size != 0) {
+                        return false
+                    }
+                }
+                return true
+        },
+        {
+            e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
+                // We need to add whatever is 'left' of this edge so that we can potentially
+                // discard more edges
+                let nextEdges = ArrayList<Edge<V, G>>()
+                for(t in e.GetSources()){
+                    let v = t.vertex
+                    match(v.GetInEdge()){
+                        case Some(ec) => nextEdges.append(ec.edge)
+                        case None => ()
+                    }
+                }
+                // We can remove this edge now, but not its sources as these will be used
+                // by other edges. Conversely, we have already confirmed that nothing else
+                // is using the targets so they can be deleted
+                f.RemoveEdge(e, false, true)
+                nextEdges
+        }
+    )
+
+}
+func GetJoinRule<V, G>(signature : Signature<V, G>)
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    RewriteRule<V, G>(
+        "join",
+        NJOIN,
+        GetApplyPreconditions<V, G>(),
+        {
+            e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
+                // This edge is guaranteed to be a join
+                // Compute the result of the operation
+                let argLHS = e.GetSource(0).vertex.GetInEdge().getOrThrow().edge
+                let argRHS = e.GetSource(1).vertex.GetInEdge().getOrThrow().edge
+                let result = signature.JoinPowers(argLHS.GetLabel().GetValueArray(), argRHS.GetLabel().GetValueArray())
+                let newEdges = ComputeEdge(f, e, [argLHS, argRHS], [result])
+                newEdges
+        }
+    )
+}
+func ComputeEdge<V, G>(
+    f : InterfacedHypergraph<V, G>,
+    edge : Edge<V, G>,
+    args : Array<Edge<V, G>>,
+    result : Array<Array<V>>
+) : ArrayList<Edge<V, G>>
+     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    let targets = edge.GetTargets()
+    f.RemoveEdge(edge)
+    // We also know all the inputs are values
+    for(e in args) {
+        f.RemoveEdge(e)
+    }
+    let newEdges = ArrayList<Edge<V, G>>()
+    // Create the value edge with this result
+    for(vs in result) {
+        let newTarget = Vertex<V, G>(vs.size)
+        let label = GetSignalLabel<V, G>(vs)
+        let resultEdge = Edge(label, Array<Vertex<V, G>>(), [newTarget], None)
+        f.AddEdgeAndVertices(resultEdge)
+        // Hook up the next edges
+        ReplaceTargets(
+            targets,
+            [newTarget],
+            f
+        )
+        newEdges.append(resultEdge)
+    }
+    // Return them
+    newEdges
+}
+
+func GetRules<V, G>(signature : Signature<V, G>) : Array<RewriteRule<V, G>>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     [
         GetForkRule<V, G>(),
-        GetApplyRule<V, G>(signature)
+        GetApplyRule<V, G>(signature),
+        GetStubRule<V, G>(signature),
+        GetJoinRule<V, G>(signature)
     ]
 }

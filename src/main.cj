@@ -7,35 +7,31 @@ import examples.gate.*
 import syntax.*
 import signatures.gate.*
 
+import rewrite.RunCycle
+
 main() {
     SetDebugMessages(true)
     SetDotDir("dot")
     SetNumberRepresentation(DEC)
-    SetDebugDot(false)
+    SetDebugDot(true)
 
     let sig = gateLevelSignature
-    println("The longest chain in ${sig} for 1 is ${sig.GetLongestChain(1)}")
-    println("The longest chain in ${sig} for 2 is ${sig.GetLongestChain(2)}")
 
+    let v0 = [FALSE, FALSE, FALSE, FALSE]
+    let v1 = [FALSE, FALSE, FALSE, TRUE]
+    let v2 = [FALSE, TRUE, FALSE, TRUE]
+    let wf = MakeWaveform([2, 3, 4], FINITE_CLOSED, width: 4)
 
-    let reg = Accumulator(width: 4, initial: 2)
-    WriteDotToFile(reg, 0, "cpu-0")
-    WriteDotToFile(reg, 1, "cpu-1")
-    WriteDotToFile(reg, 2, "cpu-2")
-    WriteDotToFile(reg, 3, "cpu-3")
-    WriteDotToFile(reg, 4, "cpu-4")
-
-    // WriteDotToFile(wf, 0, "wf-0")
-    // WriteDotToFile(wf, 1, "wf-1")
-
-    // let acc = Accumulator(width: 4, initial: 1)
-    // WriteDotToFile(acc, 0, "acc-0")
-    // WriteDotToFile(acc, 1, "acc-1")
-    // let applied = Apply(acc, [wf])
-    // WriteDotToFile(applied, 0, "acc-0")
-    // WriteDotToFile(applied, 1, "acc-1")
-    // RunCycle(applied)
-    // WriteDotToFile(applied, 0, "acc-uf")
+    let acc = Accumulator(width: 4, initial: 1)
+    WriteDotToFile(acc, 0, "acc-0")
+    WriteDotToFile(acc, 1, "acc-1")
+    let applied = Apply(acc, [wf])
+    WriteDotToFile(applied, 0, "acc-0")
+    WriteDotToFile(applied, 1, "acc-1")
+    RunCycle(sig, applied)
+    WriteDotToFile(applied, 0, "acc-cycle-1")
+    RunCycle(sig, applied)
+    WriteDotToFile(applied, 0, "acc-cycle-2")
 
     // let zero = InfiniteWaveform(TrueSignal())
     // let other = UseWire(1)

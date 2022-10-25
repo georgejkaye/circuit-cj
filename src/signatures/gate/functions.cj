@@ -208,7 +208,7 @@ public func MakeWaveform(
     vs : Array<Int64>,
     wfType : WaveformType,
     width!: Int64,
-    signed!: Bool = true
+    signed!: Bool = false
 ) : BelnapCircuit {
     let signals = map({v : Int64 => DecToBin(v, width, signed) }, vs)
     MakeWaveform(Waveform(signals), wfType)

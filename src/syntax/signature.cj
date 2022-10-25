@@ -28,19 +28,16 @@ public interface ValueSymbol <: Hashable & HasName & ToString {}
 func ComputeLongestChain<T>(elements : HashSet<T>, bot : T, top : T, lte : (T, T) -> Bool) : Int64
     where T <: ValueSymbol, T <: Equatable<T>
 {
-    println("Computing longest chain in ${elements}")
     let currentChain = ArrayList<T>()
     currentChain.append(bot)
     var longest = 0
     func ComputeLongestChainIteration() : Unit {
-        println("current ${currentChain}")
         let currentElement = currentChain[0]
         for(e in elements) {
             if(e != currentElement && lte(currentElement, e)){
                 if(e == top){
                     if(currentChain.size > longest){
                         longest = currentChain.size
-                        println(currentChain)
                     }
                 } else {
                     currentChain.prepend(e)
@@ -111,6 +108,9 @@ public struct Signature<V, G> <: HasName & ToString where V <: ValueSymbol, V <:
     }
     public func JoinPowers(v: Array<V>, u: Array<V>): Array<V> {
         this.latticeStructure.JoinPowers(v, u)
+    }
+    public func GetJoin(i : Int64) : (Array<V>, Array<V>) -> Array<V> {
+        { lhs : Array<V>, rhs : Array<V> => this.latticeStructure.JoinPowers(lhs, rhs) }
     }
     public func LTEPowers(v: Array<V>, u: Array<V>): Bool {
         this.latticeStructure.LTEPowers(v, u)

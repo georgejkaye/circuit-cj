@@ -189,13 +189,30 @@ public class InterfacedHypergraph<V, G> <: Identifiable & ToString & Specifiable
     public func GetOutputPorts() : Array<Port<V>> {
         map({ iv : InterfaceVertex<V, G> => iv.ToPort() }, this.outputs )
     }
+    func UpdateInterfaceMap(
+        map : HashMap<Vertex<V, G>, ArrayList<Int64>>,
+        i : Int64,
+        newVertex : Vertex<V, G>,
+        oldVertex : Vertex<V, G>
+    ) : Unit {
+        match(map.get(oldVertex)) {
+            case None => ()
+            case Some(ps) => ps.remove(i)
+        }
+        match(map.get(newVertex)) {
+            case Some(vs) => vs.append(i)
+            case None => map.put(newVertex, ArrayList<Int64>([i]))
+        }
+    }
     public func ReplaceInput(i : Int64, v : Vertex<V, G>) : Unit {
         let iv = this.GetInput(i)
         this.inputs[i] = InterfaceVertex(v, iv.name)
+        UpdateInterfaceMap(inputMap, i, v, iv.vertex)
     }
     public func ReplaceOutput(i : Int64, v : Vertex<V, G>) : Unit {
         let iv = this.GetOutput(i)
         this.outputs[i] = InterfaceVertex(v, iv.name)
+        UpdateInterfaceMap(outputMap, i, v, iv.vertex)
     }
     public func ReplaceOutputs(vs : ArrayList<Vertex<V, G>>) {
         for(i in 0..vs.size) {
@@ -216,6 +233,12 @@ public class InterfacedHypergraph<V, G> <: Identifiable & ToString & Specifiable
     }
     public func RemoveEdge(e : Edge<V, G>) : Unit {
         this.f.RemoveEdge(e)
+    }
+    public func RemoveEdge(e : Edge<V, G>, removeVertices : Bool) : Unit {
+        this.f.RemoveEdge(e, removeVertices)
+    }
+    public func RemoveEdge(e : Edge<V, G>, removeSources : Bool, removeTargets : Bool) : Unit {
+        this.f.RemoveEdge(e, removeSources, removeTargets)
     }
     public func toString() : String {
         let string = f.toString()

@@ -4,6 +4,7 @@
 
 - Fix some issues with the new constructions
 - Add some documentation throughout the codebase
+- Continue implementing the rewriter
 
 ## 2022-10-24
 

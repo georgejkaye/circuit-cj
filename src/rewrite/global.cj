@@ -22,7 +22,16 @@ public func RunCycle<V, G>(
     WriteDotToFile(f, 0, "before-uf")
     let startingEdges = ArrayList<EdgeAtDepth<V, G>>()
     Unfold(signature, f, startingEdges)
-    RewriteCombinational(signature, f, startingEdges)
+    WriteDotToFile(f, 0, "after-uf")
+    println("The starting edges are ${startingEdges}")
+    let testStartingEdges = ArrayList<EdgeAtDepth<V, G>>()
+    for(e in f.GetSequentialData().valueEdges){
+        testStartingEdges.append(EdgeAtDepth(e, 0))
+    }
+    for(e in f.GetSequentialData().delayEdges){
+        testStartingEdges.append(EdgeAtDepth(e, 0))
+    }
+    RewriteCombinational(signature, f, testStartingEdges)
 }
 
 /**
@@ -151,10 +160,6 @@ func CopySubgraph<V, G>(e : Edge<V, G>) : Option<InterfacedHypergraph<V, G>>
 func UnrollInstantFeedback<V, G>(signature : Signature<V, G>, f : InterfacedHypergraph<V, G>) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    // How many iterations we need to perform in order to guarantee a fixpoint
-    // This is the longest chain in the value lattice so if we introduce
-    // alternative lattices then this will not be fixed
-    let iterations = 3
     // The 'input vertices' to the combinational subcircuit are the original inputs,
     // and targets of sequential components i.e. values and delays
     let inputVertices = GetInputVertices(f, true)
@@ -167,6 +172,10 @@ func UnrollInstantFeedback<V, G>(signature : Signature<V, G>, f : InterfacedHype
     // We will be adding elements to the graph so we need a static copy to iterate over
     let vertices = HashSet<Vertex<V, G>>(f.GetVertices())
     let edges = HashSet<Edge<V, G>>(f.GetSequentialData().combinationalEdges)
+    // How many iterations we need to perform in order to guarantee a fixpoint
+    // This is the longest chain in the value lattice so if we introduce
+    // alternative lattices then this will not be fixed
+    let iterations = signature.GetLongestChain(feedbackMap.size) + 1
     for(i in 0..(iterations - 1)) {
         // Any non-input, non-value, non-delay vertex must be copied, we keep track
         // of the original vertex each vertex corresponds to in the vertex map
@@ -312,7 +321,7 @@ func MakeCopy<V, G>(
     vertexMap : HashMap<Vertex<V, G>, Vertex<V, G>>,
     edges : HashSet<Edge<V, G>>,
     now : Bool,
-    valueEdges : Option<ArrayList<EdgeAtDepth<V, G>>>
+    startingEdges : Option<ArrayList<EdgeAtDepth<V, G>>>
 ) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     CopyVertices(vertices, inputVertices, vertexMap)
     for(e in edges) {
@@ -346,13 +355,13 @@ func MakeCopy<V, G>(
                     (sources, targets, label)
                 }
             let subgraph = CopySubgraph(e)
+            let newEdge = Edge(newLabel, newSources, newTargets, subgraph, f.GetGraph())
             if(newLabel.IsValue()){
-                match(valueEdges){
-                    case Some(es) => es.append(EdgeAtDepth(e, 0))
+                match(startingEdges){
+                    case Some(es) => es.append(EdgeAtDepth(newEdge, 0))
                     case None => ()
                 }
             }
-            Edge(newLabel, newSources, newTargets, subgraph, f.GetGraph())
             ()
         }
     }
@@ -368,12 +377,17 @@ func MakeCopy<V, G>(
 func Unfold<V, G>(
     signature : Signature<V, G>,
     f : InterfacedHypergraph<V, G>,
-    es : ArrayList<EdgeAtDepth<V, G>>
+    startingEdges : ArrayList<EdgeAtDepth<V, G>>
 ) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     if(f.HasNonDelayGuardedFeedback()) {
         Debug("Cannot unfold circuits with non-delay-guarded feedback, please unroll it first")
+    } else if (f.GetSequentialData().delayEdges.size == 0) {
+        Debug("No need to unfold circuits with no delay")
+        for(e in f.GetSequentialData().valueEdges) {
+            startingEdges.append(EdgeAtDepth(e, 0))
+        }
     } else {
         let vertices = HashSet<Vertex<V, G>>(f.GetVertices())
         let edges = HashSet<Edge<V, G>>(f.GetEdges())
@@ -381,7 +395,7 @@ func Unfold<V, G>(
         // Make a copy for what is happening 'now'
         // Replace any delays with bottom values
         let nowVertexMap = HashMap<Vertex<V, G>, Vertex<V, G>>()
-        MakeCopy(signature, f, vertices, inputVertices, nowVertexMap, edges, true, es)
+        MakeCopy(signature, f, vertices, inputVertices, nowVertexMap, edges, true, startingEdges)
         // Make a copy for what is happening 'later'
         // Replace any values with bottom values and remove any delays
         // The output of the later copy will be delayed instead

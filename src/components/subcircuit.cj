@@ -93,6 +93,18 @@ public func MakeSubcircuit<V, G>(
         )
     )
 }
+public func MakeSubcircuit<V, G>(
+    outputs : Array<InterfaceWire<V, G>>,
+    name : String
+) : InterfacedHypergraph<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    MakeSubcircuit(
+        Array<InterfaceWire<V, G>>(),
+        outputs,
+        name
+    )
+}
 /**
  * Make a circuit that applies a given primitive bitwise, i.e. the primitive
  * will be applied to each bit of the input wires independently

@@ -143,6 +143,13 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             case _ => throw IncompatibleVariantException(this, "VALUE")
         }
     }
+    public func GetValueArray() : Array<V> {
+        match(this) {
+            case VALUE(v) => [v]
+            case SIGNAL(vs) => vs.values
+            case _ => throw IncompatibleVariantException(this, "VALUE/SIGNAL")
+        }
+    }
     public func IsPrimitive() : Bool {
         match(this) {
             case PRIMITIVE(_) => true
@@ -158,6 +165,12 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
     public func IsDelay() : Bool {
         match(this) {
             case DELAY(_) => true
+            case _ => false
+        }
+    }
+    public func IsJoin() : Bool {
+        match(this) {
+            case JOIN(_) => true
             case _ => false
         }
     }

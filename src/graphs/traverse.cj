@@ -51,11 +51,13 @@ public func GetUniqueNextEdges<V, G>(
     ed : EdgeAtDepth<V, G>,
     nexts : ArrayList<EdgeAtDepth<V, G>>
 ) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
-    for(v in ed.edge.GetTargets()){
-        for(e in v.GetVertex().GetOutEdges()){
-            let edd = EdgeAtDepth(e.edge, ed.depth)
-            if(!nexts.contains(edd)){
-                nexts.append(edd)
+    if(!ed.edge.GetLabel().IsDelay()) {
+        for(v in ed.edge.GetTargets()){
+            for(e in v.GetVertex().GetOutEdges()){
+                let edd = EdgeAtDepth(e.edge, ed.depth)
+                if(!nexts.contains(edd)){
+                    nexts.append(edd)
+                }
             }
         }
     }
@@ -172,6 +174,7 @@ public struct TraversalData<V, G>
 func VisitEdge<V, G>(ed : EdgeAtDepth<V, G>, data : TraversalData<V, G>) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
+    Debug("Visiting edge ${ed.edge}")
     data.visitedEdges.append(ed.edge)
     let nexts = data.actionAtEdge(ed, data)
     for(edd in nexts) {
