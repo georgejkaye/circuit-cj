@@ -116,7 +116,26 @@ public func unsafeGet<T,U>(map : HashMap<T,U>, key: T) : U where T <: Equatable<
 public func Sum(ns : Array<Int64>) : Int64 {
     fold_left({ acc : Int64, cur : Int64 => acc + cur}, 0, ns)
 }
-
+public func prepend<T>(x : T, ys : Array<T>) {
+    Array<T>(ys.size + 1){
+        i : Int64 =>
+            if(i == 0) {
+                x
+            } else {
+                ys[i-1]
+            }
+    }
+}
+public func append<T>(xs : Array<T>, y : T) {
+    Array<T>(xs.size + 1){
+        i : Int64 =>
+            if(i == xs.size) {
+                y
+            } else {
+                xs[i]
+            }
+    }
+}
 public func concat<T>(xs : Array<T>, ys : Array<T>){
     Array<T>(xs.size + ys.size, {
         i : Int64 =>

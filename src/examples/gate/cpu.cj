@@ -112,22 +112,19 @@ func RAM(cpu_do: Wire_, addr: Wire_, ram_we: Wire_, clk: Wire_) {
     )[0]
 }
 
-func Register(w: Int64): Circuit_ {
-    if (w % 2 == 1) {
-        Todo("Odd bit registers not implemented")
+public func Register(w: Int64): Circuit_ {
+    if (w != 1 && w % 2 == 1){
+        Todo("Off bit registers not implemented")
     }
     let d = sig.UseWire(w)
     let clr = sig.UseWire(1)
     let ce = sig.UseWire(1)
     let clk = sig.UseWire(1)
-    let splitWidth = w / 2
-    let (l, r) = Split(d, splitWidth)
-    let outputs = if (splitWidth == 1) {
-        Bitwise(
-            { ws: Array<Wire_> => FDCE(ws[0], ce, clk, clr) },
-            [d]
-        )
+    let output = if (w == 1) {
+        FDCE(d, ce, clk, clr)
     } else {
+        let splitWidth = w / 2
+        let (l, r) = Split(d, splitWidth)
         let lhs = UseSubcircuit_1(Register(splitWidth), [l, clr, ce, clk])
         let rhs = UseSubcircuit_1(Register(splitWidth), [r, clr, ce, clk])
         Combine(lhs, rhs)
@@ -139,7 +136,7 @@ func Register(w: Int64): Circuit_ {
             InterfaceWire(ce, "CE"),
             InterfaceWire(clk, "CLK")
         ],
-        [InterfaceWire(outputs, "Q")],
+        [InterfaceWire(output, "Q")],
         "register_${w}"
     )
 }

@@ -98,7 +98,15 @@ public func DelayGuardedFeedback<V, G>(outgoing : Wire<V, G>, incoming : Wire<V,
     let delay = UseDelay(outgoing)
     PerformFeedback(delay, incoming, false)
 }
-
+/**
+ * Create a feedback loop guarded by a simple register: join a wire to a wire that is
+ * not connected to anything on the left, and insert a register with a given initial wire
+ * on the loop
+ *
+ * @param input The input to the register
+ * @param incoming The wire to feed back to
+ * @param initial The initial wire of the register
+ */
 public func RegisterGuardedFeedback<V, G>(
     input : Wire<V, G>,
     incoming : Wire<V, G>,
@@ -110,6 +118,15 @@ public func RegisterGuardedFeedback<V, G>(
         let reg = UseSimpleRegister(initial, input)
         PerformFeedback(reg, incoming, false)
 }
+/**
+ * Create a feedback loop guarded by a simple register: join a wire to a wire that is
+ * not connected to anything on the left, and insert a register with a given initial signal
+ * on the loop
+ *
+ * @param input The input to the register
+ * @param incoming The wire to feed back to
+ * @param initial The initial signal of the register
+ */
 public func RegisterGuardedFeedback<V, G>(
     input : Wire<V, G>,
     incoming: Wire<V, G>,
@@ -119,6 +136,13 @@ public func RegisterGuardedFeedback<V, G>(
 {
     RegisterGuardedFeedback(input, incoming, UseSignal(initial))
 }
+/**
+ * Make a subcircuit for a waveform
+ *
+ * @param wf The waveform
+ * @param wfType The waveform type
+ * @return The circuit containing the waveform
+ */
 public func MakeWaveform<V, G>(
     wf : Waveform<V>,
     wfType : WaveformType
@@ -140,7 +164,7 @@ public func MakeWaveform<V, G>(
     for(i in startingIndex..vs.size) {
         let value = UseSignal<V, G>(vs[vs.size - 1 - i])
         let delay = UseDelay(currentWire)
-        currentWire = Join(value, delay)
+        currentWire = UseJoin(value, delay)
     }
     match(wfType) {
         case INFINITE =>
@@ -154,6 +178,12 @@ public func MakeWaveform<V, G>(
         WAVEFORM(wf, wfType)
     )
 }
+/**
+ * Make an infinite waveform
+ *
+ * @param wf The waveform
+ * @return The circuit containing the waveform
+ */
 public func MakeInfiniteWaveform<V, G>(
     wf : Waveform<V>
 ) : InterfacedHypergraph<V, G>
@@ -161,6 +191,12 @@ public func MakeInfiniteWaveform<V, G>(
 {
     MakeWaveform(wf, INFINITE)
 }
+/**
+ * Make a closed waveform
+ *
+ * @param wf The waveform
+ * @return The circuit containing the waveform
+ */
 public func MakeClosedWaveform<V, G>(
     wf : Waveform<V>
 ) : InterfacedHypergraph<V, G>
@@ -168,6 +204,12 @@ public func MakeClosedWaveform<V, G>(
 {
     MakeWaveform(wf, FINITE_CLOSED)
 }
+/**
+ * Make an open waveform
+ *
+ * @param wf The waveform
+ * @return The circuit containing the waveform
+ */
 public func MakeOpenWaveform<V, G>(
     wf : Waveform<V>
 ) : InterfacedHypergraph<V, G>
@@ -175,6 +217,12 @@ public func MakeOpenWaveform<V, G>(
 {
     MakeWaveform(wf, FINITE_OPEN)
 }
+/**
+ * Use an infinite waveform
+ *
+ * @param wf The waveform
+ * @return The output of the waveform
+ */
 public func UseInfiniteWaveform<V, G>(
     wf : Waveform<V>
 ) : Wire<V, G>
@@ -185,16 +233,34 @@ public func UseInfiniteWaveform<V, G>(
         Array<InterfaceWire<V, G>>()
     )
 }
+/**
+ * Use an infinite waveform
+ *
+ * @param signals The array of signals over time specifying the waveform
+ * @return The output of the waveform
+ */
 public func UseInfiniteWaveform<V, G>(signals : Array<Signal<V>>) : Wire<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     UseInfiniteWaveform(Waveform(signals))
 }
+/**
+ * Use an infinite waveform
+ *
+ * @param signal The signal that specifies the waveform
+ * @return The output of the waveform
+ */
 public func UseInfiniteWaveform<V, G>(signal : Signal<V>) : Wire<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     UseInfiniteWaveform([signal])
 }
+/**
+ * Use a closed waveform
+ *
+ * @param wf The waveform
+ * @return The output of the waveform
+ */
 public func UseClosedWaveform<V, G>(
     wf : Waveform<V>
 ) : Wire<V, G>
@@ -205,13 +271,26 @@ public func UseClosedWaveform<V, G>(
         Array<InterfaceWire<V, G>>()
     )
 }
+/**
+ * Use a closed waveform
+ *
+ * @param signals The array of signals that specifies the waveform
+ * @return The output of the waveform
+ */
 public func UseClosedWaveform<V, G>(
-    wf : Array<Signal<V>>
+    signals : Array<Signal<V>>
 ) : Wire<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    UseClosedWaveform(Waveform(wf))
+    UseClosedWaveform(Waveform(signals))
 }
+/**
+ * Use an open waveform
+ *
+ * @param wf The waveform
+ * @param inputs The inputs to the waveform
+ * @return The output of the waveform
+ */
 public func UseOpenWaveform<V, G>(
     wf : Waveform<V>,
     inputs : Wire<V, G>
@@ -223,11 +302,18 @@ public func UseOpenWaveform<V, G>(
         [inputs]
     )
 }
+/**
+ * Use an open waveform
+ *
+ * @param signals The array of signals specifying the waveform
+ * @param inputs The inputs to the waveform
+ * @return The output of the waveform
+ */
 public func UseOpenWaveform<V, G>(
-    wf : Array<Signal<V>>,
+    signals : Array<Signal<V>>,
     inputs : Wire<V, G>
 ) : Wire<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    UseOpenWaveform(Waveform(wf), inputs)
+    UseOpenWaveform(Waveform(signals), inputs)
 }

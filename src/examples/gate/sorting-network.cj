@@ -54,16 +54,16 @@ public func SortingNetwork(width : Int64, inputs : Int64) : Circuit_ {
                 smallerWires
             )
             // Ripple the sorting comparators across the wires
-            let (output, final) = RippleMap_1<Value, Gate>(
-                { acc : Array<Wire_>, cur : Array<Wire_> =>
-                    let (next, out) = SortingComparator(width, cur[0], acc[0])
+            let (output, final) = RippleMap(
+                { acc : Wire_, cur : Wire_ =>
+                    let (next, out) = SortingComparator(width, cur, acc)
                     (out, next)
                 },
-                [inputWires[inputs - 1]],
+                inputWires[inputs - 1],
                 smallerNetwork,
                 direction : BOTTOM_TO_TOP
             )
-            concat(final, output)
+            prepend(final, output)
         }
     MakeSubcircuit(
         sig.NameWires(inputWires, { i : Int64 => "I${i}"}),

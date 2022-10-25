@@ -1,3 +1,13 @@
+/**
+ * components/fundamental.cj
+ *
+ * Functions for creating values and primitives, the fundamental
+ * components of circuits
+ *
+ * @author George Kaye
+ * @since 0.3
+ */
+
 package components
 
 import graphs.*
@@ -57,11 +67,12 @@ public func UseBinaryGate<V, G>(prim : G, a : Wire<V, G>, b : Wire<V, G>) : Wire
 {
     UseGate(prim, [a,b])
 }
-
 /**
- * Nullary gates
+ * Use a value
+ *
+ * @param v The value to use
+ * @return The output of the value
  */
-
 public func UseValue<V, G>(v : V) : Wire<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
@@ -71,15 +82,21 @@ public func UseValue<V, G>(v : V) : Wire<V, G>
         None<InterfacedHypergraph<V, G>>
     )[0]
 }
-
-public func Join<V, G>(a : Wire<V, G>, b : Wire<V, G>) : Wire<V, G>
+/**
+ * Use a join operation on two wires
+ *
+ * @param a The first wire
+ * @param b The second wire
+ * @return The output of the join
+ */
+public func UseJoin<V, G>(a : Wire<V, G>, b : Wire<V, G>) : Wire<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     UseOperation(JOIN(a.GetWidth()), [a, b])
 }
-
 /**
- * Create an edge for a given array of values
+ * Make a subcircuit containing a signal
+ *
  * @param vs The array of values
  * @param signed Whether the number is signed
  * @return The output wire
@@ -104,6 +121,12 @@ func MakeSignal<V, G>(spec : Signal<V>) : InterfacedHypergraph<V, G>
         SIGNAL(spec)
     )
 }
+/**
+ * Use a signal
+ *
+ * @param The signal to use
+ * @return The output of the signal
+ */
 public func UseSignal<V, G>(spec : Signal<V>) : Wire<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
@@ -116,9 +139,45 @@ public func UseSignal<V, G>(spec : Signal<V>) : Wire<V, G>
         )
     }
 }
+/**
+ * Use a signal cosntructed as multiple copies of a single value
+ *
+ * @param v The value to use
+ * @param i The number of this value to use
+ * @return The output of the signal
+ */
 public func UseSignal<V, G>(v : V, i : Int64) : Wire<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let array : Array<V> = Array<V>(i, {i : Int64 => v})
     UseSignal(Signal(array))
+}
+/**
+ * Use a blackbox, a component that we can't look inside
+ *
+ * @param name The name of the blackbox
+ * @param domain The ports of the inputs
+ * @param codomain The ports of the outputs
+ * @param inputs The input wires
+ * @return The array of outputs of this blackbox
+ */
+public func BlackBox<V, G>(
+    name : String,
+    domain : Array<Port<V>>,
+    codomain : Array<Port<V>>,
+    inputs: Array<Wire<V, G>>
+) : Array<Wire<V, G>>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    UseEdgeWithNewOutputs<V, G, Wire<V, G>>(
+        Label<V,G>.BLACKBOX(
+            Specification<V>(
+                name,
+                domain,
+                codomain
+            )
+        ),
+        inputs,
+        None<InterfacedHypergraph<V, G>>
+    )
 }

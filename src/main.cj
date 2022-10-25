@@ -15,12 +15,12 @@ main() {
 
     let sig = gateLevelSignature
 
-    let acc = SimpleCPU()
-    WriteDotToFile(acc, 0, "cpu-0")
-    WriteDotToFile(acc, 1, "cpu-1")
-    WriteDotToFile(acc, 2, "cpu-2")
-    WriteDotToFile(acc, 3, "cpu-3")
-    WriteDotToFile(acc, 4, "cpu-4")
+    let reg = Register(8)
+    WriteDotToFile(reg, 0, "cpu-0")
+    WriteDotToFile(reg, 1, "cpu-1")
+    WriteDotToFile(reg, 2, "cpu-2")
+    WriteDotToFile(reg, 3, "cpu-3")
+    WriteDotToFile(reg, 4, "cpu-4")
 
     // WriteDotToFile(wf, 0, "wf-0")
     // WriteDotToFile(wf, 1, "wf-1")
