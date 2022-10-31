@@ -24,14 +24,7 @@ public func RunCycle<V, G>(
     Unfold(signature, f, startingEdges)
     WriteDotToFile(f, 1, "after-uf")
     println("The starting edges are ${startingEdges}")
-    let testStartingEdges = ArrayList<EdgeAtDepth<V, G>>()
-    for(e in f.GetSequentialData().valueEdges){
-        testStartingEdges.append(EdgeAtDepth(e, 0))
-    }
-    for(e in f.GetSequentialData().delayEdges){
-        testStartingEdges.append(EdgeAtDepth(e, 0))
-    }
-    RewriteCombinational(signature, f, testStartingEdges)
+    RewriteCombinational(signature, f, startingEdges)
 }
 
 /**

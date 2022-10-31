@@ -30,7 +30,7 @@ main() {
     WriteDotToFile(applied, 0, "acc-0")
     WriteDotToFile(applied, 1, "acc-1")
     RunCycle(sig, applied)
-    WriteDotToFile(applied, 1, "acc-cycle-1")
+    WriteDotToFile(applied, 0, "acc-cycle-1")
     // RunCycle(sig, applied)
     // WriteDotToFile(applied, 0, "acc-cycle-2")
 
