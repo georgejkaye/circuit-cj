@@ -19,10 +19,10 @@ public func RunCycle<V, G>(
 {
     BurstSequentialGraphs(f)
     InstantFeedback(signature, f)
-    WriteDotToFile(f, 0, "before-uf")
+    WriteDotToFile(f, 1, "before-uf")
     let startingEdges = ArrayList<EdgeAtDepth<V, G>>()
     Unfold(signature, f, startingEdges)
-    WriteDotToFile(f, 0, "after-uf")
+    WriteDotToFile(f, 1, "after-uf")
     println("The starting edges are ${startingEdges}")
     let testStartingEdges = ArrayList<EdgeAtDepth<V, G>>()
     for(e in f.GetSequentialData().valueEdges){
@@ -337,12 +337,12 @@ func MakeCopy<V, G>(
             vertexMap.put(originalTarget, originalSource)
             ()
         } else {
-            let (newSources, newTargets, newLabel) =
+            let newEdge =
                 if(now && label.IsDelay() || !now && label.IsValue()) {
                     let sources = Array<Vertex<V, G>>()
                     let targets = map({t : Tentacle<V, G> => CopyTentacle(t, vertexMap)}, e.GetTargets())
-                    let botLabel = GetSignalLabel<V, G>(signature.GetBottom(), label.GetOutputPorts()[0].GetWidth())
-                    (sources, targets, botLabel)
+                    let signal = MakeSignal<V, G>(Signal(signature.GetBottom(), label.GetOutputPorts()[0].GetWidth()))
+                    Edge(signal.GetLabel(), Array<Vertex<V, G>>(), targets, signal, f.GetGraph())
                 } else {
                     let sources = map({t : Tentacle<V, G> =>
                         if(e.GetLabel().IsDelay()) {
@@ -352,11 +352,11 @@ func MakeCopy<V, G>(
                         }
                     }, e.GetSources())
                     let targets = map({t : Tentacle<V, G> => CopyTentacle(t, vertexMap)}, e.GetTargets())
-                    (sources, targets, label)
+                    let ed = Edge(label, sources, targets, CopySubgraph(e), f.GetGraph())
+                    println("${ed.GetId()}")
+                    ed
                 }
-            let subgraph = CopySubgraph(e)
-            let newEdge = Edge(newLabel, newSources, newTargets, subgraph, f.GetGraph())
-            if(newLabel.IsValue()){
+            if(newEdge.GetLabel().IsValue()){
                 match(startingEdges){
                     case Some(es) => es.append(EdgeAtDepth(newEdge, 0))
                     case None => ()

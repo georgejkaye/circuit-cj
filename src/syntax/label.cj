@@ -14,7 +14,6 @@ import prelude.*
 
 from std import collection.ArrayList
 
-
 /**
  * Enum for the different types of generators
  */
@@ -44,7 +43,6 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             case COMPOSITE(spec)                => spec.GetInputPorts()
             case BLACKBOX(spec)                 => spec.GetInputPorts()
             case DELAY(w)                       => [Port(w)]
-
         }
     }
     public func GetArity() : Int64 {
@@ -172,6 +170,24 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
         match(this) {
             case JOIN(_) => true
             case _ => false
+        }
+    }
+    public func IsComposite() : Bool {
+        match(this) {
+            case COMPOSITE(_) => true
+            case _ => false
+        }
+    }
+    public func IsBundler() : Bool {
+        match(this) {
+            case BUNDLER(_, _) => true
+            case _ => false
+        }
+    }
+    public func GetBundlerSpec() : (Array<Int64>, Array<Int64>) {
+        match(this) {
+            case BUNDLER(ms, ns) => (ms, ns)
+            case _ => throw IncompatibleVariantException(this, "BUNDLER")
         }
     }
 }

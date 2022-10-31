@@ -64,13 +64,11 @@ public func GetUniqueNextEdges<V, G>(
 }
 public func GetUniqueNextEdges<V, G>(
     e : Edge<V, G>,
-    nexts : ArrayList<Edge<V, G>>
+    nexts : HashSet<Edge<V, G>>
 ) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     for(v in e.GetTargets()) {
         for(ec in v.GetVertex().GetOutEdges()) {
-            if(!nexts.contains(ec.edge)) {
-                nexts.append(ec.edge)
-            }
+            nexts.put(ec.edge)
         }
     }
 }

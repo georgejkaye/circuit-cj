@@ -173,6 +173,7 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         this.sequentialData.feedbackConnections.remove(ec)
     }
     func RemoveEdge(e : Edge<V, G>, removeSources : Bool, removeTargets : Bool) {
+        Debug("Removing ${e}")
         this.edges.remove(e)
         RemoveEdgeFromHypergraphData(this.startingEdges, this.sequentialData, e)
         for(t in e.GetSources()){

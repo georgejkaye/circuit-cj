@@ -101,7 +101,7 @@ public func UseJoin<V, G>(a : Wire<V, G>, b : Wire<V, G>) : Wire<V, G>
  * @param signed Whether the number is signed
  * @return The output wire
  */
-func MakeSignal<V, G>(spec : Signal<V>) : InterfacedHypergraph<V, G>
+public func MakeSignal<V, G>(spec : Signal<V>) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let vs = spec.values

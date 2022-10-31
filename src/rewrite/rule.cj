@@ -18,19 +18,21 @@ enum EntryPoint {
     | VALUE
     | PRIMITIVE
     | NJOIN
+    | SUBGRAPH
     | ANY
+    | BUNDLE
 }
 
 struct RewriteRule<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     public let name : String
     public let entryPoint : EntryPoint
     public let canRewrite : (Edge<V, G>, InterfacedHypergraph<V, G>) -> Bool
-    public let rewrite : (Edge<V, G>, InterfacedHypergraph<V, G>) -> ArrayList<Edge<V, G>>
+    public let rewrite : (Edge<V, G>, InterfacedHypergraph<V, G>) -> HashSet<Edge<V, G>>
     public init(
         name : String,
         entryPoint : EntryPoint,
         canRewrite : (Edge<V, G>, InterfacedHypergraph<V, G>) -> Bool,
-        rewrite :  (Edge<V, G>, InterfacedHypergraph<V, G>) -> ArrayList<Edge<V, G>>
+        rewrite :  (Edge<V, G>, InterfacedHypergraph<V, G>) -> HashSet<Edge<V, G>>
     ){
         this.name = name
         this.entryPoint = entryPoint
@@ -44,10 +46,12 @@ struct RewriteRule<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: Primiti
             case VALUE => label.IsValue()
             case PRIMITIVE => label.IsPrimitive()
             case NJOIN => label.IsJoin()
+            case SUBGRAPH => label.IsComposite()
+            case BUNDLE => label.IsBundler()
         }
         validLabel && this.canRewrite(e, f)
     }
-    public func Rewrite(e : Edge<V, G>, f : InterfacedHypergraph<V, G>) : ArrayList<Edge<V, G>> {
+    public func Rewrite(e : Edge<V, G>, f : InterfacedHypergraph<V, G>) : HashSet<Edge<V, G>> {
         this.rewrite(e, f)
     }
 }
@@ -90,14 +94,14 @@ func GetForkRule<V, G>() : RewriteRule<V, G>
         },
         {
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
-                let nexts = ArrayList<Edge<V, G>>()
+                let nextEdges = HashSet<Edge<V, G>>()
                 let targets = e.GetTargets()
                 let v = targets[0].vertex
 
                 func CopyValue() : (Edge<V, G>, Vertex<V, G>) {
                     let newTarget = Vertex<V, G>(v.GetWidth())
                     // Make a new copy of the value
-                    let newEdge = Edge(e.GetLabel(), [], [newTarget], None)
+                    let newEdge = Edge(e.GetLabel(), [], [newTarget], e.GetSubgraph())
                     f.AddEdgeAndVertices(newEdge)
                     (newEdge, newTarget)
                 }
@@ -108,7 +112,7 @@ func GetForkRule<V, G>() : RewriteRule<V, G>
                     let (newEdge, newTarget) = CopyValue()
                     // Hook the new edge into the system
                     ec.edge.SetSource(ec.index, newTarget, false)
-                    GetUniqueNextEdges(newEdge, nexts)
+                    GetUniqueNextEdges(newEdge, nextEdges)
                 }
                 for(i in f.GetOutputPositions(v)) {
                     let (newEdge, newTarget) = CopyValue()
@@ -116,7 +120,7 @@ func GetForkRule<V, G>() : RewriteRule<V, G>
                 }
                 // We don't need the original edge any more
                 f.RemoveEdge(e)
-                nexts
+                nextEdges
 
         }
     )
@@ -170,8 +174,8 @@ func GetApplyRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
                     { i : Int64 => args[i].GetLabel().GetValue()}
                 )
                 let result = function(values)
-                let newEdges = ComputeEdge(f, e, args, [result])
-                newEdges
+                let nextEdges = ComputeEdge(f, e, args, [result])
+                nextEdges
         }
     )
 }
@@ -198,11 +202,11 @@ func GetStubRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
                 // We need to add whatever is 'left' of this edge so that we can potentially
                 // discard more edges
-                let nextEdges = ArrayList<Edge<V, G>>()
+                let nextEdges = HashSet<Edge<V, G>>()
                 for(t in e.GetSources()){
                     let v = t.vertex
                     match(v.GetInEdge()){
-                        case Some(ec) => nextEdges.append(ec.edge)
+                        case Some(ec) => nextEdges.put(ec.edge)
                         case None => ()
                     }
                 }
@@ -229,8 +233,8 @@ func GetJoinRule<V, G>(signature : Signature<V, G>)
                 let argLHS = e.GetSource(0).vertex.GetInEdge().getOrThrow().edge
                 let argRHS = e.GetSource(1).vertex.GetInEdge().getOrThrow().edge
                 let result = signature.JoinPowers(argLHS.GetLabel().GetValueArray(), argRHS.GetLabel().GetValueArray())
-                let newEdges = ComputeEdge(f, e, [argLHS, argRHS], [result])
-                newEdges
+                let nextEdges = ComputeEdge(f, e, [argLHS, argRHS], [result])
+                nextEdges
         }
     )
 }
@@ -239,7 +243,7 @@ func ComputeEdge<V, G>(
     edge : Edge<V, G>,
     args : Array<Edge<V, G>>,
     result : Array<Array<V>>
-) : ArrayList<Edge<V, G>>
+) : HashSet<Edge<V, G>>
      where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let targets = edge.GetTargets()
@@ -248,12 +252,17 @@ func ComputeEdge<V, G>(
     for(e in args) {
         f.RemoveEdge(e)
     }
-    let newEdges = ArrayList<Edge<V, G>>()
+    let nextEdges = HashSet<Edge<V, G>>()
     // Create the value edge with this result
     for(vs in result) {
         let newTarget = Vertex<V, G>(vs.size)
+        let subcircuit = if(vs.size == 1){
+            None<InterfacedHypergraph<V, G>>
+        } else {
+            MakeSignal<V, G>(Signal(vs))
+        }
         let label = GetSignalLabel<V, G>(vs)
-        let resultEdge = Edge(label, Array<Vertex<V, G>>(), [newTarget], None)
+        let resultEdge = Edge(label, Array<Vertex<V, G>>(), [newTarget], subcircuit)
         f.AddEdgeAndVertices(resultEdge)
         // Hook up the next edges
         ReplaceTargets(
@@ -261,19 +270,97 @@ func ComputeEdge<V, G>(
             [newTarget],
             f
         )
-        newEdges.append(resultEdge)
+        nextEdges.put(resultEdge)
     }
     // Return them
-    newEdges
+    nextEdges
 }
+
+func GetCompositeRule<V, G>()
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    RewriteRule<V, G>(
+        "composite",
+        SUBGRAPH,
+        { e : Edge<V, G>, f : InterfacedHypergraph<V, G> => true },
+        {
+            e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
+                let nextEdges = HashSet<Edge<V, G>>()
+                for(t in e.GetSources()) {
+                    let v = t.vertex
+                    match(v.GetInEdge()) {
+                        case None => ()
+                        case Some(e) => nextEdges.put(e.edge)
+                    }
+                }
+                e.BurstSubgraph()
+                nextEdges
+        }
+    )
+}
+func GetBundleRule<V, G>(sig : Signature<V, G>)
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    RewriteRule<V, G>(
+        "bundle",
+        BUNDLE,
+        GetApplyPreconditions<V, G>(),
+        {
+            e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
+                let values = ArrayList<V>()
+                // Get all the individual values in a list
+                for(t in e.GetSources()){
+                    let v = t.vertex
+                    // Precondition enforces there must be an in edge
+                    let valueEdge = v.GetInEdge().getOrThrow().edge
+                    println("${valueEdge}")
+                    match(valueEdge.GetLabel()) {
+                        case VALUE(v) => values.append(v)
+                        case SIGNAL(sig) =>
+                            let subgraph = valueEdge.GetSubgraph().getOrThrow()
+                            let combineEdge = subgraph.GetOutput(0).vertex.GetInEdge().getOrThrow().edge
+                            for(tt in combineEdge.GetSources()) {
+                                values.append(tt.vertex.GetInEdge().getOrThrow().edge.GetLabel().GetValue())
+                            }
+                        case _ => ()
+                    }
+                    f.RemoveEdge(valueEdge, true, false)
+                }
+                let newEdges = HashSet<Edge<V, G>>()
+                let targets = e.GetTargets()
+                f.RemoveEdge(e, true, false)
+                println("The targets are ${targets}")
+                for(t in targets) {
+                    let v = t.vertex
+                    let width = v.GetWidth()
+                    let newEdge = if(width == 1) {
+                        let value = values.remove(0)
+                        Edge(Label.VALUE(value), Array<Tentacle<V, G>>(), [t], None, f.GetGraph())
+                    } else {
+                        let wireValues = Array<V>(width){
+                            i : Int64 => values.remove(0)
+                        }
+                        let signal = Signal(wireValues)
+                        let signalGraph = MakeSignal<V, G>(signal)
+                        Edge(SIGNAL(signal), Array<Tentacle<V, G>>(), [t], signalGraph, f.GetGraph())
+                    }
+                    newEdges.put(newEdge)
+                }
+                newEdges
+        }
+    )
+}
+
 
 func GetRules<V, G>(signature : Signature<V, G>) : Array<RewriteRule<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     [
         GetForkRule<V, G>(),
+        GetBundleRule<V, G>(signature),
         GetApplyRule<V, G>(signature),
         GetStubRule<V, G>(signature),
-        GetJoinRule<V, G>(signature)
+        GetJoinRule<V, G>(signature),
+        GetCompositeRule<V, G>()
     ]
 }
