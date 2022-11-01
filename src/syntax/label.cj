@@ -135,6 +135,19 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             case _ => false
         }
     }
+    public func IsAllValue(v : V) : Bool {
+        match(this) {
+            case VALUE(w) => v == w
+            case SIGNAL(spec) =>
+                for(w in spec.values) {
+                    if(w != v) {
+                        return false
+                    }
+                }
+                true
+            case _ => false
+        }
+    }
     public func GetValue() : V {
         match(this) {
             case VALUE(v) => v

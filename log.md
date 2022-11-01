@@ -1,5 +1,11 @@
 # CircuitCJ Development Log
 
+## 2022-10-32
+
+- Add composite expansion rule to rewriter
+- Add bundler rule to rewriter
+- Work on reducing 'next' subgraph in a suitable way
+
 ## 2022-10-25
 
 - Fix some issues with the new constructions

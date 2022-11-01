@@ -14,7 +14,7 @@ from std import collection.ArrayList
 import components.*
 import prelude.*
 
-enum EntryPoint {
+public enum EntryPoint {
     | VALUE
     | PRIMITIVE
     | NJOIN
@@ -23,7 +23,7 @@ enum EntryPoint {
     | BUNDLE
 }
 
-struct RewriteRule<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+public struct RewriteRule<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     public let name : String
     public let entryPoint : EntryPoint
     public let canRewrite : (Edge<V, G>, InterfacedHypergraph<V, G>) -> Bool
@@ -217,7 +217,6 @@ func GetStubRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
                 nextEdges
         }
     )
-
 }
 func GetJoinRule<V, G>(signature : Signature<V, G>)
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
@@ -237,6 +236,56 @@ func GetJoinRule<V, G>(signature : Signature<V, G>)
                 nextEdges
         }
     )
+}
+func ArgumentIsAllValue<V, G>(v : V, e : Edge<V, G>, i : Int64) : Bool
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    let label = e.GetSource(i).vertex.GetInEdge().getOrThrow().edge.GetLabel()
+    label.IsAllValue(v)
+}
+func RemoveBinaryArgumentAndPassthrough<V, G>(e : Edge<V, G>, i : Int64, f : InterfacedHypergraph<V, G>) : HashSet<Edge<V, G>>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    println("Rewriting ${e} with index ${i}")
+    let arg = e.GetSource(i).vertex.GetInEdge().getOrThrow().edge
+    let otherIndex = if(i == 0){
+        1
+    } else {
+        0
+    }
+    let target = e.GetTarget(0).vertex
+    let source = e.GetSource(otherIndex).vertex
+    f.RemoveEdge(e, false, false)
+    f.RemoveEdge(arg)
+    MergeVertices(source, target, false)
+    HashSet<Edge<V, G>>([source.GetInEdge().getOrThrow().edge])
+}
+
+func GetJoinUnitRule<V, G>(signature : Signature<V, G>, i : Int64, str : String)
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+        RewriteRule<V, G>(
+        "join-unit-${str}",
+        NJOIN,
+        {
+            e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
+                ArgumentIsAllValue(signature.GetBottom(), e, i)
+        },
+        {
+            e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
+                RemoveBinaryArgumentAndPassthrough(e, i, f)
+        }
+    )
+}
+func GetJoinUnitLeftRule<V, G>(signature : Signature<V, G>)
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    GetJoinUnitRule(signature, 0, "l")
+}
+func GetJoinUnitRightRule<V, G>(signature : Signature<V, G>)
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    GetJoinUnitRule(signature, 1, "r")
 }
 func ComputeEdge<V, G>(
     f : InterfacedHypergraph<V, G>,
@@ -352,15 +401,20 @@ func GetBundleRule<V, G>(sig : Signature<V, G>)
 }
 
 
-func GetRules<V, G>(signature : Signature<V, G>) : Array<RewriteRule<V, G>>
+func GetRules<V, G>(signature : Signature<V, G>, now : Bool) : ArrayList<RewriteRule<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    [
-        GetForkRule<V, G>(),
-        GetBundleRule<V, G>(signature),
-        GetApplyRule<V, G>(signature),
-        GetStubRule<V, G>(signature),
-        GetJoinRule<V, G>(signature),
-        GetCompositeRule<V, G>()
-    ]
+    let rules = ArrayList<RewriteRule<V, G>>()
+    rules.append(GetForkRule<V, G>())
+    rules.append(GetBundleRule<V, G>(signature))
+    rules.append(GetApplyRule<V, G>(signature))
+    rules.append(GetStubRule<V, G>(signature))
+    rules.append(GetJoinRule<V, G>(signature))
+    if(now) {
+        rules.append(GetCompositeRule<V, G>())
+    } else {
+        rules.append(GetJoinUnitLeftRule<V, G>(signature))
+        rules.append(GetJoinUnitRightRule<V, G>(signature))
+    }
+    rules
 }

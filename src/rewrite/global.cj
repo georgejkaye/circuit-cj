@@ -13,20 +13,30 @@ import syntax.*
 
 public func RunCycle<V, G>(
     signature : Signature<V, G>,
-    f : InterfacedHypergraph<V, G>
+    f : InterfacedHypergraph<V, G>,
+    tidyNext : Bool
 ) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     BurstSequentialGraphs(f)
     InstantFeedback(signature, f)
-    WriteDotToFile(f, 1, "before-uf")
-    let startingEdges = ArrayList<EdgeAtDepth<V, G>>()
-    Unfold(signature, f, startingEdges)
-    WriteDotToFile(f, 1, "after-uf")
-    println("The starting edges are ${startingEdges}")
-    RewriteCombinational(signature, f, startingEdges)
+    WriteDotToFile(f, 0, "before-uf")
+    let nowStartingEdges = ArrayList<EdgeAtDepth<V, G>>()
+    Unfold(signature, f, nowStartingEdges)
+    WriteDotToFile(f, 0, "after-uf")
+    let allStartingEdges = ArrayList<EdgeAtDepth<V, G>>()
+    for(e in f.GetSequentialData().valueEdges){
+        allStartingEdges.append(EdgeAtDepth(e, 0))
+    }
+    for(e in f.GetSequentialData().delayEdges){
+        allStartingEdges.append(EdgeAtDepth(e, 0))
+    }
+    RewriteCombinational(signature, GetRules(signature, true), f, nowStartingEdges)
+    WriteDotToFile(f, 0, "before-tidy")
+    if(tidyNext) {
+        RewriteCombinational(signature, GetRules(signature, false), f, allStartingEdges)
+    }
 }
-
 /**
  * 'Burst' edges that have sequential subgraphs. This is because all of the delays
  * in the subgraph must be dealt with separately, and cannot remain in their subgraphs

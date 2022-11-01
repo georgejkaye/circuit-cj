@@ -29,10 +29,17 @@ main() {
     let applied = Apply(acc, [wf])
     WriteDotToFile(applied, 0, "acc-0")
     WriteDotToFile(applied, 1, "acc-1")
-    RunCycle(sig, applied)
-    WriteDotToFile(applied, 0, "acc-cycle-1")
-    // RunCycle(sig, applied)
-    // WriteDotToFile(applied, 0, "acc-cycle-2")
+    try {
+        RunCycle(sig, applied, true)
+        WriteDotToFile(applied, 0, "acc-cycle-1")
+        RunCycle(sig, applied, true)
+        WriteDotToFile(applied, 0, "acc-cycle-2")
+    } catch(e : Exception) {
+        WriteDotToFile(applied, 0, "break-0")
+        WriteDotToFile(applied, 1, "break-1")
+        throw NotImplemented("Crash!")
+    }
+
 
     // let zero = InfiniteWaveform(TrueSignal())
     // let other = UseWire(1)
@@ -62,3 +69,4 @@ main() {
     // WriteDotToFile(circ, 0, "test-uf")
     return 0
 }
+
