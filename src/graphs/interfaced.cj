@@ -142,10 +142,10 @@ public class InterfacedHypergraph<V, G> <: Identifiable & ToString & Specifiable
     public func GetEdges() : HashSet<Edge<V, G>> {
         this.f.GetEdges()
     }
-    public func GetInputVertices() : Array<InterfaceVertex<V, G>> {
+    public func GetInputs() : Array<InterfaceVertex<V, G>> {
         this.inputs
     }
-    public func GetOutputVertices() : Array<InterfaceVertex<V, G>> {
+    public func GetOutputs() : Array<InterfaceVertex<V, G>> {
         this.outputs
     }
     public func GetStartingEdges() : HashSet<Edge<V, G>> {
@@ -242,8 +242,8 @@ public class InterfacedHypergraph<V, G> <: Identifiable & ToString & Specifiable
     }
     public func toString() : String {
         let string = f.toString()
-        let inputString = PrintWidthArray(this.GetInputVertices())
-        let outputString = PrintWidthArray(this.GetOutputVertices())
+        let inputString = PrintWidthArray(this.GetInputs())
+        let outputString = PrintWidthArray(this.GetOutputs())
         "${string} (${inputString} -> ${outputString})"
     }
     public func toLongString() : String {

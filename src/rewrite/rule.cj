@@ -70,11 +70,11 @@ func ReplaceTargets<V, G>(
         for(ec in oldTargetEdges) {
             ec.edge.SetSource(ec.index, newTarget, oldTarget.feedback)
         }
-        let outputs = f.GetOutputVertices()
+        let outputs = f.GetOutputs()
         for(j in 0..outputs.size) {
             let iv = outputs[j]
             if(iv.vertex == oldTarget.vertex) {
-                f.GetOutputVertices()[j] = InterfaceVertex(newTarget, iv.name)
+                f.GetOutputs()[j] = InterfaceVertex(newTarget, iv.name)
             }
         }
     }

@@ -11,37 +11,115 @@ package rewrite
 
 import syntax.*
 
-public func RunCycle<V, G>(
-    signature : Signature<V, G>,
-    f : InterfacedHypergraph<V, G>,
-    tidyNext : Bool
-) : Unit
+public class Rewriter<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    // We can't arbitrarily copy things with delays in, so we pop
-    // open all the sequential graphs before rewriting
-    BurstSequentialGraphs(f)
-    // Eliminate 'instant feedback' by copying the circuit some
-    // number of times. If there is no instant feedback, skips this step
-    InstantFeedback(signature, f)
-    // Unfold and stream the circuit, so that we have a combinational
-    // circuit for what is happening 'now', and some subcircuit that
-    // contains what is happening 'later'
-    let nowStartingEdges = Unfold(signature, f)
-    // Exhaustively rewrite the now subcircuit: this is guaranteed
-    // to terminate in a signal, the output of the current cycle
-    RewriteCombinational(signature, GetRules(signature, true), f, nowStartingEdges)
-    // If desired, we can also tidy up the later subcircuit
-    if(tidyNext) {
-        let allStartingEdges = ArrayList<EdgeAtDepth<V, G>>()
-        for(e in f.GetSequentialData().valueEdges){
-            allStartingEdges.append(EdgeAtDepth(e, 0))
-        }
-        for(e in f.GetSequentialData().delayEdges){
-            allStartingEdges.append(EdgeAtDepth(e, 0))
-        }
-        RewriteCombinational(signature, GetRules(signature, false), f, allStartingEdges)
+    var nextCycle = 0
+    public Rewriter(
+        let signature : Signature<V, G>,
+        let f : InterfacedHypergraph<V, G>
+    ){}
+    public func RunNextCycle(tidyNext : Bool) : Unit {
+        RunCycle(nextCycle, tidyNext)
+        nextCycle++
     }
+    public func RunCycle(cycle : Int64, tidyNext : Bool) : Unit {
+        Debug("Running cycle ${cycle} on ${f.GetName()}")
+        // This graph may be prefixed by some waveform: we will need to remove
+        // this to deal with the
+        let suffix = CheckForPrefix(this.f, this.nextCycle)
+        match(suffix) {
+            case Some(s) =>
+                Debug("Already computed cycle ${cycle}, returning")
+                return
+            case None =>
+                if(cycle > 0) {
+                    RunCycle(cycle - 1, tidyNext)
+                }
+                // Eliminate 'instant feedback' by copying the circuit some
+                // number of times. If there is no instant feedback, skips this step
+                InstantFeedback(signature, f)
+                // Unfold and stream the circuit, so that we have a combinational
+                // circuit for what is happening 'now', and some subcircuit that
+                // contains what is happening 'later'
+                let nowStartingEdges = Unfold(signature, f)
+                // Exhaustively rewrite the now subcircuit: this is guaranteed
+                // to terminate in a signal, the output of the current cycle
+                RewriteCombinational(signature, GetRules(signature, true), f, nowStartingEdges)
+                // If desired, we can also tidy up the later subcircuit
+                if(tidyNext) {
+                    let allStartingEdges = ArrayList<EdgeAtDepth<V, G>>()
+                    for(e in f.GetSequentialData().valueEdges){
+                        allStartingEdges.append(EdgeAtDepth(e, 0))
+                    }
+                    for(e in f.GetSequentialData().delayEdges){
+                        allStartingEdges.append(EdgeAtDepth(e, 0))
+                    }
+                    RewriteCombinational(signature, GetRules(signature, false), f, allStartingEdges)
+                }
+        }
+    }
+}
+/**
+ * A suffix of a graph, representing computation to be done later
+ */
+public struct GraphSuffix<V, G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    public GraphSuffix(
+        public let f : InterfacedHypergraph<V, G>,
+        public let outputs : Array<Vertex<V, G>>
+    ){}
+}
+/**
+ * Given a graph and an index, attempt to find the ith output vertex after a number of cycles.
+ * If the circuit has a long enough waveform prefix, this will be successful. If not,
+ * returns None
+ *
+ * @param f      The graph to traverse
+ * @param cycles The number of cycles to look for
+ */
+func TraversePrefix<V, G>(f : InterfacedHypergraph<V, G>, cycles : Int64, i : Int64) : Option<Vertex<V, G>>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    var currentVertex = f.GetOutput(i).vertex
+    for(j in 0..i) {
+        // If this is well-formed, there will always be an in-edge
+        let edge = currentVertex.GetInEdge().getOrThrow().edge
+        // For this circuit to have a long enough waveform
+        // prefix there must first be a join
+        if(edge.GetLabel().IsJoin()) {
+            // Now we must check that the two arguments to the join are a value and a delay
+            // (It doesn't matter which one is which since the join is commutative)
+            let lhs = edge.GetSource(0).vertex
+            let rhs = edge.GetSource(1).vertex
+            let lhsEdge = lhs.GetInEdge().getOrThrow().edge
+            let rhsEdge = rhs.GetInEdge().getOrThrow().edge
+            let delayEdge = if(lhsEdge.GetLabel().IsValue() && rhsEdge.GetLabel().IsDelay()) {
+                rhsEdge
+            } else if(rhsEdge.GetLabel().IsValue() && lhsEdge.GetLabel().IsDelay()) {
+                lhsEdge
+            } else {
+                return None<Vertex<V, G>>
+            }
+            currentVertex = delayEdge.GetSource(0).vertex
+        } else {
+            return None<Vertex<V, G>>
+        }
+    }
+    Some(currentVertex)
+}
+func CheckForPrefix<V, G>(f : InterfacedHypergraph<V, G>, currentCycle : Int64) : Option<GraphSuffix<V, G>>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    let outputs = ArrayList<Vertex<V, G>>()
+    for(i in 0..f.GetCoarity()){
+        match(TraversePrefix(f, currentCycle, i)) {
+            case None => return None<GraphSuffix<V, G>>
+            case Some(v) => outputs.append(v)
+        }
+    }
+    Some(GraphSuffix(f, outputs.toArray()))
 }
 /**
  * 'Burst' edges that have sequential subgraphs. This is because all of the delays
@@ -184,7 +262,7 @@ func UnrollInstantFeedback<V, G>(signature : Signature<V, G>, f : InterfacedHype
 {
     // The 'input vertices' to the combinational subcircuit are the original inputs,
     // and targets of sequential components i.e. values and delays
-    let inputVertices = GetInputVertices(f, true)
+    let inputVertices = GetInputs(f, true)
     // A 'feedback map' needs to be constructed so that we know which vertex of
     // the previous iteration to hook each feedback loop to
     let feedbackMap = GetFeedbackMap(f)
@@ -243,13 +321,13 @@ func UnrollInstantFeedback<V, G>(signature : Signature<V, G>, f : InterfacedHype
  * @param f The interfaced hypergraph
  * @param sequential Whether to include delay and value edges
  */
-func GetInputVertices<V, G>(f : InterfacedHypergraph<V, G>, sequential : Bool) : HashSet<Vertex<V, G>>
+func GetInputs<V, G>(f : InterfacedHypergraph<V, G>, sequential : Bool) : HashSet<Vertex<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let sequentialData = f.GetSequentialData()
     let inputVertices = HashSet<Vertex<V, G>>()
     // Input vertices don't need to be copied, edges can just be connected to them
-    for(v in f.GetInputVertices()) {
+    for(v in f.GetInputs()) {
         inputVertices.put(v.GetVertex())
     }
     // If desired, sequential components (values and delays) can be treated as inputs:
@@ -341,13 +419,13 @@ func ReplaceOutputs<V, G>(
  * inputs are replaced by bottom calues, or a 'later' graph in which all
  * instant values are replaced by bottom values
  *
- * @param signature The signature we are working with
- * @param f The parent graph
- * @param vertices The set of vertices to copy
+ * @param signature     The signature we are working with
+ * @param f             The parent graph
+ * @param vertices      The set of vertices to copy
  * @param inputVertices The 'input vertices' of the underlying combinational graph
- * @param vertexMap The map of vertices to copies
- * @param edges The set of edges to copy
- * @param now Whether this copy is for 'now' or 'later'
+ * @param vertexMap     The map of vertices to copies
+ * @param edges         The set of edges to copy
+ * @param now           Whether this copy is for 'now' or 'later'
  * @param startingEdges An optional arraylist of edges to contain the 'starting edges':
                             the values and inputs of this graph
 */
@@ -435,7 +513,7 @@ func Unfold<V, G>(
     } else {
         let vertices = HashSet<Vertex<V, G>>(f.GetVertices())
         let edges = HashSet<Edge<V, G>>(f.GetEdges())
-        let inputVertices = GetInputVertices(f, false)
+        let inputVertices = GetInputs(f, false)
         // Make a copy for what is happening 'now'
         // Replace any delays with bottom values
         let nowVertexMap = HashMap<Vertex<V, G>, Vertex<V, G>>()
@@ -455,7 +533,7 @@ func Unfold<V, G>(
             None<ArrayList<EdgeAtDepth<V, G>>>
         )
         // Update the outputs by joining the outputs of the two copies
-        let outputs = Array<InterfaceVertex<V, G>>(f.GetOutputVertices())
+        let outputs = Array<InterfaceVertex<V, G>>(f.GetOutputs())
         for(i in 0..outputs.size){
             let v = outputs[i].GetVertex()
             let width = v.GetWidth()

@@ -203,7 +203,6 @@ public func UnsignedExtend(
     let waveform = UseInfiniteWaveform<GateLevelValue, GateLevelPrimitive>(Signal([FALSE]))
     Combine([waveform, w])
 }
-
 public func MakeWaveform(
     vs : Array<Int64>,
     wfType : WaveformType,
@@ -212,4 +211,13 @@ public func MakeWaveform(
 ) : BelnapCircuit {
     let signals = map({v : Int64 => DecToBin(v, width, signed) }, vs)
     MakeWaveform(Waveform(signals), wfType)
+}
+public func UseOpenWaveform(
+    vs : Array<Int64>,
+    inputs : Wire<GateLevelValue, GateLevelPrimitive>,
+    width!: Int64,
+    signed!: Bool = false
+) : Wire<GateLevelValue, GateLevelPrimitive> {
+    let signals = map({v : Int64 => DecToBin(v, width, signed) }, vs)
+    UseOpenWaveform(Waveform(signals), inputs)
 }

@@ -545,13 +545,13 @@ func DrawInterfacedHypergraph<V, G>(
     // Draw the inputs
     if(f.GetArity() > 0) {
         DrawSubgraph(minSubgraphOpts, elementContent, connectionContent, { elementContent, connectionContent =>
-            DrawInterface("${id}", f.GetInputVertices(), true, elementContent, connectionContent)
+            DrawInterface("${id}", f.GetInputs(), true, elementContent, connectionContent)
         })
     }
     // Draw the outputs
     if(f.GetCoarity() > 0){
         DrawSubgraph(maxSubgraphOpts, elementContent, connectionContent, { elementContent, connectionContent =>
-            DrawInterface("${id}", f.GetOutputVertices(), false, elementContent, connectionContent)
+            DrawInterface("${id}", f.GetOutputs(), false, elementContent, connectionContent)
         })
     }
     elementContent.appendAll(connectionContent)

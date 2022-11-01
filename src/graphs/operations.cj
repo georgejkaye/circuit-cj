@@ -57,7 +57,7 @@ func CloneOrRetain<V, G>(
         let (newGraph, newInputs, newOutputs, _, _) = f.Clone()
         (newGraph, newInputs, newOutputs)
     } else {
-        (f.GetGraph(), f.GetInputVertices(), f.GetOutputVertices())
+        (f.GetGraph(), f.GetInputs(), f.GetOutputs())
     }
 }
 /**

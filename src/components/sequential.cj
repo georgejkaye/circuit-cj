@@ -144,45 +144,25 @@ public func RegisterGuardedFeedback<V, G>(
  * @return The circuit containing the waveform
  */
 public func MakeWaveform<V, G>(
-    wf : Waveform<V>,
-    wfType : WaveformType
+    head : Array<Signal<V>>,
+    tail : InterfacedHypergraph<V, G>
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    let width = wf.GetWidth()
-    let vs = wf.signals
-    let closed = match(wfType) {
-        case FINITE_CLOSED => true
-        case _ => false
-    }
-    // If this is a closed waveform, it is capped off on the left
-    // by the last element of the waveform array
-    var (currentWire, inputs, startingIndex) = match(wfType){
-        case FINITE_CLOSED =>
-            (UseSignal<V, G>(vs[vs.size - 1]), Array<InterfaceWire<V, G>>(), 1)
-        case _ =>
-            let wire = UseWire<V, G>(width)
-            (wire, [InterfaceWire(wire)], 0)
-    }
-    // From left-to-right, the elements of the waveform
-    // are in reverse order
-    for(i in startingIndex..vs.size) {
-        let value = UseSignal<V, G>(vs[vs.size - 1 - i])
-        let delay = UseDelay(currentWire)
-        currentWire = UseJoin(value, delay)
-    }
-    // Infinite waveforms need to have a feedback loop
-    match(wfType) {
-        case INFINITE =>
-            PerformFeedback(currentWire, inputs[0].GetWire(), false)
-            inputs = Array<InterfaceWire<V, G>>()
-        case _ => ()
-    }
+    let inputs = map({ iv : InterfaceVertex<V, G> => UseWire(iv.GetWidth())}, tail.GetInputs())
+    let subcircuit = UseSubcircuit(inputs, tail)
+    let outputs = mapi({ s : Signal<V>, i : Int64 =>
+        let signal = MakeSignal(s)
+        let delay = UseDelay(inputs[i])
+        let join = UseJoin(signal, delay)
+        InterfaceWire(join, "")
+    }, head)
     MakeSubcircuit(
-        inputs,
-        [InterfaceWire(currentWire)],
-        WAVEFORM(wf, wfType)
+        mapi({ w : Wire<V, G>, i : Int64 => InterfaceWire(w, tail.GetInput(i).name)}),
+        outputs
     )
+
+
 }
 /**
  * Make an infinite waveform
@@ -191,7 +171,7 @@ public func MakeWaveform<V, G>(
  * @return The circuit containing the waveform
  */
 public func MakeInfiniteWaveform<V, G>(
-    wf : Waveform<V>
+    wf : Array<Signal<V>>
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
@@ -204,7 +184,7 @@ public func MakeInfiniteWaveform<V, G>(
  * @return The circuit containing the waveform
  */
 public func MakeClosedWaveform<V, G>(
-    wf : Waveform<V>
+    wf : Array<Signal<V>>
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
@@ -298,7 +278,7 @@ public func UseClosedWaveform<V, G>(
  * @return The output of the waveform
  */
 public func UseOpenWaveform<V, G>(
-    wf : Waveform<V>,
+    wf : Array<Signal<V>>,
     inputs : Wire<V, G>
 ) : Wire<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>

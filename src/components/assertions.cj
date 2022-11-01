@@ -159,9 +159,9 @@ func AssertArgumentsCompatible<V, G>(
 {
     AssertArrayElementsHaveParameters(
         args,
-        f.GetInputVertices(),
+        f.GetInputs(),
         { ih : InterfacedHypergraph<V, G> =>
-            AssertArrayHasLength(ih.GetOutputVertices(), 1)
+            AssertArrayHasLength(ih.GetOutputs(), 1)
             ih.GetOutput(0).GetWidth()
         },
         { iv : InterfaceVertex<V, G> => iv.GetWidth() },
