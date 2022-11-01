@@ -18,22 +18,28 @@ public func RunCycle<V, G>(
 ) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
+    // We can't arbitrarily copy things with delays in, so we pop
+    // open all the sequential graphs before rewriting
     BurstSequentialGraphs(f)
+    // Eliminate 'instant feedback' by copying the circuit some
+    // number of times. If there is no instant feedback, skips this step
     InstantFeedback(signature, f)
-    WriteDotToFile(f, 0, "before-uf")
-    let nowStartingEdges = ArrayList<EdgeAtDepth<V, G>>()
-    Unfold(signature, f, nowStartingEdges)
-    WriteDotToFile(f, 0, "after-uf")
-    let allStartingEdges = ArrayList<EdgeAtDepth<V, G>>()
-    for(e in f.GetSequentialData().valueEdges){
-        allStartingEdges.append(EdgeAtDepth(e, 0))
-    }
-    for(e in f.GetSequentialData().delayEdges){
-        allStartingEdges.append(EdgeAtDepth(e, 0))
-    }
+    // Unfold and stream the circuit, so that we have a combinational
+    // circuit for what is happening 'now', and some subcircuit that
+    // contains what is happening 'later'
+    let nowStartingEdges = Unfold(signature, f)
+    // Exhaustively rewrite the now subcircuit: this is guaranteed
+    // to terminate in a signal, the output of the current cycle
     RewriteCombinational(signature, GetRules(signature, true), f, nowStartingEdges)
-    WriteDotToFile(f, 0, "before-tidy")
+    // If desired, we can also tidy up the later subcircuit
     if(tidyNext) {
+        let allStartingEdges = ArrayList<EdgeAtDepth<V, G>>()
+        for(e in f.GetSequentialData().valueEdges){
+            allStartingEdges.append(EdgeAtDepth(e, 0))
+        }
+        for(e in f.GetSequentialData().delayEdges){
+            allStartingEdges.append(EdgeAtDepth(e, 0))
+        }
         RewriteCombinational(signature, GetRules(signature, false), f, allStartingEdges)
     }
 }
@@ -64,11 +70,14 @@ func BurstSequentialGraphs<V, G>(f : InterfacedHypergraph<V, G>) : Unit
 func YankDelays<V, G>(f : InterfacedHypergraph<V, G>) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
+    // We need to check all the delay edges to see if their
+    // source or target is designated as a feedback tentacle
     for(e in f.GetSequentialData().delayEdges){
         if(e.GetSource(0).feedback){
             e.RemoveFeedback(0)
         }
         let v = e.GetTarget(0).GetVertex()
+        // There may be many target tentacles
         for(ec in v.GetOutEdges()) {
             let e = ec.edge
             let i = ec.index
@@ -79,15 +88,23 @@ func YankDelays<V, G>(f : InterfacedHypergraph<V, G>) : Unit
         }
     }
 }
+/**
+ * Given a set of vertices, make copies of the ones not contained
+ * in some other set, updating a vertex map
+ *
+ * @param vertices The set of vertices
+ * @param exceptions The set of vertices not to copy
+ * @param vertexMap The vertex map to update
+ */
 func CopyVertices<V, G>(
     vertices : HashSet<Vertex<V, G>>,
-    inputVertices : HashSet<Vertex<V, G>>,
+    exceptions : HashSet<Vertex<V, G>>,
     vertexMap : HashMap<Vertex<V, G>, Vertex<V, G>>
 ) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     for(v in vertices) {
-        if(!inputVertices.contains(v)) {
+        if(!exceptions.contains(v)) {
             let w = Vertex<V, G>(v.GetWidth())
             vertexMap.put(v, w)
         }
@@ -109,6 +126,8 @@ func InstantFeedback<V, G>(signature : Signature<V, G>, f : InterfacedHypergraph
     // we can eliminate this since a delay is already implicitly on a big
     // feedback loop and an additional loop is redundant
     YankDelays(f)
+    // If there is no non-delay-guarded feedback (which is common), there is
+    // no need waste time and copy all the graph
     if(f.HasNonDelayGuardedFeedback()) {
         Debug("Non-delay-guarded feedback found, unrolling it...")
         UnrollInstantFeedback(signature, f)
@@ -316,6 +335,22 @@ func ReplaceOutputs<V, G>(
         }
     }
 }
+/**
+ * Make a copy of a graph as part of the 'streaming' step of rewriting.
+ * Depending on a flag, can either be a 'now' graph in which all delayed
+ * inputs are replaced by bottom calues, or a 'later' graph in which all
+ * instant values are replaced by bottom values
+ *
+ * @param signature The signature we are working with
+ * @param f The parent graph
+ * @param vertices The set of vertices to copy
+ * @param inputVertices The 'input vertices' of the underlying combinational graph
+ * @param vertexMap The map of vertices to copies
+ * @param edges The set of edges to copy
+ * @param now Whether this copy is for 'now' or 'later'
+ * @param startingEdges An optional arraylist of edges to contain the 'starting edges':
+                            the values and inputs of this graph
+*/
 func MakeCopy<V, G>(
     signature : Signature<V, G>,
     f : InterfacedHypergraph<V, G>,
@@ -329,6 +364,8 @@ func MakeCopy<V, G>(
     CopyVertices(vertices, inputVertices, vertexMap)
     for(e in edges) {
         let label = e.GetLabel()
+        // If this edge is a delay and we are making a later graph,
+        // we copy the delay
         if(!now && label.IsDelay()){
             let originalSource = e.GetSource(0).GetVertex()
             let originalTarget = e.GetTarget(0).GetVertex()
@@ -341,11 +378,14 @@ func MakeCopy<V, G>(
             ()
         } else {
             let newEdge =
+                // If this is a now graph, we replace delays with bottoms
+                // If this is a later graph, we replace values with bottoms
                 if(now && label.IsDelay() || !now && label.IsValue()) {
                     let sources = Array<Vertex<V, G>>()
                     let targets = map({t : Tentacle<V, G> => CopyTentacle(t, vertexMap)}, e.GetTargets())
                     let signal = MakeSignal<V, G>(Signal(signature.GetBottom(), label.GetOutputPorts()[0].GetWidth()))
                     Edge(signal.GetLabel(), Array<Vertex<V, G>>(), targets, signal, f.GetGraph())
+                // Otherwise we just copy the sources and targets as usual
                 } else {
                     let sources = map({t : Tentacle<V, G> =>
                         if(e.GetLabel().IsDelay()) {
@@ -356,9 +396,9 @@ func MakeCopy<V, G>(
                     }, e.GetSources())
                     let targets = map({t : Tentacle<V, G> => CopyTentacle(t, vertexMap)}, e.GetTargets())
                     let ed = Edge(label, sources, targets, CopySubgraph(e), f.GetGraph())
-                    println("${ed.GetId()}")
                     ed
                 }
+            // If the new edge is a value, then it is a starting edge for traversing this graph
             if(newEdge.GetLabel().IsValue()){
                 match(startingEdges){
                     case Some(es) => es.append(EdgeAtDepth(newEdge, 0))
@@ -379,11 +419,12 @@ func MakeCopy<V, G>(
  */
 func Unfold<V, G>(
     signature : Signature<V, G>,
-    f : InterfacedHypergraph<V, G>,
-    startingEdges : ArrayList<EdgeAtDepth<V, G>>
-) : Unit
+    f : InterfacedHypergraph<V, G>
+) : ArrayList<EdgeAtDepth<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
+    let startingEdges = ArrayList<EdgeAtDepth<V, G>>()
+    // We can only safely unfold graphs with delay-guarded feedback
     if(f.HasNonDelayGuardedFeedback()) {
         Debug("Cannot unfold circuits with non-delay-guarded feedback, please unroll it first")
     } else if (f.GetSequentialData().delayEdges.size == 0) {
@@ -442,4 +483,5 @@ func Unfold<V, G>(
             f.ReplaceOutput(i, joinTarget)
         }
     }
+    startingEdges
 }

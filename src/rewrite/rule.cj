@@ -246,7 +246,6 @@ func ArgumentIsAllValue<V, G>(v : V, e : Edge<V, G>, i : Int64) : Bool
 func RemoveBinaryArgumentAndPassthrough<V, G>(e : Edge<V, G>, i : Int64, f : InterfacedHypergraph<V, G>) : HashSet<Edge<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    println("Rewriting ${e} with index ${i}")
     let arg = e.GetSource(i).vertex.GetInEdge().getOrThrow().edge
     let otherIndex = if(i == 0){
         1
@@ -362,7 +361,6 @@ func GetBundleRule<V, G>(sig : Signature<V, G>)
                     let v = t.vertex
                     // Precondition enforces there must be an in edge
                     let valueEdge = v.GetInEdge().getOrThrow().edge
-                    println("${valueEdge}")
                     match(valueEdge.GetLabel()) {
                         case VALUE(v) => values.append(v)
                         case SIGNAL(sig) =>
@@ -378,7 +376,6 @@ func GetBundleRule<V, G>(sig : Signature<V, G>)
                 let newEdges = HashSet<Edge<V, G>>()
                 let targets = e.GetTargets()
                 f.RemoveEdge(e, true, false)
-                println("The targets are ${targets}")
                 for(t in targets) {
                     let v = t.vertex
                     let width = v.GetWidth()
