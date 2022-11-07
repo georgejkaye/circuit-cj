@@ -54,81 +54,44 @@ extend Wire<V, G> <: ContainsWire<V, G> {
         this
     }
 }
+
 public interface WireBuilder<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    func UseWire(w : Int64) : Wire<V, G>
-    func UseWires(w : Int64, n : Int64) : Array<Wire<V, G>>
+    func UseWire(width : Int64) : Wire<V, G>
+    func UseWires(width : Int64, number : Int64) : Array<Wire<V, G>>
+    func UseWires(widths : Array<Int64>) : Array<Wire<V, G>>
 }
 extend Signature<V, G> <: WireBuilder<V, G> {
-    public func UseWire(w : Int64) : Wire<V, G> {
-        UseWire<V, G>(w)
+    /**
+    * Make a wire (and underlying vertex) of a given width
+    * @param width The width of the wire
+    * @return The wire
+    */
+    public func UseWire(width : Int64) : Wire<V, G> {
+        let vertex = Vertex<V, G>(width)
+        let f = Hypergraph(HashSet<Vertex<V, G>>([ vertex ]), HashSet<Edge<V, G>>())
+        Wire(vertex)
     }
-    public func UseWires(w : Int64, n : Int64) : Array<Wire<V, G>> {
-        UseWires<V, G>(w, n)
+    /**
+    * Make an array of wires all of a given width
+    * @param n The number of wires to create
+    * @param width The width of the wire
+    * @return The array of wires
+    */
+    public func UseWires(width : Int64, n : Int64) : Array<Wire<V, G>> {
+        AssertStrictlyPositive(n)
+        Array<Wire<V, G>>(n, { i : Int64 => this.UseWire(width) })
     }
-    public func NameWire(w : Wire<V, G>, name : String) : InterfaceWire<V, G> {
-        InterfaceWire(w, name)
+    /**
+    * Make an array of wires of given widths
+    * @param widths The array of widths for the wires
+    * @return The array of wires
+    */
+    public func UseWires(widths : Array<Int64>) : Array<Wire<V, G>> {
+        AssertNonEmpty(widths, "widths")
+        map({ i : Int64 => this.UseWire(i) }, widths)
     }
-    public func NameWires(ws : Array<Wire<V, G>>, names : Array<String>) : Array<InterfaceWire<V, G>> {
-        NameWires<V, G>(ws, names)
-    }
-    public func NameWires(ws : Array<Wire<V, G>>, names : (Int64) -> String) : Array<InterfaceWire<V, G>> {
-        NameWires<V, G>(ws, names)
-    }
-    public func UseValue(v : V) : Wire<V, G> {
-        UseValue<V, G>(v)
-    }
-    public func UseSignal(s : Signal<V>) : Wire<V, G> {
-        UseSignal<V, G>(s)
-    }
-    public func UseSignal(vs : Array<V>) : Wire<V, G> {
-        UseSignal<V, G>(Signal(vs))
-    }
-    public func UseOpenWaveform(ws : Array<Signal<V>>, input : Wire<V, G>) : Wire<V, G> {
-        UseOpenWaveform<V, G>(ws, input)
-    }
-    public func UseClosedWaveform(ws : Array<Signal<V>>) : Wire<V, G> {
-        UseClosedWaveform<V, G>(ws)
-    }
-    public func UseInfiniteWaveform(ws : Array<Signal<V>>) : Wire<V, G> {
-        UseInfiniteWaveform<V, G>(ws)
-    }
-}
-/**
- * Make a wire (and underlying vertex) of a given width
- * @param width The width of the wire
- * @return The wire
- */
-public func UseWire<V, G>(width : Int64) : Wire<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
-{
-    let vertex = Vertex<V, G>(width)
-    let f = Hypergraph(HashSet<Vertex<V, G>>([ vertex ]), HashSet<Edge<V, G>>())
-    Wire(vertex)
-}
-/**
- * Make an array of wires all of a given width
- * @param n The number of wires to create
- * @param width The width of the wire
- * @return The array of wires
- */
-public func UseWires<V, G>(width : Int64, n : Int64) : Array<Wire<V, G>>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
-{
-    AssertStrictlyPositive(n)
-    Array<Wire<V, G>>(n, { i : Int64 => UseWire(width) })
-}
-/**
- * Make an array of wires of given widths
- * @param widths The array of widths for the wires
- * @return The array of wires
- */
-public func UseWires<V, G>(widths : Array<Int64>) : Array<Wire<V, G>>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
-{
-    AssertNonEmpty(widths, "widths")
-    map({ i : Int64 => UseWire(i) }, widths)
 }
 /**
  * An interface wire is a wire with an optional name. These are

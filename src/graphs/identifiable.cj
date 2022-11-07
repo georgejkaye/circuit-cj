@@ -16,13 +16,6 @@ public func GetNextId() : Int64 {
     nextId++
     id
 }
-
 public interface Identifiable {
     func GetId() : Int64
-}
-
-public interface Ownable<T> {
-    func GetOwner() : Option<T>
-    func SetOwner(t : T) : Unit
-    func RemoveOwner() : Unit
 }

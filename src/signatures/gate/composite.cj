@@ -4,120 +4,115 @@ import graphs.*
 import components.*
 
 /**
- * Shortcut for the signature
- */
-let sig = gateLevelSignature
-
-/**
  * Bitwise gate
  */
 
 public func Buf(
     a : BelnapWire
 ) : BelnapWire {
-    UseBitwiseMapGate(BUF, [a])
+    belnapSignature.UseBitwiseMapGate(BUF, [a])
 }
 public func Not(
     a : BelnapWire
 ) : BelnapWire {
-    UseBitwiseMapGate(NOT, [a])
+    belnapSignature.UseBitwiseMapGate(NOT, [a])
 }
 public func And(
     a : BelnapWire,
     b : BelnapWire
 ) : BelnapWire {
-    UseBitwiseMapGate(AND, [a, b])
+    belnapSignature.UseBitwiseMapGate(AND, [a, b])
 }
 public func Or(
     a : BelnapWire,
     b : BelnapWire
 ) : BelnapWire {
-    UseBitwiseMapGate(OR, [a, b])
+    belnapSignature.UseBitwiseMapGate(OR, [a, b])
 }
 public func Nand(
     a : BelnapWire,
     b : BelnapWire
 ) : BelnapWire {
-    UseBitwiseMapGate(NAND, [a, b])
+    belnapSignature.UseBitwiseMapGate(NAND, [a, b])
 }
 public func Nor(
     a : BelnapWire,
     b : BelnapWire) : BelnapWire {
-    UseBitwiseMapGate(NOR, [a, b])
+    belnapSignature.UseBitwiseMapGate(NOR, [a, b])
 }
 public func Xor(
     a : BelnapWire,
     b : BelnapWire
 ) : BelnapWire {
-    UseBitwiseMapGate(XOR, [a, b])
+    belnapSignature.UseBitwiseMapGate(XOR, [a, b])
 }
 public func Xnor(
     a : BelnapWire,
     b : BelnapWire
 ) : BelnapWire {
-    UseBitwiseMapGate(XNOR, [a, b])
+    belnapSignature.UseBitwiseMapGate(XNOR, [a, b])
 }
 
 public func And(
     ws : Array<BelnapWire>
 ) : BelnapWire {
-    UseRippleGate(AND, ws)
+    belnapSignature.UseRippleGate(AND, ws)
 }
 public func Or(
     ws : Array<BelnapWire>
 ) : BelnapWire {
-    UseRippleGate(OR, ws)
+    belnapSignature.UseRippleGate(OR, ws)
 }
 public func Nand(
     ws : Array<BelnapWire>
 ) : BelnapWire {
-    UseRippleGate(NAND, ws)
+    belnapSignature.UseRippleGate(NAND, ws)
 }
 public func Nor(
     ws : Array<BelnapWire>
 ) : BelnapWire {
-    UseRippleGate(NOR, ws)
+    belnapSignature.UseRippleGate(NOR, ws)
 }
 public func Xor(
     ws : Array<BelnapWire>
 ) : BelnapWire {
-    UseRippleGate(XOR, ws)
+    belnapSignature.UseRippleGate(XOR, ws)
 }
 public func Xnor(
     ws : Array<BelnapWire>
 ) : BelnapWire {
-    UseRippleGate(XNOR, ws)
+    belnapSignature.UseRippleGate(XNOR, ws)
 }
 
 public func And(
     w : BelnapWire
 ) : BelnapWire {
-    UseBitwiseRippleGate(AND, w)
+    belnapSignature.UseBitwiseRippleGate(AND, w)
 }
 public func Or(
     w : BelnapWire
 ) : BelnapWire {
-    UseBitwiseRippleGate(OR, w)
+    belnapSignature.UseBitwiseRippleGate(OR, w)
 }
 public func Nand(
     w : BelnapWire
 ) : BelnapWire {
-    UseBitwiseRippleGate(NAND, w)
+    belnapSignature.UseBitwiseRippleGate(NAND, w)
 }
 public func Nor(
     w : BelnapWire
 ) : BelnapWire {
-    UseBitwiseRippleGate(NOR, w)
+    belnapSignature.UseBitwiseRippleGate(NOR, w)
 }
 public func Xor(
     w : BelnapWire
 ) : BelnapWire {
-    UseBitwiseRippleGate(XOR, w)
+    belnapSignature.UseBitwiseRippleGate(XOR, w)
 }
 public func Xnor(
     w : BelnapWire
 ) : BelnapWire {
-    UseBitwiseRippleGate(XNOR, w)
+    belnapSignature.UseBitwiseRippleGate(XNOR, w)
 }
 /**
  * Create a half adder subcircuit.
@@ -126,11 +121,11 @@ public func Xnor(
  * @return A half adder subcircuit
  */
 public func MakeHalfAdder() : BelnapCircuit {
-    let a = sig.UseWire(1)
-    let b = sig.UseWire(1)
+    let a = belnapSignature.UseWire(1)
+    let b = belnapSignature.UseWire(1)
     let s = XorGate(a, b)
     let c = AndGate(a, b)
-    MakeSubcircuit(
+    belnapSignature.MakeSubcircuit(
         [
             InterfaceWire(a, "A"),
             InterfaceWire(b, "B")
@@ -154,7 +149,7 @@ public func HalfAdder(
 ) : (BelnapWire, BelnapWire) {
     AssertWireWidth(a, 1)
     AssertWireWidth(b, 1)
-    UseSubcircuit_2(MakeHalfAdder(), [a, b])
+    belnapSignature.UseSubcircuit_2(MakeHalfAdder(), [a, b])
 }
 /**
  * Create a full adder subcircuit.
@@ -163,15 +158,15 @@ public func HalfAdder(
  * @return A full adder subcircuit
  */
 public func MakeFullAdder() : BelnapCircuit {
-    let a = sig.UseWire(1)
-    let b = sig.UseWire(1)
-    let cin = sig.UseWire(1)
+    let a = belnapSignature.UseWire(1)
+    let b = belnapSignature.UseWire(1)
+    let cin = belnapSignature.UseWire(1)
     let inputXor = XorGate(a, b)
     let carryXor = XorGate(inputXor, cin)
     let carryAnd = AndGate(inputXor, cin)
     let inputAnd = AndGate(a, b)
     let carryOr = OrGate(carryAnd, inputAnd)
-    MakeSubcircuit(
+    belnapSignature.MakeSubcircuit(
         [
             InterfaceWire(a, "A"),
             InterfaceWire(b, "B"),
@@ -199,7 +194,7 @@ public func FullAdder(
     AssertWireWidth(a, 1)
     AssertWireWidth(b, 1)
     AssertWireWidth(c, 1)
-    UseSubcircuit_2(MakeFullAdder(), [a, b, c])
+    belnapSignature.UseSubcircuit_2(MakeFullAdder(), [a, b, c])
 }
 /**
  * Create a ripple adder subcircuit for a given width: a circuit that
@@ -209,9 +204,9 @@ public func FullAdder(
  * @return A ripple adder subcircuit
  */
 public func MakeRippleAdder(width : Int64) : BelnapCircuit {
-    let a = sig.UseWire(width)
-    let b = sig.UseWire(width)
-    let c = sig.UseWire(1)
+    let a = belnapSignature.UseWire(width)
+    let b = belnapSignature.UseWire(width)
+    let c = belnapSignature.UseWire(1)
     let (sum, carry) = BitwiseRippleMap(
         { acc : BelnapWire, cur : Array<BelnapWire> =>
             let (sum, carry) = FullAdder(cur[0], cur[1], acc)
@@ -220,7 +215,7 @@ public func MakeRippleAdder(width : Int64) : BelnapCircuit {
         c,
         [a, b]
     )
-    MakeSubcircuit(
+    belnapSignature.MakeSubcircuit(
         [
             InterfaceWire(a, "A"),
             InterfaceWire(b, "B"),
@@ -249,21 +244,21 @@ public func UseRippleAdder(
     AssertWiresSameWidth(a, b)
     let width = a.GetWidth()
     AssertWireWidth(c, 1)
-    UseSubcircuit_2(MakeRippleAdder(width), [a, b, c])
+    belnapSignature.UseSubcircuit_2(MakeRippleAdder(width), [a, b, c])
 }
 /**
  * Create a 2-multiplexer subcircuit for inputs of one bit: a circuit
  * that produces one of two outputs depending on a control signal.
  */
 func Mux2_1_1() : BelnapCircuit {
-    let a = sig.UseWire(1)
-    let b = sig.UseWire(1)
-    let c = sig.UseWire(1)
+    let a = belnapSignature.UseWire(1)
+    let b = belnapSignature.UseWire(1)
+    let c = belnapSignature.UseWire(1)
     let z = OrGate(
         AndGate(a, NotGate(c)),
         AndGate(c, b)
     )
-    MakeSubcircuit([
+    belnapSignature.MakeSubcircuit([
             InterfaceWire(c, "SEL"),
             InterfaceWire(a, "A"),
             InterfaceWire(b, "B")
@@ -279,18 +274,18 @@ func Mux2_1_1() : BelnapCircuit {
  * a circuit that produces one of two outputs depending on a control signal.
  */
 public func Mux2_1_W(width : Int64) : BelnapCircuit {
-    let sel = sig.UseWire(1)
-    let a = sig.UseWire(width)
-    let b = sig.UseWire(width)
+    let sel = belnapSignature.UseWire(1)
+    let a = belnapSignature.UseWire(width)
+    let b = belnapSignature.UseWire(width)
     let ctls = Replicate(sel, width)
     let output = BitwiseMap(
-        { ws : Array<BelnapWire> => UseSubcircuit(
+        { ws : Array<BelnapWire> => belnapSignature.UseSubcircuit(
             Mux2_1_1(),
             ws
         )},
         [ctls, a, b]
     )[0]
-    MakeSubcircuit(
+    belnapSignature.MakeSubcircuit(
         [
             InterfaceWire(sel, "SEL"),
             InterfaceWire(a, "A"),
@@ -318,7 +313,7 @@ public func Mux2(
     AssertWireWidth(s0, 1)
     AssertWiresSameWidth(a, b)
     let width = a.GetWidth()
-    UseSubcircuit_1(
+    belnapSignature.UseSubcircuit_1(
         Mux2_1_W(width),
         [s0, a, b]
     )
@@ -328,25 +323,25 @@ public func Mux2(
  * a circuit that produces one of four outputs depending on two control signals.
  */
 func Mux4_1_W(width: Int64) : BelnapCircuit {
-    let a  = sig.UseWire(width)
-    let b  = sig.UseWire(width)
-    let c  = sig.UseWire(width)
-    let d  = sig.UseWire(width)
-    let s0 = sig.UseWire(1)
-    let s1 = sig.UseWire(1)
-    let m1 = UseSubcircuit_1(
+    let a  = belnapSignature.UseWire(width)
+    let b  = belnapSignature.UseWire(width)
+    let c  = belnapSignature.UseWire(width)
+    let d  = belnapSignature.UseWire(width)
+    let s0 = belnapSignature.UseWire(1)
+    let s1 = belnapSignature.UseWire(1)
+    let m1 = belnapSignature.UseSubcircuit_1(
         Mux2_1_W(width),
         [s0, a, b]
     )
-    let m2 = UseSubcircuit_1(
+    let m2 = belnapSignature.UseSubcircuit_1(
         Mux2_1_W(width),
         [s0, c, d]
     )
-    let m3 = UseSubcircuit_1(
+    let m3 = belnapSignature.UseSubcircuit_1(
         Mux2_1_W(width),
         [s1, m1, m2]
     )
-    MakeSubcircuit(
+    belnapSignature.MakeSubcircuit(
         [
             InterfaceWire(s0, "SEL0"),
             InterfaceWire(s1, "SEL1"),
@@ -386,43 +381,8 @@ public func Mux4(
     AssertWiresSameWidth(b, c)
     AssertWiresSameWidth(c, d)
     let width = a.GetWidth()
-    UseSubcircuit_1(
+    belnapSignature.UseSubcircuit_1(
         Mux4_1_W(width),
         [s0, s1, a, b, c, d]
     )
-}
-
-/**
- * Use a simple register: a join of some value and a delay
- *
- * @param initial The initial value of the register
- * @param signed Whether the initial value is signed
- * @param input The input to the register
- * @return The output wire of the register
- */
-public func UseSimpleRegister(
-    initial! : Int64,
-    signed! : Bool,
-    input! : BelnapWire
-) : BelnapWire {
-    let value = UseSignalFromInt(initial, signed, width: input.GetWidth())
-    UseSimpleRegister(value, input)
-}
-
-/**
- * Create a feedback loop guarded by a delay: join a wire to a wire that is
- * not connected to anything on the left, and insert a register with some initial
- * value on the loop
- *
- * @param outgoing The wire to bend back
- * @param incoming The wire to feed back into, must not have an incoming edge
- */
-public func RegisterGuardedFeedback(
-    input: BelnapWire,
-    incoming : BelnapWire,
-    initial!: Int64,
-    signed!: Bool
-) : Unit {
-    let value = UseSignalFromInt(initial, signed, width: input.GetWidth())
-    RegisterGuardedFeedback(input, incoming, value)
 }

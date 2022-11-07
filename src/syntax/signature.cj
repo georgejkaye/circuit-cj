@@ -96,7 +96,9 @@ public interface PrimitiveSymbol<V> <: Specifiable<V> & HasName & ToString & Has
     V <: Equatable<V> {
     func GetEnhancedName(n: Int64, w: Int64): String
 }
-public struct Signature<V, G> <: HasName & ToString where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+public class Signature<V, G> <: HasName & ToString
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
     public Signature(
         public let name : String,
         public let latticeStructure: FiniteLattice<V>,

@@ -9,7 +9,7 @@ Effectively, a `Label` is a generator in the free categorical sense.
 
 ## [`library.cj`](library.cj)
 
-Contains specifications for the predefined `Primitive`, `Composite` and `BlackBox` classes of generators.
+Contains specifications for the predefined `Primitive`, `Composite` and `Blackbox` classes of generators.
 
 ## [`port.cj`](port.cj)
 

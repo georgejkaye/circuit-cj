@@ -20,7 +20,7 @@ from std import collection.ArrayList
 public enum Label<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     | VALUE(V)                                           // A basic value 0 -> 1
     | SIGNAL(Signal<V>)                                  // A collection of values 0 -> n
-    | WAVEFORM(Array<Signal<V>>, Option<Label<V, G>>)   // A construct with a head signal and a delayed subcircuit
+    | WAVEFORM(Array<Signal<V>>, Option<Label<V, G>>)    // A construct with a head signal and a delayed subcircuit
     | BUNDLER(Array<Int64>, Array<Int64>)                // A bundler changes how wires are bundled
     | JOIN(Int64)                                        // Join two wires together
     | PRIMITIVE(G)                                       // The simplest building blocks of circuits

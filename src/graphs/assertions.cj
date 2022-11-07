@@ -9,9 +9,6 @@ package graphs
 
 import assertions.*
 
-func AssertOwned<T,U>(t : T) : U where T <: Ownable<U>, U <: ToString {
-    AssertIsNotNone<U>(t.GetOwner(), Owner)
-}
 func AssertAtMostOneInEdge<T, U, V, G>(t : T, u : U) : Option<EdgeConnection<V, G>>
     where T <: ContainsVertex<V, G>, U <: ContainsVertex<V, G>, V <: ValueSymbol,
             V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>

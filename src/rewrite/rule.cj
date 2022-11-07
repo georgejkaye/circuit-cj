@@ -174,7 +174,7 @@ func GetApplyRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
                     { i : Int64 => args[i].GetLabel().GetValue()}
                 )
                 let result = function(values)
-                let nextEdges = ComputeEdge(f, e, args, [result])
+                let nextEdges = ComputeEdge(signature, f, e, args, [result])
                 nextEdges
         }
     )
@@ -232,7 +232,7 @@ func GetJoinRule<V, G>(signature : Signature<V, G>)
                 let argLHS = e.GetSource(0).vertex.GetInEdge().getOrThrow().edge
                 let argRHS = e.GetSource(1).vertex.GetInEdge().getOrThrow().edge
                 let result = signature.JoinPowers(argLHS.GetLabel().GetValueArray(), argRHS.GetLabel().GetValueArray())
-                let nextEdges = ComputeEdge(f, e, [argLHS, argRHS], [result])
+                let nextEdges = ComputeEdge(signature, f, e, [argLHS, argRHS], [result])
                 nextEdges
         }
     )
@@ -287,6 +287,7 @@ func GetJoinUnitRightRule<V, G>(signature : Signature<V, G>)
     GetJoinUnitRule(signature, 1, "r")
 }
 func ComputeEdge<V, G>(
+    signature : Signature<V, G>,
     f : InterfacedHypergraph<V, G>,
     edge : Edge<V, G>,
     args : Array<Edge<V, G>>,
@@ -307,7 +308,7 @@ func ComputeEdge<V, G>(
         let subcircuit = if(vs.size == 1){
             None<InterfacedHypergraph<V, G>>
         } else {
-            MakeSignal<V, G>(Signal(vs))
+            signature.MakeSignal(Signal(vs))
         }
         let label = GetSignalLabel<V, G>(vs)
         let resultEdge = Edge(label, Array<Vertex<V, G>>(), [newTarget], subcircuit)
@@ -387,7 +388,7 @@ func GetBundleRule<V, G>(sig : Signature<V, G>)
                             i : Int64 => values.remove(0)
                         }
                         let signal = Signal(wireValues)
-                        let signalGraph = MakeSignal<V, G>(signal)
+                        let signalGraph = sig.MakeSignal(signal)
                         Edge(SIGNAL(signal), Array<Tentacle<V, G>>(), [t], signalGraph, f.GetGraph())
                     }
                     newEdges.put(newEdge)

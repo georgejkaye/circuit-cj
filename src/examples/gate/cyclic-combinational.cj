@@ -16,22 +16,22 @@ public func CyclicCombinational() {
     let c = sig.UseWire(1)
     let bottom = sig.UseWire(1)
     let muxa = Mux2(c, x, bottom)
-    let f = BlackBox(
+    let f = sig.UseBlackbox(
         "F",
         [Port(1, "A")],
         [Port(1, "Z")],
         [muxa]
     )[0]
     let muxb = Mux2(c, f, x)
-    let g = BlackBox(
+    let g = sig.UseBlackbox(
         "G",
         [Port(1, "A")],
         [Port(1, "Z")],
         [muxb]
     )[0]
-    Feedback(g, bottom)
+    sig.Feedback(g, bottom)
     let z = Mux2(c, g, f)
-    MakeSubcircuit(
+    sig.MakeSubcircuit(
         [InterfaceWire(x, "x"), InterfaceWire(c, "c")],
         [InterfaceWire(z, "z")],
         "cyclic_combinational"

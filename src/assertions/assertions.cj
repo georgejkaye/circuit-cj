@@ -42,6 +42,12 @@ public func AssertNonEmpty<T>(collection : Collection<T>, contents : String) : U
         throw EmptyException(contents)
     }
 }
+public func AssertArrayArraysNonEmpty<T>(xss : Array<Array<T>>, contents : String) : Unit {
+    AssertNonEmpty(xss, contents)
+    for(xs in xss) {
+        AssertNonEmpty(xs, contents)
+    }
+}
 public func AssertEmpty<T>(collection : Collection<T>, contents : String) : Unit {
     if(collection.size != 0) {
         throw NonEmptyException(contents)

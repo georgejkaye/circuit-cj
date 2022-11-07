@@ -28,10 +28,20 @@ func AssertWireHasNoInEdge<V, G>(w : Wire<V, G>)
 {
     AssertVertexHasNoInEdge(w.GetVertex())
 }
-func AssertWireArrayNonEmpty<V, G>(ws : Array<Wire<V, G>>) : Unit
+func AssertNonEmpty<V, G>(ws : Array<Wire<V, G>>) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     AssertNonEmpty(ws, "wires")
+}
+func AssertSignalArrayNonEmpty<V>(signals : Array<Signal<V>>) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>
+{
+    AssertNonEmpty(signals, "signals")
+}
+func AssertSignalArrayArrayNonEmpty<V>(signals : Array<Array<Signal<V>>>) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>
+{
+    AssertNonEmpty(signals, "signals")
 }
 public func AssertWireWidth<V, G, T>(t : T, i : Int64) : Unit
     where T <: ContainsWire<V, G>, T <: ToString,

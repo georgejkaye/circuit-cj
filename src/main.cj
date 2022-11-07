@@ -15,12 +15,12 @@ main() {
     SetNumberRepresentation(DEC)
     SetDebugDot(true)
 
-    let sig = gateLevelSignature
+    let sig = belnapSignature
 
     let v0 = [FALSE, FALSE, FALSE, FALSE]
     let v1 = [FALSE, FALSE, FALSE, TRUE]
     let v2 = [FALSE, TRUE, FALSE, TRUE]
-    let wf = MakeWaveform([2, 3, 4], FINITE_CLOSED, width: 4)
+    let wf = sig.MakeUnsignedClosedWaveformFromInt([2, 3, 4], 4)
 
     // let acc = Accumulator(width: 4, initial: 1)
     // WriteDotToFile(acc, 0, "acc-0")
@@ -46,8 +46,8 @@ main() {
     let b = sig.UseWire(4)
     let and = And(a, b)
 
-    let wf2 = UseOpenWaveform([2,3,4], and, width: 4)
-    let circ = MakeSubcircuit(
+    let wf2 = sig.UseUnsignedOpenWaveformFromInt([2,3,4], 4, and)
+    let circ = sig.MakeSubcircuit(
         Array<InterfaceWire<GateLevelValue, GateLevelPrimitive>>(),
         [InterfaceWire(wf2, "")],
         "test"

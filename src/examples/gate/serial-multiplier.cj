@@ -14,15 +14,15 @@ import components.*
 import signatures.gate.*
 
 func PartialProduct(a : Wire_, b0: Wire_) : Wire_ {
-    Mux2(b0, a, ConstantZero(a.GetWidth()))
+    Mux2(b0, a, sig.ConstantZero(a.GetWidth()))
 }
 
 func RunningSum(first : Wire_, prev_sum: Wire_, a: Wire_, b0: Wire_) : Wire_ {
-    let lhs = Mux2(first, ConstantZero(a.GetWidth()), prev_sum)
+    let lhs = Mux2(first, sig.ConstantZero(a.GetWidth()), prev_sum)
     let rhs = PartialProduct(a, b0)
     let a = UnsignedExtend(lhs)
     let b = UnsignedExtend(rhs)
-    let (sum, carry) = UseRippleAdder(a, b, ConstantZero())
+    let (sum, carry) = UseRippleAdder(a, b, sig.ConstantZero())
     sum
 }
 
@@ -30,7 +30,7 @@ func RunningSumLoop(first: Wire_, a : Wire_, b0 : Wire_) : (Wire_, Wire_) {
     let prev_sum = sig.UseWire(a.GetWidth())
     let sum = RunningSum(first, prev_sum, a, b0)
     let (lsb, msbs) = LsbAndMsbs(sum)
-    Feedback(msbs, prev_sum)
+    sig.Feedback(msbs, prev_sum)
     (msbs, lsb)
 }
 
@@ -39,7 +39,7 @@ func ComputedBits(bit : Wire_, width : Int64) : Wire_ {
     let prev = sig.UseWire(width)
     let msbs = Msbs(prev)
     let combined = Combine([bit, msbs])
-    DelayGuardedFeedback(combined, prev)
+    sig.DelayGuardedFeedback(combined, prev)
     combined
 }
 
@@ -50,7 +50,7 @@ public func SerialMultiplierBit(width : Int64) {
     let (sum, bit) = RunningSumLoop(first, a, b0)
     let computedBits = ComputedBits(bit, width)
     let output = Combine([sum, computedBits])
-    MakeSubcircuit([
+    sig.MakeSubcircuit([
             InterfaceWire(first, "first"),
             InterfaceWire(a, "A"),
             InterfaceWire(b0, "B0")

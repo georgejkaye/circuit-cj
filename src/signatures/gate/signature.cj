@@ -21,7 +21,7 @@ public enum GateLevelValue {
 /**
  * Instantiate Belnap values as a type of value symbols
  */
-extend GateLevelValue <: ValueSymbol & Equatable<GateLevelValue> {
+extend GateLevelValue <: ValueSymbol & Equatable<GateLevelValue> & Decimal<GateLevelValue> {
     public func hashCode(): Int64 {
         match (this) {
             case NONE => 0
@@ -60,6 +60,74 @@ extend GateLevelValue <: ValueSymbol & Equatable<GateLevelValue> {
             case TRUE => true
             case _ => false
         }
+    }
+    public static func DecToValues(x : Int64, w : Int64, signed : Bool) : Signal<GateLevelValue> {
+        if(signed) {
+            GateLevelValue.SignedDecToValues(x, w)
+        } else {
+            GateLevelValue.UnsignedDecToValues(x, w)
+        }
+    }
+    /**
+    * Convert a decimal number to a list of truth values
+    * The list is ordered with the lsb first
+    * e.g. 10 => [0, 1, 0, 1, 0, ...]
+    * If signed, the negative numbers are represented in twos complement
+    * @param w      The width of the resulting list
+    * @param x      The decimal number to convert
+    */
+    public static func UnsignedDecToValues(x : Int64, w : Int64) : Signal<GateLevelValue> {
+        AssertNonNegative(x)
+        let required = log2Ceil(x+1)
+        AssertEnoughBits(w, required)
+        // Set up the list
+        let bin = Array<GateLevelValue>(w, {x : Int64 => FALSE})
+        var num = x
+        // Divide by two w times, setting the remainder to the ith bit of the list
+        // If we run out of w before we run out of list, the msbs will be ignored
+        for(i in 0..w){
+            let rem = if(num % 2 == 1){ TRUE } else { FALSE }
+            bin.set(i, rem)
+            num = num / 2
+        }
+        return Signal(bin)
+    }
+    /**
+    * 'Add one' to an array of booleans, i.e. flip the lowest bit and
+    * propagate the changes throughout the list
+    * @param x The array of booleans
+    */
+    static func AddOne(x : Array<GateLevelValue>) : Unit {
+        for (i in 0..(x.size - 1)) {
+            if (x[i].IsTrue()) {
+                x[i] = FALSE
+            } else {
+                x[i] = TRUE
+                return
+            }
+        }
+    }
+    /**
+    * Invert an array of bools, i.e. flip each bit
+    * @param x The array of booleans
+    */
+    static func Invert(x : Array<GateLevelValue>) : Unit {
+        for (i in 0..(x.size)){
+            x[i] = x[i].Negate()
+        }
+    }
+    /**
+    * Convert a decimal number to a bitstring of a fixed length,
+    * interpreted as an array of booleans
+    * @param x The number to convert
+    * @param w The width of the bitstring
+    * @return The corresponding bitstring
+    */
+    public static func SignedDecToValues(x : Int64, w : Int64) : Signal<GateLevelValue> {
+        let bin = UnsignedDecToValues(abs(x), w).values
+        Invert(bin)
+        AddOne(bin)
+        Signal(bin)
     }
 }
 /**
@@ -349,7 +417,7 @@ func GateLevelValueToDec(values : Array<GateLevelValue>, signed : Bool) : Option
 /**
  * Signature for Belnap circuits
  */
-public let gateLevelSignature = Signature<GateLevelValue, GateLevelPrimitive>(
+public let belnapSignature = Signature<GateLevelValue, GateLevelPrimitive>(
     "Belnap",
     gateLevelLatticeStructure,
     gateLevelInterpretation,

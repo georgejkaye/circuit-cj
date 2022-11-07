@@ -13,10 +13,10 @@ import signatures.gate.*
 public func Accumulator(width!: Int64, initial!: Int64) : Circuit_ {
     let input = sig.UseWire(width)
     let prev = sig.UseWire(width)
-    let zero = sig.UseInfiniteWaveform([Signal([FALSE])])
+    let zero = sig.ConstantZero()
     let (sum, carry) = UseRippleAdder(prev, input, zero)
-    RegisterGuardedFeedback(sum, prev, initial: initial, signed: false)
-    MakeSubcircuit([
+    sig.RegisterGuardedFeedback(initial, width, false, sum, prev)
+    sig.MakeSubcircuit([
             InterfaceWire(input, "A")
         ], [
             InterfaceWire(sum, "S")

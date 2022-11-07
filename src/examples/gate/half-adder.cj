@@ -20,7 +20,7 @@ public func HalfAdder(){
     let carry = AndGate(a, b)
     let sum = XorGate(a, b)
     // We need to return both the carry and the sum
-    MakeSubcircuit([
+    sig.MakeSubcircuit([
             InterfaceWire(a, "A"),
             InterfaceWire(b, "B")
         ], [

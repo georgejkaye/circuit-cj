@@ -10,6 +10,7 @@
 package rewrite
 
 import syntax.*
+import components.*
 
 public class Rewriter<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
@@ -379,7 +380,7 @@ func PostUnrollInstantFeedback<V, G>(
     let sequentialData = f.GetSequentialData()
     // Initialise each feedback connection with a disconnected bottom edge
     for(ec in sequentialData.feedbackConnections) {
-        let bot = UseSignal<V, G>(signature.GetBottom(), ec.GetWidth())
+        let bot = signature.UseSignal(signature.GetBottom(), ec.GetWidth())
         let v = bot.GetVertex()
         ec.edge.SetSource(ec.index, v, false)
     }
@@ -461,7 +462,7 @@ func MakeCopy<V, G>(
                 if(now && label.IsDelay() || !now && label.IsValue()) {
                     let sources = Array<Vertex<V, G>>()
                     let targets = map({t : Tentacle<V, G> => CopyTentacle(t, vertexMap)}, e.GetTargets())
-                    let signal = MakeSignal<V, G>(Signal(signature.GetBottom(), label.GetOutputPorts()[0].GetWidth()))
+                    let signal = signature.MakeSignal(Signal(signature.GetBottom(), label.GetOutputPorts()[0].GetWidth()))
                     Edge(signal.GetLabel(), Array<Vertex<V, G>>(), targets, signal, f.GetGraph())
                 // Otherwise we just copy the sources and targets as usual
                 } else {

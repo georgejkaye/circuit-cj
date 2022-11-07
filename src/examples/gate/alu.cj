@@ -27,13 +27,13 @@ func FullAdder() {
     let carryXor = XorGate(inputC, inputXor)
     let carryAnd = AndGate(inputC, inputXor)
     let carryOr = OrGate(inputAnd, carryAnd)
-    MakeSubcircuit([
-            sig.NameWire(inputA, "A"),
-            sig.NameWire(inputB, "B"),
-            sig.NameWire(inputC, "C")
+    sig.MakeSubcircuit([
+            InterfaceWire(inputA, "A"),
+            InterfaceWire(inputB, "B"),
+            InterfaceWire(inputC, "C")
         ], [
-            sig.NameWire(carryXor, "S"),
-            sig.NameWire(carryOr, "C")
+            InterfaceWire(carryXor, "S"),
+            InterfaceWire(carryOr, "C")
         ],
         "+"
     )
@@ -49,7 +49,7 @@ func MultibitFullAdder(width : Int64) {
     let c = sig.UseWire(1)
     let (sum, carry) = BitwiseRippleMap(
         { acc : Wire_, cur : Array<Wire_> =>
-            UseSubcircuit_2(
+            sig.UseSubcircuit_2(
                 FullAdder(),
                 [cur[0], cur[1], acc]
             )
@@ -57,13 +57,13 @@ func MultibitFullAdder(width : Int64) {
         c,
         [a, b]
     )
-    MakeSubcircuit([
-            sig.NameWire(a, "A"),
-            sig.NameWire(b, "B"),
-            sig.NameWire(c, "C")
+    sig.MakeSubcircuit([
+            InterfaceWire(a, "A"),
+            InterfaceWire(b, "B"),
+            InterfaceWire(c, "C")
         ], [
-            sig.NameWire(sum, "S"),
-            sig.NameWire(carry, "C")
+            InterfaceWire(sum, "S"),
+            InterfaceWire(carry, "C")
         ],
         "+_${a.GetWidth()}"
     )
@@ -80,7 +80,7 @@ public func AddSub(width : Int64) {
     let c = sig.UseWire(1)
     // To allow subtraction
     let xorGates = Xor(b, Replicate(c, width))
-    let (sum, carry) = UseSubcircuit_2(MultibitFullAdder(width), [a, b, c])
+    let (sum, carry) = sig.UseSubcircuit_2(MultibitFullAdder(width), [a, b, c])
     let finalBitA = Msb(a)
     let finalBitB = Msb(xorGates)
     let finalBitSum = Msb(sum)
@@ -97,14 +97,14 @@ public func AddSub(width : Int64) {
             NotGate(finalBitA)
         ])
     )
-    MakeSubcircuit([
-            sig.NameWire(a, "A"),
-            sig.NameWire(b, "B"),
-            sig.NameWire(c, "C")
+    sig.MakeSubcircuit([
+            InterfaceWire(a, "A"),
+            InterfaceWire(b, "B"),
+            InterfaceWire(c, "C")
         ], [
-            sig.NameWire(sum, "Sum"),
-            sig.NameWire(overflow, "Overflow"),
-            sig.NameWire(carry, "Carry")
+            InterfaceWire(sum, "Sum"),
+            InterfaceWire(overflow, "Overflow"),
+            InterfaceWire(carry, "Carry")
         ],
         "ADD/SUB"
     )
@@ -122,7 +122,7 @@ public func ALU(w : Int64){
     let c1 = sig.UseWire(1)
     let and = And(a, b)
     let or = Or(a, b)
-    let (sum, overflow, carry) = UseSubcircuit_3(AddSub(w), [a, b, c0])
+    let (sum, overflow, carry) = sig.UseSubcircuit_3(AddSub(w), [a, b, c0])
     let mux1 = Mux2(c1, and, or)
     let mux2 = Mux2(c1, mux1, sum)
 
@@ -131,17 +131,17 @@ public func ALU(w : Int64){
     let zero = Not(notzero)
     let negative = Msb(result)
 
-    MakeSubcircuit([
-            sig.NameWire(a, "A"),
-            sig.NameWire(b, "B"),
-            sig.NameWire(c0, "C0"),
-            sig.NameWire(c1, "C1")
+    sig.MakeSubcircuit([
+            InterfaceWire(a, "A"),
+            InterfaceWire(b, "B"),
+            InterfaceWire(c0, "C0"),
+            InterfaceWire(c1, "C1")
         ], [
-            sig.NameWire(result, "Result"),
-            sig.NameWire(zero, "Zero"),
-            sig.NameWire(negative, "Neg"),
-            sig.NameWire(overflow, "Overflow"),
-            sig.NameWire(carry, "Carry")
+            InterfaceWire(result, "Result"),
+            InterfaceWire(zero, "Zero"),
+            InterfaceWire(negative, "Neg"),
+            InterfaceWire(overflow, "Overflow"),
+            InterfaceWire(carry, "Carry")
         ],
         "ALU"
     )
