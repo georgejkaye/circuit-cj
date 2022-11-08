@@ -19,6 +19,10 @@ public interface SubcircuitBuilder<V, G> where V <: ValueSymbol, V <: Equatable<
         outputs : Array<InterfaceWire<V, G>>,
         name : String
     ) : InterfacedHypergraph<V, G>
+    func MakeSubcircuit(
+        outputs : Array<InterfaceWire<V, G>>,
+        name : String
+    ) : InterfacedHypergraph<V, G>
     func MakeBitwiseMapGate(
         prim : G,
         width : Int64
@@ -115,17 +119,16 @@ extend Signature<V, G> <: SubcircuitBuilder<V, G> {
         )
     }
     /**
-    * Make a subcircuit with some (optionally named) input and
-    * output wires. This circuit can then be used in other subcircuits,
-    * where it will be initially displayed as a single edge, but can
-    * be expanded to show the components if desired.
-    *
-    * @param inputs The inputs of the subcircuit
-    * @param outputs The outputs of the subcircuit
-    * @param label The name of the subcircuit, which will be given a
+     * Make a subcircuit with some (optionally named) input and output wires.
+     * This circuit can then be used in other subcircuits, where it will be initially displayed
+     * as a single edge, but can be expanded to show the components if desired.
+     *
+     * @param inputs The inputs of the subcircuit
+     * @param outputs The outputs of the subcircuit
+     * @param label The name of the subcircuit, which will be given a
                     'composite' label on its parent edge
-    * @return The new interfaced hypergraph representing the subcircuit
-    */
+     * @return The new interfaced hypergraph representing the subcircuit
+     */
     public func MakeSubcircuit(
         inputs : Array<InterfaceWire<V, G>>,
         outputs : Array<InterfaceWire<V, G>>,
@@ -143,6 +146,16 @@ extend Signature<V, G> <: SubcircuitBuilder<V, G> {
             )
         )
     }
+    /**
+    * Make a subcircuit with some (optionally named) output wires. This circuit
+    * can then be used in other subcircuits, where it will be initially displayed
+    * as a single edge, but can be expanded to show the components if desired.
+    *
+    * @param outputs The outputs of the subcircuit
+    * @param label The name of the subcircuit, which will be given a
+                    'composite' label on its parent edge
+    * @return The new interfaced hypergraph representing the subcircuit
+    */
     public func MakeSubcircuit(
         outputs : Array<InterfaceWire<V, G>>,
         name : String
