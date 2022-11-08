@@ -40,17 +40,29 @@ public interface SubcircuitBuilder<V, G> where V <: ValueSymbol, V <: Equatable<
         circuit : InterfacedHypergraph<V, G>,
         inputs : Array<Wire<V, G>>
     ) : Array<Wire<V, G>>
+    func UseSubcircuit(
+        circuit : InterfacedHypergraph<V, G>
+    ) : Array<Wire<V, G>>
     func UseSubcircuit_1(
         circuit : InterfacedHypergraph<V, G>,
         inputs : Array<Wire<V, G>>
     ) : Wire<V,G>
+    func UseSubcircuit_1(
+        circuit : InterfacedHypergraph<V, G>
+    ) : Wire<V, G>
     func UseSubcircuit_2(
         circuit : InterfacedHypergraph<V, G>,
         inputs : Array<Wire<V, G>>
     ) : (Wire<V, G>, Wire<V, G>)
+    func UseSubcircuit_2(
+        circuit : InterfacedHypergraph<V, G>
+    ) : (Wire<V, G>, Wire<V, G>)
     func UseSubcircuit_3(
         circuit : InterfacedHypergraph<V, G>,
         inputs : Array<Wire<V, G>>
+    ) : (Wire<V, G>, Wire<V, G>, Wire<V, G>)
+    func UseSubcircuit_3(
+        circuit : InterfacedHypergraph<V, G>
     ) : (Wire<V, G>, Wire<V, G>, Wire<V, G>)
     func UseBitwiseMapGate(
         prim: G,
@@ -134,7 +146,7 @@ extend Signature<V, G> <: SubcircuitBuilder<V, G> {
         outputs : Array<InterfaceWire<V, G>>,
         name : String
     ) : InterfacedHypergraph<V, G> {
-        MakeSubcircuit(
+        this.MakeSubcircuit(
             inputs,
             outputs,
             COMPOSITE(
@@ -160,7 +172,7 @@ extend Signature<V, G> <: SubcircuitBuilder<V, G> {
         outputs : Array<InterfaceWire<V, G>>,
         name : String
     ) : InterfacedHypergraph<V, G> {
-        MakeSubcircuit(
+        this.MakeSubcircuit(
             Array<InterfaceWire<V, G>>(),
             outputs,
             name
@@ -238,12 +250,12 @@ extend Signature<V, G> <: SubcircuitBuilder<V, G> {
         )
     }
     /**
-    * Connect a subcircuit to some inputs and get its outputs
-    *
-    * @param circuit The circuit to connect
-    * @param inputs The inputs to hook up to the circuit
-    * @return The array of output wires from the subcircuit
-    */
+     * Connect a subcircuit to some inputs and get its outputs
+     *
+     * @param circuit The circuit to connect
+     * @param inputs The inputs to hook up to the circuit
+     * @return The array of output wires from the subcircuit
+     */
     public func UseSubcircuit(
         circuit : InterfacedHypergraph<V, G>,
         inputs : Array<Wire<V, G>>
@@ -257,12 +269,27 @@ extend Signature<V, G> <: SubcircuitBuilder<V, G> {
         )
     }
     /**
-    * Connect a subcircuit to some inputs and get its outputs
-    *
-    * @param circuit The circuit to connect
-    * @param inputs The inputs to hook up to the circuit
-    * @return The output wire of the circuit
-    */
+     * Get the output wires of a circuit with no inputs
+     *
+     * @param circuit The circuit to connect
+     * @return The array of output wires from the subcircuit
+     */
+    public func UseSubcircuit(
+        circuit : InterfacedHypergraph<V, G>
+    ) : Array<Wire<V, G>> {
+        AssertCircuitInputs(circuit, 0)
+        this.UseSubcircuit(
+            circuit,
+            Array<Wire<V, G>>()
+        )
+    }
+    /**
+     * Connect a subcircuit to some inputs and get its outputs
+     *
+     * @param circuit The circuit to connect
+     * @param inputs The inputs to hook up to the circuit
+     * @return The output wire of the circuit
+     */
     public func UseSubcircuit_1(
         circuit : InterfacedHypergraph<V, G>,
         inputs : Array<Wire<V, G>>
@@ -271,12 +298,24 @@ extend Signature<V, G> <: SubcircuitBuilder<V, G> {
         this.UseSubcircuit(circuit, inputs)[0]
     }
     /**
-    * Connect a subcircuit to some inputs and get its outputs
-    *
-    * @param circuit The circuit to connect
-    * @param inputs The inputs to hook up to the circuit
-    * @return The pair of output wires from the subcircuit
-    */
+     * Get the output wire of a circuit with no inputs
+     *
+     * @param circuit The circuit to connect
+     * @return The output wire of the subcircuit
+     */
+    public func UseSubcircuit_1(
+        circuit : InterfacedHypergraph<V, G>
+    ) : Wire<V, G> {
+        AssertCircuitInputs(circuit, 0)
+        this.UseSubcircuit_1(circuit, Array<Wire<V, G>>())
+    }
+    /**
+     * Connect a subcircuit to some inputs and get its outputs
+     *
+     * @param circuit The circuit to connect
+     * @param inputs The inputs to hook up to the circuit
+     * @return The pair of output wires from the subcircuit
+     */
     public func UseSubcircuit_2(
         circuit : InterfacedHypergraph<V, G>,
         inputs : Array<Wire<V, G>>
@@ -286,12 +325,24 @@ extend Signature<V, G> <: SubcircuitBuilder<V, G> {
         (outputs[0], outputs[1])
     }
     /**
-    * Connect a subcircuit to some inputs and get its outputs
-    *
-    * @param circuit The circuit to connect
-    * @param inputs The inputs to hook up to the circuit
-    * @return The 3-tuple of output wires from the subcircuit
-    */
+     * Get the output wires of a circuit with no inputs
+     *
+     * @param circuit The circuit to connect
+     * @return The pair of output wire from the subcircuit
+     */
+    public func UseSubcircuit_2(
+        circuit : InterfacedHypergraph<V, G>
+    ) : (Wire<V, G>, Wire<V, G>) {
+        AssertCircuitInputs(circuit, 0)
+        this.UseSubcircuit_2(circuit, Array<Wire<V, G>>())
+    }
+    /**
+     * Connect a subcircuit to some inputs and get its outputs
+     *
+     * @param circuit The circuit to connect
+     * @param inputs The inputs to hook up to the circuit
+     * @return The 3-tuple of output wires from the subcircuit
+     */
     public func UseSubcircuit_3(
         circuit : InterfacedHypergraph<V, G>,
         inputs : Array<Wire<V, G>>
@@ -300,14 +351,25 @@ extend Signature<V, G> <: SubcircuitBuilder<V, G> {
         let outputs = this.UseSubcircuit(circuit, inputs)
         (outputs[0], outputs[1], outputs[2])
     }
-
     /**
-    * Connect some inputs to a bitwise primitive
-    *
-    * @param prim The primitive to bitwise
-    * @param ws The input wires
-    * @return The output wire from the bitwise gate
-    */
+     * Get the output wires of a circuit with no inputs
+     *
+     * @param circuit The circuit to connect
+     * @return The 3-tuple of output wires from the subcircuit
+     */
+    public func UseSubcircuit_3(
+        circuit : InterfacedHypergraph<V, G>
+    ) : (Wire<V, G>, Wire<V, G>, Wire<V, G>) {
+        AssertCircuitInputs(circuit, 0)
+        this.UseSubcircuit_3(circuit, Array<Wire<V, G>>())
+    }
+    /**
+     * Connect some inputs to a bitwise primitive
+     *
+     * @param prim The primitive to bitwise
+     * @param ws The input wires
+     * @return The output wire from the bitwise gate
+     */
     public func UseBitwiseMapGate(prim : G, ws : Array<Wire<V, G>>) : Wire<V, G> {
         AssertWiresSameWidth(ws)
         AssertNumberOfWires(ws, prim.GetArity())
