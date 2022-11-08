@@ -24,6 +24,7 @@ let omega = "\u{03C9}"
 public enum Label<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     | VALUE(V)                              // A basic value 0 -> 1
     | SIGNAL(Signal<V>)                     // A collection of values 0 -> n
+    | REGISTER(Signal<V>)                   // A join of a signal and a delay
     | OPEN_WAVEFORM(Array<Signal<V>>)       // A sequence of signals over time
     | CLOSED_WAVEFORM(Array<Signal<V>>)     // A sequence of signals over time, capped with a disconnect
     | INFINITE_WAVEFORM(Array<Signal<V>>)   // A sequence of signals over time that repeats periodically
@@ -39,6 +40,7 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
         match(this) {
             case VALUE(_)                   => []
             case SIGNAL(spec)               => []
+            case REGISTER(signal)           => [Port(signal.GetWidth())]
             case OPEN_WAVEFORM(signals)     => [Port(signals[0].GetWidth())]
             case CLOSED_WAVEFORM(signals)   => []
             case INFINITE_WAVEFORM(signals) => []
@@ -57,6 +59,7 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
         match(this) {
             case VALUE(_)                   => [Port(1)]
             case SIGNAL(spec)               => spec.GetOutputPorts()
+            case REGISTER(signal)           => [Port(signal.GetWidth())]
             case OPEN_WAVEFORM(signals)     => [Port(signals[0].GetWidth())]
             case CLOSED_WAVEFORM(signals)   => [Port(signals[0].GetWidth())]
             case INFINITE_WAVEFORM(signals) => [Port(signals[0].GetWidth())]
@@ -75,6 +78,7 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
         match(this) {
             case VALUE(v)                   => "${v}"
             case SIGNAL(spec)               => spec.GetName()
+            case REGISTER(signal)           => "${signal.GetName()} ::"
             case OPEN_WAVEFORM(signals)     => "${GetWaveformString(signals)} ::"
             case CLOSED_WAVEFORM(signals)   => GetWaveformString(signals)
             case INFINITE_WAVEFORM(signals) => "(${GetWaveformString(signals)})${omega}"
@@ -97,6 +101,10 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             }
             case SIGNAL(s) => match(rhs) {
                 case SIGNAL(t) => s == t
+                case _ => false
+            }
+            case REGISTER(s) => match(rhs) {
+                case REGISTER(t) => s == t
                 case _ => false
             }
             case OPEN_WAVEFORM(signals1) => match(rhs) {

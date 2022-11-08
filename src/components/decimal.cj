@@ -151,7 +151,7 @@ extend Signature<V, G> <: DecimalBuilder<V, G> where V <: Decimal<V> {
         signed : Bool,
         input : Wire<V, G>
     ) : Wire<V, G> {
-        let signal = this.UseSignalFromInt(initial, width, signed)
+        let signal = V.DecToValues(initial, width, signed)
         this.UseSimpleRegister(signal, input)
     }
     public func RegisterGuardedFeedback(
@@ -161,7 +161,7 @@ extend Signature<V, G> <: DecimalBuilder<V, G> where V <: Decimal<V> {
         input : Wire<V, G>,
         incoming : Wire<V, G>
     ) : Unit {
-        let signal = this.UseSignalFromInt(initial, width, signed)
+        let signal = V.DecToValues(initial, width, signed)
         this.RegisterGuardedFeedback(signal, input, incoming)
     }
 }

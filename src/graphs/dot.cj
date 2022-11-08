@@ -77,6 +77,9 @@ let valueStyle = [
 let signalStyle = [
     bgColour("green")
 ]
+let registerStyle = [
+    bgColour("yellowgreen")
+]
 let openWaveformStyle = [
     bgColour("forestgreen")
 ]
@@ -237,6 +240,8 @@ func DrawEdgeNode<V, G>(
             valueStyle
         case SIGNAL(_) =>
             signalStyle
+        case REGISTER(_) =>
+            registerStyle
         case OPEN_WAVEFORM(_) =>
             openWaveformStyle
         case CLOSED_WAVEFORM(_) =>

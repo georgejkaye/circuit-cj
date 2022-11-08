@@ -12,13 +12,12 @@ package components
 public interface SequentialBuilder<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     // Delay
     func UseDelay(input : Wire<V, G>, duration!: Int64) : Wire<V, G>
-    func UseSimpleRegister(initial : Wire<V, G>, input : Wire<V, G>) : Wire<V, G>
+    func MakeSimpleRegister(initial : Signal<V>) : InterfacedHypergraph<V, G>
     func UseSimpleRegister(initial : Signal<V>, input : Wire<V, G>) : Wire<V, G>
     // Feedback
     func Feedback(outgoing : Wire<V, G>, incoming : Wire<V, G>) : Unit
     func DelayGuardedFeedback(outgoing : Wire<V, G>, incoming : Wire<V, G>) : Unit
-    func RegisterGuardedFeedback(initial : Wire<V, G>, input : Wire<V, G>, incoming : Wire<V, G>) : Unit
-    func RegisterGuardedFeedback(initial : Signal<V>, input : Wire<V, G>, incoming : Wire<V, G>) : Unit
+    func RegisterGuardedFeedback(initial : Signal<V>, outgoing : Wire<V, G>, incoming : Wire<V, G>) : Unit
     // Waveforms
     func MakeOpenWaveform(signals : Array<Signal<V>>) : InterfacedHypergraph<V, G>
     func MakeOpenWaveform(values : Array<V>) : InterfacedHypergraph<V, G>
@@ -55,20 +54,22 @@ extend Signature<V, G> <: SequentialBuilder<V, G> {
         inputWire
     }
     /**
-     * Use a simple register with an initial wire
+     * Make a simple register component
      *
-     * @param initial The wire serving as the initial output
-     * @param input The input wire to the register
-     * @return The output wire of the register
+     * @param initial The initial signal contained in this register
+     * @return The simple register circuit
      */
-    public func UseSimpleRegister(initial: Wire<V, G>, input : Wire<V, G>) : Wire<V, G> {
+    public func MakeSimpleRegister(initial : Signal<V>) : InterfacedHypergraph<V, G> {
         let width = initial.GetWidth()
-        let delay = UseDelay(input)
-        UseEdgeWithNewOutputs(
-            Label<V,G>.JOIN(width),
-            [initial, delay],
-            None
-        )[0]
+        let signal = this.UseSignal(initial)
+        let input = this.UseWire(width)
+        let delay = this.UseDelay(input)
+        let join = this.UseJoin(signal, delay)
+        this.MakeSubcircuit(
+            [InterfaceWire(input)],
+            [InterfaceWire(join)],
+            REGISTER(initial)
+        )
     }
     /**
      * Use a simple register with an initial signal
@@ -78,8 +79,10 @@ extend Signature<V, G> <: SequentialBuilder<V, G> {
      * @return The output wire of the register
      */
     public func UseSimpleRegister(initial : Signal<V>, input : Wire<V, G>) : Wire<V, G> {
-        let wire = this.UseSignal(initial)
-        UseSimpleRegister(wire, input)
+        this.UseSubcircuit_1(
+            this.MakeSimpleRegister(initial),
+            [input]
+        )
     }
     /**
      * Join two wires together to form a feedback loop. Variant for internal use
@@ -119,24 +122,6 @@ extend Signature<V, G> <: SequentialBuilder<V, G> {
     }
     /**
      * Create a feedback loop guarded by a simple register: join a wire to a wire that is
-     * not connected to anything on the left, and insert a register with a given initial wire
-     * on the loop
-     *
-     * @param input The input to the register
-     * @param incoming The wire to feed back to
-     * @param initial The initial wire of the register
-     */
-    public func RegisterGuardedFeedback(
-        initial : Wire<V, G>,
-        input : Wire<V, G>,
-        incoming : Wire<V, G>
-    ) : Unit {
-            AssertWiresSameWidth(incoming, input)
-            let reg = this.UseSimpleRegister(initial, input)
-            PerformFeedback(reg, incoming, false)
-    }
-    /**
-     * Create a feedback loop guarded by a simple register: join a wire to a wire that is
      * not connected to anything on the left, and insert a register with a given initial signal
      * on the loop
      *
@@ -146,10 +131,11 @@ extend Signature<V, G> <: SequentialBuilder<V, G> {
      */
     public func RegisterGuardedFeedback(
         initial : Signal<V>,
-        input : Wire<V, G>,
+        outgoing : Wire<V, G>,
         incoming: Wire<V, G>
     ) : Unit {
-        this.RegisterGuardedFeedback(input, incoming, this.UseSignal(initial))
+        let register = this.UseSimpleRegister(initial, outgoing)
+        this.DelayGuardedFeedback(register, incoming)
     }
     /**
      * Make a subcircuit for a waveform
@@ -167,10 +153,8 @@ extend Signature<V, G> <: SequentialBuilder<V, G> {
         for(i in 0..signals.size) {
             // Construct the waveform from back to front
             let j = signals.size - i - 1
-            let signal = this.UseSignal(signals[j])
-            let delay = this.UseDelay(currentWire)
-            let join = this.UseJoin(signal, delay)
-            currentWire = join
+            let register = this.UseSimpleRegister(signals[j], currentWire)
+            currentWire = register
         }
         this.MakeSubcircuit(
             [InterfaceWire(input)],
