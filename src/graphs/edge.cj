@@ -265,8 +265,8 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
                 MergeInterfaces(this.GetSources(), f.GetInputs())
                 MergeInterfaces(this.GetTargets(), f.GetOutputs())
                 this.owner.IncludeHypergraph(f.GetGraph())
+        }
     }
-}
     public func toString() : String {
         "e${this.GetId()} (${label.GetName()})"
     }
@@ -284,5 +284,15 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
     }
     public func hashCode() : Int64 {
         this.id
+    }
+    public func SetFreshSource(i : Int64) : Vertex<V, G> {
+        let vertex = Vertex<V, G>(this.GetSource(i).GetWidth())
+        this.SetSource(i, vertex, this.GetSource(i).feedback)
+        vertex
+    }
+    public func SetFreshTarget(i : Int64) : Vertex<V, G> {
+        let vertex = Vertex<V, G>(this.GetTarget(i).GetWidth())
+        this.SetTarget(i, vertex)
+        vertex
     }
 }
