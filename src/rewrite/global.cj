@@ -25,39 +25,44 @@ public class Rewriter<V, G>
         nextCycle++
     }
     public func RunCycle(cycle : Int64, tidyNext : Bool) : Unit {
+        AssertNonNegative(cycle)
         Debug("Running cycle ${cycle} on ${f.GetName()}")
         // This graph may be prefixed by some waveform: we will need to remove
         // this to deal with the
-        let suffix = CheckForPrefix(this.f, this.nextCycle)
-        match(suffix) {
-            case Some(s) =>
-                Debug("Already computed cycle ${cycle}, returning")
-                return
-            case None =>
-                if(cycle > 0) {
-                    RunCycle(cycle - 1, tidyNext)
+        let (prefixLength, prefix) = CheckForPrefix(f)
+        println("The prefix length is ${prefixLength} and it is ${prefix}")
+        if(cycle < prefixLength) {
+            Debug("Already computed cycle ${cycle}, returning")
+        } else {
+            BurstSequentialGraphs(f)
+            // Eliminate 'instant feedback' by copying the circuit some
+            // number of times. If there is no instant feedback, skips this step
+            InstantFeedback(signature, f)
+            WriteDotToFile(f, 2, "before-uf")
+            // Unfold and stream the circuit, so that we have a combinational
+            // circuit for what is happening 'now', and some subcircuit that
+            // contains what is happening 'later'
+            let nowStartingEdges = Unfold(signature, f)
+            WriteDotToFile(f, 2, "after-uf")
+            // Exhaustively rewrite the now subcircuit: this is guaranteed
+            // to terminate in a signal, the output of the current cycle
+            RewriteCombinational(signature, GetRules(signature, true), f, nowStartingEdges)
+            // If this was a closed circuit, then there will be an instantaneous
+            // value and a delayed subcircuit at the 'head' of the circuit. We
+            // collapse this into a register for ease of viewing
+            Debug("About to collapse the head into a register")
+            CreateHeadRegisters(f)
+            // If desired, we can also tidy up the later subcircuit
+            if(tidyNext) {
+                let allStartingEdges = ArrayList<EdgeAtDepth<V, G>>()
+                for(e in f.GetSequentialData().valueEdges){
+                    allStartingEdges.append(EdgeAtDepth(e, 0))
                 }
-                // Eliminate 'instant feedback' by copying the circuit some
-                // number of times. If there is no instant feedback, skips this step
-                InstantFeedback(signature, f)
-                // Unfold and stream the circuit, so that we have a combinational
-                // circuit for what is happening 'now', and some subcircuit that
-                // contains what is happening 'later'
-                let nowStartingEdges = Unfold(signature, f)
-                // Exhaustively rewrite the now subcircuit: this is guaranteed
-                // to terminate in a signal, the output of the current cycle
-                RewriteCombinational(signature, GetRules(signature, true), f, nowStartingEdges)
-                // If desired, we can also tidy up the later subcircuit
-                if(tidyNext) {
-                    let allStartingEdges = ArrayList<EdgeAtDepth<V, G>>()
-                    for(e in f.GetSequentialData().valueEdges){
-                        allStartingEdges.append(EdgeAtDepth(e, 0))
-                    }
-                    for(e in f.GetSequentialData().delayEdges){
-                        allStartingEdges.append(EdgeAtDepth(e, 0))
-                    }
-                    RewriteCombinational(signature, GetRules(signature, false), f, allStartingEdges)
+                for(e in f.GetSequentialData().delayEdges){
+                    allStartingEdges.append(EdgeAtDepth(e, 0))
                 }
+                RewriteCombinational(signature, GetRules(signature, false), f, allStartingEdges)
+            }
         }
     }
 }
@@ -72,55 +77,35 @@ public struct GraphSuffix<V, G>
         public let outputs : Array<Vertex<V, G>>
     ){}
 }
-/**
- * Given a graph and an index, attempt to find the ith output vertex after a number of cycles.
- * If the circuit has a long enough waveform prefix, this will be successful. If not,
- * returns None
- *
- * @param f      The graph to traverse
- * @param cycles The number of cycles to look for
- */
-func TraversePrefix<V, G>(f : InterfacedHypergraph<V, G>, cycles : Int64, i : Int64) : Option<Vertex<V, G>>
+func CheckForPrefix<V, G>(f : InterfacedHypergraph<V, G>) : (Int64, Array<Array<Signal<V>>>)
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    var currentVertex = f.GetOutput(i).vertex
-    for(j in 0..i) {
-        // If this is well-formed, there will always be an in-edge
-        let edge = currentVertex.GetInEdge().getOrThrow().edge
-        // For this circuit to have a long enough waveform
-        // prefix there must first be a join
-        if(edge.GetLabel().IsJoin()) {
-            // Now we must check that the two arguments to the join are a value and a delay
-            // (It doesn't matter which one is which since the join is commutative)
-            let lhs = edge.GetSource(0).vertex
-            let rhs = edge.GetSource(1).vertex
-            let lhsEdge = lhs.GetInEdge().getOrThrow().edge
-            let rhsEdge = rhs.GetInEdge().getOrThrow().edge
-            let delayEdge = if(lhsEdge.GetLabel().IsValue() && rhsEdge.GetLabel().IsDelay()) {
-                rhsEdge
-            } else if(rhsEdge.GetLabel().IsValue() && lhsEdge.GetLabel().IsDelay()) {
-                lhsEdge
-            } else {
-                return None<Vertex<V, G>>
-            }
-            currentVertex = delayEdge.GetSource(0).vertex
-        } else {
-            return None<Vertex<V, G>>
+    func GetWaveformElements(iv : InterfaceVertex<V, G>) : Array<Signal<V>> {
+        func GetSubwaveformElements(e : Edge<V, G>) : Array<Signal<V>> {
+            let subgraph = e.GetSubgraph().getOrThrow()
+            GetWaveformElements(subgraph.GetOutput(0))
+        }
+        let v = iv.vertex
+        match(v.GetInEdge()) {
+            case None => Array<Signal<V>>()
+            case Some(ec) =>
+                let e = ec.edge
+                match(e.GetLabel()) {
+                        case OPEN_WAVEFORM(signals) => signals
+                        case CLOSED_WAVEFORM(signals) => GetSubwaveformElements(e)
+                        case INFINITE_WAVEFORM(signals) => GetSubwaveformElements(e)
+                        case _ => Array<Signal<V>>()
+                    }
         }
     }
-    Some(currentVertex)
-}
-func CheckForPrefix<V, G>(f : InterfacedHypergraph<V, G>, currentCycle : Int64) : Option<GraphSuffix<V, G>>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
-{
-    let outputs = ArrayList<Vertex<V, G>>()
-    for(i in 0..f.GetCoarity()){
-        match(TraversePrefix(f, currentCycle, i)) {
-            case None => return None<GraphSuffix<V, G>>
-            case Some(v) => outputs.append(v)
+    let waveformElements = map(GetWaveformElements, f.GetOutputs())
+    let shortestPrefix = min(waveformElements, { signals : Array<Signal<V>> => signals.size })
+    let prefix = Array<Array<Signal<V>>>(f.GetCoarity()) {
+        i : Int64 => Array<Signal<V>>(shortestPrefix) {
+            j : Int64 => waveformElements[i][j]
         }
     }
-    Some(GraphSuffix(f, outputs.toArray()))
+    (shortestPrefix, prefix)
 }
 /**
  * 'Burst' edges that have sequential subgraphs. This is because all of the delays
@@ -563,4 +548,48 @@ func Unfold<V, G>(
         }
     }
     startingEdges
+}
+func CreateHeadRegisters<V, G>(f : InterfacedHypergraph<V, G>) : Unit
+        where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    var i = 0
+    for(iv in f.GetOutputs()) {
+        WriteDotToFile(f, 2, "head-${i}")
+        i++
+        let v = iv.vertex
+        let width = v.GetWidth()
+        // We are assuming this has been successfully rewritten
+        // so its head is a join with a signal as its left arg and
+        // a delay as its right arg
+        let joinEdge = v.GetInEdge().getOrThrow().edge
+        let oldJoinTarget = v
+        // The signal is the left arg of the join
+        let signalEdge = joinEdge.NextEdgeLeft(0)
+        let signal = signalEdge.GetLabel().GetSignal()
+        // The delay is the right arg of the join
+        let delayEdge = joinEdge.NextEdgeLeft(1)
+        let oldDelaySource = delayEdge.GetSource(0).vertex
+        // Set fresh vertices appropriately
+        let newJoinTarget = joinEdge.SetFreshTarget(0)
+        let newDelaySource = delayEdge.SetFreshSource(0)
+        // The new register edge contains the register as a subgraph
+        let registerEdges = HashSet<Edge<V, G>>([signalEdge, delayEdge, joinEdge])
+        let registerSubgraph = InterfacedHypergraph(
+            Hypergraph(registerEdges),
+            [InterfaceVertex(newDelaySource, "")],
+            [InterfaceVertex(newJoinTarget, "")],
+            REGISTER(signal)
+        )
+        f.RemoveEdge(joinEdge)
+        f.RemoveEdge(signalEdge)
+        f.RemoveEdge(delayEdge)
+        // Now make the new edge
+        let newRegisterEdge = Edge(
+            Label<V, G>.REGISTER(signal),
+            [oldDelaySource],
+            [oldJoinTarget],
+            registerSubgraph
+        )
+        f.AddEdge(newRegisterEdge)
+    }
 }
