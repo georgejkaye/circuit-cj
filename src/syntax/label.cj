@@ -174,6 +174,13 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             case _ => throw IncompatibleVariantException(this, "VALUE")
         }
     }
+    public func GetSignal() : Signal<V> {
+        match(this) {
+            case VALUE(v) => Signal(v)
+            case SIGNAL(spec) => spec
+            case _ => throw IncompatibleVariantException(this, "VALUE/SIGNAL")
+        }
+    }
     public func GetValueArray() : Array<V> {
         match(this) {
             case VALUE(v) => [v]
