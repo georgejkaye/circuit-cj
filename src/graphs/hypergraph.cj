@@ -101,7 +101,20 @@ func RemoveEdgeFromHypergraphData<V, G>(
     sequentialData.feedbackConnections.removeIf({ ec : EdgeConnection<V, G> => ec.edge == e})
     sequentialData.combinationalEdges.remove(e)
 }
-
+func GetVerticesFromEdges<V, G>(es : HashSet<Edge<V, G>>) : HashSet<Vertex<V, G>>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    let vertices = HashSet<Vertex<V, G>>()
+    for(e in es) {
+        for(t in e.GetSources()) {
+            vertices.put(t.vertex)
+        }
+        for(t in e.GetTargets()) {
+            vertices.put(t.vertex)
+        }
+    }
+    vertices
+}
 /**
  * A hypergraph contains a set of (hyper)edges and vertices.
  * These hypergraphs are not interfaced.
@@ -130,6 +143,9 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
             e.SetOwner(this)
             AddEdgeToHypergraphData(startingEdges, sequentialData, e)
         }
+    }
+    public init (edges : HashSet<Edge<V, G>>){
+        this(GetVerticesFromEdges(edges), edges)
     }
     public init () {
         this(HashSet<Vertex<V, G>>(), HashSet<Edge<V, G>>())
