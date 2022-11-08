@@ -116,6 +116,20 @@ public func unsafeGet<T,U>(map : HashMap<T,U>, key: T) : U where T <: Equatable<
 public func Sum(ns : Array<Int64>) : Int64 {
     fold_left({ acc : Int64, cur : Int64 => acc + cur}, 0, ns)
 }
+public func max<T>(x : T, y : T) : T where T <: Comparable<T> {
+    if(x >= y) {
+        x
+    } else {
+        y
+    }
+}
+public func min<T>(x : T, y : T) : T where T <: Comparable<T> {
+    if(x <= y) {
+        x
+    } else {
+        y
+    }
+}
 public func prepend<T>(x : T, ys : Array<T>) {
     Array<T>(ys.size + 1){
         i : Int64 =>
@@ -194,4 +208,16 @@ public func concatArray<T,U,V>(
 
 public func id<T>(t : T) : T {
     t
+}
+public func max<T, U>(xs : Array<T>, lowest : U, f : (T) -> U) : U where U <: Comparable<U> {
+    fold_left({ acc : U, cur : T => max(acc, f(cur))}, lowest, xs)
+}
+public func max<T>(xs : Array<T>, f : (T) -> Int64) {
+    max(xs, Int64.Min, f)
+}
+public func min<T, U>(xs : Array<T>, highest : U, f : (T) -> U) : U where U <: Comparable<U> {
+    fold_left({ acc : U, cur : T => min(acc, f(cur))}, highest, xs)
+}
+public func min<T>(xs : Array<T>, f : (T) -> Int64) {
+    min(xs, Int64.Max, f)
 }
