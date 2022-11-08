@@ -14,10 +14,10 @@ public func Todo(msg : String){
     throw TodoException(msg)
 }
 
-public func AssertNonNegative(x : Int64) {
+public func AssertNonNegative(x : Int64) : Unit {
     AssertAtLeast(x, 0)
 }
-func AssertStrictlyPositive(x : Int64) {
+public func AssertStrictlyPositive(x : Int64) : Unit {
     AssertAtLeast(x, 1)
 }
 public func AssertEnoughBits(current : Int64, desired : Int64) {
