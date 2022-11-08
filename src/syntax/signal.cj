@@ -22,6 +22,9 @@ public struct Signal<V> <: ToString & HasName & Specifiable<V> & HasWidth & Equa
     public init(v: V, n : Int64) {
         this(Array<V>(n, {i : Int64 => v}))
     }
+    public init(v : V) {
+        this([v])
+    }
     public func GetName() : String {
         fold_right({acc : String, v : V => "${acc}${v}"}, "", values)
     }
@@ -74,4 +77,9 @@ extend WaveformType <: Hashable & Equatable<WaveformType> {
     public operator func != (rhs : WaveformType) {
         !(this == rhs)
     }
+}
+public func GetWaveformString<V>(signals : Array<Signal<V>>) : String
+    where V <: ValueSymbol, V <: Equatable<V>
+{
+    printArray(signals, "", "", " :: ", { s : Signal<V> => s.GetName() }, false)
 }

@@ -15,34 +15,39 @@ import prelude.*
 from std import collection.ArrayList
 
 /**
+ * Unicode character for omega, used to denote infinite waveforms
+ */
+let omega = "\u{03C9}"
+/**
  * Enum for the different types of generators
  */
 public enum Label<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
-    | VALUE(V)                                           // A basic value 0 -> 1
-    | SIGNAL(Signal<V>)                                  // A collection of values 0 -> n
-    | WAVEFORM(Array<Signal<V>>, Option<Label<V, G>>)    // A construct with a head signal and a delayed subcircuit
-    | BUNDLER(Array<Int64>, Array<Int64>)                // A bundler changes how wires are bundled
-    | JOIN(Int64)                                        // Join two wires together
-    | PRIMITIVE(G)                                       // The simplest building blocks of circuits
-    | COMPOSITE(Specification<V>)                        // A composite of primitives
-    | BLACKBOX(Specification<V>)                         // A black box with arbitrary name and codomain
-    | DELAY(Int64)                                       // A delay parameterised by a width
+    | VALUE(V)                              // A basic value 0 -> 1
+    | SIGNAL(Signal<V>)                     // A collection of values 0 -> n
+    | OPEN_WAVEFORM(Array<Signal<V>>)       // A sequence of signals over time
+    | CLOSED_WAVEFORM(Array<Signal<V>>)     // A sequence of signals over time, capped with a disconnect
+    | INFINITE_WAVEFORM(Array<Signal<V>>)   // A sequence of signals over time that repeats periodically
+    | BUNDLER(Array<Int64>, Array<Int64>)   // A bundler changes how wires are bundled
+    | JOIN(Int64)                           // Join two wires together
+    | PRIMITIVE(G)                          // The simplest building blocks of circuits
+    | COMPOSITE(Specification<V>)           // A composite of primitives
+    | BLACKBOX(Specification<V>)            // A black box with arbitrary name and codomain
+    | DELAY(Int64)                          // A delay parameterised by a width
 }
 extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G>> {
     public func GetInputPorts() : Array<Port<V>> {
         match(this) {
-            case VALUE(_)                       => []
-            case SIGNAL(spec)                   => []
-            case WAVEFORM(hd, lb) => match(lb) {
-                case None => map({ s : Signal<V> => Port(s.GetWidth()) }, hd)
-                case Some(lab) => lab.GetInputPorts()
-            }
-            case BUNDLER(ms, _)                 => map({ i : Int64 => Port(i)}, ms)
-            case JOIN(w)                        => [Port(w), Port(w)]
-            case PRIMITIVE(prim)                => prim.GetInputPorts()
-            case COMPOSITE(spec)                => spec.GetInputPorts()
-            case BLACKBOX(spec)                 => spec.GetInputPorts()
-            case DELAY(w)                       => [Port(w)]
+            case VALUE(_)                   => []
+            case SIGNAL(spec)               => []
+            case OPEN_WAVEFORM(signals)     => [Port(signals[0].GetWidth())]
+            case CLOSED_WAVEFORM(signals)   => []
+            case INFINITE_WAVEFORM(signals) => []
+            case BUNDLER(ms, _)             => map({ i : Int64 => Port(i)}, ms)
+            case JOIN(w)                    => [Port(w), Port(w)]
+            case PRIMITIVE(prim)            => prim.GetInputPorts()
+            case COMPOSITE(spec)            => spec.GetInputPorts()
+            case BLACKBOX(spec)             => spec.GetInputPorts()
+            case DELAY(w)                   => [Port(w)]
         }
     }
     public func GetArity() : Int64 {
@@ -50,15 +55,17 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
     }
     public func GetOutputPorts() : Array<Port<V>> {
         match(this) {
-            case VALUE(_)               => [Port(1)]
-            case SIGNAL(spec)           => spec.GetOutputPorts()
-            case WAVEFORM(hd, lb)       => map({ s : Signal<V> => Port(s.GetWidth()) }, hd)
-            case BUNDLER(ms, ns)        => map({ i : Int64 => Port(i)}, ns)
-            case JOIN(w)                => [Port(w)]
-            case PRIMITIVE(prim)        => prim.GetOutputPorts()
-            case COMPOSITE(spec)        => spec.GetOutputPorts()
-            case BLACKBOX(spec)         => spec.GetOutputPorts()
-            case DELAY(w)               => [Port(w)]
+            case VALUE(_)                   => [Port(1)]
+            case SIGNAL(spec)               => spec.GetOutputPorts()
+            case OPEN_WAVEFORM(signals)     => [Port(signals[0].GetWidth())]
+            case CLOSED_WAVEFORM(signals)   => [Port(signals[0].GetWidth())]
+            case INFINITE_WAVEFORM(signals) => [Port(signals[0].GetWidth())]
+            case BUNDLER(ms, ns)            => map({ i : Int64 => Port(i)}, ns)
+            case JOIN(w)                    => [Port(w)]
+            case PRIMITIVE(prim)            => prim.GetOutputPorts()
+            case COMPOSITE(spec)            => spec.GetOutputPorts()
+            case BLACKBOX(spec)             => spec.GetOutputPorts()
+            case DELAY(w)                   => [Port(w)]
         }
     }
     public func GetCoarity() : Int64 {
@@ -66,19 +73,17 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
     }
     public func GetName() : String {
         match(this) {
-            case VALUE(v)               => "${v}"
-            case SIGNAL(spec)           => spec.GetName()
-            case WAVEFORM(hd, lb)       =>
-                match(lb) {
-                    case None => "${hd}"
-                    case Some(lab) => "${hd} :: ${lab.GetName()}"
-                }
-            case BUNDLER(ms, ns)        => if (ms.size < ns.size) { "\u{25C1}" } else { "\u{25B7}" }
-            case JOIN(w)                => "\u{2207}_${w}"
-            case PRIMITIVE(prim)        => prim.GetName()
-            case COMPOSITE(spec)        => spec.GetName()
-            case BLACKBOX(spec)         => spec.GetName()
-            case DELAY(w)               => "delay_${w}"
+            case VALUE(v)                   => "${v}"
+            case SIGNAL(spec)               => spec.GetName()
+            case OPEN_WAVEFORM(signals)     => "${GetWaveformString(signals)} ::"
+            case CLOSED_WAVEFORM(signals)   => GetWaveformString(signals)
+            case INFINITE_WAVEFORM(signals) => "(${GetWaveformString(signals)})${omega}"
+            case BUNDLER(ms, ns)            => if (ms.size < ns.size) { "\u{25C1}" } else { "\u{25B7}" }
+            case JOIN(w)                    => "\u{2207}_${w}"
+            case PRIMITIVE(prim)            => prim.GetName()
+            case COMPOSITE(spec)            => spec.GetName()
+            case BLACKBOX(spec)             => spec.GetName()
+            case DELAY(w)                   => "delay_${w}"
         }
     }
     public func toString() : String {
@@ -94,8 +99,16 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
                 case SIGNAL(t) => s == t
                 case _ => false
             }
-            case WAVEFORM(hd1, lb1) => match(rhs) {
-                case WAVEFORM(hd2, lb2) => hd1 == hd2 && lb1 == lb2
+            case OPEN_WAVEFORM(signals1) => match(rhs) {
+                case OPEN_WAVEFORM(signals2) => signals1 == signals2
+                case _ => false
+            }
+            case CLOSED_WAVEFORM(signals1) => match(rhs) {
+                case CLOSED_WAVEFORM(signals2) => signals1 == signals2
+                case _ => false
+            }
+            case INFINITE_WAVEFORM(signals1) => match(rhs) {
+                case INFINITE_WAVEFORM(signals2) => signals1 == signals2
                 case _ => false
             }
             case BUNDLER(ms, ns) => match(rhs) {

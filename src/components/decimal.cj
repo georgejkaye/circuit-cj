@@ -89,7 +89,7 @@ extend Signature<V, G> <: DecimalBuilder<V, G> where V <: Decimal<V> {
         signed : Bool,
         waveformType : WaveformType
     ) : InterfacedHypergraph<V, G> {
-        let signals = [map({ v : Int64 => V.DecToValues(v, width, signed)}, xs)]
+        let signals = map({ v : Int64 => V.DecToValues(v, width, signed)}, xs)
         match(waveformType){
             case FINITE_CLOSED => this.MakeClosedWaveform(signals)
             case FINITE_OPEN   => this.MakeOpenWaveform(signals)
@@ -114,17 +114,17 @@ extend Signature<V, G> <: DecimalBuilder<V, G> where V <: Decimal<V> {
     public func MakeUnsignedInfiniteWaveformFromInt(xs : Array<Int64>, width : Int64) : InterfacedHypergraph<V, G> {
         this.MakeWaveformFromInt(xs, width, false, INFINITE)
     }
+    func UseOpenWaveformFromInt(xs : Array<Int64>, width : Int64, signed : Bool, input : Wire<V, G>) : Wire<V, G> {
+        let signals = map({ v : Int64 => V.DecToValues(v, width, signed)}, xs)
+        this.UseOpenWaveform(signals, input)
+    }
     func UseClosedWaveformFromInt(xs : Array<Int64>, width : Int64, signed : Bool) : Wire<V, G> {
-        let signals = [map({ v : Int64 => V.DecToValues(v, width, signed)}, xs)]
-        this.UseClosedWaveform(signals)[0]
+        let signals = map({ v : Int64 => V.DecToValues(v, width, signed)}, xs)
+        this.UseClosedWaveform(signals)
     }
     func UseInfiniteWaveformFromInt(xs : Array<Int64>, width : Int64, signed : Bool) : Wire<V, G> {
-        let signals = [map({ v : Int64 => V.DecToValues(v, width, signed)}, xs)]
-        this.UseInfiniteWaveform(signals)[0]
-    }
-    func UseOpenWaveformFromInt(xs : Array<Int64>, width : Int64, signed : Bool, input : Wire<V, G>) : Wire<V, G> {
-        let signals = [map({ v : Int64 => V.DecToValues(v, width, signed)}, xs)]
-        this.UseOpenWaveform(signals, input)[0]
+        let signals = map({ v : Int64 => V.DecToValues(v, width, signed)}, xs)
+        this.UseInfiniteWaveform(signals)
     }
     public func UseSignedOpenWaveformFromInt(xs : Array<Int64>, width : Int64, input : Wire<V, G>) : Wire<V, G> {
         this.UseOpenWaveformFromInt(xs, width, true, input)

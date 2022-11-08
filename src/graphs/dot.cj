@@ -77,8 +77,14 @@ let valueStyle = [
 let signalStyle = [
     bgColour("green")
 ]
-let waveformStyle = [
+let openWaveformStyle = [
     bgColour("forestgreen")
+]
+let closedWaveformStyle = [
+    bgColour("mediumseagreen")
+]
+let infiniteWaveformStyle = [
+    bgColour("lightseagreen")
 ]
 let blackboxStyle = [
     bgColour("white")
@@ -231,8 +237,12 @@ func DrawEdgeNode<V, G>(
             valueStyle
         case SIGNAL(_) =>
             signalStyle
-        case WAVEFORM(_, _) =>
-            waveformStyle
+        case OPEN_WAVEFORM(_) =>
+            openWaveformStyle
+        case CLOSED_WAVEFORM(_) =>
+            closedWaveformStyle
+        case INFINITE_WAVEFORM(_) =>
+            infiniteWaveformStyle
         case BUNDLER(_,_) =>
             compressorStyle
         case JOIN(_) =>
