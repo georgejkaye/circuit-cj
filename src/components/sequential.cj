@@ -135,7 +135,7 @@ extend Signature<V, G> <: SequentialBuilder<V, G> {
         incoming: Wire<V, G>
     ) : Unit {
         let register = this.UseSimpleRegister(initial, outgoing)
-        this.DelayGuardedFeedback(register, incoming)
+        PerformFeedback(register, incoming, false)
     }
     /**
      * Make a subcircuit for a waveform
