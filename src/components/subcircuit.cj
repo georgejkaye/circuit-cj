@@ -164,6 +164,25 @@ extend Signature<V, G> <: SubcircuitBuilder<V, G> {
     * as a single edge, but can be expanded to show the components if desired.
     *
     * @param outputs The outputs of the subcircuit
+    * @param label The label of the subcircuit
+    * @return The new interfaced hypergraph representing the subcircuit
+    */
+    public func MakeSubcircuit(
+        outputs : Array<InterfaceWire<V, G>>,
+        label : Label<V, G>
+    ) : InterfacedHypergraph<V, G> {
+        this.MakeSubcircuit(
+            Array<InterfaceWire<V, G>>(),
+            outputs,
+            label
+        )
+    }
+    /**
+    * Make a subcircuit with some (optionally named) output wires. This circuit
+    * can then be used in other subcircuits, where it will be initially displayed
+    * as a single edge, but can be expanded to show the components if desired.
+    *
+    * @param outputs The outputs of the subcircuit
     * @param label The name of the subcircuit, which will be given a
                     'composite' label on its parent edge
     * @return The new interfaced hypergraph representing the subcircuit
