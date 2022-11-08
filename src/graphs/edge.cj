@@ -295,4 +295,7 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
         this.SetTarget(i, vertex)
         vertex
     }
+    public func NextEdgeLeft(i : Int64) : Edge<V, G> {
+        this.GetSource(i).vertex.GetInEdge().getOrThrow().edge
+    }
 }
