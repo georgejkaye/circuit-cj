@@ -38,10 +38,10 @@ func AssertSignalArrayNonEmpty<V>(signals : Array<Signal<V>>) : Unit
 {
     AssertNonEmpty(signals, "signals")
 }
-func AssertSignalArrayArrayNonEmpty<V>(signals : Array<Array<Signal<V>>>) : Unit
+func AssertSignalsAllSameWidth<V>(signals : Array<Signal<V>>) : Int64
     where V <: ValueSymbol, V <: Equatable<V>
 {
-    AssertNonEmpty(signals, "signals")
+    AssertArrayAllSameParameter(signals, { s : Signal<V> => s.GetWidth() }, Width)
 }
 public func AssertWireWidth<V, G, T>(t : T, i : Int64) : Unit
     where T <: ContainsWire<V, G>, T <: ToString,
