@@ -180,14 +180,6 @@ public class InterfacedHypergraph<V, G>
     public func GetOutputs() : Array<InterfaceVertex<V, G>> {
         this.outputs
     }
-    func GetTraversalElements(
-        end : End
-    ) : HashSet<TraversalElement<V, G>> {
-        match(end) {
-            case LEFT  => leftmostTraversalElements
-            case RIGHT => rightmostTraversalElements
-        }
-    }
     func AddVertexToTraversalElements(
         traversalElements : HashSet<TraversalElement<V, G>>,
         v : Vertex<V, G>
@@ -195,11 +187,11 @@ public class InterfacedHypergraph<V, G>
         traversalElements.put(VERTEX(v))
     }
     public func AddVertexToTraversalElements(
-        end : End,
+        direction : TraversalDirection,
         v : Vertex<V, G>
     ) : Unit {
         AddVertexToTraversalElements(
-            GetTraversalElements(end),
+            GetTraversalElements(direction),
             v
         )
     }
@@ -210,11 +202,11 @@ public class InterfacedHypergraph<V, G>
         traversalElements.remove(VERTEX(v))
     }
     public func RemoveVertexFromTraversalElements(
-        end : End,
+        direction : TraversalDirection,
         v : Vertex<V, G>
     ) : Unit {
         RemoveVertexFromTraversalElements(
-            GetTraversalElements(end),
+            GetTraversalElements(direction),
             v
         )
     }
@@ -225,11 +217,11 @@ public class InterfacedHypergraph<V, G>
         traversalElements.remove(EDGE(e))
     }
     public func RemoveEdgeFromTraversalElements(
-        end : End,
+        direction : TraversalDirection,
         e : Edge<V, G>
     ) : Unit {
         RemoveEdgeFromTraversalElements(
-            GetTraversalElements(end),
+            GetTraversalElements(direction),
             e
         )
     }
@@ -240,16 +232,22 @@ public class InterfacedHypergraph<V, G>
         traversalElements.put(EDGE(e))
     }
     public func AddEdgeToTraversalElements(
-        end : End,
+        direction : TraversalDirection,
         e : Edge<V, G>
     ) : Unit {
-        this.AddEdgeToTraversalElements(GetTraversalElements(end), e)
+        this.AddEdgeToTraversalElements(GetTraversalElements(direction), e)
     }
     public func GetLeftmostTraversalElements() : HashSet<TraversalElement<V, G>> {
         this.leftmostTraversalElements
     }
     public func GetRightmostTraversalElements() : HashSet<TraversalElement<V, G>> {
         this.rightmostTraversalElements
+    }
+    public func GetTraversalElements(direction : TraversalDirection) : HashSet<TraversalElement<V, G>> {
+        match(direction) {
+            case LEFT_TO_RIGHT => GetLeftmostTraversalElements()
+            case RIGHT_TO_LEFT => GetRightmostTraversalElements()
+        }
     }
     public func GetSequentialData() : SequentialData<V, G> {
         this.f.GetSequentialData()

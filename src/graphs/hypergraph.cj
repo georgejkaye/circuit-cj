@@ -131,22 +131,22 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
     }
     func AddEdgeToTraversalElements(
         traversalElements : HashSet<TraversalElement<V, G>>,
-        end : End,
+        direction : TraversalDirection,
         e : Edge<V, G>
     ) : Unit {
         traversalElements.put(EDGE(e))
         for(owner in this.interfacedOwners) {
-            owner.AddEdgeToTraversalElements(end, e)
+            owner.AddEdgeToTraversalElements(direction, e)
         }
     }
     func AddEdgeToHypergraphData(e : Edge<V, G>) {
         // We keep track of edges with no sources so that we can
         // start traversing the graph from there later
         if(e.GetArity() == 0) {
-            this.AddEdgeToTraversalElements(leftmostTraversalElements, LEFT, e)
+            this.AddEdgeToTraversalElements(leftmostTraversalElements, LEFT_TO_RIGHT, e)
         }
         if(e.GetCoarity() == 0) {
-            this.AddEdgeToTraversalElements(rightmostTraversalElements, RIGHT, e)
+            this.AddEdgeToTraversalElements(rightmostTraversalElements, RIGHT_TO_LEFT, e)
         }
         // We keep track of delay and value edges since these represent
         // sequential components
@@ -180,53 +180,53 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
     }
     func AddVertexToTraversalElements(
         traversalElements : HashSet<TraversalElement<V, G>>,
-        end : End,
+        direction : TraversalDirection,
         v : Vertex<V, G>)
     : Unit {
         traversalElements.put(VERTEX(v))
         for(owner in this.interfacedOwners) {
-            owner.AddVertexToTraversalElements(end, v)
+            owner.AddVertexToTraversalElements(direction, v)
         }
     }
     public func AddVertexToRightmostTraversalElements(v : Vertex<V, G>) : Unit {
         this.rightmostTraversalElements.put(VERTEX(v))
         AddVertexToTraversalElements(
             rightmostTraversalElements,
-            RIGHT,
+            RIGHT_TO_LEFT,
             v
         )
     }
     func RemoveVertexFromTraversalElements(
         traversalElements : HashSet<TraversalElement<V, G>>,
-        end : End,
+        direction : TraversalDirection,
         v : Vertex<V, G>
     ) : Unit {
         traversalElements.remove(VERTEX(v))
         for(owner in this.interfacedOwners) {
-            owner.RemoveVertexFromTraversalElements(end, v)
+            owner.RemoveVertexFromTraversalElements(direction, v)
         }
     }
     public func RemoveVertexFromLeftmostTraversalElements(v : Vertex<V, G>) : Unit {
-        RemoveVertexFromTraversalElements(this.leftmostTraversalElements, RIGHT, v)
+        RemoveVertexFromTraversalElements(this.leftmostTraversalElements, LEFT_TO_RIGHT, v)
     }
     public func RemoveVertexFromRightmostTraversalElements(v : Vertex<V, G>) : Unit {
-        RemoveVertexFromTraversalElements(this.rightmostTraversalElements, RIGHT, v)
+        RemoveVertexFromTraversalElements(this.rightmostTraversalElements, RIGHT_TO_LEFT, v)
     }
     func RemoveEdgeFromTraversalElements(
         traversalElements : HashSet<TraversalElement<V, G>>,
-        end : End,
+        direction : TraversalDirection,
         e : Edge<V, G>
     ) : Unit {
         traversalElements.remove(EDGE(e))
         for(owner in this.interfacedOwners) {
-            owner.RemoveEdgeFromTraversalElements(end, e)
+            owner.RemoveEdgeFromTraversalElements(direction, e)
         }
     }
     public func RemoveEdgeFromLeftmostTraversalElements(e : Edge<V, G>) : Unit {
-        RemoveEdgeFromTraversalElements(leftmostTraversalElements, LEFT, e)
+        RemoveEdgeFromTraversalElements(leftmostTraversalElements, LEFT_TO_RIGHT, e)
     }
     public func RemoveEdgeFromRightmostTraversalElements(e : Edge<V, G>) : Unit {
-        RemoveEdgeFromTraversalElements(rightmostTraversalElements, RIGHT, e)
+        RemoveEdgeFromTraversalElements(rightmostTraversalElements, RIGHT_TO_LEFT, e)
     }
     func RemoveEdgeFromHypergraphData(
         e : Edge<V, G>
