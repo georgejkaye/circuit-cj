@@ -230,6 +230,14 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             case _ => throw IncompatibleVariantException(this, "BUNDLER")
         }
     }
+    public func GetWaveform() : Array<Signal<V>> {
+        match(this) {
+            case OPEN_WAVEFORM(signals) => signals
+            case CLOSED_WAVEFORM(signals) => signals
+            case INFINITE_WAVEFORM(signals) => signals
+            case _ => throw IncompatibleVariantException(this, "WAVEFORM")
+        }
+    }
 }
 
 public func GetSignalLabel<V, G>(v : V, w : Int64) : Label<V, G>
