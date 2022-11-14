@@ -54,6 +54,7 @@ func TraverseFromEdge<V, G>(
     e : Edge<V, G>,
     traversalData : TraversalData<V, G>
 ) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+    traversalData.visitedElements.put(EDGE(e))
     let nextElements = traversalData.actionAtEdge(e, traversalData)
     for(elem in nextElements) {
         TraverseFrom(elem, traversalData)
@@ -63,6 +64,7 @@ func TraverseFromVertex<V, G>(
     v : Vertex<V, G>,
     traversalData : TraversalData<V, G>
 ) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+    traversalData.visitedElements.put(VERTEX(v))
     let nextElements = traversalData.actionAtVertex(v, traversalData)
     for(elem in nextElements) {
         TraverseFrom(elem, traversalData)
@@ -77,10 +79,10 @@ func TraverseFrom<V, G>(
         case EDGE(e) => TraverseFromEdge(e, traversalData)
     }
 }
-func GetDefaultNextVertices<V, G>(direction : TraversalDirection) : (Edge<V, G>) -> HashSet<TraversalElement<V, G>>
+func GetDefaultNextVertices<V, G>(direction : TraversalDirection) : (Edge<V, G>, TraversalData<V, G>) -> HashSet<TraversalElement<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    { e : Edge<V, G> =>
+    { e : Edge<V, G>, data : TraversalData<V, G> =>
         let nextElements = HashSet<TraversalElement<V, G>>()
         let nextVertices =
             match(direction) {
@@ -88,31 +90,40 @@ func GetDefaultNextVertices<V, G>(direction : TraversalDirection) : (Edge<V, G>)
                 case RIGHT_TO_LEFT => e.GetSources()
             }
         for(t in nextVertices) {
-            nextElements.put(VERTEX(t.vertex))
+            let element = VERTEX(t.vertex)
+            if(!data.visitedElements.contains(element)){
+                nextElements.put(element)
+            }
         }
         nextElements
     }
 }
-func GetDefaultNextEdges<V, G>(direction : TraversalDirection) : (Vertex<V, G>) -> HashSet<TraversalElement<V, G>>
+func GetDefaultNextEdges<V, G>(direction : TraversalDirection) : (Vertex<V, G>, TraversalData<V, G>) -> HashSet<TraversalElement<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    { v : Vertex<V, G> =>
+    { v : Vertex<V, G>, data : TraversalData<V, G> =>
         let nextElements = HashSet<TraversalElement<V, G>>()
+        func AddEdgeIfNotVisited(ec : EdgeConnection<V, G>) : Unit {
+            let element = EDGE(ec.edge)
+            if(!data.visitedElements.contains(element)){
+                nextElements.put(element)
+            }
+        }
         match(direction) {
             case LEFT_TO_RIGHT =>
                 for(ec in v.GetOutEdges()) {
-                    nextElements.put(EDGE(ec.edge))
+                    AddEdgeIfNotVisited(ec)
                 }
             case RIGHT_TO_LEFT =>
-                match(v.GetInEdge()) {
+            match(v.GetInEdge()) {
                     case None => ()
-                    case Some(ec) => nextElements.put(EDGE(ec.edge))
+                    case Some(ec) => AddEdgeIfNotVisited(ec)
                 }
         }
         nextElements
     }
 }
-func BeginTraversal<V, G>(
+public func BeginTraversal<V, G>(
     elements : HashSet<TraversalElement<V, G>>,
     maxDepth : Int64,
     actionAtVertex : (Vertex<V, G>, TraversalData<V, G>) -> HashSet<TraversalElement<V, G>>,
@@ -128,7 +139,7 @@ func BeginTraversal<V, G>(
         TraverseFrom(elem, traversalData)
     }
 }
-func BeginTraversal<V, G>(
+public func BeginTraversal<V, G>(
     elements : HashSet<TraversalElement<V, G>>,
     traversalDirection : TraversalDirection,
     maxDepth : Int64,
@@ -139,15 +150,37 @@ func BeginTraversal<V, G>(
     let defaultNextEdges = GetDefaultNextEdges<V, G>(traversalDirection)
     let completeActionAtVertex = { v : Vertex<V, G>, data : TraversalData<V, G> =>
         actionAtVertex(v, data)
-        defaultNextEdges(v)
+        defaultNextEdges(v, data)
     }
     let completeActionAtEdge = { e : Edge<V, G>, data : TraversalData<V, G> =>
         actionAtEdge(e, data)
-        defaultNextVertices(e)
+        defaultNextVertices(e, data)
     }
     BeginTraversal(elements, maxDepth, completeActionAtVertex, completeActionAtEdge)
 }
-func TraverseAll<V, G>(
+func ExtendFunctionArgumentsWithTraversalData<T, U, V, G>(
+    f : (T) -> U
+) : (T, TraversalData<V, G>) -> U
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    { t : T, data : TraversalData<V, G> => f(t)}
+}
+public func BeginTraversal<V, G>(
+    elements : HashSet<TraversalElement<V, G>>,
+    traversalDirection : TraversalDirection,
+    maxDepth : Int64,
+    actionAtVertex : (Vertex<V, G>) -> Unit,
+    actionAtEdge : (Edge<V, G>) -> Unit
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+    BeginTraversal(
+        elements,
+        traversalDirection,
+        maxDepth,
+        ExtendFunctionArgumentsWithTraversalData<Vertex<V, G>, Unit, V, G>(actionAtVertex),
+        ExtendFunctionArgumentsWithTraversalData<Edge<V, G>, Unit, V, G>(actionAtEdge)
+    )
+}
+public func TraverseAll<V, G>(
     f : InterfacedHypergraph<V, G>,
     traversalDirection : TraversalDirection,
     maxDepth : Int64,
@@ -161,5 +194,20 @@ func TraverseAll<V, G>(
         maxDepth,
         actionAtVertex,
         actionAtEdge
+    )
+}
+public func TraverseAll<V, G>(
+    f : InterfacedHypergraph<V, G>,
+    traversalDirection : TraversalDirection,
+    maxDepth : Int64,
+    actionAtVertex : (Vertex<V, G>) -> Unit,
+    actionAtEdge : (Edge<V, G>) -> Unit
+) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+    TraverseAll(
+        f,
+        traversalDirection,
+        maxDepth,
+        ExtendFunctionArgumentsWithTraversalData<Vertex<V, G>, Unit, V, G>(actionAtVertex),
+        ExtendFunctionArgumentsWithTraversalData<Edge<V, G>, Unit, V, G>(actionAtEdge)
     )
 }
