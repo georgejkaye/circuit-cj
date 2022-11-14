@@ -84,6 +84,9 @@ public class Vertex<V, G>
     public init() {
         this(1)
     }
+    public func Clone() : Vertex<V, G> {
+        Vertex(this.width)
+    }
     public func GetId() : Int64 {
         this.id
     }
@@ -111,14 +114,24 @@ public class Vertex<V, G>
                 }
         }
     }
+    public func PostAlterOutEdges() : Unit {
+        if(this.outEdges.size == 0) {
+            this.owner.AddVertexToRightmostTraversalElements(this)
+        } else {
+            this.owner.RemoveVertexFromRightmostTraversalElements(this)
+        }
+    }
     public func RemoveOutEdge(e : Edge<V, G>) : Unit {
         this.outEdges.removeIf({ec : EdgeConnection<V, G> => ec.edge == e})
+        this.PostAlterOutEdges()
     }
     public func AddOutEdge(e : Edge<V, G>, i : Int64) : Unit {
         outEdges.put(EdgeConnection(e, i, SOURCE))
+        this.PostAlterOutEdges()
     }
     public func AddAllOutEdges(es : HashSet<EdgeConnection<V, G>>) {
         outEdges.putAll(es)
+        this.PostAlterOutEdges()
     }
     func IncrementFeedback() : Unit {
         this.feedback++
