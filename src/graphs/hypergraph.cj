@@ -54,53 +54,6 @@ public struct SequentialData<V, G>
             sequentialEdges.size == 0
     }
 }
-
-func AddEdgeToHypergraphData<V, G>(
-    startingEdges : HashSet<Edge<V, G>>,
-    sequentialData : SequentialData<V, G>,
-    e : Edge<V, G>
-) where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
-    // We keep track of edges with no sources so that we can
-    // start traversing the graph from there later
-    if(e.GetArity() == 0) {
-        startingEdges.put(e)
-    }
-    // We keep track of delay and value edges since these represent
-    // sequential components
-    match(e.GetLabel()){
-        case DELAY(_) => sequentialData.delayEdges.put(e)
-        case VALUE(_) => sequentialData.valueEdges.put(e)
-        case SIGNAL(_) => sequentialData.valueEdges.put(e)
-        case _ =>
-            match(e.GetSubgraph()){
-                case Some(g) => if(g.IsCombinational()) {
-                    sequentialData.combinationalEdges.put(e)
-                } else {
-                    sequentialData.sequentialEdges.put(e)
-                }
-                case None => sequentialData.combinationalEdges.put(e)
-            }
-    }
-    // We keep track of any tentacle that has been marked as a feedback loop
-    for(i in 0..e.GetArity()) {
-        let t = e.GetSource(i)
-        if(t.feedback) {
-            sequentialData.feedbackConnections.put(EdgeConnection(e, i, SOURCE))
-        }
-    }
-}
-func RemoveEdgeFromHypergraphData<V, G>(
-    startingEdges : HashSet<Edge<V, G>>,
-    sequentialData : SequentialData<V, G>,
-    e : Edge<V, G>
-) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
-    startingEdges.remove(e)
-    sequentialData.delayEdges.remove(e)
-    sequentialData.valueEdges.remove(e)
-    sequentialData.sequentialEdges.remove(e)
-    sequentialData.feedbackConnections.removeIf({ ec : EdgeConnection<V, G> => ec.edge == e})
-    sequentialData.combinationalEdges.remove(e)
-}
 func GetVerticesFromEdges<V, G>(es : HashSet<Edge<V, G>>) : HashSet<Vertex<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
@@ -126,27 +79,47 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
     let name : String
     let vertices : HashSet<Vertex<V, G>>
     let edges : HashSet<Edge<V, G>>
-    // We keep track of edges with no sources, as these
-    // are where we begin traversing the graph
-    let startingEdges : HashSet<Edge<V, G>> = HashSet<Edge<V, G>>()
-    // We also keep track of 'sequential' components as
-    // these have different status when rewriting
+    // Edges with no sources and vertices with no in edge
+    let leftmostTraversalElements : HashSet<TraversalElement<V, G>> = HashSet<TraversalElement<V, G>>()
+    // Edges with no targets and vertices with no out edges
+    let rightmostTraversalElements : HashSet<TraversalElement<V, G>> = HashSet<TraversalElement<V, G>>()
+    // Sequential components in this graph
     let sequentialData : SequentialData<V, G> = SequentialData<V, G>()
+    // The interfaced hypergraphs that depend on this hypergraph
+    let interfacedOwners : HashSet<InterfacedHypergraph<V, G>> = HashSet<InterfacedHypergraph<V, G>>()
+    /*
+     * Define hypergraph with set of vertices and set of edges
+     *
+     * @param vertices The set of vertices
+     * @param edges The set of edges
+     */
     public init (vertices : HashSet<Vertex<V, G>>, edges : HashSet<Edge<V, G>>){
         this.vertices = vertices
         this.edges = edges
         this.name = "h${this.id}"
         for (v in this.vertices) {
             v.SetOwner(this)
+            if(v.GetOutEdges().size == 0) {
+                rightmostTraversalElements.put(VERTEX(v))
+            }
         }
         for (e in this.edges) {
             e.SetOwner(this)
-            AddEdgeToHypergraphData(startingEdges, sequentialData, e)
+            this.AddEdgeToHypergraphData(e)
         }
     }
+    /*
+     * Define hypergraph with just a set of edges. The vertices
+     * will be populated from the sources and targets of these edges
+     *
+     * @param edges The set of edges
+     */
     public init (edges : HashSet<Edge<V, G>>){
         this(GetVerticesFromEdges(edges), edges)
     }
+    /**
+     * Define an empty hypergraph
+     */
     public init () {
         this(HashSet<Vertex<V, G>>(), HashSet<Edge<V, G>>())
     }
@@ -156,8 +129,123 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
     public func GetEdges() : HashSet<Edge<V, G>> {
         this.edges
     }
-    public func GetStartingEdges() : HashSet<Edge<V, G>> {
-        this.startingEdges
+    func AddEdgeToTraversalElements(
+        traversalElements : HashSet<TraversalElement<V, G>>,
+        end : End,
+        e : Edge<V, G>
+    ) : Unit {
+        traversalElements.put(EDGE(e))
+        for(owner in this.interfacedOwners) {
+            owner.AddEdgeToTraversalElements(end, e)
+        }
+    }
+    func AddEdgeToHypergraphData(e : Edge<V, G>) {
+        // We keep track of edges with no sources so that we can
+        // start traversing the graph from there later
+        if(e.GetArity() == 0) {
+            this.AddEdgeToTraversalElements(leftmostTraversalElements, LEFT, e)
+        }
+        if(e.GetCoarity() == 0) {
+            this.AddEdgeToTraversalElements(rightmostTraversalElements, RIGHT, e)
+        }
+        // We keep track of delay and value edges since these represent
+        // sequential components
+        match(e.GetLabel()){
+            case DELAY(_) => this.sequentialData.delayEdges.put(e)
+            case VALUE(_) => this.sequentialData.valueEdges.put(e)
+            case SIGNAL(_) => this.sequentialData.valueEdges.put(e)
+            case _ =>
+                match(e.GetSubgraph()){
+                    case Some(g) => if(g.IsCombinational()) {
+                        this.sequentialData.combinationalEdges.put(e)
+                    } else {
+                        this.sequentialData.sequentialEdges.put(e)
+                    }
+                    case None => this.sequentialData.combinationalEdges.put(e)
+                }
+        }
+        // We keep track of any tentacle that has been marked as a feedback loop
+        for(i in 0..e.GetArity()) {
+            let t = e.GetSource(i)
+            if(t.feedback) {
+                this.sequentialData.feedbackConnections.put(EdgeConnection(e, i, SOURCE))
+            }
+        }
+    }
+    public func GetLeftmostTraversalElements() : HashSet<TraversalElement<V, G>> {
+        this.leftmostTraversalElements
+    }
+    public func GetRightmostTraversalElements() : HashSet<TraversalElement<V, G>> {
+        this.rightmostTraversalElements
+    }
+    func AddVertexToTraversalElements(
+        traversalElements : HashSet<TraversalElement<V, G>>,
+        end : End,
+        v : Vertex<V, G>)
+    : Unit {
+        traversalElements.put(VERTEX(v))
+        for(owner in this.interfacedOwners) {
+            owner.AddVertexToTraversalElements(end, v)
+        }
+    }
+    public func AddVertexToRightmostTraversalElements(v : Vertex<V, G>) : Unit {
+        this.rightmostTraversalElements.put(VERTEX(v))
+        AddVertexToTraversalElements(
+            rightmostTraversalElements,
+            RIGHT,
+            v
+        )
+    }
+    func RemoveVertexFromTraversalElements(
+        traversalElements : HashSet<TraversalElement<V, G>>,
+        end : End,
+        v : Vertex<V, G>
+    ) : Unit {
+        traversalElements.remove(VERTEX(v))
+        for(owner in this.interfacedOwners) {
+            owner.RemoveVertexFromTraversalElements(end, v)
+        }
+    }
+    public func RemoveVertexFromLeftmostTraversalElements(v : Vertex<V, G>) : Unit {
+        RemoveVertexFromTraversalElements(this.leftmostTraversalElements, RIGHT, v)
+    }
+    public func RemoveVertexFromRightmostTraversalElements(v : Vertex<V, G>) : Unit {
+        RemoveVertexFromTraversalElements(this.rightmostTraversalElements, RIGHT, v)
+    }
+    func RemoveEdgeFromTraversalElements(
+        traversalElements : HashSet<TraversalElement<V, G>>,
+        end : End,
+        e : Edge<V, G>
+    ) : Unit {
+        traversalElements.remove(EDGE(e))
+        for(owner in this.interfacedOwners) {
+            owner.RemoveEdgeFromTraversalElements(end, e)
+        }
+    }
+    public func RemoveEdgeFromLeftmostTraversalElements(e : Edge<V, G>) : Unit {
+        RemoveEdgeFromTraversalElements(leftmostTraversalElements, LEFT, e)
+    }
+    public func RemoveEdgeFromRightmostTraversalElements(e : Edge<V, G>) : Unit {
+        RemoveEdgeFromTraversalElements(rightmostTraversalElements, RIGHT, e)
+    }
+    func RemoveEdgeFromHypergraphData(
+        e : Edge<V, G>
+    ) : Unit {
+        this.RemoveEdgeFromLeftmostTraversalElements(e)
+        this.RemoveEdgeFromRightmostTraversalElements(e)
+        this.sequentialData.delayEdges.remove(e)
+        this.sequentialData.valueEdges.remove(e)
+        this.sequentialData.sequentialEdges.remove(e)
+        this.sequentialData.feedbackConnections.removeIf({ ec : EdgeConnection<V, G> => ec.edge == e})
+        this.sequentialData.combinationalEdges.remove(e)
+    }
+    func RemoveVertexFromHypergraphData(
+        leftmostTraversalElements : HashSet<TraversalElement<V, G>>,
+        rightmostTraversalElements : HashSet<TraversalElement<V, G>>,
+        v : Vertex<V, G>
+    ) : Unit {
+        this.RemoveVertexFromLeftmostTraversalElements(v)
+        this.RemoveVertexFromRightmostTraversalElements(v)
     }
     public func GetSequentialData() : SequentialData<V, G> {
         this.sequentialData
@@ -168,7 +256,7 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
     public func AddEdge(e : Edge<V, G>) : Unit {
         this.edges.put(e)
         e.SetOwner(this)
-        AddEdgeToHypergraphData(startingEdges, sequentialData, e)
+        AddEdgeToHypergraphData(e)
     }
     public func AddEdges(es : Iterable<Edge<V, G>>) {
         for (e in es) {
@@ -189,21 +277,22 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         this.sequentialData.feedbackConnections.remove(ec)
     }
     func RemoveEdge(e : Edge<V, G>, removeSources : Bool, removeTargets : Bool) {
-        Debug("Removing ${e}")
         this.edges.remove(e)
-        RemoveEdgeFromHypergraphData(this.startingEdges, this.sequentialData, e)
+        RemoveEdgeFromHypergraphData(e)
         for(t in e.GetSources()){
             let v = t.GetVertex()
-            v.RemoveOutEdge(e)
             if(removeSources){
                 this.RemoveVertex(v)
+            } else {
+                v.RemoveOutEdge(e)
             }
         }
         for(t in e.GetTargets()){
             let v = t.GetVertex()
-            v.RemoveInEdge(e)
             if(removeTargets){
                 this.RemoveVertex(v)
+            } else {
+                v.RemoveInEdge(e)
             }
         }
     }
@@ -215,6 +304,9 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
     }
     public func RemoveEdgeWithoutVertices(e : Edge<V, G>) : Unit {
         RemoveEdge(e, false)
+    }
+    public func AddInterfacedOwner(f : InterfacedHypergraph<V, G>) : Unit {
+        this.interfacedOwners.put(f)
     }
     public func IsCombinational() : Bool {
         this.sequentialData.IsCombinational()
