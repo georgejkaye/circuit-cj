@@ -150,7 +150,25 @@ public class Vertex<V, G>
         SetInEdge(EdgeConnection(e, i, TARGET))
     }
     public func SetInEdge(ec : EdgeConnection<V, G>) : Unit {
-        inEdge = ec
+        this.inEdge = ec
+    }
+    public func SetInEdge(ec : Option<EdgeConnection<V, G>>) : Unit {
+        match(ec) {
+            case None => ()
+            case Some(e) => SetInEdge(e)
+        }
+    }
+    public func SetOutEdges(ecs : HashSet<EdgeConnection<V, G>>) : Unit {
+        this.outEdges = ecs
+    }
+    public func RemoveInEdge(es : HashSet<Edge<V, G>>) : Unit {
+        for (e in es) {
+            RemoveInEdge(e)
+        }
+    }
+    public func RemoveInEdge() : Unit {
+        this.inEdge = None
+        this.PostAlterInEdge()
     }
     public func RemoveInEdge(e : Edge<V, G>) : Unit {
         match(this.inEdge) {
@@ -158,18 +176,32 @@ public class Vertex<V, G>
             case Some(ec) =>
                 if (ec.edge == e) {
                     this.inEdge = None
+                    this.PostAlterInEdge()
                 }
         }
     }
-    public func PostAlterOutEdges() : Unit {
-        if(this.outEdges.size == 0) {
+    func PostAlterInEdge() : Unit {
+        // TODO?
+    }
+    func PostAlterOutEdges() : Unit {
+        if(outEdges.size == 0){
             this.owner.AddVertexToRightmostTraversalElements(this)
         } else {
             this.owner.RemoveVertexFromRightmostTraversalElements(this)
         }
     }
+    public func RemoveOutEdges(es : HashSet<Edge<V, G>>) : Unit {
+        for(e in es) {
+            this.RemoveOutEdge(e)
+        }
+        this.PostAlterOutEdges()
+    }
     public func RemoveOutEdge(e : Edge<V, G>) : Unit {
         this.outEdges.removeIf({ec : EdgeConnection<V, G> => ec.edge == e})
+        this.PostAlterOutEdges()
+    }
+    public func RemoveOutEdge(e : Edge<V, G>, i : Int64) : Unit {
+        this.outEdges.removeIf({ec : EdgeConnection<V, G> => ec.edge == e && ec.index == i})
         this.PostAlterOutEdges()
     }
     public func AddOutEdge(e : Edge<V, G>, i : Int64) : Unit {
@@ -177,7 +209,9 @@ public class Vertex<V, G>
         this.PostAlterOutEdges()
     }
     public func AddAllOutEdges(es : HashSet<EdgeConnection<V, G>>) {
-        outEdges.putAll(es)
+        for(ec in es) {
+            this.AddOutEdge(ec.edge, ec.index)
+        }
         this.PostAlterOutEdges()
     }
     func IncrementFeedback() : Unit {
