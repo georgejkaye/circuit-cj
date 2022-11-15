@@ -61,7 +61,52 @@ public struct EdgeConnection<V, G> <: ToString & Equatable<EdgeConnection<V, G>>
         t.GetWidth()
     }
 }
-
+public enum InterfaceType {
+    | INPUT
+    | OUTPUT
+}
+extend InterfaceType <: ToString & Hashable & Equatable<InterfaceType> {
+    public func toString() : String {
+        match(this) {
+            case INPUT => "input"
+            case OUTPUT => "output"
+        }
+    }
+    public func hashCode() : Int64 {
+        match(this) {
+            case INPUT => 0
+            case OUTPUT => 1
+        }
+    }
+    public operator func ==(rhs : InterfaceType) : Bool {
+        this.hashCode() == rhs.hashCode()
+    }
+    public operator func !=(rhs : InterfaceType) : Bool {
+        !(this == rhs)
+    }
+}
+public struct InterfaceElement<V, G> <: Hashable & ToString & Equatable<InterfaceElement<V, G>>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    let id : Int64 = GetNextId()
+    public InterfaceElement(
+        public let graph : InterfacedHypergraph<V, G>,
+        public let index : Int64,
+        public let interfaceType : InterfaceType
+    ){}
+    public func hashCode() : Int64 {
+        this.id
+    }
+    public func toString() : String {
+        "${this.graph.GetName()} ${this.interfaceType}::${this.index}"
+    }
+    public operator func ==(rhs : InterfaceElement<V, G>) : Bool {
+        this.graph == rhs.graph && this.index == rhs.index && this.interfaceType == rhs.interfaceType
+    }
+    public operator func !=(rhs : InterfaceElement<V, G>) : Bool {
+        !(this == rhs)
+    }
+}
 /**
  * A vertex is a wire in a circuit.
  * Vertices can be the source at most one edge, but the target of an
@@ -77,6 +122,8 @@ public class Vertex<V, G>
     var outEdges : HashSet<EdgeConnection<V, G>> = HashSet<EdgeConnection<V, G>>()
     var feedback : Int64 = 0
     var owner : Hypergraph<V, G> = Hypergraph<V, G>()
+    let interfacedInputs : HashSet<InterfaceElement<V, G>> = HashSet<InterfaceElement<V, G>>()
+    let interfacedOutputs : HashSet<InterfaceElement<V, G>> = HashSet<InterfaceElement<V, G>>()
     public init(width: Int64){
         this.width = width
         this.owner.AddVertex(this)
@@ -159,6 +206,30 @@ public class Vertex<V, G>
     }
     public func GetName() : Option<String> {
         None
+    }
+    public func GetInterfacedInputs() : HashSet<InterfaceElement<V, G>> {
+        this.interfacedInputs
+    }
+    public func SetAsInput(f : InterfacedHypergraph<V, G>, i : Int64) : Unit {
+        this.interfacedInputs.put(InterfaceElement(f, i, INPUT))
+    }
+    public func RemoveAsInput(f : InterfacedHypergraph<V, G>) : Unit {
+        this.interfacedInputs.removeIf({ ie => ie.graph == f})
+    }
+    public func RemoveAsInput(f : InterfacedHypergraph<V, G>, i : Int64) : Unit {
+        this.interfacedInputs.removeIf({ ie => ie.graph == f && ie.index == i })
+    }
+    public func GetInterfacedOutputs() : HashSet<InterfaceElement<V, G>> {
+        this.interfacedOutputs
+    }
+    public func SetAsOutput(f : InterfacedHypergraph<V, G>, i : Int64) : Unit {
+        this.interfacedOutputs.put(InterfaceElement(f, i, OUTPUT))
+    }
+    public func RemoveAsOutput(f : InterfacedHypergraph<V, G>) : Unit {
+        this.interfacedOutputs.removeIf({ ie => ie.graph == f})
+    }
+    public func RemoveAsOutput(f : InterfacedHypergraph<V, G>, i : Int64) : Unit {
+        this.interfacedOutputs.removeIf({ ie => ie.graph == f && ie.index == i })
     }
 }
 
