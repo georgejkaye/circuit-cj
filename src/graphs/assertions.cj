@@ -32,13 +32,13 @@ public func AssertVertexHasNoInEdge<V, G>(v : Vertex<V, G>) : Unit
 {
     AssertIsNone(v.GetInEdge(), InEdge)
 }
-func AssertTargetsUnassigned<T, V, G>(targets : Array<T>) : Unit
-    where T <: ContainsVertex<V,G>, T <: ToString, V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+func AssertTargetsUnassigned<V, G>(targets : Array<Tentacle<V, G>>) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    AssertArrayElementsHaveParameter<T, Option<EdgeConnection<V, G>>>(
+    AssertArrayElementsHaveParameter(
         targets,
-        None,
-        { t : T => t.GetVertex().GetInEdge() },
+        None<EdgeConnection<V, G>>,
+        { t => t.vertex.GetInEdge() },
         InEdge
     )
 }
