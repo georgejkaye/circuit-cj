@@ -411,21 +411,21 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
             vertexMap.put(vertex, newVertex)
         }
         for (edge in this.edges) {
-            let newSources = map(
-                { t : Tentacle<V, G> => Tentacle(unsafeGet(vertexMap, t.GetVertex()), t.feedback, t.delay)},
-                edge.GetSources()
-            )
-            let newTargets = map(
-                { t : Tentacle<V, G> => Tentacle(unsafeGet(vertexMap, t.GetVertex()), t.feedback, t.delay)},
-                edge.GetTargets()
-            )
+            func CloneTentacles(vs : Array<Tentacle<V, G>>) : Array<Tentacle<V, G>> {
+                map(
+                    { t => Tentacle(unsafeGet(vertexMap, t.GetVertex()), t.feedback, t.delay) },
+                    vs
+                )
+            }
+            let newSources = CloneTentacles(edge.GetSources())
+            let newTargets = CloneTentacles(edge.GetTargets())
             let newSubgraph = match(edge.GetSubgraph()){
                 case None => None<InterfacedHypergraph<V, G>>
                 case Some(g) =>
                     let (newG, _, _) = g.CloneGraph()
                     newG
             }
-            let newEdge = Edge(edge.GetLabel(), newSources, newTargets, newSubgraph)
+            let newEdge = Edge(edge.GetLabel(), newSources, newTargets, newSubgraph, Hypergraph<V, G>())
             newEdges.put(newEdge)
             edgeMap.put(edge, newEdge)
         }
