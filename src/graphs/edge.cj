@@ -254,7 +254,9 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
                     childVertices : Array<InterfaceVertex<V, G>>
                 ) : Unit {
                     for (i in 0..parentVertices.size) {
-                        MergeVertices(parentVertices[i].vertex, childVertices[i].GetVertex(), false)
+                        let parent = parentVertices[i]
+                        let child = childVertices[i]
+                        MergeVertices(parent.GetVertex(), child.GetVertex(), false)
                     }
                 }
                 this.owner.RemoveEdgeWithoutVertices(this)
