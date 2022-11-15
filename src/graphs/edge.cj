@@ -268,6 +268,9 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
     public func toString() : String {
         "e${this.GetId()} (${label.GetName()})"
     }
+    public func toLongString() : String {
+        "e${this.GetId()} (${label.GetName()}) ~ ${sources} ~ ${targets}"
+    }
     public operator func ==(right: Edge<V, G>) : Bool {
         this.GetId() == right.GetId()
     }
@@ -282,18 +285,5 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
     }
     public func hashCode() : Int64 {
         this.id
-    }
-    public func SetFreshSource(i : Int64) : Vertex<V, G> {
-        let vertex = Vertex<V, G>(this.GetSource(i).GetWidth())
-        this.SetSource(i, vertex, this.GetSource(i).feedback)
-        vertex
-    }
-    public func SetFreshTarget(i : Int64) : Vertex<V, G> {
-        let vertex = Vertex<V, G>(this.GetTarget(i).GetWidth())
-        this.SetTarget(i, vertex)
-        vertex
-    }
-    public func NextEdgeLeft(i : Int64) : Edge<V, G> {
-        this.GetSource(i).vertex.GetInEdge().getOrThrow().edge
     }
 }
