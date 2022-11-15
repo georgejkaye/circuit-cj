@@ -54,20 +54,26 @@ func TraverseFromEdge<V, G>(
     e : Edge<V, G>,
     traversalData : TraversalData<V, G>
 ) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+    Debug("Visiting edge ${e}")
     traversalData.visitedElements.put(EDGE(e))
     let nextElements = traversalData.actionAtEdge(e, traversalData)
     for(elem in nextElements) {
-        TraverseFrom(elem, traversalData)
+        if(!traversalData.visitedElements.contains(elem)) {
+            TraverseFrom(elem, traversalData)
+        }
     }
 }
 func TraverseFromVertex<V, G>(
     v : Vertex<V, G>,
     traversalData : TraversalData<V, G>
 ) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+    Debug("Visiting vertex ${v}")
     traversalData.visitedElements.put(VERTEX(v))
     let nextElements = traversalData.actionAtVertex(v, traversalData)
     for(elem in nextElements) {
-        TraverseFrom(elem, traversalData)
+        if(!traversalData.visitedElements.contains(elem)) {
+            TraverseFrom(elem, traversalData)
+        }
     }
 }
 func TraverseFrom<V, G>(
@@ -79,7 +85,10 @@ func TraverseFrom<V, G>(
         case EDGE(e) => TraverseFromEdge(e, traversalData)
     }
 }
-func GetDefaultNextVertices<V, G>(direction : TraversalDirection) : (Edge<V, G>, TraversalData<V, G>) -> HashSet<TraversalElement<V, G>>
+func GetDefaultNextVertices<V, G>(
+    direction : TraversalDirection,
+    condition : (Vertex<V, G>) -> Bool
+) : (Edge<V, G>, TraversalData<V, G>) -> HashSet<TraversalElement<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     { e : Edge<V, G>, data : TraversalData<V, G> =>
@@ -91,21 +100,24 @@ func GetDefaultNextVertices<V, G>(direction : TraversalDirection) : (Edge<V, G>,
             }
         for(t in nextVertices) {
             let element = VERTEX(t.vertex)
-            if(!data.visitedElements.contains(element)){
+            if(condition(t.vertex)){
                 nextElements.put(element)
             }
         }
         nextElements
     }
 }
-func GetDefaultNextEdges<V, G>(direction : TraversalDirection) : (Vertex<V, G>, TraversalData<V, G>) -> HashSet<TraversalElement<V, G>>
+func GetDefaultNextEdges<V, G>(
+    direction : TraversalDirection,
+    condition : (Edge<V, G>) -> Bool
+) : (Vertex<V, G>, TraversalData<V, G>) -> HashSet<TraversalElement<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     { v : Vertex<V, G>, data : TraversalData<V, G> =>
         let nextElements = HashSet<TraversalElement<V, G>>()
         func AddEdgeIfNotVisited(ec : EdgeConnection<V, G>) : Unit {
             let element = EDGE(ec.edge)
-            if(!data.visitedElements.contains(element)){
+            if(condition(ec.edge)){
                 nextElements.put(element)
             }
         }
@@ -144,10 +156,12 @@ public func BeginTraversal<V, G>(
     traversalDirection : TraversalDirection,
     maxDepth : Int64,
     actionAtVertex : (Vertex<V, G>, TraversalData<V, G>) -> Unit,
-    actionAtEdge : (Edge<V, G>, TraversalData<V, G>) -> Unit
+    nextVertexCondition : (Vertex<V, G>) -> Bool,
+    actionAtEdge : (Edge<V, G>, TraversalData<V, G>) -> Unit,
+    nextEdgeCondition : (Edge<V, G>) -> Bool
 ) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
-    let defaultNextVertices = GetDefaultNextVertices<V, G>(traversalDirection)
-    let defaultNextEdges = GetDefaultNextEdges<V, G>(traversalDirection)
+    let defaultNextVertices = GetDefaultNextVertices<V, G>(traversalDirection, nextVertexCondition)
+    let defaultNextEdges = GetDefaultNextEdges<V, G>(traversalDirection, nextEdgeCondition)
     let completeActionAtVertex = { v : Vertex<V, G>, data : TraversalData<V, G> =>
         actionAtVertex(v, data)
         defaultNextEdges(v, data)
@@ -170,14 +184,18 @@ public func BeginTraversal<V, G>(
     traversalDirection : TraversalDirection,
     maxDepth : Int64,
     actionAtVertex : (Vertex<V, G>) -> Unit,
-    actionAtEdge : (Edge<V, G>) -> Unit
+    nextVertexCondition : (Vertex<V, G>) -> Bool,
+    actionAtEdge : (Edge<V, G>) -> Unit,
+    nextEdgeCondition : (Edge<V, G>) -> Bool
 ) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     BeginTraversal(
         elements,
         traversalDirection,
         maxDepth,
         ExtendFunctionArgumentsWithTraversalData<Vertex<V, G>, Unit, V, G>(actionAtVertex),
-        ExtendFunctionArgumentsWithTraversalData<Edge<V, G>, Unit, V, G>(actionAtEdge)
+        nextVertexCondition,
+        ExtendFunctionArgumentsWithTraversalData<Edge<V, G>, Unit, V, G>(actionAtEdge),
+        nextEdgeCondition
     )
 }
 public func TraverseAll<V, G>(
@@ -185,7 +203,9 @@ public func TraverseAll<V, G>(
     traversalDirection : TraversalDirection,
     maxDepth : Int64,
     actionAtVertex : (Vertex<V, G>, TraversalData<V, G>) -> Unit,
-    actionAtEdge : (Edge<V, G>, TraversalData<V, G>) -> Unit
+    nextVertexCondition : (Vertex<V, G>) -> Bool,
+    actionAtEdge : (Edge<V, G>, TraversalData<V, G>) -> Unit,
+    nextEdgeCondition : (Edge<V, G>) -> Bool
 ) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     let startingElements = f.GetTraversalElements(traversalDirection)
     BeginTraversal(
@@ -193,7 +213,9 @@ public func TraverseAll<V, G>(
         traversalDirection,
         maxDepth,
         actionAtVertex,
-        actionAtEdge
+        nextVertexCondition,
+        actionAtEdge,
+        nextEdgeCondition
     )
 }
 public func TraverseAll<V, G>(
@@ -208,6 +230,8 @@ public func TraverseAll<V, G>(
         traversalDirection,
         maxDepth,
         ExtendFunctionArgumentsWithTraversalData<Vertex<V, G>, Unit, V, G>(actionAtVertex),
-        ExtendFunctionArgumentsWithTraversalData<Edge<V, G>, Unit, V, G>(actionAtEdge)
+        { v : Vertex<V, G> => true },
+        ExtendFunctionArgumentsWithTraversalData<Edge<V, G>, Unit, V, G>(actionAtEdge),
+        { e : Edge<V, G> => true }
     )
 }
