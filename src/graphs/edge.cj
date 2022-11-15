@@ -22,28 +22,27 @@ import assertions.*
  * @param inputs The input array to check
  * @param outputs The output array to check
  */
-func CheckSpecCompatibility<T, U, V, G>(
+func CheckSpecCompatibility<V, G>(
     spec : Specifiable<V>,
-    inputs: Array<T>,
-    outputs: Array<U>
+    inputs: Array<Tentacle<V, G>>,
+    outputs: Array<Tentacle<V, G>>
 ) : Unit
-    where T <: ToString, U <: ToString, T <: HasWidth, U <: HasWidth,
-            V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    func CheckArrayCompatibility<T>(
+    func CheckArrayCompatibility(
         desired : Array<Port<V>>,
-        actual : Array<T>
-    ) : Unit where T <: HasWidth, T <: ToString {
-        AssertArrayElementsHaveParameters<T, Port<V>, Int64>(
+        actual : Array<Tentacle<V, G>>
+    ) : Unit {
+        AssertArrayElementsHaveParameters<Tentacle<V, G>, Port<V>, Int64>(
             actual,
             desired,
-            { t : T => t.GetWidth() },
-            { p : Port<V> => p.GetWidth() },
+            { t => t.GetWidth() },
+            { p => p.GetWidth() },
             Width
         )
     }
-    CheckArrayCompatibility<T>(spec.GetInputPorts(), inputs)
-    CheckArrayCompatibility<U>(spec.GetOutputPorts(), outputs)
+    CheckArrayCompatibility(spec.GetInputPorts(), inputs)
+    CheckArrayCompatibility(spec.GetOutputPorts(), outputs)
 }
 public interface HasTentacle<V, G> <: ContainsVertex<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
@@ -104,15 +103,17 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
         // Vertices cannot be the targets of multiple edges
         AssertTargetsUnassigned(targets)
         // Check the ports of the label agree
-        CheckSpecCompatibility<Tentacle<V, G>, Tentacle<V, G>, V, G>(label, sources, targets)
-        ForEachSource({ v : Vertex<V, G>, i : Int64 =>
+        CheckSpecCompatibility(label, sources, targets)
+        // All sources and targets need to belong to the same graph
+        ForEachSource({ v, i =>
             v.AddOutEdge(this, i)
             this.owner.IncludeHypergraph(v.GetOwner())
         })
-        ForEachTarget({ v : Vertex<V, G>, i : Int64 =>
+        ForEachTarget({ v, i =>
             v.SetInEdge(this, i)
             this.owner.IncludeHypergraph(v.GetOwner())
         })
+        // As does does this edge itself
         this.owner.AddEdge(this)
     }
     public init(
@@ -134,28 +135,17 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
         sources : Array<Vertex<V, G>>,
         targets : Array<Vertex<V, G>>,
         subgraph : Option<InterfacedHypergraph<V, G>>,
-        owner : Hypergraph<V, G>
+        owner : Option<Hypergraph<V, G>>
     ){
         this(
             label,
             map({ v : Vertex<V, G> => Tentacle(v, false, label.IsDelay()) }, sources),
             map({ v : Vertex<V, G> => Tentacle(v, false, false) }, targets),
             subgraph,
-            owner
-        )
-    }
-    public init(
-        label : Label<V, G>,
-        sources : Array<Vertex<V, G>>,
-        targets : Array<Vertex<V, G>>,
-        subgraph : Option<InterfacedHypergraph<V, G>>
-    ){
-        this(
-            label,
-            sources,
-            targets,
-            subgraph,
-            Hypergraph<V, G>()
+            match(owner) {
+                case None => Hypergraph<V, G>()
+                case Some(f) => f
+            }
         )
     }
     public func GetId() : Int64 {
@@ -167,7 +157,10 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
     public func GetSubgraph() : Option<InterfacedHypergraph<V, G>> {
         this.subgraph
     }
-    func ForEachVertex<T>(array : Array<T>, f : (Vertex<V, G>, Int64) -> Unit) : Unit where T <: ContainsVertex<V, G> {
+    func ForEachVertex(
+        array : Array<Tentacle<V, G>>,
+        f : (Vertex<V, G>, Int64) -> Unit
+    ) : Unit {
         for (i in 0..array.size) {
             f(array[i].GetVertex(), i)
         }
@@ -178,7 +171,7 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
     public func ForEachTarget(f : (Vertex<V, G>, Int64) -> Unit) : Unit {
         ForEachVertex(this.targets, f)
     }
-    public func ForEachSourceAndTarget(f : (Vertex<V, G>, Int64) -> Unit) : Unit{
+    public func ForEachSourceAndTarget(f : (Vertex<V, G>, Int64) -> Unit) : Unit {
         ForEachVertex(this.sources, f)
         ForEachVertex(this.targets, f)
     }
