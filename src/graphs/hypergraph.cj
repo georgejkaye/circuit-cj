@@ -343,7 +343,11 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
     }
     public func toLongString() : String {
         let vertexString = this.vertices.toString()
-        let edgeString = this.edges.toString()
+        let edgeStrings = HashSet<String>()
+        for(e in this.edges) {
+            edgeStrings.put("(${e.toLongString()})")
+        }
+        let edgeString = edgeStrings.toString()
         let sourceTargetString = fold_left(
             { acc : String , e : Edge<V, G> =>
                 func EdgeVertexString (
@@ -351,14 +355,14 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
                     array: Array<Tentacle<V, G>>
                 ){
                     foldi_left(
-                        { acc : String , t : Tentacle<V, G>, i : Int64 =>
-                            let str = "${t.GetVertex()}"
+                        { acc : String , cur : Tentacle<V, G>, i : Int64 =>
+                            let portText = "${cur}"
                             let acc = if (acc == "") {
                                 ""
                             } else {
                                 "${acc}  "
                             }
-                            "${acc}${name}(${e},${i}) = ${str}"},
+                            "${acc}${name}(${e},${i}) = ${portText}"},
                         "",
                         array
                     )
@@ -396,7 +400,7 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
      * relate the original versions of vertices/edges with the new copies
      */
     public func Clone() : (Hypergraph<V, G>, HashMap<Vertex<V, G>, Vertex<V, G>>, HashMap<Edge<V, G>, Edge<V, G>>) {
-        Debug("Cloning ${this}")
+        Debug("Cloning ${this}\n${this.toLongString()}\n")
         let newVertices = HashSet<Vertex<V, G>>()
         let vertexMap = HashMap<Vertex<V, G>,Vertex<V, G>>()
         let newEdges = HashSet<Edge<V, G>>()
