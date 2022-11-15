@@ -297,9 +297,7 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         issues.size == 0
     }
     public func WellFormednessCheck() : ArrayList<WellformednessIssue<V, G>> {
-
         let issues = ArrayList<WellformednessIssue<V, G>>()
-
         func EdgeVertexCheck(
             e : Edge<V, G>,
             array : Array<Tentacle<V, G>>,
@@ -331,10 +329,12 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         this.vertices.put(w)
     }
     public func IncludeHypergraph(f : Hypergraph<V, G>) : Unit {
-        for(e in f.GetEdges()) {
+        let newEdges = HashSet<Edge<V, G>>(f.GetEdges())
+        let newVertices = HashSet<Vertex<V, G>>(f.GetVertices())
+        for(e in newEdges) {
             this.AddEdge(e)
         }
-        for(v in f.GetVertices()) {
+        for(v in newVertices) {
             this.AddVertex(v)
         }
     }
