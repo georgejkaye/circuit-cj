@@ -179,50 +179,56 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
         this.owner
     }
     public func SetOwner(f : Hypergraph<V, G>) : Unit {
-        this.owner = f
-        ForEachSourceAndTarget({ v, i => v.SetOwner(f)} )
+        if(this.owner != f){
+            this.owner.RemoveEdge(this, false)
+            this.owner = f
+        }
     }
     func SetVertex(
         i : Int64,
-        newVertex : Tentacle<V, G>,
+        newVertex : Vertex<V, G>,
+        feedback : Bool,
         array : Array<Tentacle<V, G>>,
-        vertexFn : (Vertex<V,G>) -> Unit
+        vertexFn : (Vertex<V, G>, Vertex<V, G>) -> Unit
     ) : Unit {
-            array[i] = newVertex
-            let v = newVertex.vertex
-            vertexFn(v)
-            this.owner.IncludeHypergraph(v.GetOwner())
+            let tentacle = Tentacle(newVertex, feedback, false)
+            let oldVertex = array[i].GetVertex()
+            array[i] = tentacle
+            vertexFn(oldVertex, newVertex)
+            this.owner.IncludeHypergraph(newVertex.GetOwner())
     }
     public func SetSource(i : Int64, newVertex : Vertex<V, G>, feedback: Bool) : Unit {
-        let oldTentacle = this.GetSource(i)
-        let newTentacle = Tentacle(newVertex, feedback, oldTentacle.delay)
-        oldTentacle.vertex.RemoveOutEdge(this)
         SetVertex(
             i,
-            newTentacle,
+            newVertex,
+            feedback,
             this.sources,
-            { v => v.AddOutEdge(this, i) }
+            { oldVertex, newVertex =>
+                oldVertex.RemoveOutEdge(this, i)
+                newVertex.AddOutEdge(this, i)
+            }
         )
     }
     public func SetTarget(i : Int64, newVertex : Vertex<V, G>) : Unit {
-        let oldTentacle = this.GetTarget(i)
-        oldTentacle.vertex.RemoveInEdge(this)
         SetVertex(
             i,
-            Tentacle(newVertex, false, false),
+            newVertex,
+            false,
             this.targets,
-            {v => v.SetInEdge(this, i)}
+            { oldVertex, newVertex =>
+                oldVertex.RemoveInEdge()
+                newVertex.SetInEdge(this, i)
+            }
         )
     }
     public func RemoveFeedback(i : Int64) : Unit {
-        this.SetSource(i, this.GetSource(i).vertex, false)
+        let t = this.GetSource(i)
+        this.SetSource(i, t.vertex, false)
+        // TODO move to hypbuilder
         this.owner.RemoveFeedbackConnection(EdgeConnection(this, i, SOURCE))
     }
     public func GetSource(i : Int64) : Tentacle<V, G> {
         this.sources[i]
-    }
-    public func GetSourceVertex(i : Int64) : Vertex<V, G> {
-        this.GetSource(i).vertex
     }
     public func GetSources() : Array<Tentacle<V, G>> {
         this.sources
@@ -232,9 +238,6 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
     }
     public func GetTarget(i : Int64) : Tentacle<V, G> {
         this.targets[i]
-    }
-    public func GetTargetVertex(i : Int64) : Vertex<V, G> {
-        this.GetTarget(i).vertex
     }
     public func GetTargets() : Array<Tentacle<V, G>> {
         this.targets
