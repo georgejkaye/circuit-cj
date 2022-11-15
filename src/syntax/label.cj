@@ -52,6 +52,9 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             case DELAY(w)                   => [Port(w)]
         }
     }
+    public func GetInputPort(i : Int64) : Port<V> {
+        GetInputPorts()[i]
+    }
     public func GetArity() : Int64 {
         this.GetInputPorts().size
     }
@@ -70,6 +73,9 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             case BLACKBOX(spec)             => spec.GetOutputPorts()
             case DELAY(w)                   => [Port(w)]
         }
+    }
+    public func GetOutputPort(i : Int64) : Port<V> {
+        GetOutputPorts()[i]
     }
     public func GetCoarity() : Int64 {
         this.GetOutputPorts().size
