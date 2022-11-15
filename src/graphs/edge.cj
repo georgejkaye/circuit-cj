@@ -180,7 +180,7 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
     }
     public func SetOwner(f : Hypergraph<V, G>) : Unit {
         if(this.owner != f){
-            this.owner.RemoveEdge(this, false)
+            this.owner.RemoveEdge(this)
             this.owner = f
         }
     }
@@ -259,7 +259,7 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
                         MergeVertices(parent.GetVertex(), child.GetVertex(), false)
                     }
                 }
-                this.owner.RemoveEdgeWithoutVertices(this)
+                this.owner.RemoveEdge(this)
                 MergeInterfaces(this.GetSources(), f.GetInputs())
                 MergeInterfaces(this.GetTargets(), f.GetOutputs())
                 this.owner.IncludeHypergraph(f.GetGraph())

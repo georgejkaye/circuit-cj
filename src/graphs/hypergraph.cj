@@ -58,13 +58,14 @@ func GetVerticesFromEdges<V, G>(es : HashSet<Edge<V, G>>) : HashSet<Vertex<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let vertices = HashSet<Vertex<V, G>>()
+    func PutVertices(ts : Array<Tentacle<V, G>>) : Unit {
+        for(t in ts) {
+            vertices.put(t.GetVertex())
+        }
+    }
     for(e in es) {
-        for(t in e.GetSources()) {
-            vertices.put(t.vertex)
-        }
-        for(t in e.GetTargets()) {
-            vertices.put(t.vertex)
-        }
+        PutVertices(e.GetSources())
+        PutVertices(e.GetTargets())
     }
     vertices
 }
@@ -99,9 +100,7 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         this.name = "h${this.id}"
         for (v in this.vertices) {
             v.SetOwner(this)
-            if(v.GetOutEdges().size == 0) {
-                rightmostTraversalElements.put(VERTEX(v))
-            }
+            this.AddVertexToHypergraphData(v)
         }
         for (e in this.edges) {
             e.SetOwner(this)
@@ -139,7 +138,12 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
             owner.AddEdgeToTraversalElements(direction, e)
         }
     }
-    func AddEdgeToHypergraphData(e : Edge<V, G>) {
+    func AddVertexToHypergraphData(v : Vertex<V, G>) : Unit {
+        if(v.GetOutEdges().size == 0) {
+            rightmostTraversalElements.put(VERTEX(v))
+        }
+    }
+    func AddEdgeToHypergraphData(e : Edge<V, G>) : Unit {
         // We keep track of edges with no sources so that we can
         // start traversing the graph from there later
         if(e.GetArity() == 0) {
@@ -228,9 +232,7 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
     public func RemoveEdgeFromRightmostTraversalElements(e : Edge<V, G>) : Unit {
         RemoveEdgeFromTraversalElements(rightmostTraversalElements, RIGHT_TO_LEFT, e)
     }
-    func RemoveEdgeFromHypergraphData(
-        e : Edge<V, G>
-    ) : Unit {
+    func RemoveEdgeFromHypergraphData(e : Edge<V, G>) : Unit {
         this.RemoveEdgeFromLeftmostTraversalElements(e)
         this.RemoveEdgeFromRightmostTraversalElements(e)
         this.sequentialData.delayEdges.remove(e)
@@ -239,11 +241,7 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         this.sequentialData.feedbackConnections.removeIf({ ec : EdgeConnection<V, G> => ec.edge == e})
         this.sequentialData.combinationalEdges.remove(e)
     }
-    func RemoveVertexFromHypergraphData(
-        leftmostTraversalElements : HashSet<TraversalElement<V, G>>,
-        rightmostTraversalElements : HashSet<TraversalElement<V, G>>,
-        v : Vertex<V, G>
-    ) : Unit {
+    func RemoveVertexFromHypergraphData(v : Vertex<V, G>) : Unit {
         this.RemoveVertexFromLeftmostTraversalElements(v)
         this.RemoveVertexFromRightmostTraversalElements(v)
     }
@@ -257,8 +255,14 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         this.edges.put(e)
         e.SetOwner(this)
         AddEdgeToHypergraphData(e)
+        for(t in e.GetSources()) {
+            this.AddVertex(t.GetVertex())
+        }
+        for(t in e.GetTargets()) {
+            this.AddVertex(t.GetVertex())
+        }
     }
-    public func AddEdges(es : Iterable<Edge<V, G>>) {
+    public func AddEdges(es : Iterable<Edge<V, G>>) : Unit {
         for (e in es) {
             this.AddEdge(e)
         }
@@ -269,41 +273,18 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
     public func AddVertex(v : Vertex<V, G>) : Unit {
         this.vertices.put(v)
         v.SetOwner(this)
+        this.AddVertexToHypergraphData(v)
     }
     public func RemoveVertex(v : Vertex<V, G>) : Unit {
         this.vertices.remove(v)
+        this.RemoveVertexFromHypergraphData(v)
     }
     public func RemoveFeedbackConnection(ec : EdgeConnection<V, G>) : Unit {
         this.sequentialData.feedbackConnections.remove(ec)
     }
-    func RemoveEdge(e : Edge<V, G>, removeSources : Bool, removeTargets : Bool) {
+    func RemoveEdge(e : Edge<V, G>) {
         this.edges.remove(e)
         RemoveEdgeFromHypergraphData(e)
-        for(t in e.GetSources()){
-            let v = t.GetVertex()
-            if(removeSources){
-                this.RemoveVertex(v)
-            } else {
-                v.RemoveOutEdge(e)
-            }
-        }
-        for(t in e.GetTargets()){
-            let v = t.GetVertex()
-            if(removeTargets){
-                this.RemoveVertex(v)
-            } else {
-                v.RemoveInEdge(e)
-            }
-        }
-    }
-    public func RemoveEdge(e : Edge<V, G>, removeVertices : Bool) : Unit {
-        RemoveEdge(e, removeVertices, removeVertices)
-    }
-    public func RemoveEdge(e : Edge<V, G>) : Unit {
-        RemoveEdge(e, true, true)
-    }
-    public func RemoveEdgeWithoutVertices(e : Edge<V, G>) : Unit {
-        RemoveEdge(e, false)
     }
     public func AddInterfacedOwner(f : InterfacedHypergraph<V, G>) : Unit {
         this.interfacedOwners.put(f)
