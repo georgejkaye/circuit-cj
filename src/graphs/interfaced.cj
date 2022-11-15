@@ -56,7 +56,6 @@ public class InterfaceVertex<V, G> <: Socket & HasTentacle<V, G>
         false
     }
 }
-
 func AddToInterfaceMap<V, G>(v : Vertex<V, G>, i : Int64, interfaceMap : HashMap<Vertex<V, G>, HashSet<Int64>>) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
@@ -116,7 +115,7 @@ public class InterfacedHypergraph<V, G>
         for(i in 0..inputs.size){
             let v = inputs[i].GetVertex()
             this.leftmostTraversalElements.put(VERTEX(v))
-
+            v.SetAsInput(this, i)
         }
         for(i in 0..outputs.size){
             let v = outputs[i].GetVertex()
@@ -128,6 +127,7 @@ public class InterfacedHypergraph<V, G>
                     inputMap.put(v, vs)
                 case Some(vs) => vs.append(i)
             }
+            v.SetAsOutput(this, i)
         }
         f.AddInterfacedOwner(this)
     }
@@ -321,14 +321,17 @@ public class InterfacedHypergraph<V, G>
      * @param i The index of the input
      * @param v The new vertex
      */
-    public func ReplaceInput(i : Int64, v : Vertex<V, G>) : Unit {
+    public func ReplaceInput(i : Int64, newInput : Vertex<V, G>) : Unit {
+        this.GetInput(i).vertex.RemoveAsInput(this, i)
         UpdateInterface(
             this.inputs,
             this.inputMap,
             this.leftmostTraversalElements,
             i,
-            v
+            newInput
         )
+        newInput.SetAsInput(this, i)
+        f.AddVertex(newInput)
     }
     /**
      * Replace the output at a given index with a new one
@@ -336,14 +339,17 @@ public class InterfacedHypergraph<V, G>
      * @param i The index of the output
      * @param v The new vertex
      */
-    public func ReplaceOutput(i : Int64, v : Vertex<V, G>) : Unit {
+    public func ReplaceOutput(i : Int64, newOutput : Vertex<V, G>) : Unit {
+        this.GetOutput(i).vertex.RemoveAsOutput(this, i)
         UpdateInterface(
             this.outputs,
             this.outputMap,
             this.rightmostTraversalElements,
             i,
-            v
+            newOutput
         )
+        newOutput.SetAsOutput(this, i)
+        f.AddVertex(newOutput)
     }
     public func ReplaceOutputs(vs : ArrayList<Vertex<V, G>>) {
         for(i in 0..vs.size) {
