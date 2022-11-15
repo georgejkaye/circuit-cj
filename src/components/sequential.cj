@@ -214,7 +214,7 @@ extend Signature<V, G> <: SequentialBuilder<V, G> {
         AssertSignalArrayNonEmpty(signals)
         let width = AssertSignalsAllSameWidth(signals)
         let input = this.UseWire(width)
-        let waveform = UseOpenWaveform(signals, input)
+        let waveform = this.UseOpenWaveform(signals, input)
         this.PerformFeedback(waveform, input, false)
         this.MakeSubcircuit(
             [InterfaceWire(waveform)],
