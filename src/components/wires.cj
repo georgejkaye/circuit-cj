@@ -38,7 +38,7 @@ public class Wire<V, G> <: Identifiable & ToString & ContainsVertex<V, G> & HasW
         this.vertex.GetWidth()
     }
     public func toString() : String {
-        "w${this.id}"
+        "w${this.id} - ${this.vertex}"
     }
     public func GetVertex() : Vertex<V, G> {
         this.vertex
@@ -70,7 +70,6 @@ extend Signature<V, G> <: WireBuilder<V, G> {
     */
     public func UseWire(width : Int64) : Wire<V, G> {
         let vertex = Vertex<V, G>(width)
-        let f = Hypergraph(HashSet<Vertex<V, G>>([ vertex ]), HashSet<Edge<V, G>>())
         Wire(vertex)
     }
     /**
@@ -174,16 +173,16 @@ public func NameWires<V, G>(
  * @param graph The optional owner of this edge
  * @return The array of wires corresponding to the new edge's targets
  */
-func MakeEdge<V, G>(
+func UseEdge<V, G>(
     label : Label<V, G>,
     sources : Array<Vertex<V, G>>,
     targets : Array<Vertex<V, G>>,
-    graph : Option<InterfacedHypergraph<V, G>>
+    subgraph : Option<InterfacedHypergraph<V, G>>
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    let edge = Edge(label, sources, targets, graph)
-    map({t : Tentacle<V, G> => Wire(t.vertex) }, edge.GetTargets())
+    let edge = Edge(label, sources, targets, subgraph, None<Hypergraph<V, G>>)
+    map({ t => Wire(t.GetVertex()) }, edge.GetTargets())
 }
 /**
  * Make an edge with fresh targets, and get the wires corresponding to them
@@ -201,8 +200,9 @@ public func UseEdgeWithNewOutputs<V, G, T>(
     where T <: ContainsVertex<V, G>, V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let sources = map({ t : T => t.GetVertex() }, sources)
+    let ins = map({ v : Vertex<V, G> => v.GetInEdge() }, sources)
     let targets = map({ p : Port<V> => Vertex<V, G>(p.GetWidth()) }, label.GetOutputPorts())
-    MakeEdge(label, sources, targets, graph)
+    UseEdge(label, sources, targets, graph)
 }
 
 /**
