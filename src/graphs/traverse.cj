@@ -12,6 +12,7 @@ package graphs
 public enum TraversalDirection {
     | LEFT_TO_RIGHT
     | RIGHT_TO_LEFT
+    | BOTH_DIRECTIONS
 }
 public enum TraversalElement<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
@@ -93,16 +94,22 @@ func GetDefaultNextVertices<V, G>(
 {
     { e : Edge<V, G>, data : TraversalData<V, G> =>
         let nextElements = HashSet<TraversalElement<V, G>>()
-        let nextVertices =
-            match(direction) {
-                case LEFT_TO_RIGHT => e.GetTargets()
-                case RIGHT_TO_LEFT => e.GetSources()
+        func AddValidNextElements(potential : Array<Tentacle<V, G>>) : Unit {
+            for(t in potential) {
+                let element = VERTEX(t.vertex)
+                if(condition(t.vertex)){
+                    nextElements.put(element)
+                }
             }
-        for(t in nextVertices) {
-            let element = VERTEX(t.vertex)
-            if(condition(t.vertex)){
-                nextElements.put(element)
-            }
+        }
+        match(direction) {
+            case LEFT_TO_RIGHT =>
+                AddValidNextElements(e.GetTargets())
+            case RIGHT_TO_LEFT =>
+                AddValidNextElements(e.GetSources())
+            case BOTH_DIRECTIONS =>
+                AddValidNextElements(e.GetSources())
+                AddValidNextElements(e.GetTargets())
         }
         nextElements
     }
@@ -121,16 +128,25 @@ func GetDefaultNextEdges<V, G>(
                 nextElements.put(element)
             }
         }
+        func AddOutEdgesIfNotVisited(v : Vertex<V, G>) : Unit {
+            for(ec in v.GetOutEdges()) {
+                AddEdgeIfNotVisited(ec)
+            }
+        }
+        func AddInEdgeIfNotVisited(v : Vertex<V, G>) : Unit {
+            match(v.GetInEdge()) {
+                case None => ()
+                case Some(ec) => AddEdgeIfNotVisited(ec)
+            }
+        }
         match(direction) {
             case LEFT_TO_RIGHT =>
-                for(ec in v.GetOutEdges()) {
-                    AddEdgeIfNotVisited(ec)
-                }
+                AddOutEdgesIfNotVisited(v)
             case RIGHT_TO_LEFT =>
-            match(v.GetInEdge()) {
-                    case None => ()
-                    case Some(ec) => AddEdgeIfNotVisited(ec)
-                }
+                AddInEdgeIfNotVisited(v)
+            case BOTH_DIRECTIONS =>
+                AddOutEdgesIfNotVisited(v)
+                AddInEdgeIfNotVisited(v)
         }
         nextElements
     }

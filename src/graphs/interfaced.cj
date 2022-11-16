@@ -244,10 +244,17 @@ public class InterfacedHypergraph<V, G>
         this.rightmostTraversalElements
     }
     public func GetTraversalElements(direction : TraversalDirection) : HashSet<TraversalElement<V, G>> {
+        let traversalElements = HashSet<TraversalElement<V, G>>()
         match(direction) {
-            case LEFT_TO_RIGHT => GetLeftmostTraversalElements()
-            case RIGHT_TO_LEFT => GetRightmostTraversalElements()
+            case LEFT_TO_RIGHT =>
+                traversalElements.putAll(this.GetLeftmostTraversalElements())
+            case RIGHT_TO_LEFT =>
+                traversalElements.putAll(this.GetRightmostTraversalElements())
+            case BOTH_DIRECTIONs =>
+                traversalElements.putAll(this.GetLeftmostTraversalElements())
+                traversalElements.putAll(this.GetRightmostTraversalElements())
         }
+        traversalElements
     }
     public func GetSequentialData() : SequentialData<V, G> {
         this.f.GetSequentialData()
