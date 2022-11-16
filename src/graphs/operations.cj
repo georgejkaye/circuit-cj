@@ -22,23 +22,58 @@ package graphs
 public func MergeVertices<T, U, V, G>(t : T, u : U, feedback: Bool) : (Vertex<V, G>, Vertex<V, G>)
     where T <: ContainsVertex<V, G>, U <: ContainsVertex<V, G>, V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    let inEdge = AssertAtMostOneInEdge(t, u)
+    AssertAtMostOneInEdge(t, u)
     let v = t.GetVertex()
     let w = u.GetVertex()
-    match (inEdge) {
+    match(w.GetInEdge()) {
         case None => ()
-        case Some(ec) =>
-            ec.edge.SetTarget(ec.index, v)
+        case Some(ec) => ec.edge.SetTarget(ec.index, v)
     }
-    let wOutEdges = w.GetOutEdges()
-    // Clone the collection since we'll be removing vertices from the set
-    let outEdges = Array<EdgeConnection<V, G>>(wOutEdges)
-    for (ec in outEdges) {
-       ec.edge.SetSource(ec.index, v, feedback)
+    let outEdges = Array<EdgeConnection<V, G>>(w.GetOutEdges())
+    for(ec in outEdges){
+        ec.edge.SetSource(ec.index, v, feedback)
     }
     // Make sure the old vertex isn't part of a hypergraph any more
     w.GetOwner().RemoveVertex(w)
     (v, w)
+}
+public func SplitVertex<V, G>(v : Vertex<V, G>) : (Vertex<V, G>, Vertex<V, G>)
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    let leftVertex = v
+    let rightVertex = Vertex<V, G>(v.GetWidth())
+    leftVertex.GetOwner().AddVertex(rightVertex)
+    let outEdges = HashSet<EdgeConnection<V, G>>(v.GetOutEdges())
+    for(ec in HashSet(leftVertex.GetOutEdges())) {
+        ec.edge.SetSource(ec.index, rightVertex, ec.edge.GetSource(ec.index).feedback)
+    }
+    for(ie in HashSet(v.GetInterfacedOutputs())) {
+        ie.graph.ReplaceOutput(ie.index, rightVertex)
+        leftVertex.RemoveAsOutput(ie.graph, ie.index)
+    }
+    (leftVertex, rightVertex)
+}
+public func SliceTentacle<V, G>(to : TentacleOrigin<V, G>) : (Vertex<V, G>, Vertex<V, G>)
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    let existingVertex = match(to) {
+        case SOURCE(e, i) => e.GetSource(i).GetVertex()
+        case TARGET(e, i) => e.GetTarget(i).GetVertex()
+        case INPUT(f, i) => f.GetInput(i).GetVertex()
+        case OUTPUT(f, i) => f.GetOutput(i).GetVertex()
+    }
+    let slicedVertex = Vertex<V, G>(existingVertex.GetWidth())
+    match(to) {
+        case SOURCE(e, i) =>
+            e.SetSource(i, slicedVertex, false)
+        case TARGET(e, i) =>
+            e.SetTarget(i, slicedVertex)
+        case INPUT(f, i) =>
+            f.ReplaceInput(i, slicedVertex)
+        case OUTPUT(f, i) =>
+            f.ReplaceOutput(i, slicedVertex)
+    }
+    (existingVertex, slicedVertex)
 }
 /**
  * Depending on a flag, clone an interfaced hypergraph, or just get a

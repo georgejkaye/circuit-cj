@@ -83,6 +83,12 @@ public struct Tentacle<V, G> <: ToString & HasWidth & HasTentacle<V, G>
         this.delay
     }
 }
+public enum TentacleOrigin<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+    | SOURCE(Edge<V, G>, Int64)
+    | TARGET(Edge<V, G>, Int64)
+    | INPUT(InterfacedHypergraph<V, G>, Int64)
+    | OUTPUT(InterfacedHypergraph<V, G>, Int64)
+}
 /**
  * (Hyper)edges represent the components in circuits, whether
  * they are primitives such as logic gates or larger subcircuits.
