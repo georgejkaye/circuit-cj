@@ -431,6 +431,107 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         }
         (Hypergraph(newVertices, newEdges), vertexMap, edgeMap)
     }
+    public func RemoveSubgraphElements(f : InterfacedHypergraph<V, G>) : Unit {
+        for(v in f.GetVertices()){
+            this.RemoveVertex(v)
+        }
+        for(e in f.GetEdges()){
+            this.RemoveEdge(e)
+        }
+    }
+    public func CollapseSubgraph(
+        inputs : Array<TentacleOrigin<V, G>>,
+        outputs : Array<TentacleOrigin<V, G>>,
+        label : Label<V, G>,
+        f : InterfacedHypergraph<V, G>
+    ) : Unit {
+        let slicedInputs = map<TentacleOrigin<V, G>, (Vertex<V, G>, Vertex<V, G>)>(
+            { to => SliceTentacle(to)},
+            inputs
+        )
+        let slicedOutputs = map<TentacleOrigin<V, G>, (Vertex<V, G>, Vertex<V, G>)>(
+            { to => SliceTentacle(to)},
+            outputs
+        )
+        let getCorrectVertex = { vs : (Vertex<V, G>, Vertex<V, G>), to : TentacleOrigin<V, G>, child : Bool, input : Bool =>
+            let (existing, sliced) = vs
+            match(to) {
+                case SOURCE(_, _) =>
+                    if(child && input || !child && !input) {
+                        sliced
+                    } else {
+                        existing
+                    }
+                case TARGET(_, _) =>
+                    if(child && !input || !child && input) {
+                        sliced
+                    } else {
+                        existing
+                    }
+                case INPUT(_, _) =>
+                    if(child && input || !child && !input) {
+                        existing
+                    } else {
+                        sliced
+                    }
+                case OUTPUT(_, _) =>
+                    if(child && !input || child && !input) {
+                        existing
+                    } else {
+                        sliced
+                    }
+            }
+        }
+        let childInputs = mapi(
+            { vs : (Vertex<V, G>, Vertex<V, G>), i : Int64 => getCorrectVertex(vs, inputs[i], true, true) },
+            slicedInputs
+        )
+        let childOutputs = mapi(
+            { vs : (Vertex<V, G>, Vertex<V, G>), i : Int64 => getCorrectVertex(vs, outputs[i], true, false) },
+            slicedOutputs
+        )
+        let parentInputs = mapi(
+            { vs : (Vertex<V, G>, Vertex<V, G>), i : Int64 => getCorrectVertex(vs, inputs[i], false, true) },
+            slicedInputs
+        )
+        let parentOutputs = mapi(
+            { vs : (Vertex<V, G>, Vertex<V, G>), i : Int64 => getCorrectVertex(vs, outputs[i], false, false) },
+            slicedOutputs
+        )
+        let subgraph = Hypergraph<V, G>()
+        let actionAtVertex = {v : Vertex<V, G> => subgraph.AddVertex(v) }
+        let actionAtEdge = {e : Edge<V, G> => subgraph.AddEdge(e) }
+        func TraverseGraphFromEnd(starting : Array<Vertex<V, G>>) : Unit {
+            let startingSet = HashSet<TraversalElement<V, G>>()
+            for(v in starting) {
+                startingSet.put(VERTEX(v))
+            }
+            BeginTraversal(
+                startingSet,
+                BOTH_DIRECTIONS,
+                0,
+                actionAtVertex,
+                { v => true },
+                actionAtEdge,
+                { e => true }
+            )
+        }
+        TraverseGraphFromEnd(childInputs)
+        TraverseGraphFromEnd(childOutputs)
+        let interfacedSubgraph = InterfacedHypergraph(
+            subgraph,
+            map({ v => InterfaceVertex(v, "") }, childInputs),
+            map({ v => InterfaceVertex(v, "") }, childOutputs),
+            label
+        )
+        let newEdge = Edge<V, G>(
+            label,
+            parentInputs,
+            parentOutputs,
+            Some(interfacedSubgraph),
+            Some(this)
+        )
+    }
 }
 public func EmptyGraph<V, G>() : Hypergraph<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
