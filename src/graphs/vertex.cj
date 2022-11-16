@@ -233,7 +233,10 @@ public class Vertex<V, G>
         this.owner
     }
     public func SetOwner(f : Hypergraph<V, G>) : Unit {
-        this.owner = f
+        if(this.owner != f){
+            this.owner.RemoveVertex(this)
+            this.owner = f
+        }
     }
     public func hashCode() : Int64 {
         this.id
