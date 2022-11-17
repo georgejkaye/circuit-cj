@@ -456,8 +456,9 @@ extend Signature<V, G> <: SubcircuitBuilder<V, G> {
         AssertArgumentsCompatible(circuit, args)
         let wires = map(
             {ih : InterfacedHypergraph<V, G> =>
+                let inputs = map({ iv : InterfaceVertex<V, G> => this.UseWire(iv.GetWidth())}, ih.GetInputs())
                 InterfaceWire(
-                    UseSubcircuit_1(ih, Array<Wire<V, G>>()),
+                    UseSubcircuit_1(ih, inputs),
                     ih.GetOutput(0).GetName()
                 )
             }, args)
