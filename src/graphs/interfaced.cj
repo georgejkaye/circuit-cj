@@ -376,7 +376,10 @@ public class InterfacedHypergraph<V, G>
         this.f.AddEdgeAndVertices(e)
     }
     public func RemoveEdge(e : Edge<V, G>) : Unit {
-        this.RemoveEdge(e)
+        this.f.RemoveEdge(e)
+    }
+    public func RemoveVertex(v : Vertex<V, G>) : Unit {
+        this.f.RemoveVertex(v)
     }
     public func toString() : String {
         let string = f.toString()
