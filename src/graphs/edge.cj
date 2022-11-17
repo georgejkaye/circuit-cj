@@ -266,6 +266,12 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
                     }
                 }
                 this.owner.RemoveEdge(this)
+                for(t in this.GetSources()) {
+                    t.GetVertex().RemoveOutEdge(this)
+                }
+                for(t in this.GetTargets()) {
+                    t.GetVertex().RemoveInEdge(this)
+                }
                 MergeInterfaces(this.GetSources(), f.GetInputs())
                 MergeInterfaces(this.GetTargets(), f.GetOutputs())
                 this.owner.IncludeHypergraph(f.GetGraph())
