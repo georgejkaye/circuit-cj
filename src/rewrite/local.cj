@@ -20,24 +20,47 @@ public func RewriteCombinational<V, G>(
     signature : Signature<V, G>,
     rules : ArrayList<RewriteRule<V, G>>,
     f : InterfacedHypergraph<V, G>,
-    starting : ArrayList<EdgeAtDepth<V, G>>
+    starting : ArrayList<Edge<V, G>>
 ) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let actionAtEdge = {
-        ed : EdgeAtDepth<V, G>, data : TraversalData<V, G> =>
-            let nexts = ArrayList<EdgeAtDepth<V, G>>()
+        e : Edge<V, G>, data : TraversalData<V, G> =>
+            let nexts = HashSet<TraversalElement<V, G>>()
             for(rule in rules) {
-                if(rule.CanRewrite(ed.edge, f)) {
-                    Debug("Rewriting ${ed.edge} with ${rule.name}")
-                    for(e in rule.Rewrite(ed.edge, f)){
-                        nexts.append(EdgeAtDepth(e, ed.depth))
+                if(rule.CanRewrite(e, f)) {
+                    Debug("Rewriting ${e} with ${rule.name}")
+                    for(e in rule.Rewrite(e, f)){
+                        nexts.put(EDGE(e))
                     }
                     return nexts
                 }
             }
-            GetUniqueNextEdges(ed, nexts)
+            if(!e.GetLabel().IsDelay()) {
+                for(t in e.GetTargets()) {
+                    nexts.put(VERTEX(t.GetVertex()))
+                }
+            }
             nexts
     }
-    Traverse(starting, 0, actionAtEdge)
+    let actionAtVertex = {
+        v : Vertex<V, G>, data : TraversalData<V, G> =>
+        let nextEdges = HashSet<TraversalElement<V, G>>()
+        for(ec in v.GetOutEdges()) {
+            println("Next out edge")
+            nextEdges.put(EDGE(ec.edge))
+        }
+        nextEdges
+    }
+    let startingElements = HashSet<TraversalElement<V, G>>()
+    for(e in starting) {
+        startingElements.put(EDGE(e))
+    }
+    BeginTraversal(
+        startingElements,
+        0,
+        actionAtVertex,
+        actionAtEdge,
+        revisit: true
+    )
 }
