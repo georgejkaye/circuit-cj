@@ -66,17 +66,6 @@ public class Rewriter<V, G>
         }
     }
 }
-/**
- * A suffix of a graph, representing computation to be done later
- */
-public struct GraphSuffix<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
-{
-    public GraphSuffix(
-        public let f : InterfacedHypergraph<V, G>,
-        public let outputs : Array<Vertex<V, G>>
-    ){}
-}
 func CheckForPrefix<V, G>(f : InterfacedHypergraph<V, G>) : (Int64, Array<Array<Signal<V>>>)
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
@@ -568,28 +557,6 @@ func CreateHeadRegisters<V, G>(f : InterfacedHypergraph<V, G>) : Unit
         let signal = signalEdge.GetLabel().GetSignal()
         // The delay is the right arg of the join
         let delayEdge = joinEdge.NextEdgeLeft(1)
-        let oldDelaySource = delayEdge.GetSource(0).vertex
-        // Set fresh vertices appropriately
-        let newJoinTarget = joinEdge.SetFreshTarget(0)
-        let newDelaySource = delayEdge.SetFreshSource(0)
-        // The new register edge contains the register as a subgraph
-        let registerEdges = HashSet<Edge<V, G>>([signalEdge, delayEdge, joinEdge])
-        let registerSubgraph = InterfacedHypergraph(
-            Hypergraph(registerEdges),
-            [InterfaceVertex(newDelaySource, "")],
-            [InterfaceVertex(newJoinTarget, "")],
-            REGISTER(signal)
-        )
-        f.RemoveEdge(joinEdge)
-        f.RemoveEdge(signalEdge)
-        f.RemoveEdge(delayEdge)
-        // Now make the new edge
-        let newRegisterEdge = Edge(
-            Label<V, G>.REGISTER(signal),
-            [oldDelaySource],
-            [oldJoinTarget],
-            registerSubgraph
-        )
-        f.AddEdge(newRegisterEdge)
+        f.GetGraph().CollapseSubgraph([SOURCE(delayEdge, 0)], [TARGET(joinEdge, 0)], Label<V, G>.REGISTER(signal))
     }
 }
