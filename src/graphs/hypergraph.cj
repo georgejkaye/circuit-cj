@@ -442,8 +442,7 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
     public func CollapseSubgraph(
         inputs : Array<TentacleOrigin<V, G>>,
         outputs : Array<TentacleOrigin<V, G>>,
-        label : Label<V, G>,
-        f : InterfacedHypergraph<V, G>
+        label : Label<V, G>
     ) : Unit {
         let slicedInputs = map<TentacleOrigin<V, G>, (Vertex<V, G>, Vertex<V, G>)>(
             { to => SliceTentacle(to)},
