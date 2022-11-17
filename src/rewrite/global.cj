@@ -63,6 +63,7 @@ public class Rewriter<V, G>
                 }
                 RewriteCombinational(signature, GetRules(signature, false), f, allStartingEdges)
             }
+            CollapseNext(f)
         }
     }
 }
@@ -559,4 +560,20 @@ func CreateHeadRegisters<V, G>(f : InterfacedHypergraph<V, G>) : Unit
         let delayEdge = joinEdge.NextEdgeLeft(1)
         f.GetGraph().CollapseSubgraph([SOURCE(delayEdge, 0)], [TARGET(joinEdge, 0)], Label<V, G>.REGISTER(signal))
     }
+}
+func CollapseNext<V, G>(f : InterfacedHypergraph<V, G>) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    let laterOutputs = map(
+        {iv : InterfaceVertex<V, G> =>
+            let registerEdge = iv.GetVertex().GetInEdge().getOrThrow().edge
+            SOURCE(registerEdge, 0)
+        },
+        f.GetOutputs()
+    )
+    f.GetGraph().CollapseSubgraph(Array<TentacleOrigin<V, G>>(), laterOutputs, COMPOSITE(Specification(
+        "later",
+        Array<Port<V>>(),
+        map({ iv => Port<V>(iv.GetWidth()) }, f.GetOutputs())
+    )))
 }
