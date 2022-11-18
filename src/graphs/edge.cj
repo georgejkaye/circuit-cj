@@ -89,6 +89,24 @@ public enum TentacleOrigin<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <:
     | INPUT(InterfacedHypergraph<V, G>, Int64)
     | OUTPUT(InterfacedHypergraph<V, G>, Int64)
 }
+extend TentacleOrigin<V, G> <: HasWidth & ToString {
+    public func GetWidth() : Int64 {
+        match(this) {
+            case SOURCE(e, i) => e.GetSource(i).GetWidth()
+            case TARGET(e, i) => e.GetTarget(i).GetWidth()
+            case INPUT(f, i) => f.GetInput(i).GetWidth()
+            case OUTPUT(f, i) => f.GetOutput(i).GetWidth()
+        }
+    }
+    public func toString() : String {
+        match(this) {
+            case SOURCE(e, i) => "${e.GetSource(i).vertex} left"
+            case TARGET(e, i) => "${e.GetTarget(i).vertex} right"
+            case INPUT(f, i) => "input ${i}"
+            case OUTPUT(f, i) => "output ${i}"
+        }
+    }
+}
 /**
  * (Hyper)edges represent the components in circuits, whether
  * they are primitives such as logic gates or larger subcircuits.
