@@ -244,6 +244,12 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             case _ => throw IncompatibleVariantException(this, "WAVEFORM")
         }
     }
+    public func IsRegister() : Bool {
+        match(this) {
+            case REGISTER(_) => true
+            case _ => false
+        }
+    }
 }
 
 public func GetSignalLabel<V, G>(v : V, w : Int64) : Label<V, G>
