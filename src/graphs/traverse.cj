@@ -20,7 +20,7 @@ public enum TraversalElement<V, G>
     | EDGE(Edge<V, G>)
     | VERTEX(Vertex<V, G>)
 }
-extend TraversalElement<V, G> <: Hashable & Equatable<TraversalElement<V, G>> {
+extend TraversalElement<V, G> <: Hashable & Equatable<TraversalElement<V, G>> & ToString {
     public func hashCode() : Int64 {
         match(this) {
             case EDGE(e) => e.GetId()
@@ -32,6 +32,12 @@ extend TraversalElement<V, G> <: Hashable & Equatable<TraversalElement<V, G>> {
     }
     public operator func !=(rhs : TraversalElement<V, G>) : Bool {
         !(this == rhs)
+    }
+    public func toString() : String {
+        match(this) {
+            case EDGE(e) => "${e}"
+            case VERTEX(v) => "${v}"
+        }
     }
 }
 /**
