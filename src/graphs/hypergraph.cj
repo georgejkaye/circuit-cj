@@ -443,7 +443,7 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         inputs : Array<TentacleOrigin<V, G>>,
         outputs : Array<TentacleOrigin<V, G>>,
         label : Label<V, G>
-    ) : Unit {
+    ) : InterfacedHypergraph<V, G> {
         let slicedInputs = map<TentacleOrigin<V, G>, (Vertex<V, G>, Vertex<V, G>)>(
             { to => SliceTentacle(to)},
             inputs
@@ -530,6 +530,30 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
             Some(interfacedSubgraph),
             Some(this)
         )
+        interfacedSubgraph
+    }
+    public func CollapseSubgraph(
+        inputs : Array<TentacleOrigin<V, G>>,
+        outputs : Array<TentacleOrigin<V, G>>,
+        name : String
+    ) : InterfacedHypergraph<V, G> {
+        this.CollapseSubgraph(
+            inputs,
+            outputs,
+            COMPOSITE(
+                Specification(
+                    name,
+                    map({ to => Port(to.GetWidth(), "") }, inputs),
+                    map({ to => Port(to.GetWidth(), "") }, outputs)
+                )
+            )
+        )
+    }
+    public func ContainsElement(elem : TraversalElement<V, G>) : Bool {
+        match(elem) {
+            case EDGE(e) => this.edges.contains(e)
+            case VERTEX(v) => this.vertices.contains(v)
+        }
     }
 }
 public func EmptyGraph<V, G>() : Hypergraph<V, G>
