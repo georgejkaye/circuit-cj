@@ -351,18 +351,18 @@ func xor(lhs: GateLevelValue, rhs: GateLevelValue) {
  * @param g The Belnap gate
  * @return The function from an array of Belnap values to an array of Belnap values
  */
-func gateLevelInterpretation(g: GateLevelPrimitive): (Array<GateLevelValue>) -> Array<GateLevelValue> {
+func gateLevelInterpretation(g: GateLevelPrimitive): (Array<Array<GateLevelValue>>) -> Array<GateLevelValue> {
     {
-        ws: Array<GateLevelValue> =>
+        ws: Array<Array<GateLevelValue>> =>
             let output = match (g) {
-                case BUF => ws[0]
-                case NOT => not(ws[0])
-                case AND => and(ws[0], ws[1])
-                case OR => or(ws[0], ws[1])
-                case NAND => not(and(ws[0], ws[1]))
-                case NOR => not(or(ws[0], ws[1]))
-                case XOR => xor(ws[0], ws[1])
-                case XNOR => not(xor(ws[0], ws[1]))
+                case BUF => ws[0][0]
+                case NOT => not(ws[0][0])
+                case AND => and(ws[0][0], ws[1][0])
+                case OR => or(ws[0][0], ws[1][0])
+                case NAND => not(and(ws[0][0], ws[1][0]))
+                case NOR => not(or(ws[0][0], ws[1][0]))
+                case XOR => xor(ws[0][0], ws[1][0])
+                case XNOR => not(xor(ws[0][0], ws[1][0]))
             }
             [output]
     }

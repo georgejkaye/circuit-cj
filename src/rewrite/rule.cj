@@ -161,9 +161,9 @@ func GetApplyRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
                     { t : Tentacle<V, G> => t.vertex.GetInEdge().getOrThrow().edge },
                     e.GetSources()
                 )
-                let values = Array<V>(
+                let values = Array<Array<V>>(
                     args.size,
-                    { i : Int64 => args[i].GetLabel().GetValue()}
+                    { i : Int64 => args[i].GetLabel().GetSignal().values}
                 )
                 let result = function(values)
                 let nextEdges = ComputeEdge(signature, f, e, args, [result])

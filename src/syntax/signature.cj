@@ -102,7 +102,7 @@ public class Signature<V, G> <: HasName & ToString
     public Signature(
         public let name : String,
         public let latticeStructure: FiniteLattice<V>,
-        public let gateInterpretation: (G) -> ((Array<V>) -> Array<V>),
+        public let gateInterpretation: (G) -> ((Array<Array<V>>) -> Array<V>),
         public let toDec: (Array<V>, Bool) -> Option<Int64>
     ) {}
     public func JoinValues(v: V, u: V): V {
