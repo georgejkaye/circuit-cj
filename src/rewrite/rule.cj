@@ -197,9 +197,10 @@ func GetStubRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
                 let nextEdges = HashSet<Edge<V, G>>()
                 for(t in e.GetSources()){
                     let v = t.vertex
+                    v.RemoveOutEdge(e)
                     match(v.GetInEdge()){
                         case Some(ec) => nextEdges.put(ec.edge)
-                        case None => ()
+                        case None => f.RemoveVertex(v)
                     }
                 }
                 // We can remove this edge now, but not its sources as these will be used
@@ -208,9 +209,6 @@ func GetStubRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
                 f.RemoveEdge(e)
                 for(t in e.GetTargets()) {
                     f.RemoveVertex(t.GetVertex())
-                }
-                for(t in e.GetSources()) {
-                    t.GetVertex().RemoveOutEdge(e)
                 }
                 nextEdges
         }
@@ -293,45 +291,41 @@ func GetJoinUnitRightRule<V, G>(signature : Signature<V, G>)
 func ComputeEdge<V, G>(
     signature : Signature<V, G>,
     f : InterfacedHypergraph<V, G>,
-    edge : Edge<V, G>,
+    e : Edge<V, G>,
     args : Array<Edge<V, G>>,
-    result : Array<Array<V>>
+    results : Array<Array<V>>
 ) : HashSet<Edge<V, G>>
      where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    let targets = edge.GetTargets()
-    f.RemoveEdge(edge)
-    for(t in targets) {
-        f.RemoveVertex(t.GetVertex())
+    let targets = e.GetTargets()
+    for(arg in args) {
+        f.RemoveEdge(arg)
     }
-    // We also know all the inputs are values
-    for(e in args) {
-        f.RemoveEdge(e)
-        for(t in e.GetTargets()) {
-            f.RemoveVertex(t.GetVertex())
-        }
+    for(t in targets){
+        let v = t.GetVertex()
+        v.RemoveInEdge(e)
     }
+    for(t in e.GetSources()) {
+        let v = t.GetVertex()
+        f.RemoveVertex(v)
+    }
+    f.RemoveEdge(e)
     let nextEdges = HashSet<Edge<V, G>>()
-    // Create the value edge with this result
-    for(vs in result) {
-        let newTarget = Vertex<V, G>(vs.size)
-        let subcircuit = if(vs.size == 1){
-            None<InterfacedHypergraph<V, G>>
-        } else {
-            signature.MakeSignal(Signal(vs))
-        }
-        let label = GetSignalLabel<V, G>(vs)
-        let resultEdge = Edge(label, Array<Vertex<V, G>>(), [newTarget], subcircuit, f.GetGraph())
-        f.AddEdgeAndVertices(resultEdge)
-        // Hook up the next edges
-        ReplaceTargets(
-            targets,
-            [newTarget],
-            f
+    for(i in 0..results.size) {
+        let result = results[i]
+        let signal = GetSignalLabel<V, G>(result)
+        let signalGraph = signature.MakeSignal(Signal(result))
+        let target = e.GetTarget(i).GetVertex()
+        target.RemoveInEdge(e)
+        let newEdge = Edge(
+            Label<V,G>.SIGNAL(Signal(result)),
+            Array<Vertex<V, G>>(),
+            [e.GetTarget(i).GetVertex()],
+            Some(signalGraph),
+            Some(f.GetGraph())
         )
-        nextEdges.put(resultEdge)
+        nextEdges.put(newEdge)
     }
-    // Return them
     nextEdges
 }
 
