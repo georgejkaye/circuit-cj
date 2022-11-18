@@ -115,6 +115,13 @@ public class InterfacedHypergraph<V, G>
         for(i in 0..inputs.size){
             let v = inputs[i].GetVertex()
             this.leftmostTraversalElements.put(VERTEX(v))
+            match(inputMap.get(v)) {
+                case None =>
+                    let vs = ArrayList<Int64>()
+                    vs.append(i)
+                    inputMap.put(v, vs)
+                case Some(vs) => vs.append(i)
+            }
             v.SetAsInput(this, i)
         }
         for(i in 0..outputs.size){
@@ -124,7 +131,7 @@ public class InterfacedHypergraph<V, G>
                 case None =>
                     let vs = ArrayList<Int64>()
                     vs.append(i)
-                    inputMap.put(v, vs)
+                    outputMap.put(v, vs)
                 case Some(vs) => vs.append(i)
             }
             v.SetAsOutput(this, i)
@@ -235,7 +242,16 @@ public class InterfacedHypergraph<V, G>
         direction : TraversalDirection,
         e : Edge<V, G>
     ) : Unit {
-        this.AddEdgeToTraversalElements(GetTraversalElements(direction), e)
+        let elem = EDGE(e)
+        match(direction) {
+            case LEFT_TO_RIGHT =>
+                this.GetLeftmostTraversalElements().put(elem)
+            case RIGHT_TO_LEFT =>
+                this.GetRightmostTraversalElements().put(elem)
+            case BOTH_DIRECTIONS =>
+                this.GetLeftmostTraversalElements().put(elem)
+                this.GetRightmostTraversalElements().put(elem)
+        }
     }
     public func GetLeftmostTraversalElements() : HashSet<TraversalElement<V, G>> {
         this.leftmostTraversalElements
