@@ -468,7 +468,11 @@ public class InterfacedHypergraph<V, G>
         let newOutputs = translateVertices(this.outputs)
         (newF, newInputs, newOutputs, vertexMap, edgeMap)
     }
-    public func CloneGraph() : (InterfacedHypergraph<V, G>, HashMap<Vertex<V, G>, Vertex<V, G>>, HashMap<Edge<V, G>, Edge<V, G>>) {
+    public func CloneGraph() : (
+        InterfacedHypergraph<V, G>,
+        HashMap<Vertex<V, G>, Vertex<V, G>>,
+        HashMap<Edge<V, G>, Edge<V, G>>
+    ) {
         let (newGraph, newInputs, newOutputs, vertexMap, edgeMap) = this.Clone()
         let graph = InterfacedHypergraph(newGraph, newInputs, newOutputs, this.label)
         (graph, vertexMap, edgeMap)
