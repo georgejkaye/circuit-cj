@@ -20,7 +20,7 @@ public func RewriteCombinational<V, G>(
     signature : Signature<V, G>,
     rules : ArrayList<RewriteRule<V, G>>,
     f : InterfacedHypergraph<V, G>,
-    starting : ArrayList<Edge<V, G>>
+    starting : HashSet<TraversalElement<V, G>>
 ) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
@@ -58,7 +58,7 @@ public func RewriteCombinational<V, G>(
     }
     let startingElements = HashSet<TraversalElement<V, G>>()
     for(e in starting) {
-        startingElements.put(EDGE(e))
+        startingElements.put(e)
     }
     Traverse<V, G>(
         startingElements,

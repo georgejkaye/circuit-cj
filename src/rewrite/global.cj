@@ -394,7 +394,7 @@ func MakeCopy<V, G>(
     vertexMap : HashMap<Vertex<V, G>, Vertex<V, G>>,
     edges : HashSet<Edge<V, G>>,
     now : Bool,
-    startingEdges : Option<ArrayList<Edge<V, G>>>
+    startingEdges : Option<HashSet<TraversalElement<V, G>>>
 ) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     CopyVertices(vertices, inputVertices, vertexMap)
     for(e in edges) {
@@ -436,7 +436,7 @@ func MakeCopy<V, G>(
             // If the new edge is a value, then it is a starting edge for traversing this graph
             if(newEdge.GetLabel().IsValue()){
                 match(startingEdges){
-                    case Some(es) => es.append(newEdge)
+                    case Some(es) => es.put(EDGE(newEdge))
                     case None => ()
                 }
             }
@@ -455,17 +455,17 @@ func MakeCopy<V, G>(
 func Unfold<V, G>(
     signature : Signature<V, G>,
     f : InterfacedHypergraph<V, G>
-) : ArrayList<Edge<V, G>>
+) : HashSet<TraversalElement<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    let startingEdges = ArrayList<Edge<V, G>>()
+    let startingEdges = HashSet<TraversalElement<V, G>>()
     // We can only safely unfold graphs with delay-guarded feedback
     if(f.HasNonDelayGuardedFeedback()) {
         Debug("Cannot unfold circuits with non-delay-guarded feedback, please unroll it first")
     } else if (f.GetSequentialData().delayEdges.size == 0) {
         Debug("No need to unfold circuits with no delay")
         for(e in f.GetSequentialData().valueEdges) {
-            startingEdges.append(e)
+            startingEdges.put(EDGE(e))
         }
     } else {
         let vertices = HashSet<Vertex<V, G>>(f.GetVertices())
@@ -487,7 +487,7 @@ func Unfold<V, G>(
             laterVertexMap,
             edges,
             false,
-            None<ArrayList<Edge<V, G>>>
+            None<HashSet<TraversalElement<V, G>>>
         )
         // Update the outputs by joining the outputs of the two copies
         let outputs = Array<InterfaceVertex<V, G>>(f.GetOutputs())
