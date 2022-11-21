@@ -42,7 +42,10 @@ public class Rewriter<V, G>
                 // Unfold and stream the circuit, so that we have a combinational
                 // circuit for what is happening 'now', and some subcircuit that
                 // contains what is happening 'later'
-                let nowStartingEdges = Unfold(signature, f)
+                let nowStartingEdges = HashSet<TraversalElement<V, G>>()
+                Unfold(signature, f, core, coreEdge, nowStartingEdges)
+                signature.WriteDotToFile(f, 0, "after-unfold-0")
+                signature.WriteDotToFile(f, 1, "after-unfold-1")
                 // Exhaustively rewrite the now subcircuit: this is guaranteed
                 // to terminate in a signal, the output of the current cycle
                 RewriteCombinational(signature, GetRules(signature, true), f, nowStartingEdges)
@@ -99,7 +102,9 @@ func CheckForHead<V, G>(f : InterfacedHypergraph<V, G>) : Option<InterfacedHyper
             }
         }
     }
-    Some<InterfacedHypergraph<V, G>>(f.GetOutput(0).GetVertex().GetInEdge().getOrThrow().edge.GetSource(0).vertex.GetInEdge().getOrThrow().edge.GetSubgraph().getOrThrow())
+    Some<InterfacedHypergraph<V, G>>(
+        f.GetOutput(0).GetVertex().GetInEdge().getOrThrow().edge.GetSource(0).vertex.GetInEdge().getOrThrow().edge.GetSubgraph().getOrThrow()
+    )
 }
 /**
  * 'Burst' edges that have sequential subgraphs. This is because all of the delays
@@ -477,50 +482,87 @@ func MakeCopy<V, G>(
  */
 func Unfold<V, G>(
     signature : Signature<V, G>,
-    f : InterfacedHypergraph<V, G>
-) : HashSet<TraversalElement<V, G>>
+    f : InterfacedHypergraph<V, G>,
+    core : InterfacedHypergraph<V, G>,
+    coreEdge : Edge<V, G>,
+    nowStartingEdges : HashSet<TraversalElement<V, G>>
+) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    let startingEdges = HashSet<TraversalElement<V, G>>()
+    println("Unfolding\n${f.toLongString()}")
     // We can only safely unfold graphs with delay-guarded feedback
     if(f.HasNonDelayGuardedFeedback()) {
         Debug("Cannot unfold circuits with non-delay-guarded feedback, please unroll it first")
     } else if (f.GetSequentialData().delayEdges.size == 0) {
         Debug("No need to unfold circuits with no delay")
         for(e in f.GetSequentialData().valueEdges) {
-            startingEdges.put(EDGE(e))
+            nowStartingEdges.put(EDGE(e))
         }
     } else {
-        let vertices = HashSet<Vertex<V, G>>(f.GetVertices())
-        let edges = HashSet<Edge<V, G>>(f.GetEdges())
-        let inputVertices = GetInputs(f, false)
-        // Make a copy for what is happening 'now'
-        // Replace any delays with bottom values
-        let nowVertexMap = HashMap<Vertex<V, G>, Vertex<V, G>>()
-        MakeCopy(signature, f, vertices, inputVertices, nowVertexMap, edges, true, startingEdges)
-        // Make a copy for what is happening 'later'
-        // Replace any values with bottom values and remove any delays
-        // The output of the later copy will be delayed instead
-        let laterVertexMap = HashMap<Vertex<V, G>, Vertex<V, G>>()
-        MakeCopy(
-            signature,
-            f,
-            vertices,
-            inputVertices,
-            laterVertexMap,
-            edges,
-            false,
-            None<HashSet<TraversalElement<V, G>>>
-        )
+        let delays = f.GetSequentialData().delayEdges.size
+        let values = f.GetSequentialData().valueEdges.size
+        func CloneCore(now : Bool) : Edge<V, G> {
+            let (clonedCore, _, _) = core.CloneGraph()
+            let delayVertices = Array<Vertex<V, G>>(delays) {
+                i : Int64 =>
+                    let coreSource = coreEdge.GetSource(i).GetVertex()
+                    let width = coreSource.GetWidth()
+                    if(now) {
+                        signature.UseSignal(signature.GetBottom(), width).GetVertex()
+                    } else {
+                        let delaySource = coreSource.GetInEdge().getOrThrow().edge.GetSource(0).GetVertex()
+                        let delayTarget = Vertex<V, G>(width)
+                        let delayEdge = Edge<V, G>(
+                            Label<V, G>.DELAY(width),
+                            [delaySource],
+                            [delayTarget],
+                            None<InterfacedHypergraph<V, G>>,
+                            Some(f.GetGraph())
+                        )
+                        delayTarget
+                    }
+            }
+            let valueVertices = Array<Vertex<V, G>>(values) {
+                i : Int64 =>
+                    // The values are offset by the delays
+                    let j = i + delays
+                    let coreSource = coreEdge.GetSource(j).GetVertex()
+                    let width = coreSource.GetWidth()
+                    let newValueSpec = if(now) {
+                        coreSource.GetInEdge().getOrThrow().edge.GetLabel().GetSignal()
+                    } else {
+                        GetSignal(signature.GetBottom(), width)
+                    }
+                    signature.UseSignal(newValueSpec).GetVertex()
+            }
+            let clonedEdge = Edge<V, G>(
+                coreEdge.GetLabel(),
+                Array<Vertex<V, G>>(core.GetArity()){
+                    i : Int64 =>
+                        if(i < delays) {
+                            delayVertices[i]
+                        } else if (i < delays + values) {
+                            valueVertices[i - delays]
+                        } else {
+                            coreEdge.GetSource(i).GetVertex()
+                        }
+                },
+                Array<Vertex<V, G>>(core.GetCoarity()) {
+                    i : Int64 => Vertex(coreEdge.GetTarget(i).GetVertex().GetWidth())
+                },
+                Some(clonedCore),
+                Some(f.GetGraph())
+            )
+            clonedEdge
+        }
+        let nowEdge = CloneCore(true)
+        let laterEdge = CloneCore(false)
         // Update the outputs by joining the outputs of the two copies
-        let outputs = Array<InterfaceVertex<V, G>>(f.GetOutputs())
-        for(i in 0..outputs.size){
-            let v = outputs[i].GetVertex()
-            let width = v.GetWidth()
-            // Get the corresponding output from the now circuit
-            let nowOutput = nowVertexMap[v]
-            // Get the corresponding output from the later circuit
-            let laterOutput = laterVertexMap[v]
+        let firstOutput = nowEdge.GetCoarity() - f.GetCoarity()
+        for(i in firstOutput..nowEdge.GetCoarity()){
+            let nowOutput = nowEdge.GetTarget(i).GetVertex()
+            let laterOutput = laterEdge.GetTarget(i).GetVertex()
+            let width = nowOutput.GetWidth()
             // The later source must be delayed to make it truly 'later'
             let delayTarget = Vertex<V, G>(width)
             let delayEdge = Edge(
@@ -538,10 +580,13 @@ func Unfold<V, G>(
                 None<InterfacedHypergraph<V, G>>,
                 f.GetGraph()
             )
-            f.ReplaceOutput(i, joinTarget)
+            f.ReplaceOutput(i - firstOutput, joinTarget)
+        }
+        for(v in nowEdge.GetSources()) {
+            let e = v.GetVertex().GetInEdge().getOrThrow().edge
+            nowStartingEdges.put(EDGE(e))
         }
     }
-    startingEdges
 }
 func CreateHeadRegisters<V, G>(f : InterfacedHypergraph<V, G>) : Unit
         where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
