@@ -42,15 +42,11 @@ public class Rewriter<V, G>
                 let nowStartingEdges = Unfold(signature, f)
                 // Exhaustively rewrite the now subcircuit: this is guaranteed
                 // to terminate in a signal, the output of the current cycle
-                WriteDotToFile(f, 0, "after-uf-${cycle}")
                 RewriteCombinational(signature, GetRules(signature, true), f, nowStartingEdges)
                 // If this was a closed circuit, then there will be an instantaneous
                 // value and a delayed subcircuit at the 'head' of the circuit. We
                 // collapse this into a register for ease of viewing
-                Debug("About to collapse the head into a register")
-                WriteDotToFile(f, 0, "after-comb")
                 CreateHeadRegisters(f)
-                WriteDotToFile(f, 0, "after-head")
                 // If desired, we can also tidy up the later subcircuit
                 if(tidyNext) {
                     let allStartingEdges = ArrayList<Edge<V, G>>()
@@ -529,7 +525,6 @@ func CreateHeadRegisters<V, G>(f : InterfacedHypergraph<V, G>) : Unit
 {
     var i = 0
     for(iv in f.GetOutputs()) {
-        WriteDotToFile(f, 2, "head-${i}")
         i++
         let v = iv.vertex
         let width = v.GetWidth()
