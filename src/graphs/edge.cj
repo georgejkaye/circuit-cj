@@ -277,10 +277,16 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
                     parentVertices : Array<Tentacle<V, G>>,
                     childVertices : Array<InterfaceVertex<V, G>>
                 ) : Unit {
+                    let mergeMap = HashMap<Vertex<V, G>, Vertex<V, G>>()
                     for (i in 0..parentVertices.size) {
-                        let parent = parentVertices[i]
-                        let child = childVertices[i]
-                        MergeVertices(parent.GetVertex(), child.GetVertex(), false)
+                        let parent = parentVertices[i].GetVertex()
+                        let originalChild = childVertices[i].GetVertex()
+                        let actualChild = match(mergeMap.get(originalChild)){
+                            case Some(v) => v
+                            case None => originalChild
+                        }
+                        let (retainedVertex, oldVertex) = MergeVertices(parent, actualChild, false)
+                        mergeMap.put(oldVertex, retainedVertex)
                     }
                 }
                 this.owner.RemoveEdge(this)
