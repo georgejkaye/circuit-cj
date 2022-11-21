@@ -433,8 +433,8 @@ func GetRules<V, G>(signature : Signature<V, G>, now : Bool) : ArrayList<Rewrite
     if(now) {
         rules.append(GetCompositeRule<V, G>())
     } else {
-        // rules.append(GetJoinUnitLeftRule<V, G>(signature))
-        // rules.append(GetJoinUnitRightRule<V, G>(signature))
+        rules.append(GetJoinUnitLeftRule<V, G>(signature))
+        rules.append(GetJoinUnitRightRule<V, G>(signature))
     }
     rules
 }
