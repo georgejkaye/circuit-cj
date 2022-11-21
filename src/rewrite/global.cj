@@ -33,6 +33,9 @@ public class Rewriter<V, G>
             case Some(later) => RunCycle(later, cycle - 1, tidyNext)
             case None =>
                 BurstSequentialGraphs(f)
+                let (core, coreEdge) = IdentifyCombinationalCore(f)
+                signature.WriteDotToFile(f, 0, "after-core-0")
+                signature.WriteDotToFile(f, 1, "after-core-1")
                 // Eliminate 'instant feedback' by copying the circuit some
                 // number of times. If there is no instant feedback, skips this step
                 InstantFeedback(signature, f)
@@ -47,23 +50,43 @@ public class Rewriter<V, G>
                 // value and a delayed subcircuit at the 'head' of the circuit. We
                 // collapse this into a register for ease of viewing
                 CreateHeadRegisters(f)
-                // If desired, we can also tidy up the later subcircuit
-                if(tidyNext) {
-                    let allStartingEdges = ArrayList<Edge<V, G>>()
-                    for(e in f.GetSequentialData().valueEdges){
-                        allStartingEdges.append(e)
-                    }
-                    for(e in f.GetSequentialData().delayEdges){
-                        allStartingEdges.append(e)
-                    }
-                    RewriteCombinational(signature, GetRules(signature, false), f, allStartingEdges)
-                }
                 let later = CollapseNext(f)
+                // If desired, we can also tidy up the later subcircuit
+                signature.WriteDotToFile(f, 1, "after-now")
+                if(tidyNext) {
+                    let laterStartingEdges = later.GetLeftmostTraversalElements()
+                    for(e in f.GetSequentialData().delayEdges){
+                        laterStartingEdges.put(EDGE(e))
+                    }
+                    RewriteCombinational(signature, GetRules(signature, false), f, laterStartingEdges)
+                }
+                signature.WriteDotToFile(f, 1, "after-later")
                 if(cycle > 0) {
                     RunCycle(later, cycle - 1, tidyNext)
                 }
         }
     }
+}
+func IdentifyCombinationalCore<V, G>(f : InterfacedHypergraph<V, G>) : (InterfacedHypergraph<V, G>, Edge<V, G>)
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    let inputs = ArrayList<TentacleOrigin<V, G>>()
+    let outputs = ArrayList<TentacleOrigin<V, G>>()
+    for(ec in f.GetSequentialData().feedbackConnections) {
+        inputs.append(SOURCE(ec.edge, ec.index))
+        outputs.append(SOURCE(ec.edge, ec.index))
+    }
+    for(e in f.GetSequentialData().delayEdges) {
+        inputs.append(TARGET(e, 0))
+        outputs.append(SOURCE(e, 0))
+    }
+    for(e in f.GetSequentialData().valueEdges) {
+        inputs.append(TARGET(e, 0))
+    }
+    for(i in 0..f.GetCoarity()) {
+        outputs.append(OUTPUT(f, i))
+    }
+    f.GetGraph().CollapseSubgraph(inputs.toArray(), outputs.toArray(), "Comb(${f.GetName()})")
 }
 func CheckForHead<V, G>(f : InterfacedHypergraph<V, G>) : Option<InterfacedHypergraph<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
