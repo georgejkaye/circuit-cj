@@ -147,7 +147,7 @@ public func Traverse<V, G>(
     )
     while(traversalData.frontier.size != 0) {
         let currentElement = frontier.remove(0)
-        Debug("Visiteing ${currentElement}")
+        Debug("Visiting ${currentElement}")
         traversalData.visitedElements.put(currentElement)
         let (elementsToAdd, elementsToRemove) = match(currentElement) {
             case EDGE(e) => actionAtEdge(e, traversalData)
