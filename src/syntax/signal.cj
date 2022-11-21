@@ -52,6 +52,14 @@ public struct Signal<V> <: ToString & HasName & Specifiable<V> & HasWidth & Equa
     public operator func !=(rhs : Signal<V>) : Bool {
         !(this == rhs)
     }
+    public func IsAll(v : V) : Bool {
+        for(value in this.values) {
+            if(value != v) {
+                return false
+            }
+        }
+        true
+    }
 }
 
 public func GetSignal<V>(v : V, w : Int64) : Signal<V> where V <: ValueSymbol, V <: Equatable<V> {
