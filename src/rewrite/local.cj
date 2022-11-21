@@ -26,37 +26,41 @@ public func RewriteCombinational<V, G>(
 {
     let actionAtEdge = {
         e : Edge<V, G>, data : TraversalData<V, G> =>
-            let nexts = HashSet<TraversalElement<V, G>>()
+            let nextEdges = HashSet<TraversalElement<V, G>>()
+            let removedEdges = HashSet<TraversalElement<V, G>>()
+            // Make sure we've reduced the arguments as much as possible first
+            for(t in e.GetSources()) {
+                let v = t.GetVertex()
+                if(!data.visitedElements.contains(VERTEX(v))){
+                    return (nextEdges, removedEdges)
+                }
+            }
             for(rule in rules) {
                 if(rule.CanRewrite(e, f)) {
                     Debug("Rewriting ${e} with ${rule.name}")
-                    for(e in rule.Rewrite(e, f)){
-                        nexts.put(EDGE(e))
-                    }
-                    return nexts
+                    return rule.Rewrite(e, f)
                 }
             }
             if(!e.GetLabel().IsDelay()) {
                 for(t in e.GetTargets()) {
-                    nexts.put(VERTEX(t.GetVertex()))
+                    nextEdges.put(VERTEX(t.GetVertex()))
                 }
             }
-            nexts
+            (nextEdges, removedEdges)
     }
     let actionAtVertex = {
         v : Vertex<V, G>, data : TraversalData<V, G> =>
         let nextEdges = HashSet<TraversalElement<V, G>>()
         for(ec in v.GetOutEdges()) {
-            println("Next out edge")
             nextEdges.put(EDGE(ec.edge))
         }
-        nextEdges
+        (nextEdges, HashSet<TraversalElement<V, G>>())
     }
     let startingElements = HashSet<TraversalElement<V, G>>()
     for(e in starting) {
         startingElements.put(EDGE(e))
     }
-    BeginTraversal(
+    Traverse<V, G>(
         startingElements,
         0,
         actionAtVertex,

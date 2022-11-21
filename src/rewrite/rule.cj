@@ -27,12 +27,12 @@ public struct RewriteRule<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: 
     public let name : String
     public let entryPoint : EntryPoint
     public let canRewrite : (Edge<V, G>, InterfacedHypergraph<V, G>) -> Bool
-    public let rewrite : (Edge<V, G>, InterfacedHypergraph<V, G>) -> HashSet<Edge<V, G>>
+    public let rewrite : (Edge<V, G>, InterfacedHypergraph<V, G>) -> (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)
     public init(
         name : String,
         entryPoint : EntryPoint,
         canRewrite : (Edge<V, G>, InterfacedHypergraph<V, G>) -> Bool,
-        rewrite :  (Edge<V, G>, InterfacedHypergraph<V, G>) -> HashSet<Edge<V, G>>
+        rewrite :  (Edge<V, G>, InterfacedHypergraph<V, G>) -> (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)
     ){
         this.name = name
         this.entryPoint = entryPoint
@@ -51,7 +51,7 @@ public struct RewriteRule<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: 
         }
         validLabel && this.canRewrite(e, f)
     }
-    public func Rewrite(e : Edge<V, G>, f : InterfacedHypergraph<V, G>) : HashSet<Edge<V, G>> {
+    public func Rewrite(e : Edge<V, G>, f : InterfacedHypergraph<V, G>) : (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>) {
         this.rewrite(e, f)
     }
 }
@@ -94,7 +94,8 @@ func GetForkRule<V, G>() : RewriteRule<V, G>
         },
         {
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
-                let nextEdges = HashSet<Edge<V, G>>()
+                let nextEdges = HashSet<TraversalElement<V, G>>()
+                let removedEdges = HashSet<TraversalElement<V, G>>()
                 let target = e.GetTarget(0).GetVertex()
                 let outEdges = HashSet<EdgeConnection<V, G>>(target.GetOutEdges())
                 for(ec in outEdges) {
@@ -107,13 +108,12 @@ func GetForkRule<V, G>() : RewriteRule<V, G>
                         f.GetGraph()
                     )
                     ec.edge.SetSource(ec.index, newTarget, false)
-                    println("new target ${newTarget} has out edges ${newTarget.GetOutEdges()} ")
-                    nextEdges.put(newEdge)
+                    nextEdges.put(EDGE(newEdge))
                 }
                 f.RemoveEdge(e)
+                removedEdges.put(EDGE(e))
                 f.RemoveVertex(target)
-                println("The next edges after forking are ${nextEdges}")
-                nextEdges
+                (nextEdges, removedEdges)
         }
     )
 }
@@ -166,8 +166,7 @@ func GetApplyRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
                     { i : Int64 => args[i].GetLabel().GetSignal().values}
                 )
                 let result = function(values)
-                let nextEdges = ComputeEdge(signature, f, e, args, [result])
-                nextEdges
+                ComputeEdge(signature, f, e, args, [result])
         }
     )
 }
@@ -194,12 +193,13 @@ func GetStubRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
                 // We need to add whatever is 'left' of this edge so that we can potentially
                 // discard more edges
-                let nextEdges = HashSet<Edge<V, G>>()
+                let nextEdges = HashSet<TraversalElement<V, G>>()
+                let removedEdges = HashSet<TraversalElement<V, G>>()
                 for(t in e.GetSources()){
                     let v = t.vertex
                     v.RemoveOutEdge(e)
                     match(v.GetInEdge()){
-                        case Some(ec) => nextEdges.put(ec.edge)
+                        case Some(ec) => nextEdges.put(EDGE(ec.edge))
                         case None => f.RemoveVertex(v)
                     }
                 }
@@ -207,10 +207,11 @@ func GetStubRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
                 // by other edges. Conversely, we have already confirmed that nothing else
                 // is using the targets so they can be deleted
                 f.RemoveEdge(e)
+                removedEdges.put(EDGE(e))
                 for(t in e.GetTargets()) {
                     f.RemoveVertex(t.GetVertex())
                 }
-                nextEdges
+                (nextEdges, removedEdges)
         }
     )
 }
@@ -228,8 +229,7 @@ func GetJoinRule<V, G>(signature : Signature<V, G>)
                 let argLHS = e.GetSource(0).vertex.GetInEdge().getOrThrow().edge
                 let argRHS = e.GetSource(1).vertex.GetInEdge().getOrThrow().edge
                 let result = signature.JoinPowers(argLHS.GetLabel().GetValueArray(), argRHS.GetLabel().GetValueArray())
-                let nextEdges = ComputeEdge(signature, f, e, [argLHS, argRHS], [result])
-                nextEdges
+                ComputeEdge(signature, f, e, [argLHS, argRHS], [result])
         }
     )
 }
@@ -239,7 +239,11 @@ func ArgumentIsAllValue<V, G>(v : V, e : Edge<V, G>, i : Int64) : Bool
     let label = e.GetSource(i).vertex.GetInEdge().getOrThrow().edge.GetLabel()
     label.IsAllValue(v)
 }
-func RemoveBinaryArgumentAndPassthrough<V, G>(e : Edge<V, G>, i : Int64, f : InterfacedHypergraph<V, G>) : HashSet<Edge<V, G>>
+func RemoveBinaryArgumentAndPassthrough<V, G>(
+    e : Edge<V, G>,
+    i : Int64,
+    f : InterfacedHypergraph<V, G>
+) : (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let arg = e.GetSource(i).vertex.GetInEdge().getOrThrow().edge
@@ -250,16 +254,21 @@ func RemoveBinaryArgumentAndPassthrough<V, G>(e : Edge<V, G>, i : Int64, f : Int
     }
     let target = e.GetTarget(0).vertex
     let source = e.GetSource(otherIndex).vertex
+    let nextEdges = HashSet<TraversalElement<V, G>>()
+    let removedEdges = HashSet<TraversalElement<V, G>>()
     f.RemoveEdge(e)
+    removedEdges.put(EDGE(e))
     for(t in e.GetTargets()) {
         f.RemoveVertex(t.GetVertex())
     }
     f.RemoveEdge(arg)
+    removedEdges.put(EDGE(arg))
     for(t in arg.GetTargets()) {
         f.RemoveVertex(t.GetVertex())
     }
     MergeVertices(source, target, false)
-    HashSet<Edge<V, G>>([source.GetInEdge().getOrThrow().edge])
+    nextEdges.put(EDGE(source.GetInEdge().getOrThrow().edge))
+    (nextEdges, removedEdges)
 }
 
 func GetJoinUnitRule<V, G>(signature : Signature<V, G>, i : Int64, str : String)
@@ -294,12 +303,15 @@ func ComputeEdge<V, G>(
     e : Edge<V, G>,
     args : Array<Edge<V, G>>,
     results : Array<Array<V>>
-) : HashSet<Edge<V, G>>
+) : (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)
      where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
+    let nextEdges = HashSet<TraversalElement<V, G>>()
+    let removedEdges = HashSet<TraversalElement<V, G>>()
     let targets = e.GetTargets()
     for(arg in args) {
         f.RemoveEdge(arg)
+        removedEdges.put(EDGE(arg))
     }
     for(t in targets){
         let v = t.GetVertex()
@@ -310,7 +322,7 @@ func ComputeEdge<V, G>(
         f.RemoveVertex(v)
     }
     f.RemoveEdge(e)
-    let nextEdges = HashSet<Edge<V, G>>()
+    removedEdges.put(EDGE(e))
     for(i in 0..results.size) {
         let result = results[i]
         let signal = GetSignalLabel<V, G>(result)
@@ -324,9 +336,9 @@ func ComputeEdge<V, G>(
             Some(signalGraph),
             Some(f.GetGraph())
         )
-        nextEdges.put(newEdge)
+        nextEdges.put(EDGE(newEdge))
     }
-    nextEdges
+    (nextEdges, removedEdges)
 }
 
 func GetCompositeRule<V, G>()
@@ -338,16 +350,18 @@ func GetCompositeRule<V, G>()
         { e : Edge<V, G>, f : InterfacedHypergraph<V, G> => true },
         {
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
-                let nextEdges = HashSet<Edge<V, G>>()
+                let nextEdges = HashSet<TraversalElement<V, G>>()
+                let removedEdges = HashSet<TraversalElement<V, G>>()
                 for(t in e.GetSources()) {
                     let v = t.vertex
                     match(v.GetInEdge()) {
                         case None => ()
-                        case Some(e) => nextEdges.put(e.edge)
+                        case Some(e) => nextEdges.put(EDGE(e.edge))
                     }
                 }
                 e.BurstSubgraph()
-                nextEdges
+                removedEdges.put(EDGE(e))
+                (nextEdges, removedEdges)
         }
     )
 }
@@ -360,7 +374,8 @@ func GetBundleRule<V, G>(sig : Signature<V, G>)
         GetApplyPreconditions<V, G>(),
         {
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
-                WriteDotToFile(f, 0, "${e.GetId()}-bundle")
+                let newEdges = HashSet<TraversalElement<V, G>>()
+                let removedEdges = HashSet<TraversalElement<V, G>>()
                 let values = ArrayList<V>()
                 // Get all the individual values in a list
                 for(t in e.GetSources()){
@@ -378,12 +393,13 @@ func GetBundleRule<V, G>(sig : Signature<V, G>)
                         case _ => ()
                     }
                     f.RemoveEdge(valueEdge)
+                    removedEdges.put(EDGE(valueEdge))
                     for(t in valueEdge.GetTargets()){
                         f.RemoveVertex(t.GetVertex())
                     }
                 }
-                let newEdges = HashSet<Edge<V, G>>()
                 f.RemoveEdge(e)
+                removedEdges.put(EDGE(e))
                 for(t in e.GetTargets()) {
                     t.GetVertex().RemoveInEdge(e)
                     let v = t.vertex
@@ -399,10 +415,9 @@ func GetBundleRule<V, G>(sig : Signature<V, G>)
                         let signalGraph = sig.MakeSignal(signal)
                         Edge(SIGNAL(signal), Array<Tentacle<V, G>>(), [t], signalGraph, f.GetGraph())
                     }
-                    newEdges.put(newEdge)
+                    newEdges.put(EDGE(newEdge))
                 }
-                WriteDotToFile(f, 0, "${e.GetId()}-bundlepost")
-                newEdges
+                (newEdges, removedEdges)
         }
     )
 }
