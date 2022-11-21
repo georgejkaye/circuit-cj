@@ -400,7 +400,7 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
      * relate the original versions of vertices/edges with the new copies
      */
     public func Clone() : (Hypergraph<V, G>, HashMap<Vertex<V, G>, Vertex<V, G>>, HashMap<Edge<V, G>, Edge<V, G>>) {
-        Debug("Cloning ${this}\n${this.toLongString()}\n")
+        Debug("Cloning ${this}")
         let newVertices = HashSet<Vertex<V, G>>()
         let vertexMap = HashMap<Vertex<V, G>,Vertex<V, G>>()
         let newEdges = HashSet<Edge<V, G>>()
@@ -505,7 +505,7 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
             for(v in starting) {
                 startingSet.put(VERTEX(v))
             }
-            BeginTraversal(
+            Traverse(
                 startingSet,
                 BOTH_DIRECTIONS,
                 0,
