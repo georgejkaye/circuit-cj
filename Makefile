@@ -41,6 +41,7 @@ clean:
 	rm -f *bc
 	rm -f dot/*svg dot/*png
 	rm -f log.*.txt
+	rm -f *o
 
 cleandot:
 	rm -f dot/*.dot dot/*.svg dot/*.png
