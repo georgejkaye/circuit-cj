@@ -153,9 +153,9 @@ public func Traverse<V, G>(
             case EDGE(e) => actionAtEdge(e, traversalData)
             case VERTEX(v) => actionAtVertex(v, traversalData)
         }
-        for(e in elementsToAdd) {
-            if(revisit || !traversalData.visitedElements.contains(e)) {
-                traversalData.frontier.append(e)
+        for(elem in elementsToAdd) {
+            if(!elementsToRemove.contains(elem) && (revisit || !traversalData.visitedElements.contains(elem))) {
+                traversalData.frontier.append(elem)
             }
         }
         traversalData.frontier.removeIf({ elem => elementsToRemove.contains(elem) })
