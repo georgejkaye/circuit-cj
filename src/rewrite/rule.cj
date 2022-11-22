@@ -112,6 +112,7 @@ func GetForkRule<V, G>() : RewriteRule<V, G>
                 f.RemoveEdge(e)
                 removedEdges.put(EDGE(e))
                 f.RemoveVertex(target)
+                removedEdges.put(VERTEX(target))
                 (nextEdges, removedEdges)
         }
     )
@@ -199,7 +200,9 @@ func GetStubRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
                     v.RemoveOutEdge(e)
                     match(v.GetInEdge()){
                         case Some(ec) => nextEdges.put(EDGE(ec.edge))
-                        case None => f.RemoveVertex(v)
+                        case None =>
+                            f.RemoveVertex(v)
+                            removedEdges.put(VERTEX(v))
                     }
                 }
                 // We can remove this edge now, but not its sources as these will be used
@@ -208,7 +211,9 @@ func GetStubRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
                 f.RemoveEdge(e)
                 removedEdges.put(EDGE(e))
                 for(t in e.GetTargets()) {
-                    f.RemoveVertex(t.GetVertex())
+                    let v = t.GetVertex()
+                    f.RemoveVertex(v)
+                    removedEdges.put(VERTEX(v))
                 }
                 (nextEdges, removedEdges)
         }
@@ -258,12 +263,16 @@ func RemoveBinaryArgumentAndPassthrough<V, G>(
     f.RemoveEdge(e)
     removedEdges.put(EDGE(e))
     for(t in e.GetTargets()) {
-        f.RemoveVertex(t.GetVertex())
+        let v = t.GetVertex()
+        f.RemoveVertex(v)
+        removedEdges.put(VERTEX(v))
     }
     f.RemoveEdge(arg)
     removedEdges.put(EDGE(arg))
     for(t in arg.GetTargets()) {
-        f.RemoveVertex(t.GetVertex())
+        let v = t.GetVertex()
+        f.RemoveVertex(v)
+        removedEdges.put(VERTEX(v))
     }
     MergeVertices(source, target, false)
     nextEdges.put(EDGE(source.GetInEdge().getOrThrow().edge))
@@ -319,6 +328,7 @@ func ComputeEdge<V, G>(
     for(t in e.GetSources()) {
         let v = t.GetVertex()
         f.RemoveVertex(v)
+        removedEdges.put(VERTEX(v))
     }
     f.RemoveEdge(e)
     removedEdges.put(EDGE(e))
@@ -389,9 +399,8 @@ func GetBundleRule<V, G>(sig : Signature<V, G>)
                     }
                     f.RemoveEdge(valueEdge)
                     removedEdges.put(EDGE(valueEdge))
-                    for(t in valueEdge.GetTargets()){
-                        f.RemoveVertex(t.GetVertex())
-                    }
+                    f.RemoveVertex(t.GetVertex())
+                    removedEdges.put(VERTEX(v))
                 }
                 f.RemoveEdge(e)
                 removedEdges.put(EDGE(e))
