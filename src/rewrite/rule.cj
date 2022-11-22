@@ -22,7 +22,6 @@ public enum EntryPoint {
     | ANY
     | BUNDLE
 }
-
 public struct RewriteRule<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
     public let name : String
     public let entryPoint : EntryPoint
@@ -328,11 +327,11 @@ func ComputeEdge<V, G>(
         let signal = GetSignalLabel<V, G>(result)
         let signalGraph = signature.MakeSignal(Signal(result))
         let target = e.GetTarget(i).GetVertex()
-        target.RemoveInEdge(e)
+        target.RemoveInEdge()
         let newEdge = Edge(
             Label<V,G>.SIGNAL(Signal(result)),
             Array<Vertex<V, G>>(),
-            [e.GetTarget(i).GetVertex()],
+            [target],
             Some(signalGraph),
             Some(f.GetGraph())
         )
@@ -401,19 +400,19 @@ func GetBundleRule<V, G>(sig : Signature<V, G>)
                 f.RemoveEdge(e)
                 removedEdges.put(EDGE(e))
                 for(t in e.GetTargets()) {
-                    t.GetVertex().RemoveInEdge(e)
-                    let v = t.vertex
+                    let v = t.GetVertex()
+                    v.RemoveInEdge()
                     let width = v.GetWidth()
                     let newEdge = if(width == 1) {
                         let value = values.remove(0)
-                        Edge(Label.VALUE(value), Array<Tentacle<V, G>>(), [t], None, f.GetGraph())
+                        Edge(Label.VALUE(value), Array<Vertex<V, G>>(), [v], None, f.GetGraph())
                     } else {
                         let wireValues = Array<V>(width){
                             i : Int64 => values.remove(0)
                         }
                         let signal = Signal(wireValues)
                         let signalGraph = sig.MakeSignal(signal)
-                        Edge(SIGNAL(signal), Array<Tentacle<V, G>>(), [t], signalGraph, f.GetGraph())
+                        Edge(SIGNAL(signal), Array<Vertex<V, G>>(), [v], signalGraph, f.GetGraph())
                     }
                     newEdges.put(EDGE(newEdge))
                 }
