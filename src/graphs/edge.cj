@@ -269,23 +269,24 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
     public func GetCoarity() : Int64 {
         this.targets.size
     }
-    public func BurstSubgraph() : Unit {
+    public func BurstSubgraph() : (Array<Tentacle<V, G>>, Array<Tentacle<V, G>>) {
         match(this.GetSubgraph()){
-            case None => ()
+            case None => (this.GetSources(), this.GetTargets())
             case Some(f) =>
+                let mergeMap = HashMap<Vertex<V, G>, Vertex<V, G>>()
                 func MergeInterfaces(
                     parentVertices : Array<Tentacle<V, G>>,
                     childVertices : Array<InterfaceVertex<V, G>>
                 ) : Unit {
-                    let mergeMap = HashMap<Vertex<V, G>, Vertex<V, G>>()
-                    for (i in 0..parentVertices.size) {
-                        let parent = parentVertices[i].GetVertex()
-                        let originalChild = childVertices[i].GetVertex()
-                        let actualChild = match(mergeMap.get(originalChild)){
+                    for(i in 0..parentVertices.size){
+                        let parent = parentVertices[i]
+                        let parentVertex = parentVertices[i].GetVertex()
+                        let originalChildVertex = childVertices[i].GetVertex()
+                        let actualChildVertex = match(mergeMap.get(originalChildVertex)){
                             case Some(v) => v
-                            case None => originalChild
+                            case None => originalChildVertex
                         }
-                        let (retainedVertex, oldVertex) = MergeVertices(parent, actualChild, false)
+                        let (retainedVertex, oldVertex) = MergeVertices(parent, actualChildVertex, parent.feedback)
                         mergeMap.put(oldVertex, retainedVertex)
                     }
                 }
@@ -298,7 +299,22 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
                 }
                 MergeInterfaces(this.GetSources(), f.GetInputs())
                 MergeInterfaces(this.GetTargets(), f.GetOutputs())
+                func GetNewVertices(array : Array<Tentacle<V, G>>) : Array<Tentacle<V, G>> {
+                    map(
+                        { t =>
+                            let oldVertex = t.GetVertex()
+                            match(mergeMap.get(oldVertex)) {
+                                case None => t
+                                case Some(v) => Tentacle(v, t.feedback, false)
+                            }
+                        },
+                        array
+                    )
+                }
+                let newSources = GetNewVertices(this.GetSources())
+                let newTargets = GetNewVertices(this.GetTargets())
                 this.owner.IncludeHypergraph(f.GetGraph())
+                (newSources, newTargets)
         }
     }
     public func toString() : String {

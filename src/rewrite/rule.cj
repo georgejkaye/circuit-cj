@@ -339,7 +339,6 @@ func ComputeEdge<V, G>(
     }
     (nextEdges, removedEdges)
 }
-
 func GetCompositeRule<V, G>()
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
@@ -351,14 +350,11 @@ func GetCompositeRule<V, G>()
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
                 let nextEdges = HashSet<TraversalElement<V, G>>()
                 let removedEdges = HashSet<TraversalElement<V, G>>()
-                for(t in e.GetSources()) {
-                    let v = t.vertex
-                    match(v.GetInEdge()) {
-                        case None => ()
-                        case Some(e) => nextEdges.put(EDGE(e.edge))
-                    }
+                let (newSources, newTargets) = e.BurstSubgraph()
+                for(t in newSources) {
+                    let edge = t.GetVertex().GetInEdge().getOrThrow().edge
+                    nextEdges.put(EDGE(edge))
                 }
-                e.BurstSubgraph()
                 removedEdges.put(EDGE(e))
                 (nextEdges, removedEdges)
         }
