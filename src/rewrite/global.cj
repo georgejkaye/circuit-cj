@@ -489,7 +489,6 @@ func Unfold<V, G>(
 ) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    println("Unfolding\n${f.toLongString()}")
     // We can only safely unfold graphs with delay-guarded feedback
     if(f.HasNonDelayGuardedFeedback()) {
         Debug("Cannot unfold circuits with non-delay-guarded feedback, please unroll it first")
