@@ -28,13 +28,6 @@ public func RewriteCombinational<V, G>(
         e : Edge<V, G>, data : TraversalData<V, G> =>
             let nextEdges = HashSet<TraversalElement<V, G>>()
             let removedEdges = HashSet<TraversalElement<V, G>>()
-            // Make sure we've reduced the arguments as much as possible first
-            for(t in e.GetSources()) {
-                let v = t.GetVertex()
-                if(!data.visitedElements.contains(VERTEX(v))){
-                    return (nextEdges, removedEdges)
-                }
-            }
             for(rule in rules) {
                 if(rule.CanRewrite(e, f)) {
                     Debug("Rewriting ${e} with ${rule.name}")
