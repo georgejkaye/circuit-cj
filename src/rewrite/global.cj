@@ -511,15 +511,7 @@ func Unfold<V, G>(
                         signature.UseSignal(signature.GetBottom(), width).GetVertex()
                     } else {
                         let delaySource = coreSource.GetInEdge().getOrThrow().edge.GetSource(0).GetVertex()
-                        let delayTarget = Vertex<V, G>(width)
-                        let delayEdge = Edge<V, G>(
-                            Label<V, G>.DELAY(width),
-                            [delaySource],
-                            [delayTarget],
-                            None<InterfacedHypergraph<V, G>>,
-                            Some(f.GetGraph())
-                        )
-                        delayTarget
+                        delaySource
                     }
             }
             let valueVertices = Array<Vertex<V, G>>(values) {
