@@ -349,13 +349,13 @@ func ComputeEdge<V, G>(
     }
     (nextEdges, removedEdges)
 }
-func GetCompositeRule<V, G>()
+func GetCompositeRule<V, G>(signature : Signature<V, G>)
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     RewriteRule<V, G>(
         "composite",
         SUBGRAPH,
-        { e : Edge<V, G>, f : InterfacedHypergraph<V, G> => true },
+        GetApplyPreconditions<V, G>(),
         {
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
                 let nextEdges = HashSet<TraversalElement<V, G>>()
@@ -384,7 +384,7 @@ func GetBundleRule<V, G>(sig : Signature<V, G>)
                 let values = ArrayList<V>()
                 // Get all the individual values in a list
                 for(t in e.GetSources()){
-                    let v = t.vertex
+                    let v = t.GetVertex()
                     // Precondition enforces there must be an in edge
                     let valueEdge = v.GetInEdge().getOrThrow().edge
                     match(valueEdge.GetLabel()) {
@@ -430,12 +430,12 @@ func GetRules<V, G>(signature : Signature<V, G>, now : Bool) : ArrayList<Rewrite
 {
     let rules = ArrayList<RewriteRule<V, G>>()
     rules.append(GetForkRule<V, G>())
+    rules.append(GetStubRule<V, G>(signature))
     rules.append(GetBundleRule<V, G>(signature))
     rules.append(GetApplyRule<V, G>(signature))
-    rules.append(GetStubRule<V, G>(signature))
     rules.append(GetJoinRule<V, G>(signature))
     if(now) {
-        rules.append(GetCompositeRule<V, G>())
+        rules.append(GetCompositeRule<V, G>(signature))
     } else {
         rules.append(GetJoinUnitLeftRule<V, G>(signature))
         rules.append(GetJoinUnitRightRule<V, G>(signature))
