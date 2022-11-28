@@ -92,6 +92,8 @@ public class InterfacedHypergraph<V, G>
     let inputMap : HashMap<Vertex<V, G>, ArrayList<Int64>> = HashMap<Vertex<V, G>, ArrayList<Int64>>()
     // Associates vertices with their positions in the outputs
     let outputMap : HashMap<Vertex<V, G>, ArrayList<Int64>> = HashMap<Vertex<V, G>, ArrayList<Int64>>()
+    // The 'heads' of the circuit: the waveforms that have been computed by rewriting
+    let headWaveforms : Array<Option<Edge<V, G>>>
     /**
      * Create an interfaced hypergraph with a given label
      *
@@ -109,6 +111,9 @@ public class InterfacedHypergraph<V, G>
         this.f = f
         this.inputs = inputs
         this.outputs = outputs
+        this.headWaveforms = Array<Option<Edge<V, G>>>(outputs.size){
+            i : Int64 => None
+        }
         this.label = label
         this.leftmostTraversalElements.putAll(f.GetLeftmostTraversalElements())
         this.rightmostTraversalElements.putAll(f.GetRightmostTraversalElements())
@@ -135,6 +140,16 @@ public class InterfacedHypergraph<V, G>
                 case Some(vs) => vs.append(i)
             }
             v.SetAsOutput(this, i)
+            match(v.GetInEdge()){
+                case None => ()
+                case Some(ec) =>
+                    let e = ec.GetEdge()
+                    match(e.GetLabel()) {
+                        case OPEN_WAVEFORM(signals) => this.headWaveforms[i] = Some(e)
+                        case _ => ()
+                    }
+
+            }
         }
         f.AddInterfacedOwner(this)
     }
@@ -373,6 +388,15 @@ public class InterfacedHypergraph<V, G>
         )
         newOutput.SetAsOutput(this, i)
         f.AddVertex(newOutput)
+        match(newOutput.GetInEdge()) {
+            case None => this.headWaveforms[i] = None
+            case Some(ec) =>
+                let edge = ec.GetEdge()
+                match(edge.GetLabel()) {
+                    case OPEN_WAVEFORM(signals) => this.headWaveforms[i] = Some(edge)
+                    case _ => this.headWaveforms[i] = None
+                }
+        }
     }
     public func ReplaceOutputs(vs : ArrayList<Vertex<V, G>>) {
         for(i in 0..vs.size) {
@@ -479,5 +503,25 @@ public class InterfacedHypergraph<V, G>
     }
     public func GetLabel() : Label<V, G> {
         this.label
+    }
+    public func GetShortestHead() : Int64 {
+        fold_left(
+            { acc : Int64, cur : InterfaceVertex<V, G> =>
+                match(cur.GetVertex().GetInEdge()){
+                    case None => 0
+                    case Some(ec) =>
+                        let edge = ec.GetEdge()
+                        match(edge.GetLabel()) {
+                            case OPEN_WAVEFORM(signals) => signals.size
+                            case _ => 0
+                        }
+                }
+            },
+            MAX_INT64,
+            this.GetOutputs()
+        )
+    }
+    public func GetHeadWaveform(i : Int64) : Option<Edge<V, G>> {
+        this.headWaveforms[i]
     }
 }
