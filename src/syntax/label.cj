@@ -184,6 +184,7 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
         match(this) {
             case VALUE(v) => Signal(v)
             case SIGNAL(spec) => spec
+            case REGISTER(signal) => signal
             case _ => throw IncompatibleVariantException(this, "VALUE/SIGNAL")
         }
     }
@@ -234,6 +235,14 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
         match(this) {
             case BUNDLER(ms, ns) => (ms, ns)
             case _ => throw IncompatibleVariantException(this, "BUNDLER")
+        }
+    }
+    public func IsWaveform() : Bool {
+        match(this) {
+            case OPEN_WAVEFORM(_) => true
+            case CLOSED_WAVEFORM(_) => true
+            case INFINITE_WAVEFORM(_) => true
+            case _ => false
         }
     }
     public func GetWaveform() : Array<Signal<V>> {
