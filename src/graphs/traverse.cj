@@ -99,8 +99,8 @@ func GetDefaultNextEdges<V, G>(
     { v : Vertex<V, G>, data : TraversalData<V, G> =>
         let nextElements = HashSet<TraversalElement<V, G>>()
         func AddEdgeIfNotVisited(ec : EdgeConnection<V, G>) : Unit {
-            let element = EDGE(ec.edge)
-            if(condition(ec.edge)){
+            let element = EDGE(ec.GetEdge())
+            if(condition(ec.GetEdge())){
                 nextElements.put(element)
             }
         }

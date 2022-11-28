@@ -238,7 +238,7 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         this.sequentialData.delayEdges.remove(e)
         this.sequentialData.valueEdges.remove(e)
         this.sequentialData.sequentialEdges.remove(e)
-        this.sequentialData.feedbackConnections.removeIf({ ec : EdgeConnection<V, G> => ec.edge == e})
+        this.sequentialData.feedbackConnections.removeIf({ ec : EdgeConnection<V, G> => ec.GetEdge() == e})
         this.sequentialData.combinationalEdges.remove(e)
     }
     func RemoveVertexFromHypergraphData(v : Vertex<V, G>) : Unit {

@@ -60,6 +60,12 @@ public struct EdgeConnection<V, G> <: ToString & Equatable<EdgeConnection<V, G>>
         }
         t.GetWidth()
     }
+    public func GetEdge() : Edge<V, G> {
+        this.edge
+    }
+    public func GetIndex() : Int64 {
+        this.index
+    }
 }
 public enum InterfaceType {
     | INPUT
@@ -174,7 +180,7 @@ public class Vertex<V, G>
         match(this.inEdge) {
             case None => ()
             case Some(ec) =>
-                if (ec.edge == e) {
+                if (ec.GetEdge() == e) {
                     this.inEdge = None
                     this.PostAlterInEdge()
                 }
@@ -197,11 +203,11 @@ public class Vertex<V, G>
         this.PostAlterOutEdges()
     }
     public func RemoveOutEdge(e : Edge<V, G>) : Unit {
-        this.outEdges.removeIf({ec : EdgeConnection<V, G> => ec.edge == e})
+        this.outEdges.removeIf({ec : EdgeConnection<V, G> => ec.GetEdge() == e})
         this.PostAlterOutEdges()
     }
     public func RemoveOutEdge(e : Edge<V, G>, i : Int64) : Unit {
-        this.outEdges.removeIf({ec : EdgeConnection<V, G> => ec.edge == e && ec.index == i})
+        this.outEdges.removeIf({ec : EdgeConnection<V, G> => ec.GetEdge() == e && ec.GetIndex() == i})
         this.PostAlterOutEdges()
     }
     public func AddOutEdge(e : Edge<V, G>, i : Int64) : Unit {
@@ -210,7 +216,7 @@ public class Vertex<V, G>
     }
     public func AddAllOutEdges(es : HashSet<EdgeConnection<V, G>>) {
         for(ec in es) {
-            this.AddOutEdge(ec.edge, ec.index)
+            this.AddOutEdge(ec.GetEdge(), ec.GetIndex())
         }
         this.PostAlterOutEdges()
     }

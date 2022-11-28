@@ -67,7 +67,7 @@ func ReplaceTargets<V, G>(
         // Replace sources of edges
         let oldTargetEdges = ArrayList<EdgeConnection<V, G>>(oldTarget.vertex.GetOutEdges())
         for(ec in oldTargetEdges) {
-            ec.edge.SetSource(ec.index, newTarget, oldTarget.feedback)
+            ec.GetEdge().SetSource(ec.GetIndex(), newTarget, oldTarget.feedback)
         }
         let outputs = f.GetOutputs()
         for(j in 0..outputs.size) {
@@ -106,7 +106,7 @@ func GetForkRule<V, G>() : RewriteRule<V, G>
                         e.GetSubgraph(),
                         f.GetGraph()
                     )
-                    ec.edge.SetSource(ec.index, newTarget, false)
+                    ec.GetEdge().SetSource(ec.GetIndex(), newTarget, false)
                     nextEdges.put(EDGE(newEdge))
                 }
                 f.RemoveEdge(e)
@@ -136,7 +136,7 @@ func GetApplyPreconditions<V, G>() : (Edge<V, G>, InterfacedHypergraph<V, G>) ->
             match(v.GetInEdge()){
                 case None => return false
                 case Some(ec) =>
-                    if(!ec.edge.GetLabel().IsValue()) {
+                    if(!ec.GetEdge().GetLabel().IsValue()) {
                         return false
                     }
             }
@@ -199,7 +199,7 @@ func GetStubRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
                     let v = t.vertex
                     v.RemoveOutEdge(e)
                     match(v.GetInEdge()){
-                        case Some(ec) => nextEdges.put(EDGE(ec.edge))
+                        case Some(ec) => nextEdges.put(EDGE(ec.GetEdge()))
                         case None =>
                             f.RemoveVertex(v)
                             removedEdges.put(VERTEX(v))

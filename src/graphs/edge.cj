@@ -342,6 +342,6 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
         let t = this.GetSource(i)
         let v = t.GetVertex()
         let ec = v.GetInEdge().getOrThrow()
-        ec.edge
+        ec.GetEdge()
     }
 }

@@ -45,7 +45,7 @@ public func RewriteCombinational<V, G>(
         v : Vertex<V, G>, data : TraversalData<V, G> =>
         let nextEdges = HashSet<TraversalElement<V, G>>()
         for(ec in v.GetOutEdges()) {
-            nextEdges.put(EDGE(ec.edge))
+            nextEdges.put(EDGE(ec.GetEdge()))
         }
         (nextEdges, HashSet<TraversalElement<V, G>>())
     }

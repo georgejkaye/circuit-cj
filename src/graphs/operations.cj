@@ -27,11 +27,11 @@ public func MergeVertices<T, U, V, G>(t : T, u : U, feedback: Bool) : (Vertex<V,
     let w = u.GetVertex()
     match(w.GetInEdge()) {
         case None => ()
-        case Some(ec) => ec.edge.SetTarget(ec.index, v)
+        case Some(ec) => ec.GetEdge().SetTarget(ec.GetIndex(), v)
     }
     let outEdges = Array<EdgeConnection<V, G>>(w.GetOutEdges())
     for(ec in outEdges){
-        ec.edge.SetSource(ec.index, v, feedback)
+        ec.GetEdge().SetSource(ec.GetIndex(), v, feedback)
     }
     // Make sure the old vertex isn't part of a hypergraph any more
     w.GetOwner().RemoveVertex(w)
@@ -45,7 +45,7 @@ public func SplitVertex<V, G>(v : Vertex<V, G>) : (Vertex<V, G>, Vertex<V, G>)
     leftVertex.GetOwner().AddVertex(rightVertex)
     let outEdges = HashSet<EdgeConnection<V, G>>(v.GetOutEdges())
     for(ec in HashSet(leftVertex.GetOutEdges())) {
-        ec.edge.SetSource(ec.index, rightVertex, ec.edge.GetSource(ec.index).feedback)
+        ec.GetEdge().SetSource(ec.GetIndex(), rightVertex, ec.GetEdge().GetSource(ec.GetIndex()).feedback)
     }
     for(ie in HashSet(v.GetInterfacedOutputs())) {
         ie.graph.ReplaceOutput(ie.index, rightVertex)

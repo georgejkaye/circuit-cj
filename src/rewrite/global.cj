@@ -76,8 +76,8 @@ func IdentifyCombinationalCore<V, G>(f : InterfacedHypergraph<V, G>) : (Interfac
     let inputs = ArrayList<TentacleOrigin<V, G>>()
     let outputs = ArrayList<TentacleOrigin<V, G>>()
     for(ec in f.GetSequentialData().feedbackConnections) {
-        inputs.append(SOURCE(ec.edge, ec.index))
-        outputs.append(SOURCE(ec.edge, ec.index))
+        inputs.append(SOURCE(ec.GetEdge(), ec.GetIndex()))
+        outputs.append(SOURCE(ec.GetEdge(), ec.GetIndex()))
     }
     for(e in f.GetSequentialData().delayEdges) {
         inputs.append(TARGET(e, 0))
@@ -97,7 +97,7 @@ func CheckForHead<V, G>(f : InterfacedHypergraph<V, G>) : Option<InterfacedHyper
     for(iv in f.GetOutputs()) {
         match(iv.GetVertex().GetInEdge()) {
             case None => return None<InterfacedHypergraph<V, G>>
-            case Some(ec) => if(!ec.edge.GetLabel().IsRegister()){
+            case Some(ec) => if(!ec.GetEdge().GetLabel().IsRegister()){
                 return None<InterfacedHypergraph<V, G>>
             }
         }
@@ -142,8 +142,8 @@ func YankDelays<V, G>(f : InterfacedHypergraph<V, G>) : Unit
         let v = e.GetTarget(0).GetVertex()
         // There may be many target tentacles
         for(ec in v.GetOutEdges()) {
-            let e = ec.edge
-            let i = ec.index
+            let e = ec.GetEdge()
+            let i = ec.GetIndex()
             let t = e.GetSource(i)
             if(t.feedback) {
                 e.RemoveFeedback(i)
@@ -343,7 +343,7 @@ func GetFeedbackMap<V, G>(f : InterfacedHypergraph<V, G>) : HashMap<EdgeConnecti
     let sequentialData = f.GetSequentialData()
     let feedbackMap = HashMap<EdgeConnection<V, G>, Vertex<V, G>>()
     for(ec in sequentialData.feedbackConnections) {
-        feedbackMap.put(ec, ec.edge.GetSource(ec.index).GetVertex())
+        feedbackMap.put(ec, ec.GetEdge().GetSource(ec.GetIndex()).GetVertex())
     }
     feedbackMap
 }
@@ -366,7 +366,7 @@ func PostUnrollInstantFeedback<V, G>(
     for(ec in sequentialData.feedbackConnections) {
         let bot = signature.UseSignal(signature.GetBottom(), ec.GetWidth())
         let v = bot.GetVertex()
-        ec.edge.SetSource(ec.index, v, false)
+        ec.GetEdge().SetSource(ec.GetIndex(), v, false)
     }
     // Set the source of each delay edge to be its latest iteration
     for(e in sequentialData.delayEdges){
