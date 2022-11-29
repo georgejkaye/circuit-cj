@@ -73,7 +73,13 @@ public func SliceTentacle<V, G>(to : TentacleOrigin<V, G>) : (Vertex<V, G>, Vert
         case OUTPUT(f, i) =>
             f.ReplaceOutput(i, slicedVertex)
     }
-    (existingVertex, slicedVertex)
+    let (leftVertex, rightVertex) = match(to) {
+        case SOURCE(_, _) => (existingVertex, slicedVertex)
+        case TARGET(_, _) => (slicedVertex, existingVertex)
+        case INPUT(_, _) => (slicedVertex, existingVertex)
+        case OUTPUT(_, _) => (existingVertex, slicedVertex)
+    }
+    (leftVertex, rightVertex)
 }
 /**
  * Depending on a flag, clone an interfaced hypergraph, or just get a

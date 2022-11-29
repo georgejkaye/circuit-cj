@@ -452,51 +452,10 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
             { to => SliceTentacle(to)},
             outputs
         )
-        let getCorrectVertex = { vs : (Vertex<V, G>, Vertex<V, G>), to : TentacleOrigin<V, G>, child : Bool, input : Bool =>
-            let (existing, sliced) = vs
-            match(to) {
-                case SOURCE(_, _) =>
-                    if(child && input || !child && !input) {
-                        sliced
-                    } else {
-                        existing
-                    }
-                case TARGET(_, _) =>
-                    if(child && !input || !child && input) {
-                        sliced
-                    } else {
-                        existing
-                    }
-                case INPUT(_, _) =>
-                    if(child && input || !child && !input) {
-                        existing
-                    } else {
-                        sliced
-                    }
-                case OUTPUT(_, _) =>
-                    if(child && !input || child && !input) {
-                        existing
-                    } else {
-                        sliced
-                    }
-            }
-        }
-        let childInputs = mapi(
-            { vs : (Vertex<V, G>, Vertex<V, G>), i : Int64 => getCorrectVertex(vs, inputs[i], true, true) },
-            slicedInputs
-        )
-        let childOutputs = mapi(
-            { vs : (Vertex<V, G>, Vertex<V, G>), i : Int64 => getCorrectVertex(vs, outputs[i], true, false) },
-            slicedOutputs
-        )
-        let parentInputs = mapi(
-            { vs : (Vertex<V, G>, Vertex<V, G>), i : Int64 => getCorrectVertex(vs, inputs[i], false, true) },
-            slicedInputs
-        )
-        let parentOutputs = mapi(
-            { vs : (Vertex<V, G>, Vertex<V, G>), i : Int64 => getCorrectVertex(vs, outputs[i], false, false) },
-            slicedOutputs
-        )
+        let childInputs = map({ vs : (Vertex<V, G>, Vertex<V, G>) => vs[1] }, slicedInputs)
+        let childOutputs = map({ vs : (Vertex<V, G>, Vertex<V, G>) => vs[0] }, slicedOutputs)
+        let parentInputs = map({ vs : (Vertex<V, G>, Vertex<V, G>) => vs[0] },  slicedInputs)
+        let parentOutputs = map({ vs : (Vertex<V, G>, Vertex<V, G>) => vs[1] }, slicedOutputs)
         let subgraph = Hypergraph<V, G>()
         let actionAtVertex = {v : Vertex<V, G> => subgraph.AddVertex(v) }
         let actionAtEdge = {e : Edge<V, G> => subgraph.AddEdge(e) }
