@@ -102,8 +102,8 @@ extend TentacleOrigin<V, G> <: HasWidth & ToString {
         match(this) {
             case SOURCE(e, i) => "${e.GetSource(i).vertex} left"
             case TARGET(e, i) => "${e.GetTarget(i).vertex} right"
-            case INPUT(f, i) => "input ${i}"
-            case OUTPUT(f, i) => "output ${i}"
+            case INPUT(f, i) => "${f} input ${i}"
+            case OUTPUT(f, i) => "${f} output ${i}"
         }
     }
 }
