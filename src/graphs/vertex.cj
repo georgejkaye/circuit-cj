@@ -229,6 +229,9 @@ public class Vertex<V, G>
     public func toString() : String {
         "v${this.GetId()}"
     }
+    public func toLongString() : String {
+        "v${this.GetId()}, in ${this.GetInEdge()}, out ${this.GetOutEdges()}"
+    }
     public operator func ==(right: Vertex<V, G>) : Bool {
         this.GetId() == right.GetId()
     }
