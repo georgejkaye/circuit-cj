@@ -219,7 +219,6 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
             let oldVertex = array[i].GetVertex()
             array[i] = tentacle
             vertexFn(oldVertex, newVertex)
-            this.owner.IncludeHypergraph(newVertex.GetOwner())
     }
     public func SetSource(i : Int64, newVertex : Vertex<V, G>, feedback: Bool) : Unit {
         SetVertex(
