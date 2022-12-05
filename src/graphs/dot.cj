@@ -748,5 +748,6 @@ extend Signature<V, G> <: DotDrawer<V, G> {
         let fs = File(filename, CreateOrTruncate(false))
         fs.write(dot.toUtf8Array())
         fs.close()
+        Info("Finished writing dot file")
     }
 }
