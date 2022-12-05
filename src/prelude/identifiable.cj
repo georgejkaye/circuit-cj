@@ -1,11 +1,11 @@
 /**
- * graphs/element.cj
+ * prelude/element.cj
  *
  * @author George Kaye
  * @since 0.2
  */
 
-package graphs
+package prelude
 
 /**
  * Global ids for objects
