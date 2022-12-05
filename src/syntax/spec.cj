@@ -34,12 +34,19 @@ public func numToUppercaseLetter(n : Int64) : String {
 /**
  * A specification defines an arbitrary label with a name and arrays of input/output ports
  */
-public class Specification<V> <: Specifiable<V> & HasName & Equatable<Specification<V>> where V <: ValueSymbol, V <: Equatable<V> {
+public class Specification<V> <: Specifiable<V> & HasName & Equatable<Specification<V>> & Hashable
+    where V <: ValueSymbol, V <: Equatable<V>
+{
+    static var nextId = 0
+    public let id : Int64
     public Specification(
         public let name : String,
         public let inputPorts : Array<Port<V>>,
         public let outputPorts : Array<Port<V>>
-    ){}
+    ){
+        this.id = nextId
+        nextId++
+    }
     public func GetName() : String {
         this.name
     }
@@ -65,5 +72,8 @@ public class Specification<V> <: Specifiable<V> & HasName & Equatable<Specificat
     }
     public operator func !=(rhs : Specification<V>) {
         !(this == rhs)
+    }
+    public func hashCode() : Int64 {
+        this.id
     }
 }
