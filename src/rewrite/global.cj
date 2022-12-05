@@ -36,43 +36,46 @@ public class Rewriter<V, G>
             // productive form) so we first need to burst the waveforms at the front so
             // we can append a value to it
             BurstHeadWaveforms(f, shortestHead)
+            // signature.WriteDotToFile(f, 1, "after-burst")
             // Now we need to collapse whatever is to the left of the shortest waveform to obtain
             // the 'working graph', the graph we will actually be rewriting
-            let (workingGraph, headTentacles, headSignals) = CollapseWorkingGraph(f, shortestHead)
+            let (headTentacles, headSignals, headEdges) = IdentifyWorkingGraph(f, shortestHead)
+            // signature.WriteDotToFile(f, 1, "after-collapse")
             // Edges containing sequential components need to be treated carefully during
             // rewriting, so we burst them open first
-            BurstSequentialGraphs(workingGraph)
+            BurstSequentialGraphs(f, headEdges)
+            // signature.WriteDotToFile(f, 1, "after-burst")
             // The rewriting strategy involves performing operations on a 'combinational core'
             // containing all the combinational logic of the circuit
-            let (core, coreEdge) = IdentifyCombinationalCore(workingGraph)
+            let (core, coreEdge) = IdentifyCombinationalCore(f, headTentacles)
+            // signature.WriteDotToFile(f, 1, "after-core")
             // Eliminate 'instant feedback' by copying the circuit some
             // number of times. If there is no instant feedback, skips this step
-            InstantFeedback(signature, workingGraph)
+            // InstantFeedback(signature, f)
             // Unfold and stream the circuit, so that we have a combinational
             // circuit for what is happening 'now', and some subcircuit that
             // contains what is happening 'later'
             let nowStartingEdges = HashSet<TraversalElement<V, G>>()
-            Unfold(signature, workingGraph, core, coreEdge, nowStartingEdges)
+            let laterStartingEdges = HashSet<TraversalElement<V, G>>()
+            let outputVertices = Unfold(signature, f, core, coreEdge, headTentacles, nowStartingEdges, laterStartingEdges)
+            // signature.WriteDotToFile(f, 1, "after-unfold")
             // Exhaustively rewrite the now subcircuit: this is guaranteed
             // to terminate in a signal, the output of the current cycle
-            RewriteCombinational(signature, GetRules(signature, true), workingGraph, nowStartingEdges)
+            RewriteCombinational(signature, GetRules(signature, true), f, nowStartingEdges)
+            // signature.WriteDotToFile(f, 1, "after-rewrite")
             // If this was a closed circuit, then there will be an instantaneous
             // value and a delayed subcircuit at the 'head' of the circuit. We
             // collapse this into a register for ease of viewing
-            CreateHeadRegisters(workingGraph)
-            //     let laterGraph = CollapseNext(f)
-            // If desired, we can also tidy up the later subcircuit
-            // if(tidyNext) {
-            //     let laterStartingEdges = workingGraph.GetLeftmostTraversalElements()
-            //     for(e in f.GetSequentialData().delayEdges){
-            //         laterStartingEdges.put(EDGE(e))
-            //     }
-            //     RewriteCombinational(signature, GetRules(signature, false), workingGraph, laterStartingEdges)
-            // }
+            CreateHeadRegisters(f, outputVertices)
             for(i in 0..f.GetCoarity()) {
-                let newRegister = AppendNextValue(signature, f, i, headTentacles[i], workingGraph)
+                let newRegister = AppendNextValue(signature, f, i, outputVertices[i])
                 CollapseHeadWaveform(f, i, newRegister, headSignals[i])
             }
+            for(e in f.GetSequentialData().delayEdges){
+                laterStartingEdges.put(EDGE(e))
+            }
+            // ?RewriteCombinational(signature, GetRules(signature, false), f, laterStartingEdges)
+            signature.WriteDotToFile(f, 1, "after-rewrite-${shortestHead}")
             shortestHead = GetShortestHead(f)
         }
     }
@@ -121,13 +124,14 @@ func BurstHeadWaveforms<V, G>(f : InterfacedHypergraph<V, G>, shortestHead : Int
         }
     }
 }
-func CollapseWorkingGraph<V, G>(
+func IdentifyWorkingGraph<V, G>(
     f : InterfacedHypergraph<V, G>,
     shortest : Int64
-) : (InterfacedHypergraph<V, G>, Array<TentacleOrigin<V, G>>, Array<ArrayList<Signal<V>>>)
+) : (Array<TentacleOrigin<V, G>>, Array<ArrayList<Signal<V>>>, HashSet<Edge<V, G>>)
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let headSignals = ArrayList<ArrayList<Signal<V>>>()
+    let headEdges = HashSet<Edge<V, G>>()
     if(shortest != 0) {
         let inputs = Array<TentacleOrigin<V, G>>(f.GetArity()){
             i : Int64 => INPUT(f, i)
@@ -139,7 +143,7 @@ func CollapseWorkingGraph<V, G>(
                 let signals = ArrayList<Signal<V>>()
                 for(j in 0..shortest) {
                     let edge = vertex.GetInEdge().getOrThrow().GetEdge()
-                    println("The edge is ${edge}")
+                    headEdges.put(edge)
                     signals.append(edge.GetLabel().GetSignal())
                     tentacle = SOURCE(edge, 0)
                     vertex = edge.GetSource(0).GetVertex()
@@ -147,19 +151,17 @@ func CollapseWorkingGraph<V, G>(
                 headSignals.append(signals)
                 tentacle
         }
-        let (workingGraph, _) = f.GetGraph().CollapseSubgraph(
-            inputs,
-            outputs,
-            "workingGraph"
-        )
-        (workingGraph, outputs, headSignals.toArray())
+        (outputs, headSignals.toArray(), headEdges)
     } else {
         let outputs = Array<TentacleOrigin<V, G>>(f.GetCoarity()){ i : Int64 => OUTPUT(f, i) }
         let emptyHeads = Array<ArrayList<Signal<V>>>(f.GetCoarity()){ i => ArrayList<Signal<V>>() }
-        (f, outputs, emptyHeads)
+        (outputs, emptyHeads, headEdges)
     }
 }
-func IdentifyCombinationalCore<V, G>(f : InterfacedHypergraph<V, G>) : (InterfacedHypergraph<V, G>, Edge<V, G>)
+func IdentifyCombinationalCore<V, G>(
+    f : InterfacedHypergraph<V, G>,
+    headTentacles : Array<TentacleOrigin<V, G>>
+) : (InterfacedHypergraph<V, G>, Edge<V, G>)
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let inputs = ArrayList<TentacleOrigin<V, G>>()
@@ -175,8 +177,8 @@ func IdentifyCombinationalCore<V, G>(f : InterfacedHypergraph<V, G>) : (Interfac
     for(e in f.GetSequentialData().valueEdges) {
         inputs.append(TARGET(e, 0))
     }
-    for(i in 0..f.GetCoarity()) {
-        outputs.append(OUTPUT(f, i))
+    for(to in headTentacles) {
+        outputs.append(to)
     }
     f.GetGraph().CollapseSubgraph(inputs.toArray(), outputs.toArray(), "Comb(${f.GetName()})")
 }
@@ -192,7 +194,17 @@ func CheckForHead<V, G>(f : InterfacedHypergraph<V, G>) : Option<InterfacedHyper
         }
     }
     Some<InterfacedHypergraph<V, G>>(
-        f.GetOutput(0).GetVertex().GetInEdge().getOrThrow().edge.GetSource(0).vertex.GetInEdge().getOrThrow().edge.GetSubgraph().getOrThrow()
+        f.GetOutput(0)
+        .GetVertex()
+        .GetInEdge()
+        .getOrThrow()
+        .edge.GetSource(0)
+        .vertex
+        .GetInEdge()
+        .getOrThrow()
+        .edge
+        .GetSubgraph()
+        .getOrThrow()
     )
 }
 /**
@@ -201,16 +213,18 @@ func CheckForHead<V, G>(f : InterfacedHypergraph<V, G>) : Option<InterfacedHyper
  *
  * @param f The interfaced hypergraph
  */
-func BurstSequentialGraphs<V, G>(f : InterfacedHypergraph<V, G>) : Unit
+func BurstSequentialGraphs<V, G>(f : InterfacedHypergraph<V, G>, headEdges : HashSet<Edge<V, G>>) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    var sequentialEdges = f.GetSequentialData().sequentialEdges.size
+    var sequentialEdges = f.GetSequentialData().sequentialEdges.size - headEdges.size
     while(sequentialEdges != 0) {
         let edges = HashSet<Edge<V, G>>(f.GetSequentialData().sequentialEdges)
         for(e in edges) {
-            e.BurstSubgraph()
+            if(!headEdges.contains(e)) {
+                e.BurstSubgraph()
+            }
         }
-        sequentialEdges = f.GetSequentialData().sequentialEdges.size
+        sequentialEdges = f.GetSequentialData().sequentialEdges.size - headEdges.size
     }
 }
 /**
@@ -574,18 +588,16 @@ func Unfold<V, G>(
     f : InterfacedHypergraph<V, G>,
     core : InterfacedHypergraph<V, G>,
     coreEdge : Edge<V, G>,
-    nowStartingEdges : HashSet<TraversalElement<V, G>>
-) : Unit
+    headTentacles : Array<TentacleOrigin<V, G>>,
+    nowStartingEdges : HashSet<TraversalElement<V, G>>,
+    laterStartingEdges : HashSet<TraversalElement<V, G>>
+) : Array<Vertex<V, G>>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     // We can only safely unfold graphs with delay-guarded feedback
     if(f.HasNonDelayGuardedFeedback()) {
         Debug("Cannot unfold circuits with non-delay-guarded feedback, please unroll it first")
-    } else if (f.GetSequentialData().delayEdges.size == 0) {
-        Debug("No need to unfold circuits with no delay")
-        for(e in f.GetSequentialData().valueEdges) {
-            nowStartingEdges.put(EDGE(e))
-        }
+        Array<Vertex<V, G>>()
     } else {
         let delays = f.GetSequentialData().delayEdges.size
         let values = f.GetSequentialData().valueEdges.size
@@ -639,42 +651,59 @@ func Unfold<V, G>(
         let laterEdge = CloneCore(false)
         // Update the outputs by joining the outputs of the two copies
         let firstOutput = nowEdge.GetCoarity() - f.GetCoarity()
-        for(i in firstOutput..nowEdge.GetCoarity()){
-            let nowOutput = nowEdge.GetTarget(i).GetVertex()
-            let laterOutput = laterEdge.GetTarget(i).GetVertex()
-            let width = nowOutput.GetWidth()
-            // The later source must be delayed to make it truly 'later'
-            let delayTarget = Vertex<V, G>(width)
-            let delayEdge = Edge(
-                DELAY(width),
-                [laterOutput],
-                [delayTarget],
-                None<InterfacedHypergraph<V, G>>,
-                f.GetGraph()
-            )
-            let joinTarget = Vertex<V, G>(width)
-            let joinEdge = Edge(
-                JOIN(width),
-                [nowOutput, delayTarget],
-                [joinTarget],
-                None<InterfacedHypergraph<V, G>>,
-                f.GetGraph()
-            )
-            f.ReplaceOutput(i - firstOutput, joinTarget)
+        let joinOutputs = Array<Vertex<V, G>>(nowEdge.GetCoarity() - firstOutput) {
+            i : Int64 =>
+                let j = i + firstOutput
+                let nowOutput = nowEdge.GetTarget(j).GetVertex()
+                let laterOutput = laterEdge.GetTarget(j).GetVertex()
+                let width = nowOutput.GetWidth()
+                // The later source must be delayed to make it truly 'later'
+                let delayTarget = Vertex<V, G>(width)
+                let delayEdge = Edge(
+                    DELAY(width),
+                    [laterOutput],
+                    [delayTarget],
+                    None<InterfacedHypergraph<V, G>>,
+                    f.GetGraph()
+                )
+                let joinTarget = Vertex<V, G>(width)
+                let joinEdge = Edge(
+                    JOIN(width),
+                    [nowOutput, delayTarget],
+                    [joinTarget],
+                    None<InterfacedHypergraph<V, G>>,
+                    f.GetGraph()
+                )
+                match(headTentacles[i]){
+                    case OUTPUT(_, i) => f.ReplaceOutput(i, joinTarget)
+                    case SOURCE(e, i) => e.SetSource(i, joinTarget, false)
+                    case _ => throw NotImplemented("Can't get here")
+                }
+                joinTarget
         }
         for(v in nowEdge.GetSources()) {
             let e = v.GetVertex().GetInEdge().getOrThrow().edge
             nowStartingEdges.put(EDGE(e))
         }
+        for(v in laterEdge.GetSources()) {
+            let e = v.GetVertex().GetInEdge().getOrThrow().edge
+            laterStartingEdges.put(EDGE(e))
+        }
+        for(i in 0..f.GetCoarity()) {
+            let j = i + firstOutput
+            let original = coreEdge.GetTarget(j).GetVertex()
+
+        }
+        joinOutputs
     }
 }
-func CreateHeadRegisters<V, G>(f : InterfacedHypergraph<V, G>) : Unit
+func CreateHeadRegisters<V, G>(
+    f : InterfacedHypergraph<V, G>,
+    outputVertices : Array<Vertex<V, G>>
+) : Unit
         where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    var i = 0
-    for(iv in f.GetOutputs()) {
-        i++
-        let v = iv.vertex
+    for(v in outputVertices) {
         let width = v.GetWidth()
         // We are assuming this has been successfully rewritten
         // so its head is a join with a signal as its left arg and
@@ -714,23 +743,17 @@ func AppendNextValue<V, G>(
     signature : Signature<V, G>,
     f : InterfacedHypergraph<V, G>,
     i : Int64,
-    headTentacle : TentacleOrigin<V, G>,
-    workingGraph : InterfacedHypergraph<V, G>
+    outputVertex : Vertex<V, G>
 ) : Edge<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    let workingHeadRegister = workingGraph.GetOutput(i).GetVertex().GetInEdge().getOrThrow().GetEdge()
-    if(f.GetId() != workingGraph.GetId()) {
-        let (leftVertex, rightVertex) = SliceTentacle(headTentacle)
-        let oldTarget = workingHeadRegister.GetTarget(0).GetVertex()
-        let oldSource = workingHeadRegister.GetSource(0).GetVertex()
-        workingHeadRegister.SetSource(0, leftVertex, false)
-        workingHeadRegister.SetTarget(0, rightVertex)
-        f.AddEdge(workingHeadRegister)
-        workingGraph.RemoveVertex(oldTarget)
-        workingGraph.ReplaceOutput(0, oldSource)
-    }
-    workingHeadRegister
+    let register = outputVertex.GetInEdge().getOrThrow().GetEdge()
+    // let oldTarget = workingHeadRegister.GetTarget(0).GetVertex()
+    // let oldSource = workingHeadRegister.GetSource(0).GetVertex()
+    // workingHeadRegister.SetSource(0, leftVertex, false)
+    // workingHeadRegister.SetTarget(0, rightVertex)
+    // f.AddEdge(workingHeadRegister)
+    register
 }
 func CollapseHeadWaveform<V, G>(
     f : InterfacedHypergraph<V, G>,

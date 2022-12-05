@@ -24,10 +24,20 @@ public func RewriteCombinational<V, G>(
 ) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
+    let ending = HashSet<TraversalElement<V, G>>()
+    for(iv in f.GetOutputs()) {
+        let v = iv.GetVertex()
+        // At this stage of rewriting every output
+        // should be a join of an immediate graph and
+        // a delayed graph
+        let joinEdge = v.GetInEdge().getOrThrow().GetEdge()
+        let source = joinEdge.GetSource(0).GetVertex()
+        ending.put(VERTEX(source))
+    }
     let actionAtEdge = {
         e : Edge<V, G>, data : TraversalData<V, G> =>
-            let nextEdges = HashSet<TraversalElement<V, G>>()
-            let removedEdges = HashSet<TraversalElement<V, G>>()
+            let nextElements = HashSet<TraversalElement<V, G>>()
+            let removedElements = HashSet<TraversalElement<V, G>>()
             for(rule in rules) {
                 if(rule.CanRewrite(e, f)) {
                     Debug("Rewriting ${e} with ${rule.name}")
@@ -36,18 +46,24 @@ public func RewriteCombinational<V, G>(
             }
             if(!e.GetLabel().IsDelay()) {
                 for(t in e.GetTargets()) {
-                    nextEdges.put(VERTEX(t.GetVertex()))
+                    let te = VERTEX(t.GetVertex())
+                    if(!ending.contains(te)) {
+                        nextElements.put(te)
+                    }
                 }
             }
-            (nextEdges, removedEdges)
+            (nextElements, removedElements)
     }
     let actionAtVertex = {
         v : Vertex<V, G>, data : TraversalData<V, G> =>
-        let nextEdges = HashSet<TraversalElement<V, G>>()
+        let nextElements = HashSet<TraversalElement<V, G>>()
         for(ec in v.GetOutEdges()) {
-            nextEdges.put(EDGE(ec.GetEdge()))
+            let te = EDGE(ec.GetEdge())
+            if(!ending.contains(te)){
+                nextElements.put(te)
+            }
         }
-        (nextEdges, HashSet<TraversalElement<V, G>>())
+        (nextElements, HashSet<TraversalElement<V, G>>())
     }
     let startingElements = HashSet<TraversalElement<V, G>>()
     for(e in starting) {
