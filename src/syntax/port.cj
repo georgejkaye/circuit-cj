@@ -27,9 +27,19 @@ public interface HasOptionalName {
 public interface Socket <: HasWidth & HasOptionalName & ToString {}
 public interface Specifiable<V> where V <: ValueSymbol, V <: Equatable<V> {
     func GetInputPorts() : Array<Port<V>>
-    func GetArity() : Int64
+    func GetInputPort(i : Int64) : Port<V> {
+        this.GetInputPorts()[i]
+    }
+    func GetArity() : Int64 {
+        this.GetInputPorts().size
+    }
     func GetOutputPorts() : Array<Port<V>>
-    func GetCoarity() : Int64
+    func GetOutputPort(i : Int64) : Port<V> {
+        this.GetOutputPorts()[i]
+    }
+    func GetCoarity() : Int64 {
+        this.GetOutputPorts().size
+    }
 }
 extend Int64 <: HasWidth {
     public func GetWidth() : Int64 {
