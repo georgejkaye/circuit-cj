@@ -259,6 +259,12 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             case _ => false
         }
     }
+    public func IsExpandable() : Bool {
+        match(this) {
+            case COMPOSITE(spec)            => true
+            case _                          => false
+        }
+    }
 }
 
 public func GetSignalLabel<V, G>(v : V, w : Int64) : Label<V, G>

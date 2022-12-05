@@ -512,7 +512,8 @@ extend Signature<V, G> <: DotDrawer<V, G> {
         elementContent : ArrayList<DotLine>,
         connectionContent : ArrayList<DotLine>
     ) : Unit {
-        if (depth != 0) {
+        let label = e.GetLabel()
+        if (depth != 0 && label.IsExpandable()) {
             match (e.GetSubgraph()) {
                 case None => DrawEdgeNode(e, elementContent, connectionContent)
                 case Some(g) =>
