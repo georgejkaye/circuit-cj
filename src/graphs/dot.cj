@@ -61,8 +61,11 @@ let compressorStyle = [
 let primitiveStyle = [
     bgColour("cyan")
 ]
-let compositeStyle = [
+let enhancedStyle = [
     bgColour("darkturquoise")
+]
+let compositeStyle = [
+    bgColour("chartreuse4")
 ]
 let structuralStyle = [
     bgColour("violet"),
@@ -390,6 +393,8 @@ extend Signature<V, G> <: DotDrawer<V, G> {
                 structuralStyle
             case PRIMITIVE(_) =>
                 primitiveStyle
+            case ENHANCED_PRIMITIVE(eprim) =>
+                enhancedStyle
             case COMPOSITE(_) =>
                 compositeStyle
             case BLACKBOX(_) =>

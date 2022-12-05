@@ -22,41 +22,37 @@ let omega = "\u{03C9}"
  * Enum for the different types of generators
  */
 public enum Label<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
-    | VALUE(V)                              // A basic value 0 -> 1
-    | SIGNAL(Signal<V>)                     // A collection of values 0 -> n
-    | REGISTER(Signal<V>)                   // A join of a signal and a delay
-    | OPEN_WAVEFORM(Array<Signal<V>>)       // A sequence of signals over time
-    | CLOSED_WAVEFORM(Array<Signal<V>>)     // A sequence of signals over time, capped with a disconnect
-    | INFINITE_WAVEFORM(Array<Signal<V>>)   // A sequence of signals over time that repeats periodically
-    | BUNDLER(Array<Int64>, Array<Int64>)   // A bundler changes how wires are bundled
-    | JOIN(Int64)                           // Join two wires together
-    | PRIMITIVE(G)                          // The simplest building blocks of circuits
-    | COMPOSITE(Specification<V>)           // A composite of primitives
-    | BLACKBOX(Specification<V>)            // A black box with arbitrary name and codomain
-    | DELAY(Int64)                          // A delay parameterised by a width
+    | VALUE(V)                                      // A basic value 0 -> 1
+    | SIGNAL(Signal<V>)                             // A collection of values 0 -> n
+    | REGISTER(Signal<V>)                           // A join of a signal and a delay
+    | OPEN_WAVEFORM(Array<Signal<V>>)               // A sequence of signals over time
+    | CLOSED_WAVEFORM(Array<Signal<V>>)             // A sequence of signals over time, capped with a disconnect
+    | INFINITE_WAVEFORM(Array<Signal<V>>)           // A sequence of signals over time that repeats periodically
+    | BUNDLER(Array<Int64>, Array<Int64>)           // A bundler changes how wires are bundled
+    | JOIN(Int64)                                   // Join two wires together
+    | PRIMITIVE(G)                                  // The simplest building blocks of circuits
+    | ENHANCED_PRIMITIVE(EnhancedPrimitive<V, G>)   // An primitive that has been enhanced (e.g. a bitwise variant)
+    | COMPOSITE(Specification<V>)                   // A composite of primitives
+    | BLACKBOX(Specification<V>)                    // A black box with arbitrary name and codomain
+    | DELAY(Int64)                                  // A delay parameterised by a width
 }
 extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G>> {
     public func GetInputPorts() : Array<Port<V>> {
         match(this) {
-            case VALUE(_)                   => []
-            case SIGNAL(spec)               => []
-            case REGISTER(signal)           => [Port(signal.GetWidth())]
-            case OPEN_WAVEFORM(signals)     => [Port(signals[0].GetWidth())]
-            case CLOSED_WAVEFORM(signals)   => []
-            case INFINITE_WAVEFORM(signals) => []
-            case BUNDLER(ms, _)             => map({ i : Int64 => Port(i)}, ms)
-            case JOIN(w)                    => [Port(w), Port(w)]
-            case PRIMITIVE(prim)            => prim.GetInputPorts()
-            case COMPOSITE(spec)            => spec.GetInputPorts()
-            case BLACKBOX(spec)             => spec.GetInputPorts()
-            case DELAY(w)                   => [Port(w)]
+            case VALUE(_)                      => []
+            case SIGNAL(spec)                  => []
+            case REGISTER(signal)              => [Port(signal.GetWidth())]
+            case OPEN_WAVEFORM(signals)        => [Port(signals[0].GetWidth())]
+            case CLOSED_WAVEFORM(signals)      => []
+            case INFINITE_WAVEFORM(signals)    => []
+            case BUNDLER(ms, _)                => map({ i : Int64 => Port(i)}, ms)
+            case JOIN(w)                       => [Port(w), Port(w)]
+            case PRIMITIVE(prim)               => prim.GetInputPorts()
+            case ENHANCED_PRIMITIVE(eprim)     => eprim.GetInputPorts()
+            case COMPOSITE(spec)               => spec.GetInputPorts()
+            case BLACKBOX(spec)                => spec.GetInputPorts()
+            case DELAY(w)                      => [Port(w)]
         }
-    }
-    public func GetInputPort(i : Int64) : Port<V> {
-        GetInputPorts()[i]
-    }
-    public func GetArity() : Int64 {
-        this.GetInputPorts().size
     }
     public func GetOutputPorts() : Array<Port<V>> {
         match(this) {
@@ -69,16 +65,11 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             case BUNDLER(ms, ns)            => map({ i : Int64 => Port(i)}, ns)
             case JOIN(w)                    => [Port(w)]
             case PRIMITIVE(prim)            => prim.GetOutputPorts()
+            case ENHANCED_PRIMITIVE(eprim)  => eprim.GetOutputPorts()
             case COMPOSITE(spec)            => spec.GetOutputPorts()
             case BLACKBOX(spec)             => spec.GetOutputPorts()
             case DELAY(w)                   => [Port(w)]
         }
-    }
-    public func GetOutputPort(i : Int64) : Port<V> {
-        GetOutputPorts()[i]
-    }
-    public func GetCoarity() : Int64 {
-        this.GetOutputPorts().size
     }
     public func GetName() : String {
         match(this) {
@@ -91,6 +82,7 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             case BUNDLER(ms, ns)            => if (ms.size < ns.size) { "\u{25C1}" } else { "\u{25B7}" }
             case JOIN(w)                    => "\u{2207}_${w}"
             case PRIMITIVE(prim)            => prim.GetName()
+            case ENHANCED_PRIMITIVE(eprim)  => eprim.GetName()
             case COMPOSITE(spec)            => spec.GetName()
             case BLACKBOX(spec)             => spec.GetName()
             case DELAY(w)                   => "delay_${w}"
@@ -135,6 +127,10 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             }
             case PRIMITIVE(p1) => match(rhs) {
                 case PRIMITIVE(p2) => p1 == p2
+                case _ => false
+            }
+            case ENHANCED_PRIMITIVE(ep1) => match(rhs) {
+                case ENHANCED_PRIMITIVE(ep2) => ep1 == ep2
                 case _ => false
             }
             case COMPOSITE(s1) => match(rhs) {
