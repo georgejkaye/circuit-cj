@@ -25,6 +25,16 @@ class NonMonotoneFunctionException<T> <: Exception where T <: ToString {
     }
 }
 
+func AssertPortsSameWidth<V>(
+    array : Array<Port<V>>
+) : Unit where V <: ValueSymbol & Equatable<V> {
+    AssertArrayAllSameParameter(
+        array,
+        { p : Port<V> => p.GetWidth() },
+        Width
+    )
+}
+
 func AssertTableMonotone<V>(
     lattice : FiniteLattice<V>,
     arity : Int64,
@@ -41,5 +51,33 @@ func AssertTableMonotone<V>(
                 }
             }
         }
+    }
+}
+
+class CannotRipplePrimitiveException<V, G> <: Exception
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    public init(primitive : G) {
+        ErrorMsg(
+            """
+                Cannot ripple over primitive ${primitive} as its type is
+                ${primitive.GetInputPorts()} -> ${primitive.GetOutputPorts()}
+                wheras rippling requires type [m, m] -> [m]
+            """
+        )
+    }
+}
+
+class CannotBitwiseMapPrimitiveException<V, G> <: Exception
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    public init(primitive : G) {
+        ErrorMsg(
+            """
+                Cannot bitwise map over primitive ${primitive} as its type is
+                ${primitive.GetInputPorts()} -> ${primitive.GetOutputPorts()}
+                wheras rippling requires type [m, ..., m] -> [n, ..., n]
+            """
+        )
     }
 }

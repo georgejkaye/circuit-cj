@@ -8,11 +8,9 @@
 package syntax
 
 public enum Enhancement {
-    | BITWISE_MAP(Int64)                    // Apply a gate to each bit of multiple wires independently
-    | RIPPLE(Int64)                         // Apply a gate to each input in turn
-    | BITWISE_RIPPLE(Int64)                 // Apply a gate to each bit of an input wire in turn
-    | RIPPLE_BITWISE_MAP(Int64, Int64)      // Ripple a bitwise map gate over an arbitrary number of wires
-    | BITWISE_MAP_RIPPLE(Int64, Int64)      // Apply a ripple gate to each bit of a wire independently
+    | RIPPLE(Int64)         // RIPPLE(k) applies a gate m * m -> m to (k+1) wires of width m
+    | BITWISE_MAP(Int64)    // BITWISE_MAP(w) applies a gate m -> n to m wires of width w
+    | BITWISE_RIPPLE(Int64) // BITWISE_RIPPLE(k) applies a gate m * m -> m to m wires of width k+1
 }
 extend Enhancement <: Equatable<Enhancement> {
     public operator func ==(rhs : Enhancement) {
@@ -29,19 +27,33 @@ extend Enhancement <: Equatable<Enhancement> {
                 case BITWISE_RIPPLE(w2) => w1 == w2
                 case _ => false
             }
-            case RIPPLE_BITWISE_MAP(m1, w1) => match(rhs) {
-                case RIPPLE_BITWISE_MAP(m2, w2) => m1 == m2 && w1 == w2
-                case _ => false
-            }
-            case BITWISE_MAP_RIPPLE(w1, m1) => match(rhs) {
-                case BITWISE_MAP_RIPPLE(w2, m2) => w1 == w2 && m1 == m2
-                case _ => false
-            }
         }
     }
     public operator func !=(rhs : Enhancement) {
         !(this == rhs)
     }
+}
+
+public func CheckRippleSuitability<V, G>(primitive : G) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    let inputs = primitive.GetInputPorts()
+    let outputs = primitive.GetOutputPorts()
+    if(
+        inputs.size != 2 ||
+        outputs.size != 1 ||
+        inputs[0].GetWidth() == inputs[1].GetWidth() ||
+        outputs[0].GetWidth() != inputs[0].GetWidth()
+    ){
+        throw CannotRipplePrimitiveException(primitive)
+    }
+}
+
+public func CheckBitwiseMapSuitability<V, G>(primitive : G) : Unit
+    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    AssertPortsSameWidth(primitive.GetInputPorts())
+    AssertPortsSameWidth(primitive.GetOutputPorts())
 }
 
 public struct EnhancedPrimitive<V, G> <: HasName & Specifiable<V> & Equatable<EnhancedPrimitive<V, G>>
@@ -50,39 +62,62 @@ public struct EnhancedPrimitive<V, G> <: HasName & Specifiable<V> & Equatable<En
     public EnhancedPrimitive(
         public let primitive : G,
         public let enhancement : Enhancement
-    ){}
-    public func GetInputWiresAndWidth() : (Int64, Int64) {
+    ){
+        // Validate the enhancement
         match(this.enhancement) {
-            case BITWISE_MAP(w)           => (this.primitive.GetArity(), w)
-            case RIPPLE(n)                => (n, this.primitive.GetInputPorts()[0].GetWidth())
-            case BITWISE_RIPPLE(w)        => (1, w)
-            case RIPPLE_BITWISE_MAP(m, w) => (m, w)
-            case BITWISE_MAP_RIPPLE(w, m) => (m, w)
+            case BITWISE_MAP(w) => CheckBitwiseMapSuitability(this.primitive)
+            case RIPPLE(k) => CheckRippleSuitability(this.primitive)
+            case BITWISE_RIPPLE(k) => CheckRippleSuitability(this.primitive)
+        }
+    }
+    public func GetArity() : Int64 {
+        match(this.enhancement) {
+            case BITWISE_MAP(w)    => this.primitive.GetArity()
+            case RIPPLE(k)         => k+1
+            case BITWISE_RIPPLE(k) => this.primitive.GetInputPort(0).GetWidth()
+        }
+    }
+    public func GetCoarity() : Int64 {
+        match(this.enhancement) {
+            case BITWISE_MAP(w)    => this.primitive.GetCoarity()
+            case RIPPLE(k)         => 1
+            case BITWISE_RIPPLE(k) => 1
         }
     }
     public func GetName() : String {
-        let primitiveName = this.primitive.GetName()
-        let (wires, width) = this.GetInputWiresAndWidth()
-        "${primitiveName}_${wires}_${width}"
+        let primitiveString = this.primitive.GetName()
+        let enhancementString = match(this.enhancement) {
+            case BITWISE_MAP(w)    => "${primitive.GetArity()}_${w}"
+            case RIPPLE(k)         => "${k+1}_${primitive.GetInputPort(0).GetWidth()}"
+            case BITWISE_RIPPLE(k) => "${1}_${k+1}"
+        }
+        "${primitiveString}${enhancementString}"
     }
     public func GetInputPorts() : Array<Port<V>> {
-        let (wires, width) = GetInputWiresAndWidth()
-        Array<Port<V>>(wires, {
-            i : Int64 => Port(width, "${primitive.GetInputPorts()[0].name}i")
+        let arity = this.GetArity()
+        Array<Port<V>>(arity, {
+            i : Int64 =>
+                let portName = "${numToUppercaseLetter(i)}"
+                let portWidth = match(this.enhancement) {
+                    case BITWISE_MAP(w)    => w
+                    case RIPPLE(k)         => this.primitive.GetInputPort(0).GetWidth()
+                    case BITWISE_RIPPLE(k) => k+1
+                }
+                Port(portWidth, portName)
         })
     }
     public func GetOutputPorts() : Array<Port<V>> {
-        let (wires, width) =
-            match(this.enhancement) {
-                case BITWISE_MAP(w)           => (this.primitive.GetCoarity(), w)
-                case RIPPLE(n)                => (n, this.primitive.GetOutputPorts()[0].GetWidth())
-                case BITWISE_RIPPLE(w)        => (1, this.primitive.GetOutputPorts()[0].GetWidth())
-                case RIPPLE_BITWISE_MAP(m, w) => (1, w)
-                case BITWISE_MAP_RIPPLE(w, m) => (1, w)
-            }
-        Array<Port<V>>(wires){
-            i : Int64 => Port(width, "${primitive.GetInputPorts()[0].name}i")
-        }
+        let coarity = this.GetCoarity()
+        Array<Port<V>>(coarity, {
+            i : Int64 =>
+                let portName = "${numToUppercaseLetter(i)}"
+                let portWidth = match(this.enhancement) {
+                    case BITWISE_MAP(w)    => w
+                    case RIPPLE(k)         => this.primitive.GetInputPort(0).GetWidth()
+                    case BITWISE_RIPPLE(k) => this.primitive.GetInputPort(0).GetWidth()
+                }
+                Port(portWidth, portName)
+        })
     }
     public operator func ==(rhs : EnhancedPrimitive<V, G>) : Bool {
         this.primitive == rhs.primitive && this.enhancement == rhs.enhancement
