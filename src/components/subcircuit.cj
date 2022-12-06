@@ -74,7 +74,7 @@ public interface SubcircuitBuilder<V, G> where V <: ValueSymbol, V <: Equatable<
     ) : Wire<V, G>
     func UseBitwiseRippleGate(
         prim : G,
-        input : Wire<V, G>
+        input : Array<Wire<V, G>>
     ) : Wire<V, G>
     func Apply(
         circuit : InterfacedHypergraph<V, G>,
@@ -217,7 +217,12 @@ extend Signature<V, G> <: SubcircuitBuilder<V, G> {
         MakeSubcircuit(
             mapi({ w : Wire<V, G>, i : Int64 => InterfaceWire(w, numToUppercaseLetter(i)) }, inputs),
             [InterfaceWire(output, "Z")],
-            prim.GetEnhancedName(prim.GetArity(), w)
+            ENHANCED_PRIMITIVE(
+                EnhancedPrimitive(
+                    prim,
+                    BITWISE_MAP(w)
+                )
+            )
         )
     }
     /**
@@ -242,7 +247,12 @@ extend Signature<V, G> <: SubcircuitBuilder<V, G> {
         MakeSubcircuit(
             mapi({ws : Array<Wire<V, G>>, i : Int64 => InterfaceWire(ws[0], numToUppercaseLetter(i)) }, inputs),
             [InterfaceWire(output, "Z")],
-            prim.GetEnhancedName(n, w)
+            ENHANCED_PRIMITIVE(
+                EnhancedPrimitive(
+                    prim,
+                    RIPPLE(n-1)
+                )
+            )
         )
     }
     /**
@@ -265,7 +275,12 @@ extend Signature<V, G> <: SubcircuitBuilder<V, G> {
         MakeSubcircuit(
             [InterfaceWire(input, "A")],
             [InterfaceWire(output, "Z")],
-            prim.GetEnhancedName(1, w)
+            ENHANCED_PRIMITIVE(
+                EnhancedPrimitive(
+                    prim,
+                    BITWISE_RIPPLE(w-1)
+                )
+            )
         )
     }
     /**
@@ -432,13 +447,14 @@ extend Signature<V, G> <: SubcircuitBuilder<V, G> {
     * @param w The input wire
     * @return The output wire from the internally rippled gate
     */
-    public func UseBitwiseRippleGate(prim : G, w : Wire<V, G>) : Wire<V, G> {
+    public func UseBitwiseRippleGate(prim : G, ws : Array<Wire<V, G>>) : Wire<V, G> {
+        let width = AssertWiresSameWidth(ws)
         UseSubcircuit_1(
             MakeBitwiseRippleGate(
                 prim,
-                w.GetWidth()
+                width
             ),
-            [w]
+            ws
         )
     }
     /**
