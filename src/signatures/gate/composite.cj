@@ -87,32 +87,32 @@ public func Xnor(
 public func And(
     w : BelnapWire
 ) : BelnapWire {
-    belnapSignature.UseBitwiseRippleGate(AND, w)
+    belnapSignature.UseBitwiseRippleGate(AND, [w])
 }
 public func Or(
     w : BelnapWire
 ) : BelnapWire {
-    belnapSignature.UseBitwiseRippleGate(OR, w)
+    belnapSignature.UseBitwiseRippleGate(OR, [w])
 }
 public func Nand(
     w : BelnapWire
 ) : BelnapWire {
-    belnapSignature.UseBitwiseRippleGate(NAND, w)
+    belnapSignature.UseBitwiseRippleGate(NAND, [w])
 }
 public func Nor(
     w : BelnapWire
 ) : BelnapWire {
-    belnapSignature.UseBitwiseRippleGate(NOR, w)
+    belnapSignature.UseBitwiseRippleGate(NOR, [w])
 }
 public func Xor(
     w : BelnapWire
 ) : BelnapWire {
-    belnapSignature.UseBitwiseRippleGate(XOR, w)
+    belnapSignature.UseBitwiseRippleGate(XOR, [w])
 }
 public func Xnor(
     w : BelnapWire
 ) : BelnapWire {
-    belnapSignature.UseBitwiseRippleGate(XNOR, w)
+    belnapSignature.UseBitwiseRippleGate(XNOR, [w])
 }
 /**
  * Create a half adder subcircuit.
