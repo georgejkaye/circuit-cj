@@ -257,8 +257,9 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
     }
     public func IsExpandable() : Bool {
         match(this) {
-            case COMPOSITE(spec)            => true
-            case _                          => false
+            case COMPOSITE(_)          => true
+            case ENHANCED_PRIMITIVE(_) => true
+            case _                     => false
         }
     }
 }
