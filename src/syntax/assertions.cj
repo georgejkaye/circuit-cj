@@ -59,11 +59,9 @@ class CannotRipplePrimitiveException<V, G> <: Exception
 {
     public init(primitive : G) {
         ErrorMsg(
-            """
-                Cannot ripple over primitive ${primitive} as its type is
-                ${primitive.GetInputPorts()} -> ${primitive.GetOutputPorts()}
-                wheras rippling requires type [m, m] -> [m]
-            """
+            "Cannot ripple over primitive ${primitive} as its type is" +
+            "${primitive.GetInputPorts()} -> ${primitive.GetOutputPorts()}" +
+            "wheras rippling requires type [m, m] -> [m]"
         )
     }
 }
@@ -73,11 +71,9 @@ class CannotBitwiseMapPrimitiveException<V, G> <: Exception
 {
     public init(primitive : G) {
         ErrorMsg(
-            """
-                Cannot bitwise map over primitive ${primitive} as its type is
-                ${primitive.GetInputPorts()} -> ${primitive.GetOutputPorts()}
-                wheras rippling requires type [m, ..., m] -> [n, ..., n]
-            """
+            "Cannot bitwise map over primitive ${primitive} as its type is" +
+            "${primitive.GetInputPorts()} -> ${primitive.GetOutputPorts()}" +
+            "wheras rippling requires type [m, ..., m] -> [n, ..., n]"
         )
     }
 }
