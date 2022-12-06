@@ -42,7 +42,7 @@ public func CheckRippleSuitability<V, G>(primitive : G) : Unit
     if(
         inputs.size != 2 ||
         outputs.size != 1 ||
-        inputs[0].GetWidth() == inputs[1].GetWidth() ||
+        inputs[0].GetWidth() != inputs[1].GetWidth() ||
         outputs[0].GetWidth() != inputs[0].GetWidth()
     ){
         throw CannotRipplePrimitiveException(primitive)
