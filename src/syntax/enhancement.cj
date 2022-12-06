@@ -97,26 +97,24 @@ public struct EnhancedPrimitive<V, G> <: HasName & Specifiable<V> & Equatable<En
         let arity = this.GetArity()
         Array<Port<V>>(arity, {
             i : Int64 =>
-                let portName = "${numToUppercaseLetter(i)}"
                 let portWidth = match(this.enhancement) {
                     case BITWISE_MAP(w)    => w
                     case RIPPLE(k)         => this.primitive.GetInputPort(0).GetWidth()
                     case BITWISE_RIPPLE(k) => k+1
                 }
-                Port(portWidth, portName)
+                Port(portWidth, "")
         })
     }
     public func GetOutputPorts() : Array<Port<V>> {
         let coarity = this.GetCoarity()
         Array<Port<V>>(coarity, {
             i : Int64 =>
-                let portName = "${numToUppercaseLetter(i)}"
                 let portWidth = match(this.enhancement) {
                     case BITWISE_MAP(w)    => w
                     case RIPPLE(k)         => this.primitive.GetInputPort(0).GetWidth()
                     case BITWISE_RIPPLE(k) => this.primitive.GetInputPort(0).GetWidth()
                 }
-                Port(portWidth, portName)
+                Port(portWidth, "")
         })
     }
     public operator func ==(rhs : EnhancedPrimitive<V, G>) : Bool {
