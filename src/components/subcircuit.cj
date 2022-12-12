@@ -100,6 +100,9 @@ extend Signature<V, G> <: SubcircuitBuilder<V, G> {
         outputs : Array<InterfaceWire<V, G>>,
         label : Label<V, G>
     ) : InterfacedHypergraph<V, G> {
+        for(iv in inputs) {
+            AssertWireHasNoInEdge(iv.GetWire())
+        }
         let (first, inputsStart, outputsStart) = if(inputs.size > 0) {
             (inputs[0], 1, 0)
         } else {
