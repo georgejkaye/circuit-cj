@@ -262,6 +262,12 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             case _                     => false
         }
     }
+    public func IsEnhanced() : Bool {
+        match(this) {
+            case ENHANCED_PRIMITIVE(_) => true
+            case _ => false
+        }
+    }
 }
 
 public func GetSignalLabel<V, G>(v : V, w : Int64) : Label<V, G>
