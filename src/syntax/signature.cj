@@ -99,6 +99,8 @@ public interface PrimitiveSymbol<V> <: Specifiable<V> & HasName & ToString & Has
 public class Signature<V, G> <: HasName & ToString
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
+    public let specificationImplementation : HashMap<Specification<V>, ((Array<Array<V>>) -> Array<V>)>
+        = HashMap<Specification<V>, ((Array<Array<V>>) -> Array<V>)>()
     public Signature(
         public let name : String,
         public let latticeStructure: FiniteLattice<V>,
