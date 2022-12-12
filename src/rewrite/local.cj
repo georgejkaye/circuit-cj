@@ -39,9 +39,10 @@ public func RewriteCombinational<V, G>(
             let nextElements = HashSet<TraversalElement<V, G>>()
             let removedElements = HashSet<TraversalElement<V, G>>()
             for(rule in rules) {
-                if(rule.CanRewrite(e, f)) {
+                let (canRewrite, payload) = rule.CanRewrite(e, f)
+                if(canRewrite) {
                     Debug("Rewriting ${e} with ${rule.name}")
-                    return rule.Rewrite(e, f)
+                    return rule.Rewrite(e, f, payload)
                 }
             }
             if(!e.GetLabel().IsDelay()) {
