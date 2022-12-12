@@ -37,6 +37,30 @@ public func MergeVertices<T, U, V, G>(t : T, u : U, feedback: Bool) : (Vertex<V,
     w.GetOwner().RemoveVertex(w)
     (v, w)
 }
+public func MergeVertices<T, V, G>(vs : Array<T>) : Vertex<V, G>
+    where T <: ContainsVertex<V, G>, V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    AssertAtMostOneInEdge<T, V, G>(vs)
+    let retainedVertex = vs[0].GetVertex()
+    for(i in 1..vs.size) {
+        let discardedVertex = vs[i].GetVertex()
+        match(discardedVertex.GetInEdge()) {
+            case None => ()
+            case Some(ec) => ec.GetEdge()
+        }
+        for(ie in discardedVertex.GetInterfacedInputs()) {
+            ie.graph.ReplaceInput(ie.index, retainedVertex)
+        }
+        for(ec in discardedVertex.GetOutEdges()) {
+            ec.GetEdge().SetSource(ec.GetIndex(), retainedVertex, false)
+        }
+        for(ie in discardedVertex.GetInterfacedOutputs()) {
+            ie.graph.ReplaceOutput(ie.index, retainedVertex)
+        }
+        discardedVertex.GetOwner().RemoveVertex(discardedVertex)
+    }
+    retainedVertex
+}
 public func SplitVertex<V, G>(v : Vertex<V, G>) : (Vertex<V, G>, Vertex<V, G>)
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {

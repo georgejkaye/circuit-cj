@@ -27,6 +27,27 @@ func AssertAtMostOneInEdge<T, U, V, G>(t : T, u : U) : Option<EdgeConnection<V, 
             Some(ev)
     }
 }
+func AssertAtMostOneInEdge<T, V, G>(ts : Array<T>) : Option<EdgeConnection<V, G>>
+    where T <: ContainsVertex<V, G>, V <: ValueSymbol,
+            V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+{
+    var inEdge = None<EdgeConnection<V, G>>
+    for (t in ts) {
+        let v = t.GetVertex()
+        match(inEdge) {
+            case Some(ec) =>
+                AssertHasParameter<Vertex<V, G>, Option<EdgeConnection<V, G>>>(
+                v,
+                None,
+                { w : Vertex<V, G> => w.GetInEdge() },
+                InEdge
+            )
+            case None =>
+                inEdge = v.GetInEdge()
+        }
+    }
+    inEdge
+}
 public func AssertVertexHasNoInEdge<V, G>(v : Vertex<V, G>) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
