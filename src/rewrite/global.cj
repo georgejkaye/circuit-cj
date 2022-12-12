@@ -30,6 +30,7 @@ public class Rewriter<V, G>
         AssertNonNegative(cycle)
         // Check to see if the cycle has already been computed
         var shortestHead = GetShortestHead(f)
+        RewriteCombinational(signature, GetRules(signature, false), f, f.GetLeftmostTraversalElements())
         while(shortestHead <= cycle) {
             println("The shortest head is ${shortestHead} and we want to compute ${cycle}")
             // This circuit may already have had rewriting done to it (or is just natively in
@@ -74,8 +75,7 @@ public class Rewriter<V, G>
             for(e in f.GetSequentialData().delayEdges){
                 laterStartingEdges.put(EDGE(e))
             }
-            // ?RewriteCombinational(signature, GetRules(signature, false), f, laterStartingEdges)
-            signature.WriteDotToFile(f, 1, "after-rewrite-${shortestHead}")
+            RewriteCombinational(signature, GetRules(signature, false), f, laterStartingEdges)
             shortestHead = GetShortestHead(f)
         }
     }
