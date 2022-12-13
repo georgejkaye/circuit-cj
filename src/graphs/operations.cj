@@ -119,7 +119,7 @@ func CloneOrRetain<V, G>(
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     if(clone) {
-        let (newGraph, newInputs, newOutputs, _, _) = f.Clone()
+        let (newGraph, newInputs, newOutputs, _, _) = f.CloneGraph()
         (newGraph, newInputs, newOutputs)
     } else {
         (f.GetGraph(), f.GetInputs(), f.GetOutputs())

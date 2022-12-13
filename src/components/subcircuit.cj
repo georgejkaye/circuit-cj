@@ -298,7 +298,7 @@ extend Signature<V, G> <: SubcircuitBuilder<V, G> {
         inputs : Array<Wire<V, G>>
     ) : Array<Wire<V, G>> {
         AssertWiresHaveWidths(inputs, circuit.GetInputPorts())
-        let (newGraph, _, _) = circuit.CloneGraph()
+        let newGraph = circuit.Clone()
         UseEdgeWithNewOutputs(
             circuit.GetLabel(),
             inputs,

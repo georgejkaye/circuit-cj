@@ -428,9 +428,7 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
             let newTargets = CloneTentacles(edge.GetTargets())
             let newSubgraph = match(edge.GetSubgraph()){
                 case None => None<InterfacedHypergraph<V, G>>
-                case Some(g) =>
-                    let (newG, _, _) = g.CloneGraph()
-                    newG
+                case Some(g) => Some(g.Clone())
             }
             let newEdge = Edge(edge.GetLabel(), newSources, newTargets, newSubgraph, Hypergraph<V, G>())
             newEdges.put(newEdge)

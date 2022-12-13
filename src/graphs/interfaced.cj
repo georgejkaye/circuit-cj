@@ -464,14 +464,12 @@ public class InterfacedHypergraph<V, G>
     public operator func !=(right : InterfacedHypergraph<V, G>) : Bool {
         this.GetId() != right.GetId()
     }
-    public func Clone()
+    public func CloneGraph()
         : (Hypergraph<V, G>,
             Array<InterfaceVertex<V, G>>,
             Array<InterfaceVertex<V, G>>,
-            HashMap<Vertex<V, G>,
-            Vertex<V, G>>,
-            HashMap<Edge<V, G>,
-            Edge<V, G>>
+            HashMap<Vertex<V, G>, Vertex<V, G>>,
+            HashMap<Edge<V, G>, Edge<V, G>>
         ) {
         let (newF, vertexMap, edgeMap) = f.Clone()
         /**
@@ -490,14 +488,9 @@ public class InterfacedHypergraph<V, G>
         let newOutputs = translateVertices(this.outputs)
         (newF, newInputs, newOutputs, vertexMap, edgeMap)
     }
-    public func CloneGraph() : (
-        InterfacedHypergraph<V, G>,
-        HashMap<Vertex<V, G>, Vertex<V, G>>,
-        HashMap<Edge<V, G>, Edge<V, G>>
-    ) {
-        let (newGraph, newInputs, newOutputs, vertexMap, edgeMap) = this.Clone()
-        let graph = InterfacedHypergraph(newGraph, newInputs, newOutputs, this.label)
-        (graph, vertexMap, edgeMap)
+    public func Clone() : InterfacedHypergraph<V, G> {
+        let (newGraph, newInputs, newOutputs, vertexMap, edgeMap) = this.CloneGraph()
+        InterfacedHypergraph(newGraph, newInputs, newOutputs, this.GetName())
     }
     public func GetLabel() : Label<V, G> {
         this.label
