@@ -160,11 +160,12 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
             case SIGNAL(_) => this.sequentialData.valueEdges.put(e)
             case _ =>
                 match(e.GetSubgraph()){
-                    case Some(g) => if(g.IsCombinational()) {
-                        this.sequentialData.combinationalEdges.put(e)
-                    } else {
-                        this.sequentialData.sequentialEdges.put(e)
-                    }
+                    case Some(g) =>
+                        if(g.IsCombinational()) {
+                            this.sequentialData.combinationalEdges.put(e)
+                        } else {
+                            this.sequentialData.sequentialEdges.put(e)
+                        }
                     case None => this.sequentialData.combinationalEdges.put(e)
                 }
         }
@@ -192,8 +193,14 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
             owner.AddVertexToTraversalElements(direction, v)
         }
     }
+    public func AddVertexToLeftmostTraversalElements(v : Vertex<V, G>) : Unit {
+        AddVertexToTraversalElements(
+            leftmostTraversalElements,
+            LEFT_TO_RIGHT,
+            v
+        )
+    }
     public func AddVertexToRightmostTraversalElements(v : Vertex<V, G>) : Unit {
-        this.rightmostTraversalElements.put(VERTEX(v))
         AddVertexToTraversalElements(
             rightmostTraversalElements,
             RIGHT_TO_LEFT,
@@ -458,7 +465,9 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         let parentOutputs = map({ vs : (Vertex<V, G>, Vertex<V, G>) => vs[1] }, slicedOutputs)
         let subgraph = Hypergraph<V, G>()
         let actionAtVertex = {v : Vertex<V, G> => subgraph.AddVertex(v) }
-        let actionAtEdge = {e : Edge<V, G> => subgraph.AddEdge(e) }
+        let actionAtEdge = {e : Edge<V, G> =>
+            subgraph.AddEdge(e)
+        }
         func TraverseGraphFromEnd(starting : Array<Vertex<V, G>>) : Unit {
             let startingSet = HashSet<TraversalElement<V, G>>()
             for(v in starting) {

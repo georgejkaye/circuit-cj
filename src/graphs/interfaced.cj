@@ -89,9 +89,9 @@ public class InterfacedHypergraph<V, G>
     // Output vertices, vertices with no out edges, edges with no targets
     let rightmostTraversalElements : HashSet<TraversalElement<V, G>> = HashSet<TraversalElement<V, G>>()
     // Associates vertices with their positions in the inputs
-    let inputMap : HashMap<Vertex<V, G>, ArrayList<Int64>> = HashMap<Vertex<V, G>, ArrayList<Int64>>()
+    let inputMap : HashMap<Vertex<V, G>, HashSet<Int64>> = HashMap<Vertex<V, G>, HashSet<Int64>>()
     // Associates vertices with their positions in the outputs
-    let outputMap : HashMap<Vertex<V, G>, ArrayList<Int64>> = HashMap<Vertex<V, G>, ArrayList<Int64>>()
+    let outputMap : HashMap<Vertex<V, G>, HashSet<Int64>> = HashMap<Vertex<V, G>, HashSet<Int64>>()
     // The 'heads' of the circuit: the waveforms that have been computed by rewriting
     let headWaveforms : Array<Option<Edge<V, G>>>
     /**
@@ -122,10 +122,9 @@ public class InterfacedHypergraph<V, G>
             this.leftmostTraversalElements.put(VERTEX(v))
             match(inputMap.get(v)) {
                 case None =>
-                    let vs = ArrayList<Int64>()
-                    vs.append(i)
+                    let vs = HashSet<Int64>([i])
                     inputMap.put(v, vs)
-                case Some(vs) => vs.append(i)
+                case Some(vs) => vs.put(i)
             }
             v.SetAsInput(this, i)
         }
@@ -134,10 +133,9 @@ public class InterfacedHypergraph<V, G>
             this.rightmostTraversalElements.put(VERTEX(v))
             match(outputMap.get(v)) {
                 case None =>
-                    let vs = ArrayList<Int64>()
-                    vs.append(i)
+                    let vs = HashSet<Int64>([i])
                     outputMap.put(v, vs)
-                case Some(vs) => vs.append(i)
+                case Some(vs) => vs.put(i)
             }
             v.SetAsOutput(this, i)
             match(v.GetInEdge()){
@@ -301,15 +299,15 @@ public class InterfacedHypergraph<V, G>
         AssertGraphHasMinimumOutputs(this, i)
         this.outputs[i]
     }
-    public func GetInputPositions(v : Vertex<V, G>) : ArrayList<Int64> {
+    public func GetInputPositions(v : Vertex<V, G>) : HashSet<Int64> {
         match(this.inputMap.get(v)){
-            case None => ArrayList<Int64>()
+            case None => HashSet<Int64>()
             case Some(ps) => ps
         }
     }
-    public func GetOutputPositions(v : Vertex<V, G>) : ArrayList<Int64> {
+    public func GetOutputPositions(v : Vertex<V, G>) : HashSet<Int64> {
         match(this.outputMap.get(v)){
-            case None => ArrayList<Int64>()
+            case None => HashSet<Int64>()
             case Some(ps) => ps
         }
     }
@@ -335,7 +333,7 @@ public class InterfacedHypergraph<V, G>
      */
     func UpdateInterface(
         interfaceArray : Array<InterfaceVertex<V, G>>,
-        interfaceMap : HashMap<Vertex<V, G>, ArrayList<Int64>>,
+        interfaceMap : HashMap<Vertex<V, G>, HashSet<Int64>>,
         traversalElements : HashSet<TraversalElement<V, G>>,
         i : Int64,
         newVertex : Vertex<V, G>
@@ -347,8 +345,8 @@ public class InterfacedHypergraph<V, G>
             case Some(ps) => ps.remove(i)
         }
         match(interfaceMap.get(newVertex)) {
-            case Some(vs) => vs.append(i)
-            case None => interfaceMap.put(newVertex, ArrayList<Int64>([i]))
+            case Some(vs) => vs.put(i)
+            case None => interfaceMap.put(newVertex, HashSet<Int64>([i]))
         }
         traversalElements.remove(VERTEX(oldVertex.vertex))
         traversalElements.put(VERTEX(newVertex))
