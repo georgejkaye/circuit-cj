@@ -156,7 +156,8 @@ public class Vertex<V, G>
         SetInEdge(EdgeConnection(e, i, TARGET))
     }
     public func SetInEdge(ec : EdgeConnection<V, G>) : Unit {
-        this.inEdge = ec
+        this.inEdge = Some(ec)
+        this.owner.RemoveVertexFromLeftmostTraversalElements(this)
     }
     public func SetInEdge(ec : Option<EdgeConnection<V, G>>) : Unit {
         match(ec) {
@@ -166,6 +167,7 @@ public class Vertex<V, G>
     }
     public func SetOutEdges(ecs : HashSet<EdgeConnection<V, G>>) : Unit {
         this.outEdges = ecs
+        this.PostAlterOutEdges()
     }
     public func RemoveInEdge(es : HashSet<Edge<V, G>>) : Unit {
         for (e in es) {
@@ -187,7 +189,10 @@ public class Vertex<V, G>
         }
     }
     func PostAlterInEdge() : Unit {
-        // TODO?
+        match(this.inEdge) {
+            case None => this.owner.AddVertexToLeftmostTraversalElements(this)
+            case Some(ec) => this.owner.RemoveVertexFromLeftmostTraversalElements(this)
+        }
     }
     func PostAlterOutEdges() : Unit {
         if(outEdges.size == 0){
