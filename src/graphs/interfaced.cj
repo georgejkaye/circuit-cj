@@ -515,4 +515,18 @@ public class InterfacedHypergraph<V, G>
     public func GetHeadWaveform(i : Int64) : Option<Edge<V, G>> {
         this.headWaveforms[i]
     }
+    public func CollapseSubgraph(
+        inputs : Array<TentacleOrigin<V, G>>,
+        outputs : Array<TentacleOrigin<V, G>>,
+        name : String
+    ) : (InterfacedHypergraph<V, G>, Edge<V, G>) {
+        this.GetGraph().CollapseSubgraph(inputs, outputs, name)
+    }
+    public func CollapseSubgraph(
+        inputs : Array<TentacleOrigin<V, G>>,
+        outputs : Array<TentacleOrigin<V, G>>,
+        label : Label<V, G>
+    ) : (InterfacedHypergraph<V, G>, Edge<V, G>) {
+        this.GetGraph().CollapseSubgraph(inputs, outputs, label)
+    }
 }
