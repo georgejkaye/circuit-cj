@@ -39,10 +39,17 @@ public func RewriteCombinational<V, G>(
             let nextElements = HashSet<TraversalElement<V, G>>()
             let removedElements = HashSet<TraversalElement<V, G>>()
             for(rule in rules) {
-                let (canRewrite, payload) = rule.CanRewrite(e, f)
-                if(canRewrite) {
-                    Debug("Rewriting ${e} with ${rule.name}")
-                    return rule.Rewrite(e, f, payload)
+                if(rule.CanRewrite(e, f)) {
+                        Debug("Attempting to rewrite ${e} with ${rule.name}")
+                    match(rule.Rewrite(e, f)) {
+                        case None =>
+                            Debug("Did not rewrite ${e} with ${rule.name}")
+                        case Some(result) =>
+                            Debug("Rewrote ${e} with ${rule.name}")
+                            // signature.WriteDotToFile(f, 2, "rewrite-${y}-${rule.GetName()}")
+                            // y++
+                            return result
+                    }
                 }
             }
             if(!e.GetLabel().IsDelay()) {
