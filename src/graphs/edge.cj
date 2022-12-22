@@ -343,4 +343,23 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
         let ec = v.GetInEdge().getOrThrow()
         ec.GetEdge()
     }
+    public func Clone(
+        sources : Array<Vertex<V, G>>,
+        targets : Array<Vertex<V, G>>,
+        owner : Hypergraph<V, G>
+    ) : Edge<V, G> {
+        AssertArrayHasLength(sources, this.sources.size)
+        AssertArrayHasLength(targets, this.targets.size)
+        let clonedSubgraph = match(this.subgraph) {
+            case None    => None<InterfacedHypergraph<V, G>>
+            case Some(f) => Some(f.Clone())
+        }
+        Edge(
+            this.GetLabel(),
+            sources,
+            targets,
+            clonedSubgraph,
+            owner
+        )
+    }
 }
