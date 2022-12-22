@@ -61,11 +61,11 @@ extend GateLevelValue <: ValueSymbol & Equatable<GateLevelValue> & Decimal<GateL
             case _ => false
         }
     }
-    public static func DecToValues(x : Int64, w : Int64, signed : Bool) : Signal<GateLevelValue> {
+    public static func DecToSignal(x : Int64, w : Int64, signed : Bool) : Signal<GateLevelValue> {
         if(signed) {
-            GateLevelValue.SignedDecToValues(x, w)
+            GateLevelValue.SignedDecToSignal(x, w)
         } else {
-            GateLevelValue.UnsignedDecToValues(x, w)
+            GateLevelValue.UnsignedDecToSignal(x, w)
         }
     }
     /**
@@ -76,7 +76,7 @@ extend GateLevelValue <: ValueSymbol & Equatable<GateLevelValue> & Decimal<GateL
     * @param w      The width of the resulting list
     * @param x      The decimal number to convert
     */
-    public static func UnsignedDecToValues(x : Int64, w : Int64) : Signal<GateLevelValue> {
+    public static func UnsignedDecToSignal(x : Int64, w : Int64) : Signal<GateLevelValue> {
         AssertNonNegative(x)
         let required = log2Ceil(x+1)
         AssertEnoughBits(w, required)
@@ -123,8 +123,8 @@ extend GateLevelValue <: ValueSymbol & Equatable<GateLevelValue> & Decimal<GateL
     * @param w The width of the bitstring
     * @return The corresponding bitstring
     */
-    public static func SignedDecToValues(x : Int64, w : Int64) : Signal<GateLevelValue> {
-        let bin = UnsignedDecToValues(abs(x), w).values
+    public static func SignedDecToSignal(x : Int64, w : Int64) : Signal<GateLevelValue> {
+        let bin = UnsignedDecToSignal(abs(x), w).values
         Invert(bin)
         AddOne(bin)
         Signal(bin)

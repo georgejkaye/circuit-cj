@@ -13,9 +13,9 @@ package components
 public interface Decimal<V>
     where V <: ValueSymbol, V <: Equatable<V>
 {
-    static func UnsignedDecToValues(x : Int64, width : Int64) : Signal<V>
-    static func SignedDecToValues(x : Int64, width : Int64) : Signal<V>
-    static func DecToValues(x  : Int64, width : Int64, signed : Bool) : Signal<V>
+    static func UnsignedDecToSignal(x : Int64, width : Int64) : Signal<V>
+    static func SignedDecToSignal(x : Int64, width : Int64) : Signal<V>
+    static func DecToSignal(x  : Int64, width : Int64, signed : Bool) : Signal<V>
 }
 public interface DecimalBuilder<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
@@ -58,7 +58,7 @@ public interface DecimalBuilder<V, G>
 }
 extend Signature<V, G> <: DecimalBuilder<V, G> where V <: Decimal<V> {
     public func MakeSignalFromInt(x : Int64, width : Int64, signed : Bool) : InterfacedHypergraph<V, G> {
-        let signal = V.DecToValues(x, width, signed)
+        let signal = V.DecToSignal(x, width, signed)
         this.MakeSignal(signal)
     }
     public func MakeSignedSignalFromInt(
@@ -74,7 +74,7 @@ extend Signature<V, G> <: DecimalBuilder<V, G> where V <: Decimal<V> {
         this.MakeSignalFromInt(x, width, false)
     }
     public func UseSignalFromInt(x : Int64, width : Int64, signed : Bool) : Wire<V, G> {
-        let signal = V.DecToValues(x, width, signed)
+        let signal = V.DecToSignal(x, width, signed)
         this.UseSignal(signal)
     }
     public func UseSignedSignalFromInt(x : Int64, width: Int64) : Wire<V, G> {
@@ -89,7 +89,7 @@ extend Signature<V, G> <: DecimalBuilder<V, G> where V <: Decimal<V> {
         signed : Bool,
         waveformType : WaveformType
     ) : InterfacedHypergraph<V, G> {
-        let signals = map({ v : Int64 => V.DecToValues(v, width, signed)}, xs)
+        let signals = map({ v : Int64 => V.DecToSignal(v, width, signed)}, xs)
         match(waveformType){
             case FINITE_CLOSED => this.MakeClosedWaveform(signals)
             case FINITE_OPEN   => this.MakeOpenWaveform(signals)
@@ -115,15 +115,15 @@ extend Signature<V, G> <: DecimalBuilder<V, G> where V <: Decimal<V> {
         this.MakeWaveformFromInt(xs, width, false, INFINITE)
     }
     func UseOpenWaveformFromInt(xs : Array<Int64>, width : Int64, signed : Bool, input : Wire<V, G>) : Wire<V, G> {
-        let signals = map({ v : Int64 => V.DecToValues(v, width, signed)}, xs)
+        let signals = map({ v : Int64 => V.DecToSignal(v, width, signed)}, xs)
         this.UseOpenWaveform(signals, input)
     }
     func UseClosedWaveformFromInt(xs : Array<Int64>, width : Int64, signed : Bool) : Wire<V, G> {
-        let signals = map({ v : Int64 => V.DecToValues(v, width, signed)}, xs)
+        let signals = map({ v : Int64 => V.DecToSignal(v, width, signed)}, xs)
         this.UseClosedWaveform(signals)
     }
     func UseInfiniteWaveformFromInt(xs : Array<Int64>, width : Int64, signed : Bool) : Wire<V, G> {
-        let signals = map({ v : Int64 => V.DecToValues(v, width, signed)}, xs)
+        let signals = map({ v : Int64 => V.DecToSignal(v, width, signed)}, xs)
         this.UseInfiniteWaveform(signals)
     }
     public func UseSignedOpenWaveformFromInt(xs : Array<Int64>, width : Int64, input : Wire<V, G>) : Wire<V, G> {
@@ -151,7 +151,7 @@ extend Signature<V, G> <: DecimalBuilder<V, G> where V <: Decimal<V> {
         signed : Bool,
         input : Wire<V, G>
     ) : Wire<V, G> {
-        let signal = V.DecToValues(initial, width, signed)
+        let signal = V.DecToSignal(initial, width, signed)
         this.UseSimpleRegister(signal, input)
     }
     public func RegisterGuardedFeedback(
@@ -161,7 +161,7 @@ extend Signature<V, G> <: DecimalBuilder<V, G> where V <: Decimal<V> {
         input : Wire<V, G>,
         incoming : Wire<V, G>
     ) : Unit {
-        let signal = V.DecToValues(initial, width, signed)
+        let signal = V.DecToSignal(initial, width, signed)
         this.RegisterGuardedFeedback(signal, input, incoming)
     }
 }
