@@ -177,7 +177,7 @@ func GetApplyRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
     )
 }
 
-func GetStubRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
+func GetStubRule<V, G>() : RewriteRule<V, G>
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     RewriteRule<V, G>(
@@ -373,7 +373,11 @@ func GetCompositeRule<V, G>(signature : Signature<V, G>, all : Bool)
         "composite",
         SUBGRAPH,
         { e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
-            Some(ExpandSubgraphRewrite(e, f))
+            if(!ApplyPreconditions(e, f)){
+                None
+            } else {
+                Some(ExpandSubgraphRewrite(e, f))
+            }
         }
     )
 }
@@ -384,6 +388,10 @@ func ExpandSubgraphRewrite<V, G>(e : Edge<V, G>, f : InterfacedHypergraph<V, G>)
 
     let nextEdges = HashSet<TraversalElement<V, G>>()
     let removedEdges = HashSet<TraversalElement<V, G>>()
+    let subgraph = e.GetSubgraph().getOrThrow()
+    for(edge in subgraph.GetSequentialData().valueEdges){
+        nextEdges.put(EDGE(edge))
+    }
     let (newSources, newTargets) = e.BurstSubgraph()
     for(t in newSources) {
         match(t.GetVertex().GetInEdge()){
@@ -467,16 +475,21 @@ func GetRules<V, G>(signature : Signature<V, G>, now : Bool) : ArrayList<Rewrite
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
     let rules = ArrayList<RewriteRule<V, G>>()
-    rules.append(GetForkRule<V, G>())
-    rules.append(GetStubRule<V, G>(signature))
-    rules.append(GetBundleRule<V, G>(signature))
-    rules.append(GetApplyRule<V, G>(signature))
-    rules.append(GetJoinRule<V, G>(signature))
-    if(now) {
-        rules.append(GetCompositeRule<V, G>(signature))
+    if(now){
+        rules.append(GetForkRule<V, G>())
+        rules.append(GetStubRule<V, G>())
+        rules.append(GetBundleRule<V, G>(signature))
+        rules.append(GetApplyRule<V, G>(signature))
+        rules.append(GetJoinRule<V, G>(signature))
+        rules.append(GetEnhancedRule<V, G>(signature))
+        rules.append(GetCompositeRule<V, G>(signature, true))
+        rules.append(GetMergeBundlesRule<V, G>(signature))
     } else {
-        rules.append(GetJoinUnitLeftRule<V, G>(signature))
-        rules.append(GetJoinUnitRightRule<V, G>(signature))
+        // rules.append(GetForkRule<V, G>())
+        rules.append(GetStubRule<V, G>())
+        rules.append(GetCompositeRule<V, G>(signature, true))
+        // rules.append(GetJoinUnitLeftRule<V, G>(signature))
+        // rules.append(GetJoinUnitRightRule<V, G>(signature))
     }
     rules
 }

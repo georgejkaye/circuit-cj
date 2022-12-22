@@ -63,6 +63,8 @@ public class Evaluator<V, G>
     func GetStateVertices(
         inputs : ArrayList<Vertex<V, G>>,
         outputs : ArrayList<Vertex<V, G>>,
+        startingElements : HashSet<TraversalElement<V, G>>,
+        endingElements : HashSet<TraversalElement<V, G>>,
         vertexFn : (Int64, Vertex<V, G>, Signal<V>) -> (Vertex<V, G>, Vertex<V, G>)
     ) : Unit {
         for(i in 0..this.currentState.size) {
@@ -71,25 +73,37 @@ public class Evaluator<V, G>
             let (inputVertex, outputVertex) = vertexFn(i, stateVertex, stateSignal)
             inputs.append(inputVertex)
             outputs.append(outputVertex)
+            let inputEdge = inputVertex.GetInEdge().getOrThrow().GetEdge()
+            startingElements.put(EDGE(inputEdge))
+            for(ec in outputVertex.GetOutEdges()) {
+                endingElements.put(EDGE(ec.GetEdge()))
+            }
         }
     }
     func GetInputVertices(
         signals : Array<Signal<V>>,
         inputs : ArrayList<Vertex<V, G>>,
-        vertexFn : (Int64, Signal<V>) -> Vertex<V, G>
+        startingElements : HashSet<TraversalElement<V, G>>,
+        vertexFn : (Int64, Signal<V>) -> (Vertex<V, G>)
     ) : Unit {
         for(i in 0..signals.size) {
             let vertex = vertexFn(i, signals[i])
             inputs.append(vertex)
+            let inputEdge = vertex.GetInEdge().getOrThrow().GetEdge()
+            startingElements.put(EDGE(inputEdge))
         }
     }
     func GetOutputVertices(
         outputs : ArrayList<Vertex<V, G>>,
+        endingElements : HashSet<TraversalElement<V, G>>,
         vertexFn : (Int64, Int64) -> Vertex<V, G>
     ) : Unit {
         for(i in this.traceVertices.size..this.combinationalCore.GetCoarity()) {
             let vertex = vertexFn(i, i - traceVertices.size)
             outputs.append(vertex)
+            for(ec in vertex.GetOutEdges()) {
+                endingElements.put(EDGE(ec.GetEdge()))
+            }
         }
     }
     func CopyCore(
@@ -97,19 +111,24 @@ public class Evaluator<V, G>
         stateVertexFn : (Int64, Vertex<V, G>, Signal<V>) -> (Vertex<V, G>, Vertex<V, G>),
         inputVertexFn : (Int64, Signal<V>) -> Vertex<V, G>,
         outputVertexFn : (Int64, Int64) -> Vertex<V, G>
-    ) : Unit {
+    ) : (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>) {
         let inputs = ArrayList<Vertex<V, G>>()
         let outputs = ArrayList<Vertex<V, G>>()
-        GetStateVertices(inputs, outputs, stateVertexFn)
-        GetInputVertices(signals, inputs, inputVertexFn)
-        GetOutputVertices(outputs, outputVertexFn)
+        let startingElements = HashSet<TraversalElement<V, G>>()
+        let endingElements = HashSet<TraversalElement<V, G>>()
+        GetStateVertices(inputs, outputs, startingElements, endingElements, stateVertexFn)
+        GetInputVertices(signals, inputs, startingElements, inputVertexFn)
+        GetOutputVertices(outputs, endingElements, outputVertexFn)
         let clonedEdge = coreEdge.Clone(
             inputs.toArray(),
             outputs.toArray(),
             f.GetGraph()
         )
+        (startingElements, endingElements)
     }
-    func MakeTransitionRegister(signals : Array<Signal<V>>) : Unit {
+    func MakeTransitionRegister(
+        signals : Array<Signal<V>>
+    ) : (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>) {
         let stateVertexFn = {
             i : Int64, v : Vertex<V, G>, s : Signal<V> =>
                 SplitVertex(v)
@@ -124,7 +143,9 @@ public class Evaluator<V, G>
         }
         CopyCore(signals, stateVertexFn, inputVertexFn, outputVertexFn)
     }
-    func MakeOutputRegister(signals : Array<Signal<V>>) : Unit {
+    func MakeOutputRegister(
+        signals : Array<Signal<V>>
+    ) : (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>) {
         let stateVertexFn = {
             i : Int64, v : Vertex<V, G>, s : Signal<V> =>
                 (GetSignalVertex(s), Vertex<V, G>(s.GetWidth()))
@@ -159,10 +180,28 @@ public class Evaluator<V, G>
         }
         CopyCore(signals, stateVertexFn, inputVertexFn, outputVertexFn)
     }
-    public func PerformCycle(signals : Array<Signal<V>>) {
+    public func PerformCycle(signals : Array<Signal<V>>) : Unit {
         AssertArrayHasLength(signals, f.GetArity())
-        MakeTransitionRegister(signals)
-        MakeOutputRegister(signals)
+        // TODO This is inefficient as we're reducing the same graph twice.
+        // Really we should be reducing the core with values once, then
+        // sticking the appropriate values (transition or output) into the
+        // appropriate places
+        let (transitionStarting, transitionEnding) = MakeTransitionRegister(signals)
+        let (outputStarting, outputEnding) = MakeOutputRegister(signals)
+        this.sig.WriteDotToFile(this.f, 0, "before-rewrite-0")
+        this.sig.WriteDotToFile(this.f, 1, "before-rewrite-1")
+        RewriteCombinational<V, G>(
+            this.sig,
+            this.f,
+            transitionStarting,
+            transitionEnding
+        )
+        RewriteCombinational<V, G>(
+            this.sig,
+            this.f,
+            outputStarting,
+            outputEnding
+        )
     }
 }
 
@@ -288,7 +327,6 @@ func ConvertToMealyForm<V, G>(
     for(i in 0..f.GetCoarity()) {
         coreOutputs.append(OUTPUT(f, i))
     }
-    sig.WriteDotToFile(f, 1, "after-regs")
     let (graph, edge) = f.CollapseSubgraph(
         coreInputs.toArray(),
         coreOutputs.toArray(),
