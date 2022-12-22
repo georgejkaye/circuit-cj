@@ -20,9 +20,11 @@ public class Evaluator<V, G>
     let sig : Signature<V, G>
     let f : InterfacedHypergraph<V, G>
     let combinationalCore : InterfacedHypergraph<V, G>
-    let initialState : Array<Signal<V>>
+    let coreEdge : Edge<V, G>
+    var currentState : Array<Signal<V>>
     var tailVertices : Array<Vertex<V, G>>
     var inputVertices : Array<Vertex<V, G>>
+    var stateVertices : Array<Vertex<V, G>>
     var traceVertices : Array<Vertex<V, G>>
     public init(
         signature : Signature<V, G>,
@@ -34,24 +36,133 @@ public class Evaluator<V, G>
         BurstSequentialGraphs(clonedF)
         sig.WriteDotToFile(clonedF, 0, "after-burst")
         this.f = clonedF
-        let (graph, edge, state) = ConvertToMealyForm(signature, clonedF)
+        let (graph, edge, state, stateVertices) =
+            ConvertToMealyForm(signature, clonedF)
         this.combinationalCore = graph
-        this.initialState = state
+        this.coreEdge = edge
+        this.currentState = state
+        this.stateVertices = stateVertices
         this.tailVertices = Array<Vertex<V, G>>(f.GetCoarity()) {
             i : Int64 => f.GetOutput(i).GetVertex()
         }
         this.inputVertices = Array<Vertex<V, G>>(f.GetArity()) {
             i : Int64 => f.GetInput(i).GetVertex()
         }
-        this.traceVertices = Array<Vertex<V, G>>(combinationalCore.GetCoarity() - f.GetCoarity()) {
+        this.traceVertices = Array<Vertex<V, G>>(
+            graph.GetCoarity() - f.GetCoarity()
+        ) {
             i : Int64 => graph.GetOutput(i).GetVertex()
         }
     }
-    // public func EvaluateCycle(vs : Array<Signal<V>>) : Signal<V> {
-    //     let nowEdge = MakeNowEdge(vs)
-    //     let laterEdge = MakeLaterEdge(vs)
-    public func GetGraph() : InterfacedHypergraph<V, G>  {
+    public func GetGraph() : InterfacedHypergraph<V, G> {
         this.f
+    }
+    func GetSignalVertex(s : Signal<V>) : Vertex<V, G> {
+        sig.UseSignal(s).GetVertex()
+    }
+    func GetStateVertices(
+        inputs : ArrayList<Vertex<V, G>>,
+        outputs : ArrayList<Vertex<V, G>>,
+        vertexFn : (Int64, Vertex<V, G>, Signal<V>) -> (Vertex<V, G>, Vertex<V, G>)
+    ) : Unit {
+        for(i in 0..this.currentState.size) {
+            let stateVertex = this.stateVertices[i]
+            let stateSignal = this.currentState[i]
+            let (inputVertex, outputVertex) = vertexFn(i, stateVertex, stateSignal)
+            inputs.append(inputVertex)
+            outputs.append(outputVertex)
+        }
+    }
+    func GetInputVertices(
+        signals : Array<Signal<V>>,
+        inputs : ArrayList<Vertex<V, G>>,
+        vertexFn : (Int64, Signal<V>) -> Vertex<V, G>
+    ) : Unit {
+        for(i in 0..signals.size) {
+            let vertex = vertexFn(i, signals[i])
+            inputs.append(vertex)
+        }
+    }
+    func GetOutputVertices(
+        outputs : ArrayList<Vertex<V, G>>,
+        vertexFn : (Int64, Int64) -> Vertex<V, G>
+    ) : Unit {
+        for(i in this.traceVertices.size..this.combinationalCore.GetCoarity()) {
+            let vertex = vertexFn(i, i - traceVertices.size)
+            outputs.append(vertex)
+        }
+    }
+    func CopyCore(
+        signals : Array<Signal<V>>,
+        stateVertexFn : (Int64, Vertex<V, G>, Signal<V>) -> (Vertex<V, G>, Vertex<V, G>),
+        inputVertexFn : (Int64, Signal<V>) -> Vertex<V, G>,
+        outputVertexFn : (Int64, Int64) -> Vertex<V, G>
+    ) : Unit {
+        let inputs = ArrayList<Vertex<V, G>>()
+        let outputs = ArrayList<Vertex<V, G>>()
+        GetStateVertices(inputs, outputs, stateVertexFn)
+        GetInputVertices(signals, inputs, inputVertexFn)
+        GetOutputVertices(outputs, outputVertexFn)
+        let clonedEdge = coreEdge.Clone(
+            inputs.toArray(),
+            outputs.toArray(),
+            f.GetGraph()
+        )
+    }
+    func MakeTransitionRegister(signals : Array<Signal<V>>) : Unit {
+        let stateVertexFn = {
+            i : Int64, v : Vertex<V, G>, s : Signal<V> =>
+                SplitVertex(v)
+        }
+        let inputVertexFn = {
+            i : Int64, s : Signal<V> =>
+                GetSignalVertex(s)
+        }
+        let outputVertexFn = {
+            i : Int64, j : Int64 =>
+                Vertex<V, G>(this.coreEdge.GetTarget(i).GetWidth())
+        }
+        CopyCore(signals, stateVertexFn, inputVertexFn, outputVertexFn)
+    }
+    func MakeOutputRegister(signals : Array<Signal<V>>) : Unit {
+        let stateVertexFn = {
+            i : Int64, v : Vertex<V, G>, s : Signal<V> =>
+                (GetSignalVertex(s), Vertex<V, G>(s.GetWidth()))
+        }
+        let inputVertexFn = {
+            i : Int64, s : Signal<V> =>
+                GetSignalVertex(s)
+        }
+        let outputVertexFn = {
+            sourceIndex : Int64, outputIndex : Int64 =>
+                let outputVertex = f.GetOutput(outputIndex).GetVertex()
+                let width = outputVertex.GetWidth()
+                let delayTarget = Vertex<V, G>(width)
+                let delay = Edge(
+                    DELAY(width),
+                    [outputVertex],
+                    [delayTarget],
+                    None,
+                    f.GetGraph()
+                )
+                let coreTarget = Vertex<V, G>(width)
+                let joinTarget = Vertex<V, G>(width)
+                let join = Edge(
+                    JOIN(width),
+                    [coreTarget, delayTarget],
+                    [joinTarget],
+                    None,
+                    f.GetGraph()
+                )
+                f.ReplaceOutput(outputIndex, joinTarget)
+                coreTarget
+        }
+        CopyCore(signals, stateVertexFn, inputVertexFn, outputVertexFn)
+    }
+    public func PerformCycle(signals : Array<Signal<V>>) {
+        AssertArrayHasLength(signals, f.GetArity())
+        MakeTransitionRegister(signals)
+        MakeOutputRegister(signals)
     }
 }
 
@@ -79,7 +190,12 @@ func MakeRegisterJoin<V, G>(
     e : Edge<V, G>,
     f : InterfacedHypergraph<V, G>,
     delays : Bool
-) : (TentacleOrigin<V, G>, TentacleOrigin<V, G>, Signal<V>) where
+) : (
+    TentacleOrigin<V, G>,
+    TentacleOrigin<V, G>,
+    Signal<V>,
+    Vertex<V, G>
+) where
     V <: ValueSymbol,
     V <: Equatable<V>,
     G <: PrimitiveSymbol<V>,
@@ -120,7 +236,7 @@ func MakeRegisterJoin<V, G>(
         None<InterfacedHypergraph<V, G>>,
         f.GetGraph()
     )
-    (input, TARGET(join, 0), signal)
+    (input, TARGET(join, 0), signal, value)
 }
 /**
  * Convert a circuit to Mealy form, in which there is a `combinational core'
@@ -132,10 +248,15 @@ func MakeRegisterJoin<V, G>(
  * @return A tuple of the combinational graph, the edge for the core, and
  *               the array of signals of the registers (the 'state')
  */
-public func ConvertToMealyForm<V, G>(
+func ConvertToMealyForm<V, G>(
     sig : Signature<V, G>,
     f : InterfacedHypergraph<V, G>
-) : (InterfacedHypergraph<V, G>, Edge<V, G>, Array<Signal<V>>) where
+) : (
+    InterfacedHypergraph<V, G>,
+    Edge<V, G>,
+    Array<Signal<V>>,
+    Array<Vertex<V, G>>
+) where
     V <: ValueSymbol,
     V <: Equatable<V>,
     G <: PrimitiveSymbol<V>,
@@ -147,11 +268,13 @@ public func ConvertToMealyForm<V, G>(
     let coreInputs = ArrayList<TentacleOrigin<V, G>>()
     let coreOutputs = ArrayList<TentacleOrigin<V, G>>()
     let state = ArrayList<Signal<V>>()
+    let values = ArrayList<Vertex<V, G>>()
     func GetInputAndOutput(e : Edge<V, G>, delays : Bool) {
-        let (input, output, signal) = MakeRegisterJoin(sig, e, f, delays)
+        let (input, output, signal, value) = MakeRegisterJoin(sig, e, f, delays)
         coreInputs.append(output)
         coreOutputs.append(input)
         state.append(signal)
+        values.append(value)
     }
     for(e in HashSet(delayEdges)) {
         GetInputAndOutput(e, true)
@@ -171,5 +294,5 @@ public func ConvertToMealyForm<V, G>(
         coreOutputs.toArray(),
         "Core(${f.GetName()})"
     )
-    (graph, edge, state.toArray())
+    (graph, edge, state.toArray(), values.toArray())
 }
