@@ -61,10 +61,10 @@ let compressorStyle = [
 let primitiveStyle = [
     bgColour("cyan")
 ]
-let enhancedStyle = [
+let combinationalCompositeStyle = [
     bgColour("darkturquoise")
 ]
-let compositeStyle = [
+let sequentialCompositeStyle = [
     bgColour("chartreuse4")
 ]
 let structuralStyle = [
@@ -394,9 +394,13 @@ extend Signature<V, G> <: DotDrawer<V, G> {
             case PRIMITIVE(_) =>
                 primitiveStyle
             case ENHANCED_PRIMITIVE(eprim) =>
-                enhancedStyle
+                combinationalCompositeStyle
             case COMPOSITE(_) =>
-                compositeStyle
+                if(e.GetSubgraph().getOrThrow().IsCombinational()) {
+                    combinationalCompositeStyle
+                } else {
+                    sequentialCompositeStyle
+                }
             case BLACKBOX(_) =>
                 blackboxStyle
             case DELAY(_) =>
