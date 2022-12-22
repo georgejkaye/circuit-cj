@@ -22,10 +22,11 @@ public class Evaluator<V, G>
     let combinationalCore : InterfacedHypergraph<V, G>
     let coreEdge : Edge<V, G>
     var currentState : Array<Signal<V>>
-    var tailVertices : Array<Vertex<V, G>>
-    var inputVertices : Array<Vertex<V, G>>
+    var coreStateSources : Array<Vertex<V, G>>
+    var coreInputSources : Array<Vertex<V, G>>
+    var coreStateTargets : Array<Vertex<V, G>>
+    var coreOutputTargets : Array<Vertex<V, G>>
     var stateVertices : Array<Vertex<V, G>>
-    var traceVertices : Array<Vertex<V, G>>
     var stateJoinEdges : Array<Edge<V, G>>
     public init(
         signature : Signature<V, G>,
@@ -42,16 +43,21 @@ public class Evaluator<V, G>
         this.coreEdge = edge
         this.currentState = state
         this.stateVertices = stateVertices
-        this.tailVertices = Array<Vertex<V, G>>(f.GetCoarity()) {
+        this.coreOutputTargets = Array<Vertex<V, G>>(f.GetCoarity()) {
             i : Int64 => clonedF.GetOutput(i).GetVertex()
         }
-        this.inputVertices = Array<Vertex<V, G>>(f.GetArity()) {
+        this.coreInputSources = Array<Vertex<V, G>>(f.GetArity()) {
             i : Int64 => clonedF.GetInput(i).GetVertex()
         }
-        this.traceVertices = Array<Vertex<V, G>>(
+        this.coreStateSources = Array<Vertex<V, G>>(
             graph.GetCoarity() - f.GetCoarity()
         ) {
-            i : Int64 => graph.GetOutput(i).GetVertex()
+            i : Int64 => edge.GetSource(i).GetVertex()
+        }
+        this.coreStateTargets = Array<Vertex<V, G>>(
+            graph.GetCoarity() - f.GetCoarity()
+        ) {
+            i : Int64 => edge.GetTarget(i).GetVertex()
         }
         this.stateJoinEdges = Array<Edge<V, G>>(graph.GetCoarity() - f.GetCoarity()){
             i : Int64 => edge.GetSource(i).GetVertex().GetInEdge().getOrThrow().GetEdge()
@@ -101,8 +107,8 @@ public class Evaluator<V, G>
         endingElements : HashSet<TraversalElement<V, G>>,
         vertexFn : (Int64, Int64) -> Vertex<V, G>
     ) : Unit {
-        for(i in this.traceVertices.size..this.combinationalCore.GetCoarity()) {
-            let vertex = vertexFn(i, i - traceVertices.size)
+        for(i in this.coreStateTargets.size..this.combinationalCore.GetCoarity()) {
+            let vertex = vertexFn(i, i - coreStateTargets.size)
             outputs.append(vertex)
             for(ec in vertex.GetOutEdges()) {
                 endingElements.put(EDGE(ec.GetEdge()))
@@ -159,9 +165,9 @@ public class Evaluator<V, G>
         }
         let outputVertexFn = {
             sourceIndex : Int64, outputIndex : Int64 =>
-                let tailVertex = this.tailVertices[outputIndex]
+                let tailVertex = this.coreOutputTargets[outputIndex]
                 let (left, right) = SplitVertex(tailVertex)
-                this.tailVertices[outputIndex] = left
+                this.coreOutputTargets[outputIndex] = left
                 let width = left.GetWidth()
                 let delayTarget = Vertex<V, G>(width)
                 let delay = Edge(
