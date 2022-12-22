@@ -103,8 +103,6 @@ public func RewriteCombinational<V, G>(
 ) : Unit
     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
 {
-    println("The starting elements are ${starting}")
-    println("The ending elemnents are ${ending}")
     let actionAtEdge = {
         e : Edge<V, G>, data : TraversalData<V, G> =>
             match(CheckAppropriateRules(e, f, signature)) {

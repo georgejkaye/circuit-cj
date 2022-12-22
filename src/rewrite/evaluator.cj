@@ -26,6 +26,7 @@ public class Evaluator<V, G>
     var inputVertices : Array<Vertex<V, G>>
     var stateVertices : Array<Vertex<V, G>>
     var traceVertices : Array<Vertex<V, G>>
+    var stateJoinEdges : Array<Edge<V, G>>
     public init(
         signature : Signature<V, G>,
         f : InterfacedHypergraph<V, G>
@@ -34,7 +35,6 @@ public class Evaluator<V, G>
         // Clone the graph so that the original is not affected
         let clonedF = f.Clone()
         BurstSequentialGraphs(clonedF)
-        sig.WriteDotToFile(clonedF, 0, "after-burst")
         this.f = clonedF
         let (graph, edge, state, stateVertices) =
             ConvertToMealyForm(signature, clonedF)
@@ -43,15 +43,18 @@ public class Evaluator<V, G>
         this.currentState = state
         this.stateVertices = stateVertices
         this.tailVertices = Array<Vertex<V, G>>(f.GetCoarity()) {
-            i : Int64 => f.GetOutput(i).GetVertex()
+            i : Int64 => clonedF.GetOutput(i).GetVertex()
         }
         this.inputVertices = Array<Vertex<V, G>>(f.GetArity()) {
-            i : Int64 => f.GetInput(i).GetVertex()
+            i : Int64 => clonedF.GetInput(i).GetVertex()
         }
         this.traceVertices = Array<Vertex<V, G>>(
             graph.GetCoarity() - f.GetCoarity()
         ) {
             i : Int64 => graph.GetOutput(i).GetVertex()
+        }
+        this.stateJoinEdges = Array<Edge<V, G>>(graph.GetCoarity() - f.GetCoarity()){
+            i : Int64 => edge.GetSource(i).GetVertex().GetInEdge().getOrThrow().GetEdge()
         }
     }
     public func GetGraph() : InterfacedHypergraph<V, G> {
@@ -156,26 +159,26 @@ public class Evaluator<V, G>
         }
         let outputVertexFn = {
             sourceIndex : Int64, outputIndex : Int64 =>
-                let outputVertex = f.GetOutput(outputIndex).GetVertex()
-                let width = outputVertex.GetWidth()
+                let tailVertex = this.tailVertices[outputIndex]
+                let (left, right) = SplitVertex(tailVertex)
+                this.tailVertices[outputIndex] = left
+                let width = left.GetWidth()
                 let delayTarget = Vertex<V, G>(width)
                 let delay = Edge(
                     DELAY(width),
-                    [outputVertex],
+                    [left],
                     [delayTarget],
                     None,
                     f.GetGraph()
                 )
                 let coreTarget = Vertex<V, G>(width)
-                let joinTarget = Vertex<V, G>(width)
                 let join = Edge(
                     JOIN(width),
                     [coreTarget, delayTarget],
-                    [joinTarget],
+                    [right],
                     None,
                     f.GetGraph()
                 )
-                f.ReplaceOutput(outputIndex, joinTarget)
                 coreTarget
         }
         CopyCore(signals, stateVertexFn, inputVertexFn, outputVertexFn)
@@ -188,8 +191,6 @@ public class Evaluator<V, G>
         // appropriate places
         let (transitionStarting, transitionEnding) = MakeTransitionRegister(signals)
         let (outputStarting, outputEnding) = MakeOutputRegister(signals)
-        this.sig.WriteDotToFile(this.f, 0, "before-rewrite-0")
-        this.sig.WriteDotToFile(this.f, 1, "before-rewrite-1")
         RewriteCombinational<V, G>(
             this.sig,
             this.f,
@@ -202,6 +203,13 @@ public class Evaluator<V, G>
             outputStarting,
             outputEnding
         )
+        for(i in 0..this.stateJoinEdges.size) {
+            let e = this.stateJoinEdges[i]
+            let stateVertex = e.GetSource(0).GetVertex()
+            this.stateVertices[i] = stateVertex
+            this.currentState[i] = stateVertex.GetInEdge().getOrThrow().GetEdge().GetLabel().GetSignal()
+        }
+        this.currentCycle++
     }
 }
 
@@ -315,10 +323,10 @@ func ConvertToMealyForm<V, G>(
         state.append(signal)
         values.append(value)
     }
-    for(e in HashSet(delayEdges)) {
+    for(e in delayEdges) {
         GetInputAndOutput(e, true)
     }
-    for(e in HashSet(valueEdges)) {
+    for(e in valueEdges) {
         GetInputAndOutput(e, false)
     }
     for(i in 0..f.GetArity()) {
