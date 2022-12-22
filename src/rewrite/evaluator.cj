@@ -115,6 +115,20 @@ public class Evaluator<V, G>
             }
         }
     }
+    /**
+     * Make a copy of the combinational core.
+     *
+     * @param signals The input signals at this tick
+     * @param stateVertexFn The function that specifies the source and target
+                              state vertex at each index for this copy
+     * @param inputVertexFn the function that specifies the input source vertex
+                               at each index for this copy
+     * @param outputVertexFn the function that specifies the output target vertex
+                               at each index for this copy
+     * @return A tuple containing
+     *              0) The starting elements for traversing this core (the values)
+     *              1) The ending elements for traversing this core (the join)
+     */
     func CopyCore(
         signals : Array<Signal<V>>,
         stateVertexFn : (Int64, Vertex<V, G>, Signal<V>) -> (Vertex<V, G>, Vertex<V, G>),
@@ -135,7 +149,15 @@ public class Evaluator<V, G>
         )
         (startingElements, endingElements)
     }
-    func MakeTransitionRegister(
+    /**
+     * Create the copy of the core that produces the transition at this tick.
+     *
+     * @param signals The input signals
+     * @return A tuple of
+     *          a) The starting traversal elements (the values)
+     *          b) The ending trversal elements (the join of the register)
+     */
+    func MakeTransitionCore(
         signals : Array<Signal<V>>
     ) : (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>) {
         let stateVertexFn = {
@@ -152,7 +174,15 @@ public class Evaluator<V, G>
         }
         CopyCore(signals, stateVertexFn, inputVertexFn, outputVertexFn)
     }
-    func MakeOutputRegister(
+    /**
+     * Create the copy of the core that produces the output at this tick.
+     *
+     * @param signals The input signals
+     * @return A tuple of
+     *          a) The starting traversal elements (the values)
+     *          b) The ending trversal elements (the join of the register)
+     */
+    func MakeOutputCore(
         signals : Array<Signal<V>>
     ) : (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>) {
         let stateVertexFn = {
@@ -189,14 +219,20 @@ public class Evaluator<V, G>
         }
         CopyCore(signals, stateVertexFn, inputVertexFn, outputVertexFn)
     }
+    /**
+     * Perform a cycle using this evaluator for some given input signals
+     * for this cycle
+     *
+     * @param signals The input signals at the current tick of the clock
+     */
     public func PerformCycle(signals : Array<Signal<V>>) : Unit {
         AssertArrayHasLength(signals, f.GetArity())
         // TODO This is inefficient as we're reducing the same graph twice.
         // Really we should be reducing the core with values once, then
         // sticking the appropriate values (transition or output) into the
         // appropriate places
-        let (transitionStarting, transitionEnding) = MakeTransitionRegister(signals)
-        let (outputStarting, outputEnding) = MakeOutputRegister(signals)
+        let (transitionStarting, transitionEnding) = MakeTransitionCore(signals)
+        let (outputStarting, outputEnding) = MakeOutputCore(signals)
         RewriteCombinational<V, G>(
             this.sig,
             this.f,
@@ -218,15 +254,19 @@ public class Evaluator<V, G>
         this.currentCycle++
     }
 }
-
 /**
- * 'Burst' edges that have sequential subgraphs. This is because all of the delays
- * in the subgraph must be dealt with separately, and cannot remain in their subgraphs
+ * 'Burst' edges that have sequential subgraphs.
+ * This is because all of the delays in the subgraph must be
+ * dealt with separately, and cannot remain in their subgraphs.
  *
  * @param f The interfaced hypergraph
  */
 func BurstSequentialGraphs<V, G>(f : InterfacedHypergraph<V, G>) : Unit
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where
+        V <: ValueSymbol,
+        V <: Equatable<V>,
+        G <: PrimitiveSymbol<V>,
+        G <: Equatable<G>
 {
     var sequentialEdges = f.GetSequentialData().sequentialEdges.size
     while(sequentialEdges != 0) {
@@ -237,7 +277,24 @@ func BurstSequentialGraphs<V, G>(f : InterfacedHypergraph<V, G>) : Unit
         sequentialEdges = f.GetSequentialData().sequentialEdges.size
     }
 }
-
+/**
+ * Given an edge (which is assumed to either be a value or a delay),
+ * transform it into a register. For values, this means joining with
+ * a delay; for delays this means joining with a bottom signal.
+ *
+ * @param sig The signature we are working in
+ * @param e The edge to transform
+ * @param f The interfaced hypergraph we are working in
+ * @param delays Whether this edge is a delay or not
+ * @return A tuple with
+ *              0) the TentacleOrigin of the target of the
+ *                 register
+ *              1) the TentacleOrigin of the source of the
+ *                 register
+ *              2) The signal contained within this register
+ *              3) The vertex connected to the value of this
+ *                 register
+ */
 func MakeRegisterJoin<V, G>(
     sig : Signature<V, G>,
     e : Edge<V, G>,
