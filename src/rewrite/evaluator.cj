@@ -298,8 +298,7 @@ func BurstSequentialGraphs<V, G>(f : InterfacedHypergraph<V, G>) : Unit
 func MakeRegisterJoin<V, G>(
     sig : Signature<V, G>,
     e : Edge<V, G>,
-    f : InterfacedHypergraph<V, G>,
-    delays : Bool
+    f : InterfacedHypergraph<V, G>
 ) : (
     TentacleOrigin<V, G>,
     TentacleOrigin<V, G>,
@@ -315,7 +314,8 @@ func MakeRegisterJoin<V, G>(
     let width = target.GetWidth()
     let (left, right) = SplitVertex(target)
     let bot = sig.UseSignal(sig.GetBottom(), width)
-    let (value, delay, input, signal) = if(delays) {
+    let isDelay = e.GetLabel().IsDelay()
+    let (value, delay, input, signal) = if(isDelay) {
         let tentacle = SOURCE(e, 0)
         (
             bot.GetVertex(),
@@ -379,18 +379,18 @@ func ConvertToMealyForm<V, G>(
     let coreOutputs = ArrayList<TentacleOrigin<V, G>>()
     let state = ArrayList<Signal<V>>()
     let values = ArrayList<Vertex<V, G>>()
-    func GetInputAndOutput(e : Edge<V, G>, delays : Bool) {
-        let (input, output, signal, value) = MakeRegisterJoin(sig, e, f, delays)
+    func GetInputAndOutput(e : Edge<V, G>) {
+        let (input, output, signal, value) = MakeRegisterJoin(sig, e, f)
         coreInputs.append(output)
         coreOutputs.append(input)
         state.append(signal)
         values.append(value)
     }
     for(e in delayEdges) {
-        GetInputAndOutput(e, true)
+        GetInputAndOutput(e)
     }
     for(e in valueEdges) {
-        GetInputAndOutput(e, false)
+        GetInputAndOutput(e)
     }
     for(i in 0..f.GetArity()) {
         coreInputs.append(INPUT(f, i))
