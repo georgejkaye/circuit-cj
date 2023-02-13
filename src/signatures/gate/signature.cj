@@ -6,8 +6,6 @@
 package signatures.gate
 
 from std import collection.ArrayList, collection.HashSet
-import syntax.*
-import components.*
 
 /**
  * Enum of Belnap values (four valued logic)
@@ -269,9 +267,9 @@ func GateLevelLTE(lhs: GateLevelValue, rhs: GateLevelValue): Bool {
 /**
  * The lattice A4 on the Belnap values
  */
-let gateLevelLatticeStructure = FiniteLattice<GateLevelValue>(
-    HashSet<GateLevelValue>([NONE, TRUE, FALSE, BOTH]),
-    NONE,
+let gateLevelLatticeStructure = FiniteLattice(
+    HashSet([NONE, TRUE, FALSE, BOTH]),
+    BOTH,
     BOTH,
     GateLevelLTE,
     GateLevelJoin

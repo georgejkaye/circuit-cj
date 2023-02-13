@@ -9,7 +9,7 @@
 
 package components
 
-public interface SequentialBuilder<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+public interface SequentialBuilder<V, G> where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
     // Delay
     func UseDelay(input : Wire<V, G>, duration!: Int64) : Wire<V, G>
     func MakeSimpleRegister(initial : Signal<V>) : InterfacedHypergraph<V, G>

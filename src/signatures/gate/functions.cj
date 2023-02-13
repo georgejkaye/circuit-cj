@@ -1,7 +1,6 @@
 package signatures.gate
 
 import syntax.*
-import components.*
 import prelude.*
 
 from std import math.abs

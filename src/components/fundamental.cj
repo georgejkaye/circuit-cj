@@ -10,11 +10,8 @@
 
 package components
 
-import graphs.*
-import syntax.*
-
 public interface FundamentalBuilder<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     func UseValue(v : V) : Wire<V, G>
     func MakeSignal(signal : Signal<V>) : InterfacedHypergraph<V, G>

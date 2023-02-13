@@ -10,8 +10,11 @@ package graphs
 import assertions.*
 
 func AssertAtMostOneInEdge<T, U, V, G>(t : T, u : U) : Option<EdgeConnection<V, G>>
-    where T <: ContainsVertex<V, G>, U <: ContainsVertex<V, G>, V <: ValueSymbol,
-            V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where
+        T <: ContainsVertex<V, G>,
+        U <: ContainsVertex<V, G>,
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let v = t.GetVertex()
     let w = u.GetVertex()
@@ -28,8 +31,10 @@ func AssertAtMostOneInEdge<T, U, V, G>(t : T, u : U) : Option<EdgeConnection<V, 
     }
 }
 func AssertAtMostOneInEdge<T, V, G>(ts : Array<T>) : Option<EdgeConnection<V, G>>
-    where T <: ContainsVertex<V, G>, V <: ValueSymbol,
-            V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where
+        T <: ContainsVertex<V, G>,
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     var inEdge = None<EdgeConnection<V, G>>
     for (t in ts) {
@@ -49,12 +54,16 @@ func AssertAtMostOneInEdge<T, V, G>(ts : Array<T>) : Option<EdgeConnection<V, G>
     inEdge
 }
 public func AssertVertexHasNoInEdge<V, G>(v : Vertex<V, G>) : Unit
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertIsNone(v.GetInEdge(), InEdge)
 }
 func AssertTargetsUnassigned<V, G>(targets : Array<Tentacle<V, G>>) : Unit
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertArrayElementsHaveParameter(
         targets,
@@ -66,7 +75,11 @@ func AssertTargetsUnassigned<V, G>(targets : Array<Tentacle<V, G>>) : Unit
 func AssertCompatibleInputOutput<V, G>(
     f : InterfacedHypergraph<V, G>,
     g : InterfacedHypergraph<V, G>
-) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+) : Unit
+    where
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
     AssertArrayElementsHaveParameters<Port<V>, Port<V>, Port<V>>(
         g.GetInputPorts(),
         f.GetOutputPorts(),
@@ -76,12 +89,16 @@ func AssertCompatibleInputOutput<V, G>(
     )
 }
 func AssertGraphHasMinimumInputs<V, G>(f : InterfacedHypergraph<V, G>, i : Int64) : Unit
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertArrayHasMinimumLength(f.GetInputPorts(), i)
 }
 func AssertGraphHasMinimumOutputs<V, G>(f : InterfacedHypergraph<V, G>, i : Int64) : Unit
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertArrayHasMinimumLength(f.GetOutputPorts(), i)
 }

@@ -10,9 +10,6 @@
 
 package examples.gate
 
-import components.*
-import signatures.gate.*
-
 func PartialProduct(a : Wire_, b0: Wire_) : Wire_ {
     Mux2(b0, a, sig.ConstantZero(a.GetWidth()))
 }
@@ -20,9 +17,9 @@ func PartialProduct(a : Wire_, b0: Wire_) : Wire_ {
 func RunningSum(first : Wire_, prev_sum: Wire_, a: Wire_, b0: Wire_) : Wire_ {
     let lhs = Mux2(first, sig.ConstantZero(a.GetWidth()), prev_sum)
     let rhs = PartialProduct(a, b0)
-    let a = UnsignedExtend(lhs)
-    let b = UnsignedExtend(rhs)
-    let (sum, carry) = UseRippleAdder(a, b, sig.ConstantZero())
+    let aExtended = UnsignedExtend(lhs)
+    let bExtended = UnsignedExtend(rhs)
+    let (sum, carry) = UseRippleAdder(aExtended, bExtended, sig.ConstantZero())
     sum
 }
 

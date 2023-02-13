@@ -10,10 +10,8 @@
 package components
 
 import prelude.*
-import syntax.*
-import graphs.*
 
-public interface SubcircuitBuilder<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+public interface SubcircuitBuilder<V, G> where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
     func MakeSubcircuit(
         inputs: Array<InterfaceWire<V, G>>,
         outputs : Array<InterfaceWire<V, G>>,

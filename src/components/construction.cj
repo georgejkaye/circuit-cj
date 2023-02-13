@@ -2,8 +2,6 @@ package components
 
 from std import collection.ArrayList
 
-import debug.*
-
 public class NotImplemented <: Exception {
     public init(msg : String) {
         ErrorMsg("Not implemented: ${msg}")
@@ -25,7 +23,7 @@ public enum Direction {
 func GeneraliseSingleOutputFunction<V, G>(
     f : (Array<Wire<V, G>>) -> Wire<V, G>
 ) : (Array<Wire<V, G>>) -> Array<Wire<V, G>>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     { ws : Array<Wire<V, G>> => [f(ws)] }
 }
@@ -40,7 +38,7 @@ func GeneraliseSingleOutputFunction<V, G>(
 func FlattenSingleWireOutputs<V, G>(
     wss : Array<Array<Wire<V, G>>>
 ) : Array<Wire<V, G>>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     map({ ws : Array<Wire<V, G>> => ws[0] }, wss)
 }
@@ -56,7 +54,7 @@ public func Map<V, G>(
     f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
     wss : Array<Array<Wire<V, G>>>
 ) : Array<Array<Wire<V, G>>>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let width = AssertWireArrayArraysCompatible(wss)
     map({ws : Array<Wire<V, G>> => f(ws)}, wss)
@@ -73,7 +71,7 @@ public func Map<V, G>(
     f : (Array<Wire<V, G>>) -> Wire<V, G>,
     wss : Array<Array<Wire<V, G>>>
 ) : Array<Wire<V, G>>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let outputWires = Map(GeneraliseSingleOutputFunction(f), wss)
     FlattenSingleWireOutputs(outputWires)
@@ -88,7 +86,7 @@ public func Map<V, G>(
 public func BitwiseSplit<V, G>(
     ws : Array<Wire<V, G>>
 ) : Array<Array<Wire<V, G>>>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let width = AssertWiresSameWidth(ws)
     let splitInputs = map({ w : Wire<V, G> => Split(w) }, ws)
@@ -106,7 +104,7 @@ public func BitwiseSplit<V, G>(
 public func BitwiseCombine<V, G>(
     wss : Array<Array<Wire<V, G>>>
 ) : Array<Wire<V, G>>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let size = AssertWireArrayArraysCompatible(wss)
     Array<Wire<V, G>>(size){
@@ -127,7 +125,7 @@ public func BitwiseMap<V, G>(
     f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
     ws : Array<Wire<V, G>>
 ) : Array<Wire<V, G>>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let inputWires = BitwiseSplit(ws)
     let outputWires = Map(f, inputWires)
@@ -145,7 +143,7 @@ public func BitwiseMap<V, G>(
     f : (Array<Wire<V, G>>) -> Wire<V, G>,
     ws : Array<Wire<V, G>>
 ) : Wire<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     BitwiseMap(
         { ws : Array<Wire<V, G>> => [f(ws)] },
@@ -156,7 +154,7 @@ public func BitwiseMap<V, G>(
     f : (Wire<V, G>) -> Wire<V, G>,
     w : Wire<V, G>
 ) : Wire<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     BitwiseMap(
         { ws : Array<Wire<V, G>> => [f(ws[0])] },
@@ -180,7 +178,7 @@ public func RippleMap<V, G>(
     wss : Array<Array<Wire<V, G>>>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : (Array<Array<Wire<V, G>>>, Array<Wire<V, G>>)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let width = AssertWireArrayArraysCompatible(wss)
     var acc = initial
@@ -217,7 +215,7 @@ public func RippleMap<V, G>(
     wss : Array<Array<Wire<V, G>>>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : (Array<Wire<V, G>>, Wire<V, G>)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let (outputs, acc) = RippleMap(
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
@@ -247,7 +245,7 @@ public func RippleMap<V, G>(
     ws : Array<Wire<V, G>>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : (Array<Wire<V, G>>, Wire<V, G>)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let (finalOut, finalAcc) = RippleMap(
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
@@ -276,7 +274,7 @@ public func RippleMap<V, G>(
     wss : Array<Array<Wire<V, G>>>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : (Array<Array<Wire<V, G>>>, Array<Wire<V, G>>)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let (initial, rest) = GetFirstAndRest(wss)
     RippleMap(f, initial, rest, direction: direction)
@@ -297,7 +295,7 @@ public func RippleMap<V, G>(
     ws : Array<Wire<V, G>>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : (Array<Wire<V, G>>, Wire<V, G>)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let (outputs, acc) = RippleMap<V, G>(
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
@@ -326,7 +324,7 @@ public func Ripple<V, G>(
     wss : Array<Array<Wire<V, G>>>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : Array<Wire<V, G>>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let (_, acc) = RippleMap(
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
@@ -356,7 +354,7 @@ public func Ripple<V, G>(
     wss : Array<Array<Wire<V, G>>>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : Wire<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     Ripple(
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
@@ -401,7 +399,7 @@ public func Ripple<V, G>(
     wss : Array<Array<Wire<V, G>>>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : Array<Wire<V, G>>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let (initial, rest) = GetFirstAndRest(wss)
     Ripple(f, initial, rest, direction: direction)
@@ -421,7 +419,7 @@ public func Ripple<V, G>(
     ws : Array<Wire<V, G>>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : Wire<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     Ripple<V, G>(
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
@@ -438,7 +436,7 @@ public func BitwiseRipple<V, G>(
     ws : Array<Wire<V, G>>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : Array<Wire<V, G>>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let inputWires = BitwiseSplit(ws)
     Ripple(f, initial, inputWires, direction: direction)
@@ -449,7 +447,7 @@ public func BitwiseRipple<V, G>(
     ws : Array<Wire<V, G>>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : Array<Wire<V, G>>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     BitwiseRipple(
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
@@ -466,7 +464,7 @@ public func BitwiseRipple<V, G>(
     ws : Array<Wire<V, G>>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : Array<Wire<V, G>>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let inputWires = BitwiseSplit(ws)
     let (first, rest) = GetFirstAndRest(inputWires)
@@ -477,7 +475,7 @@ public func BitwiseRipple<V, G>(
     ws : Array<Wire<V, G>>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : Array<Wire<V, G>>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     BitwiseRipple(
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
@@ -494,7 +492,7 @@ public func BitwiseRippleMap<V, G>(
     ws : Array<Wire<V, G>>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : (Array<Wire<V, G>>, Array<Wire<V, G>>)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let inputWires = BitwiseSplit(ws)
     let (output, acc) = RippleMap(f, initial, inputWires, direction: direction)
@@ -507,7 +505,7 @@ public func BitwiseRippleMap<V, G>(
     ws : Array<Wire<V, G>>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : (Wire<V, G>, Wire<V, G>)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let inputWires = BitwiseSplit(ws)
     let (output, acc) = RippleMap(
@@ -524,7 +522,7 @@ public func BitwiseRippleMap<V, G>(
     ws : Wire<V, G>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : (Wire<V, G>, Wire<V, G>)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let (output, acc) = BitwiseRippleMap(
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
@@ -542,7 +540,7 @@ public func BitwiseRippleMap<V, G>(
     ws : Array<Wire<V, G>>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : (Array<Wire<V, G>>, Array<Wire<V, G>>)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let inputWires = BitwiseSplit(ws)
     let (first, rest) = GetFirstAndRest(inputWires)
@@ -555,7 +553,7 @@ public func BitwiseRippleMap<V, G>(
     w : Wire<V, G>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : (Wire<V, G>, Wire<V, G>)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let inputWires = BitwiseSplit([w])
     let (first, rest) = GetFirstAndRest(inputWires)

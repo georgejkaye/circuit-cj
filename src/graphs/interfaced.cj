@@ -9,10 +9,11 @@
 
 package graphs
 
-import syntax.*
-
-public class InterfaceVertex<V, G> <: Socket & HasTentacle<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+public class InterfaceVertex<V, G>
+    <: Socket & HasTentacle<V, G>
+    where
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public InterfaceVertex(
         public let vertex : Vertex<V, G>,
@@ -57,7 +58,7 @@ public class InterfaceVertex<V, G> <: Socket & HasTentacle<V, G>
     }
 }
 func AddToInterfaceMap<V, G>(v : Vertex<V, G>, i : Int64, interfaceMap : HashMap<Vertex<V, G>, HashSet<Int64>>) : Unit
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     match(interfaceMap.get(v)) {
         case None =>
@@ -73,7 +74,7 @@ func AddToInterfaceMap<V, G>(v : Vertex<V, G>, i : Int64, interfaceMap : HashMap
  */
 public class InterfacedHypergraph<V, G>
     <: Hashable & Identifiable & ToString & Specifiable<V> & Equatable<InterfacedHypergraph<V, G>> & HasName
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let uniqueId : Int64 = GetNextId()
     // The hypergraph being interfaced
@@ -508,7 +509,7 @@ public class InterfacedHypergraph<V, G>
                         }
                 }
             },
-            MAX_INT64,
+            Int64.Max,
             this.GetOutputs()
         )
     }

@@ -23,7 +23,7 @@ public enum EntryPoint {
     | ANY
     | BUNDLE
 }
-public struct RewriteRule<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+public struct RewriteRule<V, G> where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
     public let name : String
     public let entryPoint : EntryPoint
     public let rewrite : (Edge<V, G>, InterfacedHypergraph<V, G>)
@@ -65,7 +65,7 @@ func ReplaceTargets<V, G>(
     oldTargets : Array<Tentacle<V, G>>,
     newTargets : Array<Vertex<V, G>>,
     f : InterfacedHypergraph<V, G>
-) : Unit where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+) : Unit where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
     AssertArraysSameLength(oldTargets, newTargets)
     for (i in 0..oldTargets.size){
         let oldTarget = oldTargets[i]
@@ -85,7 +85,7 @@ func ReplaceTargets<V, G>(
     }
 }
 func GetForkRule<V, G>() : RewriteRule<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     RewriteRule<V, G>(
         "fork",
@@ -124,7 +124,7 @@ func GetForkRule<V, G>() : RewriteRule<V, G>
     )
 }
 func ApplyPreconditions<V, G>(e : Edge<V, G>, f : InterfacedHypergraph<V, G>) : Bool
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let sources = e.GetSources()
     // Check that none of the values are forked
@@ -148,7 +148,7 @@ func ApplyPreconditions<V, G>(e : Edge<V, G>, f : InterfacedHypergraph<V, G>) : 
     return true
 }
 func GetApplyRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     RewriteRule<V, G>(
         "apply",
@@ -178,7 +178,7 @@ func GetApplyRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
 }
 
 func GetStubRule<V, G>() : RewriteRule<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     RewriteRule<V, G>(
         "stub",
@@ -222,7 +222,7 @@ func GetStubRule<V, G>() : RewriteRule<V, G>
     )
 }
 func GetJoinRule<V, G>(signature : Signature<V, G>)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     RewriteRule<V, G>(
         "join",
@@ -243,7 +243,7 @@ func GetJoinRule<V, G>(signature : Signature<V, G>)
     )
 }
 func ArgumentIsAllValue<V, G>(v : V, e : Edge<V, G>, i : Int64) : Bool
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let label = e.GetSource(i).vertex.GetInEdge().getOrThrow().edge.GetLabel()
     label.IsAllValue(v)
@@ -253,7 +253,7 @@ func RemoveBinaryArgumentAndPassthrough<V, G>(
     i : Int64,
     f : InterfacedHypergraph<V, G>
 ) : (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let arg = e.GetSource(i).vertex.GetInEdge().getOrThrow().edge
     let otherIndex = if(i == 0){
@@ -282,7 +282,7 @@ func RemoveBinaryArgumentAndPassthrough<V, G>(
 }
 
 func GetJoinUnitRule<V, G>(signature : Signature<V, G>, i : Int64, str : String)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
         RewriteRule<V, G>(
         "join-unit-${str}",
@@ -298,12 +298,12 @@ func GetJoinUnitRule<V, G>(signature : Signature<V, G>, i : Int64, str : String)
     )
 }
 func GetJoinUnitLeftRule<V, G>(signature : Signature<V, G>)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     GetJoinUnitRule(signature, 0, "l")
 }
 func GetJoinUnitRightRule<V, G>(signature : Signature<V, G>)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     GetJoinUnitRule(signature, 1, "r")
 }
@@ -314,7 +314,7 @@ func ComputeEdge<V, G>(
     args : Array<Edge<V, G>>,
     results : Array<Array<V>>
 ) : (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)
-     where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+     where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let nextEdges = HashSet<TraversalElement<V, G>>()
     let removedEdges = HashSet<TraversalElement<V, G>>()
@@ -352,7 +352,7 @@ func ComputeEdge<V, G>(
     (nextEdges, removedEdges)
 }
 func GetEnhancedRule<V, G>(signature : Signature<V, G>)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
         RewriteRule<V, G>(
         "enhanced",
@@ -367,7 +367,7 @@ func GetEnhancedRule<V, G>(signature : Signature<V, G>)
     )
 }
 func GetCompositeRule<V, G>(signature : Signature<V, G>, all : Bool)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     RewriteRule<V, G>(
         "composite",
@@ -383,7 +383,7 @@ func GetCompositeRule<V, G>(signature : Signature<V, G>, all : Bool)
 }
 func ExpandSubgraphRewrite<V, G>(e : Edge<V, G>, f : InterfacedHypergraph<V, G>) :
         (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
 
     let nextEdges = HashSet<TraversalElement<V, G>>()
@@ -403,7 +403,7 @@ func ExpandSubgraphRewrite<V, G>(e : Edge<V, G>, f : InterfacedHypergraph<V, G>)
     (nextEdges, removedEdges)
 }
 func GetBundleRule<V, G>(sig : Signature<V, G>)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     RewriteRule<V, G>(
         "bundle",
@@ -461,7 +461,7 @@ func GetBundleRule<V, G>(sig : Signature<V, G>)
     )
 }
 func GetMergeBundlesRule<V, G>(signature : Signature<V, G>)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     RewriteRule<V, G>(
         "bundle",
@@ -472,7 +472,7 @@ func GetMergeBundlesRule<V, G>(signature : Signature<V, G>)
     )
 }
 func GetRules<V, G>(signature : Signature<V, G>, now : Bool) : ArrayList<RewriteRule<V, G>>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let rules = ArrayList<RewriteRule<V, G>>()
     if(now){

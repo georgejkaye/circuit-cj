@@ -27,7 +27,7 @@ extend ParamType <: ToString {
         }
     }
 }
-public func AssertEqual<T, U>(t : T, u : U) : Unit where T <: Equatable<U>, T <: ToString, U <: ToString {
+public func AssertEqual<T, U>(t : T, u : U) : Unit where T <: Equatable<U> & ToString, U <: ToString {
     if (t != u) {
         throw IncompatibleParameterException2<T, U>(t, u)
     }
@@ -122,7 +122,7 @@ public func AssertObjectHasParameter<T, U>(
     u : U,
     fn : (T) -> U,
     paramType: ParamType
-) : Unit where T <: ToString, U <: ToString, U <: Equatable<U> {
+) : Unit where T <: ToString, U <: ToString & Equatable<U> {
     let currentParam = fn(t)
     if (currentParam != u) {
         throw IncompatibleParameterException2<T,U>(
@@ -137,7 +137,7 @@ public func AssertArrayAllSameParameter<T, U>(
     xs : Array<T>,
     fn : (T) -> U,
     paramType : ParamType
-) : U where T <: ToString, U <: ToString, U <: Equatable<U> {
+) : U where T <: ToString, U <: ToString & Equatable<U> {
     AssertNonEmpty(xs, "${paramType}")
     let targetParam = fn(xs[0])
     for(i in 1..xs.size) {
@@ -160,7 +160,7 @@ public func AssertArrayElementsHaveParameters<T, U, V>(
     fnt : (T) -> V,
     fnu : (U) -> V,
     paramType : ParamType
-) : Unit where T <: ToString, U <: ToString, V <: ToString, V <: Equatable<V> {
+) : Unit where T <: ToString, U <: ToString, V <: ToString & Equatable<V> {
     AssertArraysSameLength<T,U>(xs, desiredParams)
     for(i in 0..xs.size) {
         let current = xs[i]
@@ -183,7 +183,7 @@ public func AssertArrayElementsHaveParameter<T, V>(
     desiredParam : V,
     fn : (T) -> V,
     paramType : ParamType
-) : Unit where T <: ToString, V <: ToString, V <: Equatable<V> {
+) : Unit where T <: ToString, V <: ToString & Equatable<V> {
     for (x in xs){
         if (fn(x) != desiredParam){
             let desired = map({ t : T => desiredParam }, xs)
@@ -202,7 +202,7 @@ public func AssertTwoSameParameter<T, U, V>(
     fnt : (T) -> V,
     fnu : (U) -> V,
     paramType : ParamType
-) : V where T <: ToString, U <: ToString, V <: ToString, V <: Equatable<V> {
+) : V where T <: ToString, U <: ToString, V <: ToString & Equatable<V> {
     let xParam = fnt(x)
     let yParam = fnu(y)
     if (xParam != yParam) {
@@ -221,7 +221,7 @@ public func AssertHasParameter<T,U>(
     desired : U,
     fn : (T) -> U,
     paramType : ParamType
-) : Unit where T <: ToString, U <: ToString, U <: Equatable<U> {
+) : Unit where T <: ToString, U <: ToString & Equatable<U> {
     let param = fn(t)
     if (param != desired) {
         throw IncompatibleParameterException2<T, U>(
@@ -237,7 +237,7 @@ public func AssertHasAtLeastParameter<T, U>(
     desired : U,
     fn : (T) -> U,
     paramType : ParamType
-) : Unit where T <: ToString, U <: ToString, U <: Comparable<U> {
+) : Unit where T <: ToString, U <: ToString & Comparable<U> {
     let param = fn(t)
     if (param < desired) {
         throw InsufficientParameterException2<T, U>(
@@ -251,7 +251,7 @@ public func AssertHasAtLeastParameter<T, U>(
 public func AssertElementInCollection<T>(
     t : T,
     collection : Collection<T>
-) : Unit where T <: ToString, T <: Equatable<T> {
+) : Unit where T <: ToString & Equatable<T> {
     for(x in collection) {
         if(x == t){
             return

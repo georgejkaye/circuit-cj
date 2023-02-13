@@ -13,7 +13,7 @@ package syntax
 import assertions.*
 
 public struct Signal<V> <: ToString & HasName & Specifiable<V> & HasWidth & Equatable<Signal<V>>
-    where V <: ValueSymbol, V <: Equatable<V> {
+    where V <: ValueSymbol & Equatable<V> {
     public Signal(
         public let values : Array<V>
     ){
@@ -62,7 +62,7 @@ public struct Signal<V> <: ToString & HasName & Specifiable<V> & HasWidth & Equa
     }
 }
 
-public func GetSignal<V>(v : V, w : Int64) : Signal<V> where V <: ValueSymbol, V <: Equatable<V> {
+public func GetSignal<V>(v : V, w : Int64) : Signal<V> where V <: ValueSymbol & Equatable<V> {
     Signal(Array<V>(w){ i : Int64 => v })
 }
 
@@ -87,7 +87,7 @@ extend WaveformType <: Hashable & Equatable<WaveformType> {
     }
 }
 public func GetWaveformString<V>(signals : Array<Signal<V>>) : String
-    where V <: ValueSymbol, V <: Equatable<V>
+    where V <: ValueSymbol & Equatable<V>
 {
     printArray(signals, "", "", " :: ", { s : Signal<V> => s.GetName() }, false)
 }

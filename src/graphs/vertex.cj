@@ -24,7 +24,7 @@ extend VertexType <: ToString {
  * is a source or target of, and which index it is.
  */
 public struct EdgeConnection<V, G> <: ToString & Equatable<EdgeConnection<V, G>> & Hashable
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public EdgeConnection(
         public let edge : Edge<V, G>,
@@ -92,7 +92,7 @@ extend InterfaceType <: ToString & Hashable & Equatable<InterfaceType> {
     }
 }
 public struct InterfaceElement<V, G> <: Hashable & ToString & Equatable<InterfaceElement<V, G>>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let id : Int64 = GetNextId()
     public InterfaceElement(
@@ -120,7 +120,7 @@ public struct InterfaceElement<V, G> <: Hashable & ToString & Equatable<Interfac
  */
 public class Vertex<V, G>
     <: Identifiable & Equatable<Vertex<V, G>> & Hashable & ToString & HasWidth & Socket
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let width : Int64
     let id : Int64 = GetNextId()
@@ -285,7 +285,7 @@ public class Vertex<V, G>
 }
 
 public interface ContainsVertex<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     func GetVertex() : Vertex<V, G>
 }

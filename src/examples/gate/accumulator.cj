@@ -7,9 +7,6 @@
 
 package examples.gate
 
-import components.*
-import signatures.gate.*
-
 public func Accumulator(width!: Int64, initial!: Int64) : Circuit_ {
     let input = sig.UseWire(width)
     let prev = sig.UseWire(width)

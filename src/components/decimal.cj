@@ -11,14 +11,14 @@
 package components
 
 public interface Decimal<V>
-    where V <: ValueSymbol, V <: Equatable<V>
+    where V <: ValueSymbol & Equatable<V>
 {
     static func UnsignedDecToSignal(x : Int64, width : Int64) : Signal<V>
     static func SignedDecToSignal(x : Int64, width : Int64) : Signal<V>
     static func DecToSignal(x  : Int64, width : Int64, signed : Bool) : Signal<V>
 }
 public interface DecimalBuilder<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     // Signals
     func MakeSignalFromInt(x : Int64, width : Int64, signed : Bool) : InterfacedHypergraph<V, G>

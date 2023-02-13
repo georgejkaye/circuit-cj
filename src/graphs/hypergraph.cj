@@ -7,14 +7,13 @@
 
 package graphs
 
-import prelude.*
 
 from std import collection.ArrayList
 from std import collection.HashMap
 from std import collection.HashSet
 
 public enum WellformednessIssue<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     | InputNotAssigned(Int64)
     | OutputNotAssigned(Int64)
@@ -40,7 +39,7 @@ extend WellformednessIssue<V, G> <: ToString {
     }
 }
 public struct SequentialData<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public let delayEdges : HashSet<Edge<V, G>> = HashSet<Edge<V, G>>()
     public let valueEdges : HashSet<Edge<V, G>> = HashSet<Edge<V, G>>()
@@ -55,7 +54,7 @@ public struct SequentialData<V, G>
     }
 }
 func GetVerticesFromEdges<V, G>(es : HashSet<Edge<V, G>>) : HashSet<Vertex<V, G>>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let vertices = HashSet<Vertex<V, G>>()
     func PutVertices(ts : Array<Tentacle<V, G>>) : Unit {
@@ -74,7 +73,7 @@ func GetVerticesFromEdges<V, G>(es : HashSet<Edge<V, G>>) : HashSet<Vertex<V, G>
  * These hypergraphs are not interfaced.
  */
 public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<V, G>> & Hashable
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let id : Int64 = GetNextId()
     let name : String
@@ -364,12 +363,12 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
                     foldi_left(
                         { acc : String , cur : Tentacle<V, G>, i : Int64 =>
                             let portText = "${cur}"
-                            let acc = if (acc == "") {
+                            let newAcc = if (acc == "") {
                                 ""
                             } else {
                                 "${acc}  "
                             }
-                            "${acc}${name}(${e},${i}) = ${portText}"},
+                            "${newAcc}${name}(${e},${i}) = ${portText}"},
                         "",
                         array
                     )
@@ -523,7 +522,7 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
     }
 }
 public func EmptyGraph<V, G>() : Hypergraph<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     Hypergraph(
         HashSet<Vertex<V, G>>(),

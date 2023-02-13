@@ -10,7 +10,6 @@ package graphs
 from std import collection.{ArrayList,HashMap}
 
 import syntax.*
-import assertions.*
 
 /**
  * Check that two arrays, for inputs and outputs, agree
@@ -27,7 +26,7 @@ func CheckSpecCompatibility<V, G>(
     inputs: Array<Tentacle<V, G>>,
     outputs: Array<Tentacle<V, G>>
 ) : Unit
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     func CheckArrayCompatibility(
         desired : Array<Port<V>>,
@@ -45,13 +44,13 @@ func CheckSpecCompatibility<V, G>(
     CheckArrayCompatibility(spec.GetOutputPorts(), outputs)
 }
 public interface HasTentacle<V, G> <: ContainsVertex<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     func IsFeedback() : Bool
     func IsDelay() : Bool
 }
 public struct Tentacle<V, G> <: ToString & HasWidth & HasTentacle<V, G>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public Tentacle(
         public let vertex : Vertex<V, G>,
@@ -83,7 +82,7 @@ public struct Tentacle<V, G> <: ToString & HasWidth & HasTentacle<V, G>
         this.delay
     }
 }
-public enum TentacleOrigin<V, G> where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G> {
+public enum TentacleOrigin<V, G> where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
     | SOURCE(Edge<V, G>, Int64)
     | TARGET(Edge<V, G>, Int64)
     | INPUT(InterfacedHypergraph<V, G>, Int64)
@@ -114,7 +113,7 @@ extend TentacleOrigin<V, G> <: HasWidth & ToString {
  * an optional subgraph representing the internal construction.
  */
 public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable & ToString & Hashable
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let id : Int64 = GetNextId()
     public Edge(

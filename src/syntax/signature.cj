@@ -6,9 +6,8 @@
 package syntax
 
 from std import collection.HashSet, collection.HashMap
-import assertions.*
 
-func GetAllPermutations<T>(elems: HashSet<T>, i: Int64): ArrayList<Array<T>> where T <: Equatable<T>, T <: Hashable {
+func GetAllPermutations<T>(elems: HashSet<T>, i: Int64): ArrayList<Array<T>> where T <: Equatable<T> & Hashable {
     if (i == 0) {
         ArrayList<Array<T>>()
     } else {
@@ -26,43 +25,57 @@ func GetAllPermutations<T>(elems: HashSet<T>, i: Int64): ArrayList<Array<T>> whe
 }
 public interface ValueSymbol <: Hashable & HasName & ToString {}
 func ComputeLongestChain<T>(elements : HashSet<T>, bot : T, top : T, lte : (T, T) -> Bool) : Int64
-    where T <: ValueSymbol, T <: Equatable<T>
+    where T <: ValueSymbol & Equatable<T>
 {
     let currentChain = ArrayList<T>()
     currentChain.append(bot)
-    var longest = 0
-    func ComputeLongestChainIteration() : Unit {
+    func ComputeLongestChainIteration(longest : Int64) : Int64 {
         let currentElement = currentChain[0]
+        var currentLongest = longest
         for(e in elements) {
             if(e != currentElement && lte(currentElement, e)){
-                if(e == top){
+                currentLongest = if(e == top){
                     if(currentChain.size > longest){
-                        longest = currentChain.size
+                        currentChain.size
+                    } else {
+                        currentLongest
                     }
                 } else {
                     currentChain.prepend(e)
-                    ComputeLongestChainIteration()
+                    let subcallLongest = ComputeLongestChainIteration(longest)
                     currentChain.remove(0)
+                    subcallLongest
                 }
             }
         }
+        currentLongest
     }
-    ComputeLongestChainIteration()
-    longest
+    ComputeLongestChainIteration(0)
 }
-public struct FiniteLattice<T> where T <: ValueSymbol, T <: Equatable<T> {
+public struct FiniteLattice<T> where T <: ValueSymbol & Equatable<T> {
     let cachedCombinations = HashMap<Int64, ArrayList<Array<T>>>()
     let longestChain : Int64
-    public FiniteLattice(
-        public let elements: HashSet<T>,
-        public let bot: T,
-        public let top: T,
-        public let lte: (T, T) -> Bool,
-        public let join: (T, T) -> T
+    public let elements: HashSet<T>
+    public let bot: T
+    public let top: T
+    public let lte: (T, T) -> Bool
+    public let join: (T, T) -> T
+    public init (
+        elements : HashSet<T>,
+        bot : T,
+        top : T,
+        lte : (T, T) -> Bool,
+        join : (T, T) -> T
     ) {
-        AssertElementInCollection(bot, elements)
-        AssertElementInCollection(top, elements)
-        this.longestChain = ComputeLongestChain(elements, bot, top, lte)
+        this.elements = elements
+        this.bot = bot
+        this.top = top
+        this.lte = lte
+        this.join = join
+        // this.longestChain = ComputeLongestChain(elements, bot, top, lte)
+        // AssertElementInCollection(bot, elements)
+        // AssertElementInCollection(top, elements)
+        this.longestChain = 0
     }
     public func EnumeratePowers(i: Int64): ArrayList<Array<T>> {
         match (this.cachedCombinations.get(i)) {
@@ -92,12 +105,13 @@ public struct FiniteLattice<T> where T <: ValueSymbol, T <: Equatable<T> {
         this.longestChain * i
     }
 }
-public interface PrimitiveSymbol<V> <: Specifiable<V> & HasName & ToString & Hashable where V <: ValueSymbol,
-    V <: Equatable<V> {
+public interface PrimitiveSymbol<V>
+    <: Specifiable<V> & HasName & ToString & Hashable
+    where V <: ValueSymbol & Equatable<V> {
     func GetEnhancedName(n: Int64, w: Int64): String
 }
 public class Signature<V, G> <: HasName & ToString
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public let specificationImplementation : HashMap<Specification<V>, ((Array<Array<V>>) -> Array<V>)>
         = HashMap<Specification<V>, ((Array<Array<V>>) -> Array<V>)>()

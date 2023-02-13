@@ -10,8 +10,6 @@
 
 package examples.gate
 
-import components.*
-
 public func HalfAdder(){
     // First we declare our inputs so we have handles on them
     let a = sig.UseWire(1)

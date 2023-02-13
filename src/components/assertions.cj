@@ -24,28 +24,30 @@ public func AssertEnoughBits(current : Int64, desired : Int64) {
     AssertAtLeast(current, desired)
 }
 func AssertWireHasNoInEdge<V, G>(w : Wire<V, G>)
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertVertexHasNoInEdge(w.GetVertex())
 }
 func AssertNonEmpty<V, G>(ws : Array<Wire<V, G>>) : Unit
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertNonEmpty(ws, "wires")
 }
 func AssertSignalArrayNonEmpty<V>(signals : Array<Signal<V>>) : Unit
-    where V <: ValueSymbol, V <: Equatable<V>
+    where V <: ValueSymbol & Equatable<V>
 {
     AssertNonEmpty(signals, "signals")
 }
 func AssertSignalsAllSameWidth<V>(signals : Array<Signal<V>>) : Int64
-    where V <: ValueSymbol, V <: Equatable<V>
+    where V <: ValueSymbol & Equatable<V>
 {
     AssertArrayAllSameParameter(signals, { s : Signal<V> => s.GetWidth() }, Width)
 }
 public func AssertWireWidth<V, G, T>(t : T, i : Int64) : Unit
-    where T <: ContainsWire<V, G>, T <: ToString,
-            V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where
+        T <: ContainsWire<V, G> & ToString,
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertObjectHasParameter<T, Int64>(
         t,
@@ -55,8 +57,10 @@ public func AssertWireWidth<V, G, T>(t : T, i : Int64) : Unit
     )
 }
 func AssertWireHasWidthAtLeast<V, G, T>(t : T, i : Int64) : Unit
-    where T <: ContainsWire<V, G>, T <: ToString,
-            V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where
+        T <: ContainsWire<V, G> & ToString,
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertHasAtLeastParameter<T, Int64>(
         t,
@@ -65,7 +69,9 @@ func AssertWireHasWidthAtLeast<V, G, T>(t : T, i : Int64) : Unit
         Width
     )
 }
-public func AssertWiresSameWidth<T>(ws : Array<T>) : Int64 where T <: ToString, T <: HasWidth {
+public func AssertWiresSameWidth<T>(ws : Array<T>) : Int64
+    where T <: ToString & HasWidth
+{
     AssertArrayAllSameParameter<T, Int64>(
         ws,
         { t : T => t.GetWidth() },
@@ -75,7 +81,11 @@ public func AssertWiresSameWidth<T>(ws : Array<T>) : Int64 where T <: ToString, 
 public func AssertWiresSameWidth<T,U>(
     t : T,
     u : U
-) : Int64 where T <: ToString, U <: ToString, T <: HasWidth, U <: HasWidth {
+) : Int64
+    where
+        T <: ToString & HasWidth,
+        U <: ToString & HasWidth
+{
     AssertTwoSameParameter<T,U,Int64>(
         t,
         u,
@@ -85,7 +95,9 @@ public func AssertWiresSameWidth<T,U>(
     )
 }
 func AssertWireArraysCompatible<V, G>(ws : Array<Wire<V, G>>, vs : Array<Wire<V, G>>) : Array<Int64>
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertArraysSameLength(ws, vs)
     Array<Int64>(ws.size) {
@@ -94,7 +106,9 @@ func AssertWireArraysCompatible<V, G>(ws : Array<Wire<V, G>>, vs : Array<Wire<V,
     }
 }
 func AssertWireArrayArraysCompatible<V, G>(wss : Array<Array<Wire<V, G>>>) : Int64
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     if(wss.size > 0) {
         let size = AssertArraysSameLength(wss)
@@ -109,7 +123,11 @@ func AssertWireArrayArraysCompatible<V, G>(wss : Array<Array<Wire<V, G>>>) : Int
 func AssertWiresHaveWidths<T,U>(
     ws : Array<T>,
     ns: Array<U>
-) : Unit where T <: ToString, U <: ToString, T <: HasWidth, U <: HasWidth {
+) : Unit
+    where
+        T <: ToString & HasWidth,
+        U <: ToString & HasWidth
+{
     AssertArrayElementsHaveParameters<T,U,Int64>(
         ws,
         ns,
@@ -118,7 +136,8 @@ func AssertWiresHaveWidths<T,U>(
         Width
     )
 }
-func AssertAllWiresWidth<T>(ws : Array<T>, n: Int64) : Unit where T <: ToString, T <: HasWidth {
+func AssertAllWiresWidth<T>(ws : Array<T>, n: Int64) : Unit
+    where T <: ToString & HasWidth {
     AssertArrayElementsHaveParameter<T,Int64>(
         ws,
         n,
@@ -127,8 +146,10 @@ func AssertAllWiresWidth<T>(ws : Array<T>, n: Int64) : Unit where T <: ToString,
     )
 }
 public func AssertNumberOfWires<T, V, G>(ws : Array<T>, n : Int64) : Unit
-    where T <: ContainsWire<V, G>, T <: ToString,
-            V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where
+        T <: ContainsWire<V, G> & ToString,
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertArrayHasLength<T>(ws, n)
 }
@@ -136,13 +157,17 @@ func AssertMinNumberOfWires<T, V, G>(
     ws : Array<T>,
     n : Int64
 ) : Unit
-    where T <: ContainsWire<V, G>, T <: ToString,
-            V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where
+        T <: ContainsWire<V, G> & ToString,
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertArrayHasMinimumLength<T>(ws, n)
 }
 func AssertCircuitInputs<V, G>(c : InterfacedHypergraph<V, G>, n : Int64) : Unit
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertHasParameter(
         c,
@@ -152,7 +177,9 @@ func AssertCircuitInputs<V, G>(c : InterfacedHypergraph<V, G>, n : Int64) : Unit
     )
 }
 func AssertCircuitOutputs<V, G>(c : InterfacedHypergraph<V, G>, n : Int64) : Unit
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertHasParameter(
         c,
@@ -165,7 +192,9 @@ func AssertArgumentsCompatible<V, G>(
     f : InterfacedHypergraph<V, G>,
     args : Array<InterfacedHypergraph<V, G>>
 ) : Unit
-    where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+    where
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertArrayElementsHaveParameters(
         args,

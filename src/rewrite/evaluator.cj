@@ -14,7 +14,7 @@ import syntax.*
 import debug.*
 
 public class Evaluator<V, G>
-        where V <: ValueSymbol, V <: Equatable<V>, G <: PrimitiveSymbol<V>, G <: Equatable<G>
+        where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     var currentCycle = 0
     let sig : Signature<V, G>
@@ -263,10 +263,8 @@ public class Evaluator<V, G>
  */
 func BurstSequentialGraphs<V, G>(f : InterfacedHypergraph<V, G>) : Unit
     where
-        V <: ValueSymbol,
-        V <: Equatable<V>,
-        G <: PrimitiveSymbol<V>,
-        G <: Equatable<G>
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     var sequentialEdges = f.GetSequentialData().sequentialEdges.size
     while(sequentialEdges != 0) {
@@ -305,10 +303,8 @@ func MakeRegisterJoin<V, G>(
     Signal<V>,
     Vertex<V, G>
 ) where
-    V <: ValueSymbol,
-    V <: Equatable<V>,
-    G <: PrimitiveSymbol<V>,
-    G <: Equatable<G>
+    V <: ValueSymbol & Equatable<V>,
+    G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let target = e.GetTarget(0).GetVertex()
     let width = target.GetWidth()
@@ -367,10 +363,8 @@ func ConvertToMealyForm<V, G>(
     Array<Signal<V>>,
     Array<Vertex<V, G>>
 ) where
-    V <: ValueSymbol,
-    V <: Equatable<V>,
-    G <: PrimitiveSymbol<V>,
-    G <: Equatable<G>
+    V <: ValueSymbol & Equatable<V>,
+    G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let sequentialData = f.GetSequentialData()
     let valueEdges = HashSet(sequentialData.valueEdges)
