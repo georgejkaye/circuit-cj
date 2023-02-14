@@ -411,6 +411,9 @@ public class InterfacedHypergraph<V, G>
     public func AddEdge(e : Edge<V, G>) : Unit {
         this.f.AddEdge(e)
     }
+    public func AddVertex(v : Vertex<V, G>) : Unit {
+        this.f.AddVertex(v)
+    }
     public func AddEdgeAndVertices(e : Edge<V, G>) : Unit {
         this.f.AddEdgeAndVertices(e)
     }
