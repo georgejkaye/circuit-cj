@@ -5,7 +5,10 @@
 	"description": "nothing here",
 	"version": "1.0.0",
 	"requires": {},
-	"package_requires": {},
+	"package_requires": {
+		"path_option": [],
+		"package_option": {}
+	},
 	"foreign_requires": {},
 	"output_type": "executable",
 	"command_option": "",
