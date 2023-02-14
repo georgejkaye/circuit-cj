@@ -448,12 +448,38 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         outputs : Array<TentacleOrigin<V, G>>,
         label : Label<V, G>
     ) : (InterfacedHypergraph<V, G>, Edge<V, G>) {
-        let slicedInputs = map<TentacleOrigin<V, G>, (Vertex<V, G>, Vertex<V, G>)>(
-            { to => SliceTentacle(to)},
+        func SliceInterfaceVertex(
+            to : TentacleOrigin<V, G>,
+            vt : VertexType
+        ) : (Vertex<V, G>, Vertex<V, G>) {
+            match(to) {
+                case FROM_EDGE(ec) =>
+                    SliceTentacle(ec)
+                case FROM_VERTEX(v) =>
+                    let newVertex = Vertex<V, G>(v.GetWidth())
+                    match(v.GetInEdge()) {
+                        case Some(ec) =>
+                            ec.GetEdge().SetTarget(ec.GetIndex(), newVertex)
+                            v.RemoveInEdge()
+                        case None => ()
+                    }
+                    let outEdges = HashSet(v.GetOutEdges())
+                    for(ec in outEdges) {
+                        ec.GetEdge().SetSource(ec.GetIndex(), newVertex, false)
+                    }
+                    v.RemoveOutEdges()
+                    match(vt) {
+                        case SOURCE => (v, newVertex)
+                        case TARGET => (newVertex, v)
+                    }
+            }
+        }
+        let slicedInputs = map(
+            { to : TentacleOrigin<V, G> => SliceInterfaceVertex(to, SOURCE) },
             inputs
         )
-        let slicedOutputs = map<TentacleOrigin<V, G>, (Vertex<V, G>, Vertex<V, G>)>(
-            { to => SliceTentacle(to)},
+        let slicedOutputs = map(
+            { to : TentacleOrigin<V, G> => SliceInterfaceVertex(to, TARGET) },
             outputs
         )
         let childInputs = map({ vs : (Vertex<V, G>, Vertex<V, G>) => vs[1] }, slicedInputs)

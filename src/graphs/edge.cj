@@ -83,26 +83,20 @@ public struct Tentacle<V, G> <: ToString & HasWidth & HasTentacle<V, G>
     }
 }
 public enum TentacleOrigin<V, G> where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
-    | SOURCE(Edge<V, G>, Int64)
-    | TARGET(Edge<V, G>, Int64)
-    | INPUT(InterfacedHypergraph<V, G>, Int64)
-    | OUTPUT(InterfacedHypergraph<V, G>, Int64)
+    | FROM_EDGE(EdgeConnection<V, G>)
+    | FROM_VERTEX(Vertex<V, G>)
 }
 extend TentacleOrigin<V, G> <: HasWidth & ToString {
     public func GetWidth() : Int64 {
         match(this) {
-            case SOURCE(e, i) => e.GetSource(i).GetWidth()
-            case TARGET(e, i) => e.GetTarget(i).GetWidth()
-            case INPUT(f, i) => f.GetInput(i).GetWidth()
-            case OUTPUT(f, i) => f.GetOutput(i).GetWidth()
+            case FROM_EDGE(ec) => ec.GetWidth()
+            case FROM_VERTEX(v) => v.GetWidth()
         }
     }
     public func toString() : String {
         match(this) {
-            case SOURCE(e, i) => "${e.GetSource(i).vertex} left"
-            case TARGET(e, i) => "${e.GetTarget(i).vertex} right"
-            case INPUT(f, i) => "${f} input ${i}"
-            case OUTPUT(f, i) => "${f} output ${i}"
+            case FROM_EDGE(ec) => ec.toString()
+            case FROM_VERTEX(v) => v.toString()
         }
     }
 }

@@ -66,6 +66,16 @@ public struct EdgeConnection<V, G> <: ToString & Equatable<EdgeConnection<V, G>>
     public func GetIndex() : Int64 {
         this.index
     }
+    public func GetVertex() : Vertex<V, G> {
+        let fn = { e : Edge<V, G>, i : Int64 => match(this.vertexType) {
+            case SOURCE => e.GetSource(i)
+            case TARGET => e.GetTarget(i)
+        }}
+        fn(this.GetEdge(), this.GetIndex()).GetVertex()
+    }
+    public func GetVertexType() : VertexType {
+        this.vertexType
+    }
 }
 public enum InterfaceType {
     | INPUT
@@ -200,6 +210,13 @@ public class Vertex<V, G>
         } else {
             this.owner.RemoveVertexFromRightmostTraversalElements(this)
         }
+    }
+    public func RemoveOutEdges() : Unit {
+        let outEdges = HashSet(this.outEdges)
+        for(ec in outEdges) {
+            this.RemoveOutEdge(ec.GetEdge())
+        }
+        this.PostAlterOutEdges()
     }
     public func RemoveOutEdges(es : HashSet<Edge<V, G>>) : Unit {
         for(e in es) {

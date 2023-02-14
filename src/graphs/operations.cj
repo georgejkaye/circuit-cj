@@ -77,31 +77,22 @@ public func SplitVertex<V, G>(v : Vertex<V, G>) : (Vertex<V, G>, Vertex<V, G>)
     }
     (leftVertex, rightVertex)
 }
-public func SliceTentacle<V, G>(to : TentacleOrigin<V, G>) : (Vertex<V, G>, Vertex<V, G>)
+public func SliceTentacle<V, G>(
+    ec : EdgeConnection<V, G>
+) : (Vertex<V, G>, Vertex<V, G>)
     where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    let existingVertex = match(to) {
-        case SOURCE(e, i) => e.GetSource(i).GetVertex()
-        case TARGET(e, i) => e.GetTarget(i).GetVertex()
-        case INPUT(f, i) => f.GetInput(i).GetVertex()
-        case OUTPUT(f, i) => f.GetOutput(i).GetVertex()
-    }
+    let existingVertex = ec.GetVertex()
     let slicedVertex = Vertex<V, G>(existingVertex.GetWidth())
-    match(to) {
-        case SOURCE(e, i) =>
-            e.SetSource(i, slicedVertex, false)
-        case TARGET(e, i) =>
-            e.SetTarget(i, slicedVertex)
-        case INPUT(f, i) =>
-            f.ReplaceInput(i, slicedVertex)
-        case OUTPUT(f, i) =>
-            f.ReplaceOutput(i, slicedVertex)
-    }
-    let (leftVertex, rightVertex) = match(to) {
-        case SOURCE(_, _) => (existingVertex, slicedVertex)
-        case TARGET(_, _) => (slicedVertex, existingVertex)
-        case INPUT(_, _) => (slicedVertex, existingVertex)
-        case OUTPUT(_, _) => (existingVertex, slicedVertex)
+    let edge = ec.GetEdge()
+    let index = ec.GetIndex()
+    let (leftVertex, rightVertex) = match(ec.GetVertexType()) {
+        case SOURCE =>
+            edge.SetSource(index, slicedVertex, false)
+            (existingVertex, slicedVertex)
+        case TARGET =>
+            edge.SetTarget(index, slicedVertex)
+            (slicedVertex, existingVertex)
     }
     (leftVertex, rightVertex)
 }

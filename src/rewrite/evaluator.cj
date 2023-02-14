@@ -298,8 +298,7 @@ func MakeRegisterJoin<V, G>(
     e : Edge<V, G>,
     f : InterfacedHypergraph<V, G>
 ) : (
-    TentacleOrigin<V, G>,
-    TentacleOrigin<V, G>,
+    Edge<V, G>,
     Signal<V>,
     Vertex<V, G>
 ) where
@@ -311,12 +310,10 @@ func MakeRegisterJoin<V, G>(
     let (left, right) = SplitVertex(target)
     let bot = sig.UseSignal(sig.GetBottom(), width)
     let isDelay = e.GetLabel().IsDelay()
-    let (value, delay, input, signal) = if(isDelay) {
-        let tentacle = SOURCE(e, 0)
+    let (value, delay, signal) = if(isDelay) {
         (
             bot.GetVertex(),
             left,
-            SOURCE(e, 0),
             Signal(sig.GetBottom(), width)
         )
     } else {
@@ -331,7 +328,6 @@ func MakeRegisterJoin<V, G>(
         (
             left,
             delayTarget,
-            SOURCE(delayEdge, 0),
             e.GetLabel().GetSignal()
         )
     }
@@ -342,7 +338,7 @@ func MakeRegisterJoin<V, G>(
         None<InterfacedHypergraph<V, G>>,
         f.GetGraph()
     )
-    (input, TARGET(join, 0), signal, value)
+    (join, signal, value)
 }
 /**
  * Convert a circuit to Mealy form, in which there is a `combinational core'
@@ -374,9 +370,9 @@ func ConvertToMealyForm<V, G>(
     let state = ArrayList<Signal<V>>()
     let values = ArrayList<Vertex<V, G>>()
     func GetInputAndOutput(e : Edge<V, G>) {
-        let (input, output, signal, value) = MakeRegisterJoin(sig, e, f)
-        coreInputs.append(output)
-        coreOutputs.append(input)
+        let (edge, signal, value) = MakeRegisterJoin(sig, e, f)
+        coreInputs.append(FROM_EDGE(EdgeConnection(edge, 0, SOURCE)))
+        coreOutputs.append(FROM_EDGE(EdgeConnection(edge, 0, TARGET)))
         state.append(signal)
         values.append(value)
     }
@@ -387,10 +383,10 @@ func ConvertToMealyForm<V, G>(
         GetInputAndOutput(e)
     }
     for(i in 0..f.GetArity()) {
-        coreInputs.append(INPUT(f, i))
+        coreInputs.append(FROM_VERTEX(f.GetInput(i).GetVertex()))
     }
     for(i in 0..f.GetCoarity()) {
-        coreOutputs.append(OUTPUT(f, i))
+        coreOutputs.append(FROM_VERTEX(f.GetOutput(i).GetVertex()))
     }
     let (graph, edge) = f.CollapseSubgraph(
         coreInputs.toArray(),
