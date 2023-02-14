@@ -533,4 +533,35 @@ public class InterfacedHypergraph<V, G>
     ) : (InterfacedHypergraph<V, G>, Edge<V, G>) {
         this.GetGraph().CollapseSubgraph(inputs, outputs, label)
     }
+    public func IsolateTentacles(
+        connections : Array<EdgeConnection<V, G>>
+    ) : Unit {
+        let slicedVertices = map(
+            { ec : EdgeConnection<V, G> => SliceTentacle(ec)},
+            connections
+        )
+        let subgraphArity = connections.size + this.GetArity()
+        let subgraphCoarity = connections.size + this.GetCoarity()
+        let subgraphInputs = Array<TentacleOrigin<V, G>>(subgraphArity){
+            i : Int64 =>
+                if(i < connections.size) {
+                    FROM_VERTEX(slicedVertices[i][1])
+                } else {
+                    FROM_VERTEX(this.GetInput(i - connections.size).GetVertex())
+                }
+        }
+        let subgraphOutputs = Array<TentacleOrigin<V, G>>(subgraphCoarity){
+            i : Int64 =>
+                if(i < connections.size) {
+                    FROM_VERTEX(slicedVertices[i][0])
+                } else {
+                    FROM_VERTEX(this.GetOutput(i - connections.size).GetVertex())
+                }
+        }
+        this.CollapseSubgraph(
+            subgraphInputs,
+            subgraphOutputs,
+            "Isolated"
+        )
+    }
 }
