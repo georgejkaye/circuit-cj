@@ -9,6 +9,16 @@ from std import collection.ArrayList
 from std import math.*
 from std import collection.HashMap
 
+public func fold_left<T>(f : (T, T) -> T, xs : Iterable<T>) : Option<T> {
+    var acc = None<T>
+    for (x in xs) {
+        acc = match(acc) {
+            case None => x
+            case Some(y) => f(y, x)
+        }
+    }
+    acc
+}
 public func fold_left<T,U>(f : (U, T) -> U, initial : U,  xs : Iterable<T>) : U {
     var acc = initial
     for (x in xs) {
