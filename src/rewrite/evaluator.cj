@@ -1,4 +1,4 @@
-/**
+/*
  * rewrite/evaluator.cj
  *
  * Evaluator for reducing closed circuits
@@ -299,46 +299,54 @@ func MakeRegisterJoin<V, G>(
     f : InterfacedHypergraph<V, G>
 ) : (
     Edge<V, G>,
+    Edge<V, G>,
     Signal<V>,
     Vertex<V, G>
 ) where
     V <: ValueSymbol & Equatable<V>,
     G <: PrimitiveSymbol<V> & Equatable<G>
 {
+    // We can only turn a delay or a value into a register
+    let isDelay = e.GetLabel().IsDelay()
+    let isValue = e.GetLabel().IsValue()
+    if(!isDelay && !isValue) {
+        throw IncompatibleVariantException(e.GetLabel(), "DELAY/VALUE")
+    }
     let target = e.GetTarget(0).GetVertex()
     let width = target.GetWidth()
-    let (left, right) = SplitVertex(target)
+    let (leftVertex, rightVertex) = SplitVertex(target)
     let bot = sig.UseSignal(sig.GetBottom(), width)
-    let isDelay = e.GetLabel().IsDelay()
-    let (value, delay, signal) = if(isDelay) {
+    let (valueTarget, delayTarget, delayEdge, signal) = if(isDelay) {
         (
             bot.GetVertex(),
-            left,
+            leftVertex,
+            e,
             Signal(sig.GetBottom(), width)
         )
     } else {
-        let delayTarget = Vertex<V, G>(width)
+        let newVertex = Vertex<V, G>(width)
         let delayEdge = Edge(
             DELAY(width),
             [bot.GetVertex()],
-            [delayTarget],
+            [newVertex],
             None,
             f.GetGraph()
         )
         (
-            left,
-            delayTarget,
+            leftVertex,
+            newVertex,
+            delayEdge,
             e.GetLabel().GetSignal()
         )
     }
-    let join = Edge(
+    let joinEdge = Edge(
         Label<V, G>.JOIN(width),
-        [value, delay],
-        [right],
+        [valueTarget, delayTarget],
+        [rightVertex],
         None<InterfacedHypergraph<V, G>>,
         f.GetGraph()
     )
-    (join, signal, value)
+    (joinEdge, delayEdge, signal, valueTarget)
 }
 /**
  * Convert a circuit to Mealy form, in which there is a `combinational core'
@@ -370,9 +378,9 @@ func ConvertToMealyForm<V, G>(
     let state = ArrayList<Signal<V>>()
     let values = ArrayList<Vertex<V, G>>()
     func GetInputAndOutput(e : Edge<V, G>) {
-        let (edge, signal, value) = MakeRegisterJoin(sig, e, f)
-        coreInputs.append(FROM_EDGE(EdgeConnection(edge, 0, SOURCE)))
-        coreOutputs.append(FROM_EDGE(EdgeConnection(edge, 0, TARGET)))
+        let (joinEdge, delayEdge, signal, value) = MakeRegisterJoin(sig, e, f)
+        coreInputs.append(FROM_EDGE(EdgeConnection(joinEdge, 0, TARGET)))
+        coreOutputs.append(FROM_EDGE(EdgeConnection(delayEdge, 0, SOURCE)))
         state.append(signal)
         values.append(value)
     }
