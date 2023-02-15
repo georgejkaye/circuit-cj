@@ -19,7 +19,7 @@ public enum GateLevelValue {
 /**
  * Instantiate Belnap values as a type of value symbols
  */
-extend GateLevelValue <: ValueSymbol & Equatable<GateLevelValue> & Decimal<GateLevelValue> {
+extend GateLevelValue <: ValueSymbol & LessOrEqual<GateLevelValue> & Equatable<GateLevelValue> & Decimal<GateLevelValue> {
     public func hashCode(): Int64 {
         match (this) {
             case NONE => 0
@@ -28,18 +28,37 @@ extend GateLevelValue <: ValueSymbol & Equatable<GateLevelValue> & Decimal<GateL
             case BOTH => 3
         }
     }
-    public operator func ==(rhs: GateLevelValue): Bool {
+    public operator func <=(rhs : GateLevelValue) : Bool {
+        match(this) {
+            case NONE => true
+            case TRUE => match(rhs) {
+                case FALSE => false
+                case NONE => false
+                case _   =>  true
+            }
+            case FALSE => match(rhs) {
+                case TRUE => false
+                case NONE => false
+                case _   => true
+            }
+            case BOTH => match(rhs) {
+                case BOTH => true
+                case _   => false
+            }
+        }
+    }
+    public operator func ==(rhs: GateLevelValue) : Bool {
         this.hashCode() == rhs.hashCode()
     }
-    public operator func !=(rhs: GateLevelValue): Bool {
+    public operator func !=(rhs: GateLevelValue) : Bool {
         !(this == rhs)
     }
     public func toString(): String {
         match (this) {
-            case NONE => "\u{22A4}"
+            case NONE => "\u{22A5}"
             case FALSE => "0"
             case TRUE => "1"
-            case BOTH => "\u{22A5}"
+            case BOTH => "\u{22A4}"
         }
     }
     public func GetName(): String {
@@ -212,67 +231,10 @@ extend GateLevelPrimitive <: PrimitiveSymbol<GateLevelValue> & Equatable<GateLev
     }
 }
 /**
- * Given two Belnap values, get their join in the lattice A4
- * @param lhs The left value
- * @param rhs The right value
- * @return The result of lhs v rhs in A4
- */
-func GateLevelJoin(lhs: GateLevelValue, rhs: GateLevelValue): GateLevelValue {
-    match (lhs) {
-        case BOTH => BOTH
-        case NONE => rhs
-        case TRUE =>
-            match (rhs) {
-                case BOTH => BOTH
-                case FALSE => BOTH
-                case _ => TRUE
-            }
-        case FALSE =>
-            match (rhs) {
-                case BOTH => BOTH
-                case TRUE => BOTH
-                case _ => FALSE
-            }
-    }
-}
-/**
- * Given two Belnap values, find if the left value is less than or equal
- * to the right in the lattice A4
- * @param lhs The left value
- * @param rhs The right value
- * @return Whether lhs <= rhs in A4
- */
-func GateLevelLTE(lhs: GateLevelValue, rhs: GateLevelValue): Bool {
-    match (lhs) {
-        case NONE => true
-        case FALSE =>
-            match (rhs) {
-                case NONE => false
-                case TRUE => false
-                case _ => true
-            }
-        case TRUE =>
-            match (rhs) {
-                case NONE => false
-                case FALSE => false
-                case _ => true
-            }
-        case BOTH =>
-            match (rhs) {
-                case BOTH => true
-                case _ => false
-            }
-    }
-}
-/**
  * The lattice A4 on the Belnap values
  */
 let gateLevelLatticeStructure = FiniteLattice(
-    HashSet([NONE, TRUE, FALSE, BOTH]),
-    BOTH,
-    BOTH,
-    GateLevelLTE,
-    GateLevelJoin
+    HashSet([NONE, TRUE, FALSE, BOTH])
 )
 /**
  * Get the logical NOT of a values

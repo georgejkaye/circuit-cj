@@ -39,7 +39,7 @@ func AssertTableMonotone<V>(
     lattice : FiniteLattice<V>,
     arity : Int64,
     table : (Array<V>) -> Array<V>
-) : Unit where V <: ValueSymbol & Equatable<V> {
+) : Unit where V <: ValueSymbol & Equatable<V> & LessOrEqual<V> {
     let inputs = lattice.EnumeratePowers(arity)
     for(input1 in inputs) {
         for(input2 in inputs) {
@@ -75,5 +75,13 @@ class CannotBitwiseMapPrimitiveException<V, G> <: Exception
             "${primitive.GetInputPorts()} -> ${primitive.GetOutputPorts()}" +
             "wheras rippling requires type [m, ..., m] -> [n, ..., n]"
         )
+    }
+}
+
+class IncompleteLatticeException<V> <: Exception
+    where V <: ToString
+{
+    public init(lhs : V, rhs : V, op : String) {
+        ErrorMsg("Attempted to define complete lattice but ${lhs} ${op} ${rhs} does not exist")
     }
 }

@@ -22,7 +22,9 @@ func AttemptRewriteRule<V, G>(
     rule : RewriteRule<V, G>,
     f : InterfacedHypergraph<V, G>
 ) : Option<(HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)>
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     match(rule.Rewrite(e, f)) {
         case None =>
@@ -41,7 +43,9 @@ func CheckAppropriateRules<V, G>(
     f : InterfacedHypergraph<V, G>,
     signature : Signature<V, G>
 ) : Option<(HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)>
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let label = edge.GetLabel()
     let validRules = ArrayList<RewriteRule<V, G>>()
@@ -99,7 +103,9 @@ public func RewriteCombinational<V, G>(
     starting : HashSet<TraversalElement<V, G>>,
     ending : HashSet<TraversalElement<V, G>>
 ) : Unit
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let actionAtEdge = {
         e : Edge<V, G>, data : TraversalData<V, G> =>

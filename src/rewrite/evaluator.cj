@@ -14,7 +14,9 @@ import syntax.*
 import debug.*
 
 public class Evaluator<V, G>
-        where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     var currentCycle = 0
     let sig : Signature<V, G>
@@ -303,7 +305,7 @@ func MakeRegisterJoin<V, G>(
     Signal<V>,
     Vertex<V, G>
 ) where
-    V <: ValueSymbol & Equatable<V>,
+    V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
     G <: PrimitiveSymbol<V> & Equatable<G>
 {
     // We can only turn a delay or a value into a register
@@ -367,7 +369,7 @@ func ConvertToMealyForm<V, G>(
     Array<Signal<V>>,
     Array<Vertex<V, G>>
 ) where
-    V <: ValueSymbol & Equatable<V>,
+    V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
     G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let sequentialData = f.GetSequentialData()

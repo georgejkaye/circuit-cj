@@ -24,58 +24,99 @@ func GetAllPermutations<T>(elems: HashSet<T>, i: Int64): ArrayList<Array<T>> whe
     }
 }
 public interface ValueSymbol <: Hashable & HasName & ToString {}
-func ComputeLongestChain<T>(elements : HashSet<T>, bot : T, top : T, lte : (T, T) -> Bool) : Int64
-    where T <: ValueSymbol & Equatable<T>
+func ComputeLongestChain<T>(elements : HashSet<T>, bot : T, top : T) : Int64
+    where T <: LessOrEqual<T> & Hashable & Equatable<T>
 {
-    let currentChain = ArrayList<T>()
-    currentChain.append(bot)
-    func ComputeLongestChainIteration(longest : Int64) : Int64 {
-        let currentElement = currentChain[0]
-        var currentLongest = longest
-        for(e in elements) {
-            if(e != currentElement && lte(currentElement, e)){
-                currentLongest = if(e == top){
-                    if(currentChain.size > longest){
-                        currentChain.size
-                    } else {
-                        currentLongest
-                    }
-                } else {
-                    currentChain.prepend(e)
-                    let subcallLongest = ComputeLongestChainIteration(longest)
-                    currentChain.remove(0)
-                    subcallLongest
+    func ComputeLongestChainLength(currentElement : T) : Int64 {
+        if(currentElement == bot) {
+            0
+        } else {
+            let nexts = HashSet<Int64>()
+            for(e in elements) {
+                if(e != currentElement && e <= currentElement) {
+                    nexts.put(1 + ComputeLongestChainLength(e))
                 }
             }
+            fold_left<Int64, Int64>({ acc, cur => max(acc, cur) }, 0, nexts)
         }
-        currentLongest
     }
-    ComputeLongestChainIteration(0)
+    ComputeLongestChainLength(top)
 }
-public struct FiniteLattice<T> where T <: ValueSymbol & Equatable<T> {
+
+func ComputeOrderIntersectionOp<T>(
+    elements : HashSet<T>,
+    orderFn : (T, T) -> Bool,
+    rankFn : (T, T) -> T,
+    op : String
+) : (T, T) -> T where T <: Hashable & Equatable<T> & LessOrEqual<T> & ToString {
+    { lhs : T, rhs : T =>
+        AssertElementInCollection(lhs, elements)
+        AssertElementInCollection(rhs, elements)
+        AssertCollectionHasLengthAtLeast<T>(elements, 1)
+        if(lhs == rhs) {
+            lhs
+        } else {
+            let lhsElements = HashSet<T>()
+            let rhsElements = HashSet<T>()
+            for(t in elements) {
+                if(orderFn(t, lhs)) {
+                    lhsElements.put(t)
+                }
+                if(orderFn(t, rhs)) {
+                    rhsElements.put(t)
+                }
+            }
+            lhsElements.removeIf({ t : T => !rhsElements.contains(t) })
+            let res = match(fold_left<T>(rankFn, lhsElements)){
+                case Some(x) => x
+                case None    => throw IncompleteLatticeException(lhs, rhs, op)
+            }
+            res
+        }
+    }
+}
+func ComputeMeet<T>(elements : HashSet<T>) : (T, T) -> T where T <: LessOrEqual<T> & Hashable & Equatable<T> & ToString {
+    ComputeOrderIntersectionOp(elements, { lhs, rhs => lhs <= rhs}, { lhs, rhs => min(lhs, rhs) }, "\u{2227}")
+}
+func ComputeJoin<T>(elements : HashSet<T>) : (T, T) -> T where T <: LessOrEqual<T> & Hashable & Equatable<T> & ToString {
+    ComputeOrderIntersectionOp(elements, { lhs, rhs => rhs <= lhs }, { lhs, rhs => max(lhs, rhs) },  "\u{2228}")
+}
+func ComputeBottom<T>(elements : HashSet<T>) : T where T <: LessOrEqual<T> & Hashable & Equatable<T> {
+    fold_left<T>({ acc, cur => min(acc, cur) }, elements).getOrThrow()
+}
+func ComputeTop<T>(elements : HashSet<T>) : T where T <: LessOrEqual<T> & Hashable & Equatable<T> {
+    fold_left<T>({ acc, cur => max(acc, cur) }, elements).getOrThrow()
+}
+func BinaryFunctionToHashMap<T, U, V>(
+    lhsElements : HashSet<T>,
+    rhsElements : HashSet<U>,
+    fn : (T, U) -> V
+) : HashMap<T, HashMap<U, V>> where  T <: Hashable & Equatable<T>, U <: Hashable & Equatable<U> {
+    let outerMap = HashMap<T, HashMap<U, V>>()
+    for(l in lhsElements) {
+        let innerMap = HashMap<U, V>()
+        for(r in rhsElements) {
+            innerMap.put(r, fn(l, r))
+        }
+        outerMap.put(l, innerMap)
+    }
+    outerMap
+}
+public struct FiniteLattice<T> where T <: LessOrEqual<T> & Equatable<T> & Hashable & ToString {
     let cachedCombinations = HashMap<Int64, ArrayList<Array<T>>>()
     let longestChain : Int64
     public let elements: HashSet<T>
-    public let bot: T
-    public let top: T
-    public let lte: (T, T) -> Bool
-    public let join: (T, T) -> T
-    public init (
-        elements : HashSet<T>,
-        bot : T,
-        top : T,
-        lte : (T, T) -> Bool,
-        join : (T, T) -> T
-    ) {
+    public let meet: HashMap<T, HashMap<T, T>>
+    public let join: HashMap<T, HashMap<T, T>>
+    public let bot : T
+    public let top : T
+    public init (elements : HashSet<T>) {
         this.elements = elements
-        this.bot = bot
-        this.top = top
-        this.lte = lte
-        this.join = join
-        // this.longestChain = ComputeLongestChain(elements, bot, top, lte)
-        // AssertElementInCollection(bot, elements)
-        // AssertElementInCollection(top, elements)
-        this.longestChain = 0
+        this.meet = BinaryFunctionToHashMap(elements, elements, ComputeMeet(elements))
+        this.join = BinaryFunctionToHashMap(elements, elements, ComputeJoin(elements))
+        this.bot = ComputeBottom(elements)
+        this.top = ComputeTop(elements)
+        this.longestChain = ComputeLongestChain<T>(elements, bot, top)
     }
     public func EnumeratePowers(i: Int64): ArrayList<Array<T>> {
         match (this.cachedCombinations.get(i)) {
@@ -86,13 +127,27 @@ public struct FiniteLattice<T> where T <: ValueSymbol & Equatable<T> {
                 result
         }
     }
+    public func Join(lhs : T, rhs : T) {
+        AssertElementInCollection(lhs, this.elements)
+        AssertElementInCollection(rhs, this.elements)
+        this.join.get(lhs).getOrThrow().get(rhs).getOrThrow()
+    }
+    public func Meet(lhs : T, rhs : T) {
+        AssertElementInCollection(lhs, this.elements)
+        AssertElementInCollection(rhs, this.elements)
+        this.meet.get(lhs).getOrThrow().get(rhs).getOrThrow()
+    }
     public func JoinPowers(lhs: Array<T>, rhs: Array<T>) {
         AssertArraysSameLength<T, T>(lhs, rhs)
-        map2({l: T, r: T => this.join(l, r)}, lhs, rhs)
+        map2<T, T, T>({ lhs, rhs => this.Join(lhs, rhs) }, lhs, rhs)
+    }
+    public func MeetPowers(lhs: Array<T>, rhs: Array<T>) {
+        AssertArraysSameLength<T, T>(lhs, rhs)
+        map2<T, T, T>({ lhs, rhs => this.Meet(lhs, rhs) }, lhs, rhs)
     }
     public func LTEPowers(lhs: Array<T>, rhs: Array<T>) {
         AssertArraysSameLength<T, T>(lhs, rhs)
-        fold_left2({acc: Bool, l: T, r: T => acc && (this.lte(l, r))}, true, lhs, rhs)
+        fold_left2({ acc, lhs, rhs => acc && lhs <= rhs }, true, lhs, rhs)
     }
     /**
      * Get the longest chain in the lattice structure
@@ -111,7 +166,7 @@ public interface PrimitiveSymbol<V>
     func GetEnhancedName(n: Int64, w: Int64): String
 }
 public class Signature<V, G> <: HasName & ToString
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public let specificationImplementation : HashMap<Specification<V>, ((Array<Array<V>>) -> Array<V>)>
         = HashMap<Specification<V>, ((Array<Array<V>>) -> Array<V>)>()
@@ -121,8 +176,8 @@ public class Signature<V, G> <: HasName & ToString
         public let gateInterpretation: (G) -> ((Array<Array<V>>) -> Array<V>),
         public let toDec: (Array<V>, Bool) -> Option<Int64>
     ) {}
-    public func JoinValues(v: V, u: V): V {
-        this.latticeStructure.join(v, u)
+    public func Join(v: V, u: V): V {
+        this.latticeStructure.Join(v, u)
     }
     public func JoinPowers(v: Array<V>, u: Array<V>): Array<V> {
         this.latticeStructure.JoinPowers(v, u)
