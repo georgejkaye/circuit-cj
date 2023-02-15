@@ -85,7 +85,7 @@ public func AssertArraysSameLength<T, U>(
     ys : Array<U>
 ) : Unit where T <: ToString {
     if(xs.size != ys.size) {
-        throw IncompatibleArrayLengthException<T>(xs, ys.size, true)
+        throw IncompatibleLengthException<T>(xs, ys.size, true)
     }
 }
 public func AssertArraysSameLength<T>(
@@ -106,7 +106,7 @@ public func AssertArrayHasLength<T>(
     n : Int64
 ) : Unit where T <: ToString {
     if(xs.size != n) {
-        throw IncompatibleArrayLengthException<T>(xs, n, true)
+        throw IncompatibleLengthException<T>(xs, n, true)
     }
 }
 public func AssertArrayHasMinimumLength<T>(
@@ -114,7 +114,7 @@ public func AssertArrayHasMinimumLength<T>(
     n : Int64
 ) : Unit where T <: ToString {
     if (xs.size < n) {
-        throw IncompatibleArrayLengthException<T>(xs, n, false)
+        throw IncompatibleLengthException<T>(xs, n, false)
     }
 }
 public func AssertObjectHasParameter<T, U>(
@@ -258,4 +258,12 @@ public func AssertElementInCollection<T>(
         }
     }
     throw ElementNotInCollectionException(t, collection)
+}
+public func AssertCollectionHasLengthAtLeast<T>(
+    collection : Collection<T>,
+    len : Int64
+) where T <: ToString {
+    if (collection.size < len) {
+        throw IncompatibleLengthException(collection, len, false)
+    }
 }

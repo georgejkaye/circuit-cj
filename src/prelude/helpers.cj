@@ -221,3 +221,11 @@ public func min<T, U>(xs : Array<T>, highest : U, f : (T) -> U) : U where U <: C
 public func min<T>(xs : Array<T>, f : (T) -> Int64) {
     min(xs, Int64.Max, f)
 }
+public func printCollection<T>(ts : Collection<T>) : String where T <: ToString {
+    let contents = fold_left(
+        {acc, cur => "${acc}, ${cur}"},
+        "",
+        ts
+    )
+    "{${contents}}"
+}

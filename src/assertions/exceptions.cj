@@ -7,6 +7,8 @@
 
 package assertions
 
+import prelude.*
+
 /**
  * Print an error message, prepending it with [ERROR].
  *
@@ -99,10 +101,13 @@ class NonEmptyException <: Exception {
  *
  * @param T the type of the array, has ToString
  */
-class IncompatibleArrayLengthException<T> <: Exception where T <: ToString {
-    public init(xs : Array<T>, n : Int64, exact : Bool) {
+class IncompatibleLengthException<T> <: Exception where T <: ToString {
+    public init(xs : Collection<T>, n : Int64, exact : Bool) {
         let exactText = if (exact) { "" } else { " at least"}
-        ErrorMsg("Expected an array of ${exactText}length ${n} but ${xs} is of length ${xs.size}")
+        let contents = printCollection(xs)
+        ErrorMsg(
+            "Expected an array of ${exactText}length ${n} but ${contents} is of length ${xs.size}"
+        )
     }
 }
 
