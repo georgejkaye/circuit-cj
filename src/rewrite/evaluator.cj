@@ -399,7 +399,18 @@ func ConvertToMealyForm<V, G>(
     let (graph, edge) = f.CollapseSubgraph(
         coreInputs.toArray(),
         coreOutputs.toArray(),
-        "Core(${f.GetName()})"
+        "MealyCore(${f.GetName()})"
     )
     (graph, edge, state.toArray(), values.toArray())
+}
+
+func EliminateInstantFeedback<V, G>(
+    sig : Signature<V, G>,
+    f : InterfacedHypergraph<V, G>
+) : Unit where
+    V <: ValueSymbol & Equatable<V>,
+    G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    let feedbackConnections = f.GetSequentialData().feedbackConnections
+    f.IsolateTentacles(Array(feedbackConnections), "PreMealyCore(${f.GetName()})")
 }
