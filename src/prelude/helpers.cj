@@ -126,14 +126,14 @@ public func unsafeGet<T,U>(map : HashMap<T,U>, key: T) : U where T <: Equatable<
 public func Sum(ns : Array<Int64>) : Int64 {
     fold_left({ acc : Int64, cur : Int64 => acc + cur}, 0, ns)
 }
-public func max<T>(x : T, y : T) : T where T <: Comparable<T> {
-    if(x >= y) {
-        x
-    } else {
+public func max<T>(x : T, y : T) : T where T <: LessOrEqual<T> {
+    if(x <= y) {
         y
+    } else {
+        x
     }
 }
-public func min<T>(x : T, y : T) : T where T <: Comparable<T> {
+public func min<T>(x : T, y : T) : T where T <: LessOrEqual<T> {
     if(x <= y) {
         x
     } else {
