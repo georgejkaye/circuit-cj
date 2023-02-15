@@ -36,10 +36,10 @@ extend GateLevelValue <: ValueSymbol & Equatable<GateLevelValue> & Decimal<GateL
     }
     public func toString(): String {
         match (this) {
-            case NONE => "\u{22A5}"
+            case NONE => "\u{22A4}"
             case FALSE => "0"
             case TRUE => "1"
-            case BOTH => "\u{22A4}"
+            case BOTH => "\u{22A5}"
         }
     }
     public func GetName(): String {
