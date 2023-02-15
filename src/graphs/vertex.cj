@@ -287,6 +287,9 @@ public class Vertex<V, G>
     public func RemoveAsInput(f : InterfacedHypergraph<V, G>, i : Int64) : Unit {
         this.interfacedInputs.removeIf({ ie => ie.graph == f && ie.index == i })
     }
+    public func RemoveAsInput() : Unit {
+        this.interfacedInputs.clear()
+    }
     public func GetInterfacedOutputs() : HashSet<InterfaceElement<V, G>> {
         this.interfacedOutputs
     }
@@ -298,6 +301,9 @@ public class Vertex<V, G>
     }
     public func RemoveAsOutput(f : InterfacedHypergraph<V, G>, i : Int64) : Unit {
         this.interfacedOutputs.removeIf({ ie => ie.graph == f && ie.index == i })
+    }
+    public func RemoveAsOutput() : Unit {
+        this.interfacedOutputs.clear()
     }
 }
 

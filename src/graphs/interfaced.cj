@@ -559,13 +559,19 @@ public class InterfacedHypergraph<V, G>
                     FROM_VERTEX(this.GetOutput(i - connections.size).GetVertex())
                 }
         }
-        this.CollapseSubgraph(
+        let (newGraph, newEdge) = this.CollapseSubgraph(
             subgraphInputs,
             subgraphOutputs,
             label
         )
+        var loop = 0
         for(vs in slicedVertices) {
-            MergeVertices(vs[0], vs[1], true)
+            MergeVertices(
+                newEdge.GetSource(loop).GetVertex(),
+                newEdge.GetTarget(loop).GetVertex(),
+                true
+            )
+            loop++
         }
     }
 }

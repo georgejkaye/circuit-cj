@@ -457,21 +457,22 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
                     SliceTentacle(ec)
                 case FROM_VERTEX(v) =>
                     let newVertex = Vertex<V, G>(v.GetWidth())
-                    match(v.GetInEdge()) {
-                        case Some(ec) =>
-                            ec.GetEdge().SetTarget(ec.GetIndex(), newVertex)
-                            v.RemoveInEdge()
-                        case None => ()
-                    }
-                    let outEdges = HashSet(v.GetOutEdges())
-                    for(ec in outEdges) {
-                        ec.GetEdge().SetSource(ec.GetIndex(), newVertex, false)
-                    }
-                    v.RemoveOutEdges()
+                    v.GetOwner().AddVertex(newVertex)
                     match(vt) {
-                        case SOURCE => (v, newVertex)
-                        case TARGET => (newVertex, v)
+                        case SOURCE =>
+                            let inputs = HashSet(v.GetInterfacedInputs())
+                            for(ie in inputs) {
+                                ie.graph.ReplaceInput(ie.index, newVertex)
+                            }
+                            (newVertex, v)
+                        case TARGET =>
+                            let outputs = HashSet(v.GetInterfacedOutputs())
+                            for(ie in outputs) {
+                                ie.graph.ReplaceOutput(ie.index, newVertex)
+                            }
+                            (v, newVertex)
                     }
+
             }
         }
         let slicedInputs = map(
