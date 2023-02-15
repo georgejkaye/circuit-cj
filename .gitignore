@@ -9,9 +9,10 @@ circuits/
 dot/
 *.out
 *.bc
+*.gcno
 *.cjo
 *.o
 *.cj.o
-*txt
+*.txt
 module-resolve.json
 *.dep
