@@ -33,6 +33,20 @@ public func MergeVertices<T, U, V, G>(t : T, u : U, feedback: Bool) : (Vertex<V,
     for(ec in outEdges){
         ec.GetEdge().SetSource(ec.GetIndex(), v, feedback)
     }
+    func UpdateInterfaces(ie : InterfaceElement<V, G>) {
+        let graph = ie.graph
+        let index = ie.index
+        match(ie.interfaceType) {
+            case INPUT => graph.ReplaceInput(index, v)
+            case OUTPUT => graph.ReplaceOutput(index, v)
+        }
+    }
+    for(ie in HashSet(w.GetInterfacedInputs())) {
+        UpdateInterfaces(ie)
+    }
+    for(ie in HashSet(w.GetInterfacedOutputs())) {
+        UpdateInterfaces(ie)
+    }
     // Make sure the old vertex isn't part of a hypergraph any more
     w.GetOwner().RemoveVertex(w)
     (v, w)
