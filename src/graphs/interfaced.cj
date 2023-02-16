@@ -536,7 +536,7 @@ public class InterfacedHypergraph<V, G>
     public func IsolateTentacles(
         connections : Array<EdgeConnection<V, G>>,
         label : String
-    ) : Unit {
+    ) : (Array<Vertex<V, G>>, Edge<V, G>, InterfacedHypergraph<V, G>) {
         let slicedVertices = map(
             { ec : EdgeConnection<V, G> => SliceTentacle(ec)},
             connections
@@ -564,14 +564,15 @@ public class InterfacedHypergraph<V, G>
             subgraphOutputs,
             label
         )
-        var loop = 0
-        for(vs in slicedVertices) {
-            MergeVertices(
-                newEdge.GetSource(loop).GetVertex(),
-                newEdge.GetTarget(loop).GetVertex(),
-                true
-            )
-            loop++
+        let mergedVertices = Array<Vertex<V, G>>(slicedVertices.size){
+            i : Int64 =>
+                let (primary, secondary) = MergeVertices(
+                    newEdge.GetSource(i).GetVertex(),
+                    newEdge.GetTarget(i).GetVertex(),
+                    true
+                )
+                primary
         }
+        (mergedVertices, newEdge, newGraph)
     }
 }

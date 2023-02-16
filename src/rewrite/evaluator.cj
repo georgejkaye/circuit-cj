@@ -410,9 +410,52 @@ func EliminateInstantFeedback<V, G>(
     sig : Signature<V, G>,
     f : InterfacedHypergraph<V, G>
 ) : Unit where
-    V <: ValueSymbol & Equatable<V>,
+    V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
     G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let feedbackConnections = f.GetSequentialData().feedbackConnections
-    f.IsolateTentacles(Array(feedbackConnections), "PreMealyCore(${f.GetName()})")
+    let feedbackWires = feedbackConnections.size
+    let (feedbackVertices, coreEdge, _) =
+        f.IsolateTentacles(
+            Array(feedbackConnections),
+            "PreMealyCore(${f.GetName()})"
+        )
+    for(i in 0..feedbackWires) {
+        let (left, right) = SplitVertex(feedbackVertices[i])
+        let bot = Edge(
+            GetSignalLabel<V, G>(Array<V>(left.GetWidth()){ i => sig.GetBottom() }),
+            Array<Vertex<V, G>>(),
+            [right],
+            None,
+            f.GetGraph()
+        )
+    }
+    let feedbackOutputs = Array<Vertex<V, G>>(feedbackWires){
+        i : Int64 => coreEdge.GetTarget(i).GetVertex()
+    }
+    let iterations = sig.GetLongestChain(feedbackWires)
+    for(it in 0..iterations) {
+        let copyInputs = Array<Vertex<V, G>>(coreEdge.GetArity()) {
+            i : Int64 =>
+                if(i < feedbackWires) {
+                    feedbackOutputs[i]
+                } else {
+                    f.GetInput(i - feedbackWires).GetVertex()
+                }
+        }
+        let copyOutputs = Array<Vertex<V, G>>(coreEdge.GetCoarity()) {
+            i : Int64 => Vertex(coreEdge.GetTarget(i).GetWidth())
+        }
+        let coreCopy = coreEdge.Clone(
+            copyInputs,
+            copyOutputs,
+            f.GetGraph()
+        )
+        for(i in 0..feedbackWires) {
+            feedbackOutputs[i] = copyOutputs[i]
+        }
+        for(i in 0..f.GetCoarity()) {
+            f.ReplaceOutput(i, copyOutputs[i + feedbackWires])
+        }
+    }
 }
