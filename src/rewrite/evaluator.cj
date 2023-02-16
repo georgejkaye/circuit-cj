@@ -37,10 +37,16 @@ public class Evaluator<V, G>
         this.sig = signature
         // Clone the graph so that the original is not affected
         let clonedF = f.Clone()
-        BurstSequentialGraphs(clonedF)
         this.f = clonedF
+        // Sequential components need to be isolated from the combinational ones
+        BurstSequentialGraphs(clonedF)
+        // Put all state into registers, and bundle combinational logic into
+        // one block
         let (graph, edge, state, stateVertices) =
             ConvertToMealyForm(signature, clonedF)
+        // Eliminate the instant feedback from the Mealy core
+        EliminateInstantFeedback(sig, graph)
+        RewriteCombinational(sig, graph)
         this.combinationalCore = graph
         this.coreEdge = edge
         this.currentState = state
