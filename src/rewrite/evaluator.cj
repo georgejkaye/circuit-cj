@@ -423,7 +423,10 @@ func EliminateInstantFeedback<V, G>(
     for(i in 0..feedbackWires) {
         let (left, right) = SplitVertex(feedbackVertices[i])
         let bot = Edge(
-            GetSignalLabel<V, G>(sig.GetBottom(), i),
+            GetSignalLabel<V, G>(
+                sig.GetBottom(),
+                coreEdge.GetSource(i).GetWidth()
+            ),
             Array<Vertex<V, G>>(),
             [right],
             None,
@@ -434,6 +437,7 @@ func EliminateInstantFeedback<V, G>(
         i : Int64 => coreEdge.GetTarget(i).GetVertex()
     }
     let iterations = sig.GetLongestChain(feedbackWires)
+    let coreEdges = HashSet([coreEdge])
     for(it in 0..iterations) {
         let copyInputs = Array<Vertex<V, G>>(coreEdge.GetArity()) {
             i : Int64 =>
@@ -457,5 +461,9 @@ func EliminateInstantFeedback<V, G>(
         for(i in 0..f.GetCoarity()) {
             f.ReplaceOutput(i, copyOutputs[i + feedbackWires])
         }
+        coreEdges.put(coreCopy)
+    }
+    for(e in coreEdges) {
+        e.BurstSubgraph()
     }
 }
