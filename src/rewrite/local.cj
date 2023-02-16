@@ -146,3 +146,18 @@ public func RewriteCombinational<V, G>(
         revisit: true
     )
 }
+public func RewriteCombinational<V, G>(
+    signature : Signature<V, G>,
+    f : InterfacedHypergraph<V, G>
+) : Unit
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    RewriteCombinational(
+        signature,
+        f,
+        f.GetLeftmostTraversalElements(),
+        f.GetRightmostTraversalElements()
+    )
+}
