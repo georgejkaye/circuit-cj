@@ -502,9 +502,9 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
                 BOTH_DIRECTIONS,
                 0,
                 actionAtVertex,
-                { v => true },
+                { v, e => true },
                 actionAtEdge,
-                { e => true }
+                { e, v => true }
             )
         }
         TraverseGraphFromEnd(childInputs)

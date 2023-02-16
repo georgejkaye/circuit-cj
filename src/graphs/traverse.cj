@@ -64,7 +64,7 @@ public struct TraversalData<V, G>
 }
 func GetDefaultNextVertices<V, G>(
     direction : TraversalDirection,
-    condition : (Vertex<V, G>) -> Bool
+    condition : (Edge<V, G>, Vertex<V, G>) -> Bool
 ) : (Edge<V, G>, TraversalData<V, G>) -> (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)
     where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
@@ -73,7 +73,7 @@ func GetDefaultNextVertices<V, G>(
         func AddValidNextElements(potential : Array<Tentacle<V, G>>) : Unit {
             for(t in potential) {
                 let element = VERTEX(t.vertex)
-                if(condition(t.vertex)){
+                if(condition(e, t.vertex)){
                     nextElements.put(element)
                 }
             }
@@ -92,7 +92,7 @@ func GetDefaultNextVertices<V, G>(
 }
 func GetDefaultNextEdges<V, G>(
     direction : TraversalDirection,
-    condition : (Edge<V, G>) -> Bool
+    condition : (Vertex<V, G>, Edge<V, G>) -> Bool
 ) : (Vertex<V, G>, TraversalData<V, G>) -> (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)
     where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
@@ -100,7 +100,7 @@ func GetDefaultNextEdges<V, G>(
         let nextElements = HashSet<TraversalElement<V, G>>()
         func AddEdgeIfNotVisited(ec : EdgeConnection<V, G>) : Unit {
             let element = EDGE(ec.GetEdge())
-            if(condition(ec.GetEdge())){
+            if(condition(v, ec.GetEdge())){
                 nextElements.put(element)
             }
         }
@@ -166,9 +166,9 @@ public func Traverse<V, G>(
     traversalDirection : TraversalDirection,
     maxDepth : Int64,
     actionAtVertex : (Vertex<V, G>, TraversalData<V, G>) -> Unit,
-    nextVertexCondition : (Vertex<V, G>) -> Bool,
+    nextEdgeCondition : (Vertex<V, G>, Edge<V, G>) -> Bool,
     actionAtEdge : (Edge<V, G>, TraversalData<V, G>) -> Unit,
-    nextEdgeCondition : (Edge<V, G>) -> Bool
+    nextVertexCondition : (Edge<V, G>, Vertex<V, G>) -> Bool
 ) : Unit where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
     let defaultNextVertices = GetDefaultNextVertices<V, G>(traversalDirection, nextVertexCondition)
     let defaultNextEdges = GetDefaultNextEdges<V, G>(traversalDirection, nextEdgeCondition)
@@ -194,18 +194,41 @@ public func Traverse<V, G>(
     traversalDirection : TraversalDirection,
     maxDepth : Int64,
     actionAtVertex : (Vertex<V, G>) -> Unit,
-    nextVertexCondition : (Vertex<V, G>) -> Bool,
+    nextEdgeCondition : (Vertex<V, G>, Edge<V, G>) -> Bool,
     actionAtEdge : (Edge<V, G>) -> Unit,
-    nextEdgeCondition : (Edge<V, G>) -> Bool
+    nextVertexCondition : (Edge<V, G>, Vertex<V, G>) -> Bool
 ) : Unit where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
     Traverse(
         elements,
         traversalDirection,
         maxDepth,
         ExtendFunctionArgumentsWithTraversalData<Vertex<V, G>, Unit, V, G>(actionAtVertex),
-        nextVertexCondition,
+        nextEdgeCondition,
         ExtendFunctionArgumentsWithTraversalData<Edge<V, G>, Unit, V, G>(actionAtEdge),
-        nextEdgeCondition
+        nextVertexCondition
+    )
+}
+public func Traverse<V, G>(
+    element : TraversalElement<V, G>,
+    traversalDirection : TraversalDirection,
+    maxDepth : Int64,
+    actionAtVertex : (Vertex<V, G>) -> Unit,
+    actionAtEdge : (Edge<V, G>) -> Unit,
+    nextVertexCondition!: (Edge<V, G>, Vertex<V, G>) -> Bool = { e, v => true },
+    nextEdgeCondition!: (Vertex<V, G>, Edge<V, G>) -> Bool = { v, e => true }
+) : Unit
+    where
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    Traverse<V, G>(
+        HashSet([element]),
+        traversalDirection,
+        maxDepth,
+        actionAtVertex,
+        nextEdgeCondition,
+        actionAtEdge,
+        nextVertexCondition
     )
 }
 public func TraverseAll<V, G>(
@@ -213,19 +236,19 @@ public func TraverseAll<V, G>(
     traversalDirection : TraversalDirection,
     maxDepth : Int64,
     actionAtVertex : (Vertex<V, G>, TraversalData<V, G>) -> Unit,
-    nextVertexCondition : (Vertex<V, G>) -> Bool,
+    nextEdgeCondition : (Vertex<V, G>, Edge<V, G>) -> Bool,
     actionAtEdge : (Edge<V, G>, TraversalData<V, G>) -> Unit,
-    nextEdgeCondition : (Edge<V, G>) -> Bool
+    nextVertexCondition : (Edge<V, G>, Vertex<V, G>) -> Bool
 ) : Unit where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
     let startingElements = f.GetTraversalElements(traversalDirection)
-    Traverse(
+    Traverse<V, G>(
         startingElements,
         traversalDirection,
         maxDepth,
         actionAtVertex,
-        nextVertexCondition,
+        nextEdgeCondition,
         actionAtEdge,
-        nextEdgeCondition
+        nextVertexCondition
     )
 }
 public func TraverseAll<V, G>(
@@ -234,14 +257,18 @@ public func TraverseAll<V, G>(
     maxDepth : Int64,
     actionAtVertex : (Vertex<V, G>) -> Unit,
     actionAtEdge : (Edge<V, G>) -> Unit
-) : Unit where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
-    TraverseAll(
+) : Unit
+    where
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    TraverseAll<V, G>(
         f,
         traversalDirection,
         maxDepth,
         ExtendFunctionArgumentsWithTraversalData<Vertex<V, G>, Unit, V, G>(actionAtVertex),
-        { v : Vertex<V, G> => true },
+        { v : Vertex<V, G>, e : Edge<V, G> => true },
         ExtendFunctionArgumentsWithTraversalData<Edge<V, G>, Unit, V, G>(actionAtEdge),
-        { e : Edge<V, G> => true }
+        { e : Edge<V, G>, v : Vertex<V, G> => true }
     )
 }
