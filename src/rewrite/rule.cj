@@ -240,7 +240,7 @@ func GetJoinRule<V, G>(signature : Signature<V, G>)
                     // Compute the result of the operation
                     let argLHS = e.GetSource(0).vertex.GetInEdge().getOrThrow().edge
                     let argRHS = e.GetSource(1).vertex.GetInEdge().getOrThrow().edge
-                    let result = signature.JoinPowers(argLHS.GetLabel().GetValueArray(), argRHS.GetLabel().GetValueArray())
+                    let result = signature.Join(argLHS.GetLabel().GetValueArray(), argRHS.GetLabel().GetValueArray())
                     Some(ComputeEdge(signature, f, e, [argLHS, argRHS], [result]))
                 }
         }
