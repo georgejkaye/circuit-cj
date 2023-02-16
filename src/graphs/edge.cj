@@ -331,11 +331,11 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
     public func hashCode() : Int64 {
         this.id
     }
-    public func NextEdgeLeft(i : Int64) : Edge<V, G> {
-        let t = this.GetSource(i)
-        let v = t.GetVertex()
-        let ec = v.GetInEdge().getOrThrow()
-        ec.GetEdge()
+    public func NextEdgeLeft(i : Int64) : EdgeConnection<V, G> {
+        this.GetSource(i).GetVertex().GetInEdge().getOrThrow()
+    }
+    public func NextEdgesRight(i : Int64) : HashSet<EdgeConnection<V, G>> {
+        this.GetTarget(i).GetVertex().GetOutEdges()
     }
     public func Clone(
         sources : Array<Vertex<V, G>>,
