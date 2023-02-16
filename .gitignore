@@ -1,8 +1,14 @@
+# Local development
 .vscode/
 .gdb_history
 
-// Output files
-import.conf
+# Main test file
+src/main.cj
+
+# cpm
+module-resolve.json
+
+# Output files
 bin/
 build/
 circuits/
@@ -13,6 +19,4 @@ dot/
 *.cjo
 *.o
 *.cj.o
-*.txt
-module-resolve.json
 *.dep
