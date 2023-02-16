@@ -423,7 +423,7 @@ func EliminateInstantFeedback<V, G>(
     for(i in 0..feedbackWires) {
         let (left, right) = SplitVertex(feedbackVertices[i])
         let bot = Edge(
-            GetSignalLabel<V, G>(Array<V>(left.GetWidth()){ i => sig.GetBottom() }),
+            GetSignalLabel<V, G>(sig.GetBottom(), i),
             Array<Vertex<V, G>>(),
             [right],
             None,

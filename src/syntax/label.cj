@@ -269,7 +269,15 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
         }
     }
 }
-
+/**
+ * Given a value, get the label for a given number of this value in parallel.
+ * If there is only one value, this will be a VALUE label; otherwise it will be
+ * a SIGNAL.
+ *
+ * @param v The value
+ * @param w How many values to have in parallel
+ * @return The corresponding label for these values
+ */
 public func GetSignalLabel<V, G>(v : V, w : Int64) : Label<V, G>
     where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
@@ -280,7 +288,14 @@ public func GetSignalLabel<V, G>(v : V, w : Int64) : Label<V, G>
         SIGNAL(signal)
     }
 }
-
+/**
+ * Given an array of values, get the corresponding label. If the list has one
+ * element, this will be a VALUE label; otherwise it will be a SIGNAL.
+ *
+ *
+ * @param values
+ * @return The corresponding label for these values
+ */
 public func GetSignalLabel<V, G>(values : Array<V>) : Label<V, G>
     where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
