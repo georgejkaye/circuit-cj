@@ -205,8 +205,10 @@ func GetStubRule<V, G>() : RewriteRule<V, G>
                     match(v.GetInEdge()){
                         case Some(ec) => nextEdges.put(EDGE(ec.GetEdge()))
                         case None =>
-                            f.RemoveVertex(v)
-                            removedEdges.put(VERTEX(v))
+                            if(v.GetInterfacedInputs().size == 0){
+                                f.RemoveVertex(v)
+                                removedEdges.put(VERTEX(v))
+                            }
                     }
                 }
                 // We can remove this edge now, but not its sources as these will be used
