@@ -7,7 +7,7 @@
 
 package assertions
 
-import prelude.map
+import utils.map
 
 public enum ParamType {
     | Width

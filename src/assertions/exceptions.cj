@@ -7,7 +7,7 @@
 
 package assertions
 
-import prelude.*
+import utils.*
 
 /**
  * Print an error message, prepending it with [ERROR].

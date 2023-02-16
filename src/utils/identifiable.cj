@@ -1,11 +1,11 @@
 /**
- * prelude/element.cj
+ * utils/element.cj
  *
  * @author George Kaye
  * @since 0.2
  */
 
-package prelude
+package utils
 
 /**
  * Global ids for objects

@@ -12,7 +12,7 @@ package rewrite
 from std import collection.ArrayList
 
 import components.*
-import prelude.*
+import utils.*
 
 public enum EntryPoint {
     | VALUE

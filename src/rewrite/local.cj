@@ -9,7 +9,7 @@
 
 package rewrite
 
-import prelude.map
+import utils.map
 
 from std import collection.HashMap
 from std import collection.HashSet

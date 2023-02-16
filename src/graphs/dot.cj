@@ -11,7 +11,7 @@ package graphs
 
 import debug.*
 import settings.*
-import prelude.*
+import utils.*
 
 from std import fs.*
 

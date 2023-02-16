@@ -10,7 +10,7 @@
 
 package syntax
 
-import prelude.*
+import utils.*
 
 from std import collection.ArrayList
 

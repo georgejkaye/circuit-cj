@@ -9,7 +9,7 @@
 
 package components
 
-import prelude.*
+import utils.*
 
 public interface SubcircuitBuilder<V, G> where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
     func MakeSubcircuit(

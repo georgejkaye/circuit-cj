@@ -10,7 +10,7 @@
 
 package examples.gate
 
-import prelude.*
+import utils.*
 
 /**
  * A sorting comparator black box component

@@ -3,7 +3,7 @@
  *
  * This file contains some helper functions used within the library
  */
-package prelude
+package utils
 
 from std import collection.ArrayList
 from std import math.*
