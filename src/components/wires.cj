@@ -268,7 +268,11 @@ public func Split<V, G, T>(w : T) : Array<Wire<V, G>>
         G <: PrimitiveSymbol<V> & Equatable<G>,
         T <: ContainsWire<V, G> & ToString
 {
-    Split(w, Array<Int64>(w.GetWidth(), { i : Int64 => 1}))
+    if(w.GetWidth() == 1) {
+        [w.GetWire()]
+    } else {
+        Split(w, Array<Int64>(w.GetWidth(), { i : Int64 => 1}))
+    }
 }
 /**
  * Combine an array of wires into one wire with width the sum of the original wires.
@@ -281,12 +285,17 @@ public func Combine<V, G, T>(ws : Array<T>) : Wire<V, G>
         G <: PrimitiveSymbol<V> & Equatable<G>,
         T <: ContainsWire<V, G> & ToString
 {
-    let widths = map({ t : T => t.GetWidth() }, ws)
-    UseEdgeWithNewOutputs(
-        BUNDLER(widths, [Sum(widths)]),
-        ws,
-        None
-    )[0]
+    AssertArrayHasMinimumLength(ws, 1)
+    if(ws.size == 1) {
+        ws[0].GetWire()
+    } else {
+        let widths = map({ t : T => t.GetWidth() }, ws)
+        UseEdgeWithNewOutputs(
+            BUNDLER(widths, [Sum(widths)]),
+            ws,
+            None
+        )[0]
+    }
 }
 /**
  * Combine two wires into one wire with width the sum of the original two wires.
