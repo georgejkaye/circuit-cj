@@ -147,6 +147,16 @@ func ApplyPreconditions<V, G>(e : Edge<V, G>, f : InterfacedHypergraph<V, G>) : 
     }
     return true
 }
+func GetArgs<V, G>(e : Edge<V, G>) : Array<Edge<V, G>>
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    map(
+        { t : Tentacle<V, G> => t.vertex.GetInEdge().getOrThrow().edge },
+        e.GetSources()
+    )
+}
 func GetApplyRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
     where
         V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
@@ -306,7 +316,6 @@ func RemoveBinaryArgumentAndPassthrough<V, G>(
     nextEdges.put(EDGE(source.GetInEdge().getOrThrow().edge))
     (nextEdges, removedEdges)
 }
-
 func GetJoinUnitRule<V, G>(signature : Signature<V, G>, i : Int64, str : String)
     where
         V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
@@ -410,11 +419,11 @@ func GetCompositeRule<V, G>(signature : Signature<V, G>, all : Bool)
         "composite",
         SUBGRAPH,
         { e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
-            if(!ApplyPreconditions(e, f)){
-                None
-            } else {
+            // if(!ApplyPreconditions(e, f)){
+            //     None
+            // } else {
                 Some(ExpandSubgraphRewrite(e, f))
-            }
+            // }
         }
     )
 }
@@ -515,6 +524,30 @@ func GetMergeBundlesRule<V, G>(signature : Signature<V, G>)
         }
     )
 }
+func GetBottomRule<V, G>(signature : Signature<V, G>)
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    RewriteRule<V, G>(
+        "bottom",
+        ANY,
+        { e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
+            if(!ArgumentsAreAllValue(signature.GetBottom(), e)){
+                None
+            } else {
+                let args = GetArgs(e)
+                let bottoms = Array<Array<V>>(e.GetCoarity()){
+                    i : Int64 =>
+                        Array<V>(e.GetTarget(i).GetWidth()){
+                            j : Int64 => signature.GetBottom()
+                        }
+                }
+                ComputeEdge(signature, f, e, args, bottoms)
+            }
+        }
+    )
+}
 func GetRules<V, G>(signature : Signature<V, G>, now : Bool) : ArrayList<RewriteRule<V, G>>
     where
         V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
@@ -525,6 +558,7 @@ func GetRules<V, G>(signature : Signature<V, G>, now : Bool) : ArrayList<Rewrite
         rules.append(GetForkRule<V, G>())
         rules.append(GetStubRule<V, G>())
         rules.append(GetBundleRule<V, G>(signature))
+        rules.append(GetBottomRule<V, G>(signature))
         rules.append(GetApplyRule<V, G>(signature))
         rules.append(GetJoinRule<V, G>(signature))
         rules.append(GetEnhancedRule<V, G>(signature))
