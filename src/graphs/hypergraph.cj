@@ -496,8 +496,10 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         let parentInputs = map({ vs : (Vertex<V, G>, Vertex<V, G>) => vs[0] },  slicedInputs)
         let parentOutputs = map({ vs : (Vertex<V, G>, Vertex<V, G>) => vs[1] }, slicedOutputs)
         let subgraph = Hypergraph<V, G>()
-        let actionAtVertex = {v : Vertex<V, G> => subgraph.AddVertex(v) }
-        let actionAtEdge = {e : Edge<V, G> =>
+        let actionAtVertex = { v : Vertex<V, G> =>
+            subgraph.AddVertex(v)
+        }
+        let actionAtEdge = { e : Edge<V, G> =>
             subgraph.AddEdge(e)
         }
         func TraverseGraphFromEnd(starting : Array<Vertex<V, G>>) : Unit {
