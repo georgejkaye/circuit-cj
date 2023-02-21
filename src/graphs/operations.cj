@@ -19,8 +19,16 @@ package graphs
  * @param w The secondary vertex that will be merged
  * @return A pair (new,old) of the merged vertex and the old vertex
  */
-public func MergeVertices<T, U, V, G>(t : T, u : U, feedback: Bool) : (Vertex<V, G>, Vertex<V, G>)
-    where T <: ContainsVertex<V, G>, U <: ContainsVertex<V, G>, V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+public func MergeVertices<T, U, V, G>(
+    t : T,
+    u : U,
+    feedback: Bool
+) : (Vertex<V, G>, Vertex<V, G>)
+    where
+        T <: ContainsVertex<V, G>,
+        U <: ContainsVertex<V, G>,
+        V <: ValueSymbol & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertAtMostOneInEdge(t, u)
     let v = t.GetVertex()
@@ -76,7 +84,7 @@ public func MergeVertices<T, V, G>(vs : Array<T>) : Vertex<V, G>
     retainedVertex
 }
 public func SplitVertex<V, G>(v : Vertex<V, G>) : (Vertex<V, G>, Vertex<V, G>)
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let leftVertex = v
     let rightVertex = Vertex<V, G>(v.GetWidth())
@@ -94,7 +102,7 @@ public func SplitVertex<V, G>(v : Vertex<V, G>) : (Vertex<V, G>, Vertex<V, G>)
 public func SliceTentacle<V, G>(
     ec : EdgeConnection<V, G>
 ) : (Vertex<V, G>, Vertex<V, G>)
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let existingVertex = ec.GetVertex()
     let slicedVertex = Vertex<V, G>(existingVertex.GetWidth())
@@ -121,7 +129,7 @@ func CloneOrRetain<V, G>(
     f : InterfacedHypergraph<V, G>,
     clone : Bool
 ) : (Hypergraph<V, G>, Array<InterfaceVertex<V, G>>, Array<InterfaceVertex<V, G>>)
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     if(clone) {
         let (newGraph, newInputs, newOutputs, _, _) = f.CloneGraph()
@@ -143,7 +151,7 @@ func Seq<V, G>(
     g : InterfacedHypergraph<V, G>,
     clone : Bool
 ) : InterfacedHypergraph<V, G>
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertCompatibleInputOutput(f, g)
     // If necessary, clone the graphs
@@ -177,7 +185,7 @@ func Seq<V, G>(
  * @return The composed hypergraph m->p
  */
 public func Seq<V, G>(f : InterfacedHypergraph<V, G>, g : InterfacedHypergraph<V, G>) : InterfacedHypergraph<V, G>
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     Seq(f, g, true)
 }
@@ -191,7 +199,7 @@ public func Seq<V, G>(f : InterfacedHypergraph<V, G>, g : InterfacedHypergraph<V
  * @return The result of the parallel composition
  */
 func Par<V, G>(f : InterfacedHypergraph<V, G>, g : InterfacedHypergraph<V, G>, clone : Bool) : InterfacedHypergraph<V, G>
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     // If necessary, clone the graphs
     let (newF, newFInputs, newFOutputs) = CloneOrRetain(f, clone)
@@ -234,7 +242,7 @@ func Par<V, G>(f : InterfacedHypergraph<V, G>, g : InterfacedHypergraph<V, G>, c
  * @return The result of the parallel composition
  */
 public func Par<V, G>(f : InterfacedHypergraph<V, G>, g : InterfacedHypergraph<V, G>) : InterfacedHypergraph<V, G>
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     Par(f, g, true)
 }

@@ -11,7 +11,7 @@ package syntax
 
 func AssertSignalsSameWidth<V>(
     vs : Array<Signal<V>>
-) : Int64 where V <: ValueSymbol & Equatable<V> {
+) : Int64 where V <: ValueSymbol & Equatable<V> & LessOrEqual<V> {
     AssertArrayAllSameParameter<Signal<V>, Int64>(
         vs,
         { v : Signal<V> => v.GetWidth() },
@@ -21,7 +21,7 @@ func AssertSignalsSameWidth<V>(
 
 func AssertPortsSameWidth<V>(
     array : Array<Port<V>>
-) : Unit where V <: ValueSymbol & Equatable<V> {
+) : Unit where V <: ValueSymbol & Equatable<V> & LessOrEqual<V> {
     AssertArrayAllSameParameter(
         array,
         { p : Port<V> => p.GetWidth() },
@@ -30,7 +30,7 @@ func AssertPortsSameWidth<V>(
 }
 
 class CannotRipplePrimitiveException<V, G> <: Exception
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public init(primitive : G) {
         ErrorMsg(
@@ -42,7 +42,7 @@ class CannotRipplePrimitiveException<V, G> <: Exception
 }
 
 class CannotBitwiseMapPrimitiveException<V, G> <: Exception
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public init(primitive : G) {
         ErrorMsg(
@@ -57,7 +57,7 @@ func AssertTableMonotone<V>(
     lattice : FiniteLattice<V>,
     arity : Int64,
     table : (Array<V>) -> Array<V>
-) : Unit where V <: ValueSymbol & Equatable<V> & LessOrEqual<V> {
+) : Unit where V <: ValueSymbol & Equatable<V> & LessOrEqual<V> & LessOrEqual<V> {
     let inputs = lattice.EnumeratePowers(arity)
     for(input1 in inputs) {
         for(input2 in inputs) {

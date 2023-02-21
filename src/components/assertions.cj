@@ -24,22 +24,22 @@ public func AssertEnoughBits(current : Int64, desired : Int64) {
     AssertAtLeast(current, desired)
 }
 func AssertWireHasNoInEdge<V, G>(w : Wire<V, G>)
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertVertexHasNoInEdge(w.GetVertex())
 }
 func AssertNonEmpty<V, G>(ws : Array<Wire<V, G>>) : Unit
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertNonEmpty(ws, "wires")
 }
 func AssertSignalArrayNonEmpty<V>(signals : Array<Signal<V>>) : Unit
-    where V <: ValueSymbol & Equatable<V>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>
 {
     AssertNonEmpty(signals, "signals")
 }
 func AssertSignalsAllSameWidth<V>(signals : Array<Signal<V>>) : Int64
-    where V <: ValueSymbol & Equatable<V>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>
 {
     AssertArrayAllSameParameter(signals, { s : Signal<V> => s.GetWidth() }, Width)
 }

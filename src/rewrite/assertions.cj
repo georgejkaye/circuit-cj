@@ -13,7 +13,7 @@ import assertions.*
 import graphs.*
 
 public func AssertNoNonDelayGuardedFeedback<V, G>(f : InterfacedHypergraph<V, G>) : Unit
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertEmpty(f.GetSequentialData().feedbackConnections, "non-delay-guarded feedback")
 }

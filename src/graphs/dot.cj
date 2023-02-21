@@ -351,7 +351,7 @@ public func ConvertStringIndentListToString(list : ArrayList<DotLine>) : String 
  * Interface to extend signatures with ability to draw dot graphs
  */
 public interface DotDrawer<V, G>
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     func WriteDotToFile(f : InterfacedHypergraph<V, G>, depth : Int64, file : String) : Unit
 }

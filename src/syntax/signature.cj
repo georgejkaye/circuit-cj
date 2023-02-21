@@ -11,12 +11,12 @@ public interface ValueSymbol <: Hashable & HasName & ToString {}
 
 public interface PrimitiveSymbol<V>
     <: Specifiable<V> & HasName & ToString & Hashable
-    where V <: ValueSymbol & Equatable<V> {
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V> {
     func GetEnhancedName(n: Int64, w: Int64): String
 }
 
 public class Signature<V, G> <: HasName & ToString
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public let specificationImplementation : HashMap<Specification<V>, ((Array<Array<V>>) -> Array<V>)>
         = HashMap<Specification<V>, ((Array<Array<V>>) -> Array<V>)>()

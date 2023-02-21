@@ -26,7 +26,7 @@ func CheckSpecCompatibility<V, G>(
     inputs: Array<Tentacle<V, G>>,
     outputs: Array<Tentacle<V, G>>
 ) : Unit
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     func CheckArrayCompatibility(
         desired : Array<Port<V>>,
@@ -44,13 +44,13 @@ func CheckSpecCompatibility<V, G>(
     CheckArrayCompatibility(spec.GetOutputPorts(), outputs)
 }
 public interface HasTentacle<V, G> <: ContainsVertex<V, G>
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     func IsFeedback() : Bool
     func IsDelay() : Bool
 }
 public struct Tentacle<V, G> <: ToString & HasWidth & HasTentacle<V, G>
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public Tentacle(
         public let vertex : Vertex<V, G>,
@@ -82,7 +82,7 @@ public struct Tentacle<V, G> <: ToString & HasWidth & HasTentacle<V, G>
         this.delay
     }
 }
-public enum TentacleOrigin<V, G> where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
+public enum TentacleOrigin<V, G> where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
     | FROM_EDGE(EdgeConnection<V, G>)
     | FROM_VERTEX(Vertex<V, G>)
 }
@@ -107,7 +107,9 @@ extend TentacleOrigin<V, G> <: HasWidth & ToString {
  * an optional subgraph representing the internal construction.
  */
 public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable & ToString & Hashable
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let id : Int64 = GetNextId()
     public Edge(

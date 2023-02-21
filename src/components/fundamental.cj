@@ -11,7 +11,7 @@
 package components
 
 public interface FundamentalBuilder<V, G>
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     func UseValue(v : V) : Wire<V, G>
     func MakeSignal(signal : Signal<V>) : InterfacedHypergraph<V, G>

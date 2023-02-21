@@ -13,7 +13,7 @@ package syntax
 import assertions.*
 
 public struct Signal<V> <: ToString & HasName & Specifiable<V> & HasWidth & Equatable<Signal<V>>
-    where V <: ValueSymbol & Equatable<V> {
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V> {
     public Signal(
         public let values : Array<V>
     ){
@@ -27,6 +27,9 @@ public struct Signal<V> <: ToString & HasName & Specifiable<V> & HasWidth & Equa
     }
     public func GetName() : String {
         fold_right({acc : String, v : V => "${acc}${v}"}, "", values)
+    }
+    public func GetValues() : Array<V> {
+        this.values
     }
     public func toString() : String {
         "${values}"
@@ -62,8 +65,16 @@ public struct Signal<V> <: ToString & HasName & Specifiable<V> & HasWidth & Equa
     }
 }
 
-public func GetSignal<V>(v : V, w : Int64) : Signal<V> where V <: ValueSymbol & Equatable<V> {
+public func GetSignal<V>(v : V, w : Int64) : Signal<V>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>
+{
     Signal(Array<V>(w){ i : Int64 => v })
+}
+
+public func GetSignalsString<V>(vs : Array<Signal<V>>) : String
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>
+{
+    printArray(vs, "(", ")", ",", { s => s.GetName() }, false)
 }
 
 public enum WaveformType {
@@ -87,7 +98,7 @@ extend WaveformType <: Hashable & Equatable<WaveformType> {
     }
 }
 public func GetWaveformString<V>(signals : Array<Signal<V>>) : String
-    where V <: ValueSymbol & Equatable<V>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>
 {
     printArray(signals, "", "", " :: ", { s : Signal<V> => s.GetName() }, false)
 }

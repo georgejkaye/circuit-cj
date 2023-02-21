@@ -23,7 +23,7 @@ public interface HasOptionalName {
     func GetName() : Option<String>
 }
 public interface Socket <: HasWidth & HasOptionalName & ToString {}
-public interface Specifiable<V> where V <: ValueSymbol & Equatable<V> {
+public interface Specifiable<V> where V <: ValueSymbol & Equatable<V> & LessOrEqual<V> {
     func GetInputPorts() : Array<Port<V>>
     func GetInputPort(i : Int64) : Port<V> {
         this.GetInputPorts()[i]
@@ -47,7 +47,7 @@ extend Int64 <: HasWidth {
 /**
  * A port has a width and an optional name
  */
-public class Port<V> <: ToString & Equatable<Port<V>> & Socket where V <: ValueSymbol & Equatable<V> {
+public class Port<V> <: ToString & Equatable<Port<V>> & Socket where V <: ValueSymbol & Equatable<V> & LessOrEqual<V> {
     public Port(
         public let width : Int64,
         public let name!: Option<String> = None

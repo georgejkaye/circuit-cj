@@ -36,7 +36,7 @@ public func numToUppercaseLetter(n : Int64) : String {
  */
 public class Specification<V>
     <: Specifiable<V> & HasName & Equatable<Specification<V>> & Hashable
-    where V <: ValueSymbol & Equatable<V>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>
 {
     static var nextId = 0
     public let id : Int64

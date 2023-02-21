@@ -23,7 +23,7 @@ public enum EntryPoint {
     | ANY
     | BUNDLE
 }
-public struct RewriteRule<V, G> where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
+public struct RewriteRule<V, G> where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
     public let name : String
     public let entryPoint : EntryPoint
     public let rewrite : (Edge<V, G>, InterfacedHypergraph<V, G>)
@@ -65,7 +65,7 @@ func ReplaceTargets<V, G>(
     oldTargets : Array<Tentacle<V, G>>,
     newTargets : Array<Vertex<V, G>>,
     f : InterfacedHypergraph<V, G>
-) : Unit where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
+) : Unit where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
     AssertArraysSameLength(oldTargets, newTargets)
     for (i in 0..oldTargets.size){
         let oldTarget = oldTargets[i]
@@ -85,7 +85,7 @@ func ReplaceTargets<V, G>(
     }
 }
 func GetForkRule<V, G>() : RewriteRule<V, G>
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     RewriteRule<V, G>(
         "fork",
@@ -124,7 +124,7 @@ func GetForkRule<V, G>() : RewriteRule<V, G>
     )
 }
 func ApplyPreconditions<V, G>(e : Edge<V, G>, f : InterfacedHypergraph<V, G>) : Bool
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let sources = e.GetSources()
     // Check that none of the values are forked
@@ -180,7 +180,7 @@ func GetApplyRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
 }
 
 func GetStubRule<V, G>() : RewriteRule<V, G>
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     RewriteRule<V, G>(
         "stub",
@@ -249,17 +249,37 @@ func GetJoinRule<V, G>(signature : Signature<V, G>)
     )
 }
 func ArgumentIsAllValue<V, G>(v : V, e : Edge<V, G>, i : Int64) : Bool
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    let label = e.GetSource(i).vertex.GetInEdge().getOrThrow().edge.GetLabel()
-    label.IsAllValue(v)
+    match(e.GetSource(i).vertex.GetInEdge()){
+        case None => false
+        case Some(e) => e.GetEdge().GetLabel().IsAllValue(v)
+    }
+}
+func ArgumentsAreAllValue<V, G>(v : V, e : Edge<V, G>) : Bool
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    if(e.GetArity() > 0) {
+        for(i in 0..e.GetArity()) {
+            if(!ArgumentIsAllValue(v, e, i)) {
+                return false
+            }
+        }
+        true
+    } else {
+        false
+    }
 }
 func RemoveBinaryArgumentAndPassthrough<V, G>(
     e : Edge<V, G>,
     i : Int64,
     f : InterfacedHypergraph<V, G>
 ) : (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let arg = e.GetSource(i).vertex.GetInEdge().getOrThrow().edge
     let otherIndex = if(i == 0){
@@ -313,7 +333,7 @@ func GetJoinUnitLeftRule<V, G>(signature : Signature<V, G>)
     GetJoinUnitRule(signature, 0, "l")
 }
 func GetJoinUnitRightRule<V, G>(signature : Signature<V, G>)
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V> & LessOrEqual<V>,
     G <: PrimitiveSymbol<V> & Equatable<G>
 {
     GetJoinUnitRule(signature, 1, "r")

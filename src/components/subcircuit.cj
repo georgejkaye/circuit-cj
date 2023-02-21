@@ -11,7 +11,7 @@ package components
 
 import utils.*
 
-public interface SubcircuitBuilder<V, G> where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
+public interface SubcircuitBuilder<V, G> where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
     func MakeSubcircuit(
         inputs: Array<InterfaceWire<V, G>>,
         outputs : Array<InterfaceWire<V, G>>,

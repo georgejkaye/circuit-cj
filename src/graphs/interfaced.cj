@@ -12,7 +12,7 @@ package graphs
 public class InterfaceVertex<V, G>
     <: Socket & HasTentacle<V, G>
     where
-        V <: ValueSymbol & Equatable<V>,
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public InterfaceVertex(
@@ -58,7 +58,7 @@ public class InterfaceVertex<V, G>
     }
 }
 func AddToInterfaceMap<V, G>(v : Vertex<V, G>, i : Int64, interfaceMap : HashMap<Vertex<V, G>, HashSet<Int64>>) : Unit
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     match(interfaceMap.get(v)) {
         case None =>
@@ -74,7 +74,9 @@ func AddToInterfaceMap<V, G>(v : Vertex<V, G>, i : Int64, interfaceMap : HashMap
  */
 public class InterfacedHypergraph<V, G>
     <: Hashable & Identifiable & ToString & Specifiable<V> & Equatable<InterfacedHypergraph<V, G>> & HasName
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let uniqueId : Int64 = GetNextId()
     // The hypergraph being interfaced

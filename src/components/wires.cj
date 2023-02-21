@@ -18,7 +18,9 @@ import syntax.*
  * A wire has an id and a mutable vertex
  */
 public class Wire<V, G> <: Identifiable & ToString & ContainsVertex<V, G> & HasWidth
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let id : Int64 = GetNextId()
     var vertex : Vertex<V, G>
@@ -46,7 +48,9 @@ public class Wire<V, G> <: Identifiable & ToString & ContainsVertex<V, G> & HasW
     }
 }
 public interface ContainsWire<V, G> <: HasWidth & ContainsVertex<V, G>
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     func GetWire() : Wire<V, G>
 }
@@ -57,7 +61,9 @@ extend Wire<V, G> <: ContainsWire<V, G> {
 }
 
 public interface WireBuilder<V, G>
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     func UseWire(width : Int64) : Wire<V, G>
     func UseWires(width : Int64, number : Int64) : Array<Wire<V, G>>
@@ -98,7 +104,7 @@ extend Signature<V, G> <: WireBuilder<V, G> {
  * used to specify the names of interface ports on a subcircuit
  */
 public class InterfaceWire<V, G> <: ContainsWire<V, G> & ToString & ContainsVertex<V, G> & Socket
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public InterfaceWire(
         let wire : Wire<V, G>,
@@ -147,7 +153,7 @@ public func NameWires<V, G>(
     wires : Array<Wire<V, G>>,
     names : Array<String>
 ) : Array<InterfaceWire<V, G>>
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertArraysSameLength(wires, names)
     map2({ w : Wire<V, G>, name : String => InterfaceWire(w, name) }, wires, names)
@@ -162,7 +168,7 @@ public func NameWires<V, G>(
     wires : Array<Wire<V, G>>,
     f : (Int64) -> String
 ) : Array<InterfaceWire<V, G>>
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     Array<InterfaceWire<V, G>>(wires.size, { i : Int64 => InterfaceWire(wires[i], f(i)) })
 }
@@ -180,7 +186,7 @@ func UseEdge<V, G>(
     targets : Array<Vertex<V, G>>,
     subgraph : Option<InterfacedHypergraph<V, G>>
 ) : Array<Wire<V, G>>
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let edge = Edge(label, sources, targets, subgraph, None<Hypergraph<V, G>>)
     map({ t => Wire(t.GetVertex()) }, edge.GetTargets())
@@ -214,7 +220,7 @@ public func UseEdgeWithNewOutputs<V, G, T>(
  * @return A tuple (merged vertex, removed vertex)
  */
 public func MergeWires<V, G>(v : Wire<V, G>, w : Wire<V, G>, feedback: Bool) : Unit
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let (retainedVertex, discardedVertex) = MergeVertices(v.GetVertex(), w.GetVertex(), feedback)
     w.SetVertex(retainedVertex)

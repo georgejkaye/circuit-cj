@@ -21,7 +21,7 @@ let omega = "\u{03C9}"
 /**
  * Enum for the different types of generators
  */
-public enum Label<V, G> where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
+public enum Label<V, G> where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
     | VALUE(V)                                      // A basic value 0 -> 1
     | SIGNAL(Signal<V>)                             // A collection of values 0 -> n
     | REGISTER(Signal<V>)                           // A join of a signal and a delay
@@ -279,7 +279,7 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
  * @return The corresponding label for these values
  */
 public func GetSignalLabel<V, G>(v : V, w : Int64) : Label<V, G>
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     if(w == 1) {
         VALUE(v)
@@ -297,7 +297,7 @@ public func GetSignalLabel<V, G>(v : V, w : Int64) : Label<V, G>
  * @return The corresponding label for these values
  */
 public func GetSignalLabel<V, G>(values : Array<V>) : Label<V, G>
-    where V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     if(values.size == 1) {
         VALUE(values[0])
