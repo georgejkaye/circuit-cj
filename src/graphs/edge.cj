@@ -167,6 +167,27 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
             }
         )
     }
+    public init(
+        name : String,
+        sources : Array<Vertex<V, G>>,
+        targets : Array<Vertex<V, G>>,
+        subgraph : Option<InterfacedHypergraph<V, G>>,
+        owner : Option<Hypergraph<V, G>>
+    ){
+        this(
+            COMPOSITE(
+                Specification(
+                    name,
+                    map({ v => Port<V>(v.GetWidth(), "")}, sources),
+                    map({ v => Port<V>(v.GetWidth(), "")}, targets)
+                )
+            ),
+            sources,
+            targets,
+            subgraph,
+            owner
+        )
+    }
     public func GetId() : Int64 {
         this.id
     }
@@ -269,6 +290,14 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
             case None => (this.GetSources(), this.GetTargets())
             case Some(f) =>
                 let mergeMap = HashMap<Vertex<V, G>, Vertex<V, G>>()
+                this.GetOwner().RemoveEdge(this)
+                for(v in f.GetInputs()) {
+                    v.GetVertex().RemoveAsInput(f)
+                }
+                for(v in f.GetOutputs()) {
+                    v.GetVertex().RemoveAsOutput(f)
+                }
+                this.GetOwner().IncludeHypergraph(f.GetGraph())
                 func MergeInterfaces(
                     parentVertices : Array<Tentacle<V, G>>,
                     childVertices : Array<InterfaceVertex<V, G>>
@@ -281,11 +310,11 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
                             case Some(v) => v
                             case None => originalChildVertex
                         }
-                        let (retainedVertex, oldVertex) = MergeVertices(parent, actualChildVertex, parent.feedback)
+                        let (retainedVertex, oldVertex) =
+                            MergeVertices(parentVertex, actualChildVertex, parent.feedback)
                         mergeMap.put(oldVertex, retainedVertex)
                     }
                 }
-                this.owner.RemoveEdge(this)
                 for(t in this.GetSources()) {
                     t.GetVertex().RemoveOutEdge(this)
                 }
@@ -355,6 +384,15 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
             sources,
             targets,
             clonedSubgraph,
+            owner
+        )
+    }
+    public func Clone(
+        owner : Hypergraph<V, G>
+    ) : Edge<V, G> {
+        Clone(
+            map({ t => Vertex(t.GetWidth()) }, this.GetSources()),
+            map({ t => Vertex(t.GetWidth()) }, this.GetTargets()),
             owner
         )
     }
