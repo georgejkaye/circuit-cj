@@ -22,6 +22,7 @@ public enum EntryPoint {
     | SUBGRAPH
     | ANY
     | BUNDLE
+    | BLACKBOX
 }
 public struct RewriteRule<V, G> where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
     public let name : String
@@ -48,6 +49,7 @@ public struct RewriteRule<V, G> where V <: ValueSymbol & Equatable<V> & LessOrEq
             case ENHANCED => label.IsEnhanced()
             case SUBGRAPH => label.IsComposite()
             case BUNDLE => label.IsBundler()
+            case BLACKBOX => label.IsBlackBox()
         }
     }
     public func GetName() : String {
@@ -569,6 +571,101 @@ func GetBottomRule<V, G>(signature : Signature<V, G>)
         }
     )
 }
+func GetCopyBlackboxRule<V, G>(blackBoxTracker : HashMap<Edge<V, G>, Int64>)
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    RewriteRule<V, G>(
+        "blackbox-copy",
+        BLACKBOX,
+        { e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
+            let targets = e.GetTargets().size
+            if(targets < 2) {
+                blackBoxTracker.put(e, 0)
+                None
+            } else {
+                let nextEdges = HashSet<TraversalElement<V, G>>()
+                let discardedEdges = HashSet<TraversalElement<V, G>>()
+                for(i in 0..targets) {
+                    let newTargets = Array<Vertex<V, G>>(targets){
+                        j : Int64 =>
+                            if(j < i){
+                                Vertex(e.GetTarget(j).GetWidth())
+                            } else if (j == i) {
+                                e.GetTarget(j).GetVertex()
+                            } else {
+                                Vertex(e.GetTarget(j + 1).GetWidth())
+                            }
+                    }
+                    let newEdge = e.Clone(
+                        map({ t => t.GetVertex() }, e.GetSources()),
+                        newTargets,
+                        f.GetGraph()
+                    )
+                    nextEdges.put(EDGE(newEdge))
+                    blackBoxTracker.put(newEdge, i)
+                }
+                discardedEdges.put(EDGE(e))
+                Some((nextEdges, discardedEdges))
+            }
+        }
+    )
+}
+func GetForkBlackboxRule<V, G>(blackBoxTracker : HashMap<Edge<V, G>, Int64>)
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+        RewriteRule<V, G>(
+            "blackbox-fork",
+            BLACKBOX,
+            { e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
+                match(blackBoxTracker.get(e)){
+                    case None => None
+                    case Some(i) =>
+                        let v = e.GetTarget(i).GetVertex()
+                        if(v.GetOutEdges().size < 2) {
+                            None
+                        } else {
+                            let newEdges = HashSet<TraversalElement<V, G>>()
+                            let removedEdges = HashSet<TraversalElement<V, G>>()
+                            let originalSourceVertices = map({ t : Tentacle<V, G> => t.GetVertex() }, e.GetSources())
+                            f.RemoveEdge(e)
+                            removedEdges.put(EDGE(e))
+                            for(t in e.GetSources()) {
+                                t.GetVertex().RemoveOutEdge(e)
+                            }
+                            for(t in e.GetTargets()) {
+                                t.GetVertex().RemoveInEdge(e)
+                            }
+                            for(ec in HashSet(v.GetOutEdges())) {
+                                let newTargetVertices = Array<Vertex<V, G>>(e.GetCoarity()) {
+                                    k : Int64 =>
+                                        let originalVertex = e.GetTarget(k).GetVertex()
+                                        let newVertex = Vertex<V, G>(originalVertex.GetWidth())
+                                        ec.GetEdge().SetSource(ec.GetIndex(), newVertex, false)
+                                        newVertex
+                                }
+                                let newEdge = e.Clone(
+                                    originalSourceVertices,
+                                    newTargetVertices,
+                                    f.GetGraph()
+                                )
+                            }
+                            for(v in originalSourceVertices) {
+                                let originalSourceEdge = match(v.GetInEdge()) {
+                                    case None => newEdges.put(VERTEX(v))
+                                    case Some(ec) => newEdges.put(EDGE(ec.GetEdge()))
+                                }
+                            }
+                            Some((newEdges, removedEdges))
+                        }
+                }
+            }
+        )
+}
+
 func GetRules<V, G>(signature : Signature<V, G>, now : Bool) : ArrayList<RewriteRule<V, G>>
     where
         V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,

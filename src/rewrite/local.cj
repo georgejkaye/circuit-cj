@@ -41,7 +41,8 @@ func AttemptRewriteRule<V, G>(
 func CheckAppropriateRules<V, G>(
     edge : Edge<V, G>,
     f : InterfacedHypergraph<V, G>,
-    signature : Signature<V, G>
+    signature : Signature<V, G>,
+    copyBlackBoxes!: Bool
 ) : Option<(HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)>
     where
         V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
@@ -49,11 +50,18 @@ func CheckAppropriateRules<V, G>(
 {
     let label = edge.GetLabel()
     let validRules = ArrayList<RewriteRule<V, G>>()
+    // Hashmap for tracking the 'active' vertex of a blackbox
+    // This is only required when separating each state, where
+    // any blackbox with multiple outputs is separated into
+    // ones where only one output is 'active' and the rest
+    // are stubbed
+    let blackBoxTracker = HashMap<Edge<V, G>, Int64>()
     func AddRule(rule : RewriteRule<V, G>) {
         validRules.append(rule)
     }
     func AddAnyRules() : Unit {
         AddRule(GetStubRule())
+        AddRule(GetBottomRule(signature))
     }
     func AddSignalRules() : Unit {
         AddRule(GetForkRule())
@@ -86,6 +94,11 @@ func CheckAppropriateRules<V, G>(
             AddCompositeRules()
         case COMPOSITE(_) =>
             AddCompositeRules()
+        case BLACKBOX(_) =>
+            if(copyBlackBoxes) {
+                AddRule(GetCopyBlackboxRule(blackBoxTracker))
+                AddRule(GetForkBlackboxRule(blackBoxTracker))
+            }
         case _ => ()
     }
     for(rule in validRules) {
@@ -101,7 +114,8 @@ public func RewriteCombinational<V, G>(
     signature : Signature<V, G>,
     f : InterfacedHypergraph<V, G>,
     starting : HashSet<TraversalElement<V, G>>,
-    ending : HashSet<TraversalElement<V, G>>
+    ending : HashSet<TraversalElement<V, G>>,
+    copyBlackBoxes!: Bool
 ) : Unit
     where
         V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
@@ -109,7 +123,7 @@ public func RewriteCombinational<V, G>(
 {
     let actionAtEdge = {
         e : Edge<V, G>, data : TraversalData<V, G> =>
-            match(CheckAppropriateRules(e, f, signature)) {
+            match(CheckAppropriateRules(e, f, signature, copyBlackBoxes: copyBlackBoxes)) {
                 case Some(result) => result
                 case None =>
                     let nextElements = HashSet<TraversalElement<V, G>>()
@@ -148,7 +162,26 @@ public func RewriteCombinational<V, G>(
 }
 public func RewriteCombinational<V, G>(
     signature : Signature<V, G>,
-    f : InterfacedHypergraph<V, G>
+    f : InterfacedHypergraph<V, G>,
+    starting : HashSet<TraversalElement<V, G>>,
+    copyBlackBoxes!: Bool
+) : Unit
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    RewriteCombinational(
+        signature,
+        f,
+        starting,
+        f.GetRightmostTraversalElements(),
+        copyBlackBoxes: copyBlackBoxes
+    )
+}
+public func RewriteCombinational<V, G>(
+    signature : Signature<V, G>,
+    f : InterfacedHypergraph<V, G>,
+    copyBlackBoxes!: Bool
 ) : Unit
     where
         V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
@@ -158,6 +191,7 @@ public func RewriteCombinational<V, G>(
         signature,
         f,
         f.GetLeftmostTraversalElements(),
-        f.GetRightmostTraversalElements()
+        f.GetRightmostTraversalElements(),
+        copyBlackBoxes: copyBlackBoxes
     )
 }

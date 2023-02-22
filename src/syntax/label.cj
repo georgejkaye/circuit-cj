@@ -268,6 +268,12 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             case _ => false
         }
     }
+    public func IsBlackBox() : Bool {
+        match(this) {
+            case BLACKBOX(_) => true
+            case _ => false
+        }
+    }
 }
 /**
  * Given a value, get the label for a given number of this value in parallel.

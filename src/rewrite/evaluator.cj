@@ -43,7 +43,7 @@ public class Evaluator<V, G>
         this.coreGraph = coreGraph
         this.stateWires = stateWires
         EliminateInstantFeedback(sig, this.coreGraph)
-        RewriteCombinational(sig, this.coreGraph)
+        RewriteCombinational(sig, this.coreGraph, copyBlackBoxes: false)
         this.nextOutputVertices = map({
             iv => iv.GetVertex()
         }, this.graph.GetOutputs())
@@ -101,7 +101,8 @@ public class Evaluator<V, G>
         this.sig.WriteDotToFile(appliedCoreGraph, 2, "after-applying")
         RewriteCombinational<V, G>(
             this.sig,
-            appliedCoreGraph
+            appliedCoreGraph,
+            copyBlackBoxes: false
         )
         let transitionTargets = Array<Vertex<V, G>>(
             this.coreGraph.GetCoarity()
@@ -188,7 +189,8 @@ public class Evaluator<V, G>
             this.sig,
             this.graph,
             HashSet([EDGE(transitionEdge)]),
-            HashSet(transitionEnding)
+            HashSet(transitionEnding),
+            copyBlackBoxes: true
         )
         let outputEnding = HashSet<TraversalElement<V, G>>()
         for(t in outputEdge.GetTargets()){
@@ -198,7 +200,8 @@ public class Evaluator<V, G>
             this.sig,
             this.graph,
             HashSet([EDGE(outputEdge)]),
-            HashSet(transitionEnding)
+            HashSet(transitionEnding),
+            copyBlackBoxes: true
         )
         this.currentCycle++
     }
