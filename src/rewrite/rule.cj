@@ -102,7 +102,11 @@ func GetForkRule<V, G>() : RewriteRule<V, G>
                     let removedEdges = HashSet<TraversalElement<V, G>>()
                     let target = e.GetTarget(0).GetVertex()
                     let outEdges = HashSet<EdgeConnection<V, G>>(target.GetOutEdges())
-                    for(ec in outEdges) {
+                    // Create a new edge and target for each outgoing tentacle
+                    // there is from this vertex
+                    func CreateForkedEdge(
+                        forkFn : (Vertex<V, G>) -> Unit
+                    ) : Edge<V, G> {
                         let newTarget = Vertex<V, G>(target.GetWidth())
                         let newEdge = Edge(
                             e.GetLabel(),
@@ -111,8 +115,25 @@ func GetForkRule<V, G>() : RewriteRule<V, G>
                             e.GetSubgraph(),
                             f.GetGraph()
                         )
-                        ec.GetEdge().SetSource(ec.GetIndex(), newTarget, false)
-                        nextEdges.put(EDGE(newEdge))
+                        forkFn(newTarget)
+                        newEdge
+                    }
+                    // The value needs to be forked for every edge this vertex
+                    // is in the sources of
+                    for(ec in outEdges) {
+                        let newValueEdge = CreateForkedEdge(
+                            { v =>
+                                ec.GetEdge().SetSource(ec.GetIndex(), v, false)
+                            }
+                        )
+                        nextEdges.put(EDGE(newValueEdge))
+                    }
+                    // The value also needs to be forked if it is in the
+                    // outputs of a graph
+                    for(ie in HashSet(v.GetInterfacedOutputs())) {
+                        CreateForkedEdge(
+                            { v => ie.graph.ReplaceOutput(ie.index, v) }
+                        )
                     }
                     f.RemoveEdge(e)
                     removedEdges.put(EDGE(e))
