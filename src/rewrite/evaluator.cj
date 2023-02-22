@@ -179,39 +179,26 @@ public class Evaluator<V, G>
                 this.graph.GetGraph()
             )
         }
-        let transitionLeftmost = transitionGraph.GetLeftmostTraversalElements()
-        let transitionRightmost = HashSet<TraversalElement<V, G>>()
-        for(v in transitionTargets) {
-            transitionRightmost.put(VERTEX(v))
-        }
-        let outputLeftmost = outputGraph.GetLeftmostTraversalElements()
-        let outputRightmost = HashSet<TraversalElement<V, G>>()
-        for(v in outputTargets) {
-            outputRightmost.put(VERTEX(v))
-        }
-        this.sig.WriteDotToFile(this.graph, 2, "before-burst")
-        transitionEdge.BurstSubgraph()
-        outputEdge.BurstSubgraph()
         this.sig.WriteDotToFile(this.graph, 1, "before-rewrite")
+        let transitionEnding = HashSet<TraversalElement<V, G>>()
+        for(t in transitionEdge.GetTargets()){
+            transitionEnding.put(VERTEX(t.GetVertex()))
+        }
         RewriteCombinational(
             this.sig,
             this.graph,
-            transitionLeftmost,
-            transitionRightmost
+            HashSet([EDGE(transitionEdge)]),
+            HashSet(transitionEnding)
         )
-        // for(i in 0..this.stateWires) {
-        //     let join = this.coreEdge.NextEdgeLeft(i).GetEdge()
-        //     this.graph.CollapseSubgraph(
-        //         Array<TentacleOrigin<V, G>>(),
-        //         [FROM_EDGE(EdgeConnection(join, 0, SOURCE))],
-        //         "${this.graph.GetName()}${GetSignalsString(signals)}.state(${i})"
-        //     )
-        // }
+        let outputEnding = HashSet<TraversalElement<V, G>>()
+        for(t in outputEdge.GetTargets()){
+            outputEnding.put(VERTEX(t.GetVertex()))
+        }
         RewriteCombinational(
             this.sig,
             this.graph,
-            outputLeftmost,
-            outputRightmost
+            HashSet([EDGE(outputEdge)]),
+            HashSet(transitionEnding)
         )
         this.currentCycle++
     }
