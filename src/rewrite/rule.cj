@@ -399,12 +399,12 @@ func ComputeEdge<V, G>(
     removedEdges.put(EDGE(e))
     for(i in 0..results.size) {
         let result = results[i]
-        let signal = GetSignalLabel<V, G>(result)
+        let signalLabel = GetSignalLabel<V, G>(result)
         let signalGraph = signature.MakeSignal(Signal(result))
         let target = e.GetTarget(i).GetVertex()
         target.RemoveInEdge()
         let newEdge = Edge(
-            Label<V,G>.SIGNAL(Signal(result)),
+            signalLabel,
             Array<Vertex<V, G>>(),
             [target],
             Some(signalGraph),
