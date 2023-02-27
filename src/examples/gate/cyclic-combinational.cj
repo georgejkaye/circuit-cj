@@ -11,32 +11,44 @@
 
 package examples.gate
 
-public func CyclicCombinational() {
+public func CyclicCombinational(delays!: Bool) {
     let x = sig.UseWire(1)
     let c = sig.UseWire(1)
     let bottom = sig.UseWire(1)
     let muxa = Mux2(c, x, bottom)
-    let muxaDelay = sig.UseDelay(muxa)
+    let muxaWire = if(delays) {
+        sig.UseDelay(muxa)
+    } else {
+        muxa
+    }
     let f = sig.UseBlackbox(
         "F",
         [Port(1, "A")],
         [Port(1, "Z")],
-        [muxaDelay]
+        [muxaWire]
     )[0]
     let muxb = Mux2(c, f, x)
-    let muxbDelay = sig.UseDelay(muxb)
+    let muxbWire = if(delays) {
+        sig.UseDelay(muxb)
+    } else {
+        muxb
+    }
     let g = sig.UseBlackbox(
         "G",
         [Port(1, "A")],
         [Port(1, "Z")],
-        [muxbDelay]
+        [muxbWire]
     )[0]
     sig.Feedback(g, bottom)
     let muxc = Mux2(c, g, f)
-    let muxcDelay = sig.UseDelay(muxc)
+    let muxcWire = if(delays) {
+        sig.UseDelay(muxc)
+    } else {
+        muxc
+    }
     sig.MakeSubcircuit(
         [InterfaceWire(x, "x"), InterfaceWire(c, "c")],
-        [InterfaceWire(muxcDelay, "z")],
+        [InterfaceWire(muxcWire, "z")],
         "cyclic_combinational"
     )
 }
