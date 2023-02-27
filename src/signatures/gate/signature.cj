@@ -243,10 +243,10 @@ let gateLevelLatticeStructure = FiniteLattice(
  */
 func not(v: GateLevelValue) {
     match (v) {
-        case BOTH => BOTH
         case NONE => NONE
-        case TRUE => FALSE
         case FALSE => TRUE
+        case TRUE => FALSE
+        case BOTH => BOTH
     }
 }
 /**
@@ -257,15 +257,18 @@ func not(v: GateLevelValue) {
  */
 func and(lhs: GateLevelValue, rhs: GateLevelValue) {
     match (lhs) {
-        case BOTH => BOTH
-        case NONE => NONE
-        case TRUE => rhs
-        case FALSE =>
-            match (rhs) {
-                case BOTH => BOTH
-                case NONE => NONE
-                case _ => FALSE
-            }
+        case FALSE => FALSE
+        case TRUE  => rhs
+        case NONE => match(rhs) {
+            case NONE => NONE
+            case TRUE => NONE
+            case _ => FALSE
+        }
+        case BOTH => match(rhs) {
+            case NONE => FALSE
+            case FALSE => FALSE
+            case _ => BOTH
+        }
     }
 }
 /**
@@ -276,15 +279,18 @@ func and(lhs: GateLevelValue, rhs: GateLevelValue) {
  */
 func or(lhs: GateLevelValue, rhs: GateLevelValue) {
     match (lhs) {
-        case BOTH => BOTH
-        case NONE => NONE
+        case TRUE => TRUE
         case FALSE => rhs
-        case TRUE =>
-            match (rhs) {
-                case BOTH => BOTH
-                case NONE => NONE
-                case _ => TRUE
-            }
+        case NONE => match(rhs) {
+            case NONE => NONE
+            case FALSE => NONE
+            case _ => TRUE
+        }
+        case BOTH => match(rhs) {
+            case NONE => TRUE
+            case TRUE => TRUE
+            case _ => BOTH
+        }
     }
 }
 /**
@@ -294,17 +300,7 @@ func or(lhs: GateLevelValue, rhs: GateLevelValue) {
  * @return The logical OR of the two arguments
  */
 func xor(lhs: GateLevelValue, rhs: GateLevelValue) {
-    match (lhs) {
-        case BOTH => BOTH
-        case NONE => NONE
-        case FALSE => rhs
-        case TRUE =>
-            match (rhs) {
-                case BOTH => BOTH
-                case NONE => NONE
-                case v => not(v)
-            }
-    }
+    or(and(lhs, not(rhs)), and(not(lhs), rhs))
 }
 /**
  * Given a Belnap gate, interpret it as an appropriate function on Belnap values
