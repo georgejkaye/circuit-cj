@@ -67,7 +67,7 @@ func CheckAppropriateRules<V, G>(
         AddRule(GetForkRule())
     }
     func AddBundleRules() : Unit {
-        AddRule(GetBundleRule(signature))
+        AddRule(GetValueBundleRule(signature))
     }
     func AddPrimitiveRules() : Unit {
         AddRule(GetApplyRule(signature))
