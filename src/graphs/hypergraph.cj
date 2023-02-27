@@ -511,10 +511,8 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
                 startingSet,
                 BOTH_DIRECTIONS,
                 0,
-                actionAtVertex,
-                { v, e => true },
-                actionAtEdge,
-                { e, v => true }
+                actionAtVertex: actionAtVertex,
+                actionAtEdge: actionAtEdge
             )
         }
         TraverseGraphFromEnd(childInputs)
