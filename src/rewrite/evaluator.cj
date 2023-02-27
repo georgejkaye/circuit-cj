@@ -25,6 +25,7 @@ public class Evaluator<V, G>
     var coreEdge : Edge<V, G>
     let stateWires : Int64
     let nextOutputVertices : Array<Vertex<V, G>>
+    let stateJoinEdges : Array<TraversalElement<V, G>>
     public init(
         signature : Signature<V, G>,
         f : InterfacedHypergraph<V, G>
@@ -47,6 +48,9 @@ public class Evaluator<V, G>
         this.nextOutputVertices = map({
             iv => iv.GetVertex()
         }, this.graph.GetOutputs())
+        this.stateJoinEdges = Array<TraversalElement<V, G>>(this.stateWires){
+            i : Int64 => EDGE(coreEdge.NextEdgeLeft(i).GetEdge())
+        }
     }
     public func GetGraph() : InterfacedHypergraph<V, G> {
         this.graph
@@ -56,10 +60,8 @@ public class Evaluator<V, G>
         let coreCopyEdge = this.coreEdge.Clone(appliedCoreGraph)
         let stateEdges = Array<Edge<V, G>>(this.stateWires) {
             i : Int64 =>
-                println("Getting state edge ${i}")
                 let joinEdge = this.coreEdge.NextEdgeLeft(i).GetEdge()
                 let stateEdge = joinEdge.NextEdgeLeft(0).GetEdge()
-                println("The ${i} state edge is ${stateEdge}")
                 stateEdge.Clone(
                     Array<Vertex<V, G>>(),
                     [coreCopyEdge.GetSource(i).GetVertex()],
@@ -97,110 +99,96 @@ public class Evaluator<V, G>
      */
     public func PerformCycle(signals : Array<Signal<V>>) : Unit {
         AssertArrayHasLength(signals, this.graph.GetArity())
-        let appliedCoreGraph = ApplyCore(signals)
-        this.sig.WriteDotToFile(appliedCoreGraph, 2, "after-applying")
-        RewriteCombinational<V, G>(
-            this.sig,
-            appliedCoreGraph,
-            copyBlackBoxes: false
-        )
-        let transitionTargets = Array<Vertex<V, G>>(
-            this.coreGraph.GetCoarity()
-        ) {
+        let splitJoinVertices = Array<(Vertex<V, G>, Vertex<V, G>)>(this.stateWires) {
+            i : Int64 =>
+                let joinSourceLeft =
+                    this.coreEdge
+                        .NextEdgeLeft(i)
+                        .GetEdge()
+                        .GetSource(0)
+                        .GetVertex()
+                SplitVertex(joinSourceLeft)
+        }
+        let coreCopyInputs = Array<Vertex<V, G>>(this.coreEdge.GetArity()) {
             i : Int64 =>
                 if(i < this.stateWires) {
-                    let stateVertex =
-                        this.coreEdge
-                            .NextEdgeLeft(i)
-                            .GetEdge()
-                            .GetSource(0)
-                            .GetVertex()
-                    let oldStateEdge =
-                        stateVertex
-                            .GetInEdge()
-                            .getOrThrow()
-                            .GetEdge()
-                    this.graph.RemoveEdge(oldStateEdge)
-                    stateVertex.RemoveInEdge()
-                    stateVertex
+                    splitJoinVertices[i][0]
                 } else {
-                    Vertex<V, G>(appliedCoreGraph.GetOutput(i).GetWidth())
+                    let signal = signals[i - this.stateWires]
+                    let signalLabel = GetSignalLabel<V, G>(signal.GetValues())
+                    let signalVertex = Vertex<V, G>(signal.GetWidth())
+                    let signalSubgraph = if(signal.GetValues().size == 1) {
+                        None<InterfacedHypergraph<V, G>>
+                    } else {
+                        this.sig.MakeSignal(signal)
+                    }
+                    let signalEdge = Edge(
+                        signalLabel,
+                        Array<Vertex<V, G>>(),
+                        [signalVertex],
+                        signalSubgraph,
+                        this.graph.GetGraph()
+                    )
+                    signalVertex
                 }
         }
-        // TODO we shouldn't have to clone here, but if we don't the traversal
-        // elements are wrong and I'm not sure why.
-        // Presumably they aren't being updated correctly after some rewrite,
-        // but they are recomputed when the new graph is made so it's okay after
-        // that
-        let transitionGraph = appliedCoreGraph.Clone()
-        let transitionEdge = Edge<V, G>(
-            "Transition",
-            Array<Vertex<V, G>>(),
-            transitionTargets,
-            transitionGraph,
+        let coreCopyOutputs = Array<Vertex<V, G>>(this.coreEdge.GetCoarity()) {
+            i : Int64 =>
+                if(i < this.stateWires) {
+                    splitJoinVertices[i][1]
+                } else {
+                    let outputVertex = nextOutputVertices[i - this.stateWires]
+                    // We are going to insert the register containing the
+                    // output subcircuit in between the previous register
+                    // and the main graph
+                    let (leftVertex, rightVertex) = SplitVertex(outputVertex)
+                    // Make the delay edge for this output
+                    let outputWidth = outputVertex.GetWidth()
+                    let delayTarget = Vertex<V, G>(outputWidth)
+                    let delayEdge = Edge(
+                        DELAY(outputWidth),
+                        [leftVertex],
+                        [delayTarget],
+                        None,
+                        this.graph.GetGraph()
+                    )
+                    // The ith target from the output subgraph is the first source
+                    // of this register's join edge
+                    let outputTarget = Vertex<V, G>(outputWidth)
+                    let joinEdge = Edge(
+                        JOIN(outputWidth),
+                        [outputTarget, delayTarget],
+                        [rightVertex],
+                        None,
+                        this.graph.GetGraph()
+                    )
+                    joinEdge.GetSource(0).GetVertex()
+                }
+        }
+        let coreCopyEdge = this.coreEdge.Clone(
+            coreCopyInputs,
+            coreCopyOutputs,
             this.graph.GetGraph()
         )
-        let outputTargets = Array<Vertex<V, G>>(this.coreEdge.GetCoarity()) {
-            i : Int64 => Vertex<V, G>(
-                appliedCoreGraph.GetOutput(i).GetWidth()
-            )
-        }
-        let outputGraph = appliedCoreGraph.Clone()
-        let outputEdge = Edge<V, G>(
-            "Output",
-            Array<Vertex<V, G>>(),
-            outputTargets,
-            outputGraph,
-            this.graph.GetGraph()
+        let rewriteStartingElements = HashSet<TraversalElement<V, G>>()
+        let actionAtEdge =
+            { e : Edge<V, G> =>
+                if(e.GetLabel().IsValue()){
+                    rewriteStartingElements.put(EDGE(e))
+                    ()
+                }
+            }
+        Traverse<V, G>(
+            HashSet([EDGE(coreCopyEdge)]),
+            RIGHT_TO_LEFT,
+            0,
+            actionAtEdge: actionAtEdge
         )
-        for(i in 0..this.nextOutputVertices.size) {
-            let outputVertex = nextOutputVertices[i]
-            // We are going to insert the register containing the
-            // output subcircuit in between the previous register
-            // and the main graph
-            let (leftVertex, rightVertex) = SplitVertex(outputVertex)
-            // Make the delay edge for this output
-            let outputWidth = outputVertex.GetWidth()
-            let delayTarget = Vertex<V, G>(outputWidth)
-            let delayEdge = Edge(
-                DELAY(outputWidth),
-                [leftVertex],
-                [delayTarget],
-                None,
-                this.graph.GetGraph()
-            )
-            // The ith target from the output subgraph is the first source
-            // of this register's join edge
-            let outputTarget = outputTargets[this.stateWires + i]
-            let joinEdge = Edge(
-                JOIN(outputWidth),
-                [outputTarget, delayTarget],
-                [rightVertex],
-                None,
-                this.graph.GetGraph()
-            )
-        }
-        this.sig.WriteDotToFile(this.graph, 1, "before-rewrite")
-        let transitionEnding = HashSet<TraversalElement<V, G>>()
-        for(t in transitionEdge.GetTargets()){
-            transitionEnding.put(VERTEX(t.GetVertex()))
-        }
         RewriteCombinational(
             this.sig,
             this.graph,
-            HashSet([EDGE(transitionEdge)]),
-            HashSet(transitionEnding),
-            copyBlackBoxes: true
-        )
-        let outputEnding = HashSet<TraversalElement<V, G>>()
-        for(t in outputEdge.GetTargets()){
-            outputEnding.put(VERTEX(t.GetVertex()))
-        }
-        RewriteCombinational(
-            this.sig,
-            this.graph,
-            HashSet([EDGE(outputEdge)]),
-            HashSet(transitionEnding),
+            rewriteStartingElements,
+            HashSet(this.stateJoinEdges),
             copyBlackBoxes: true
         )
         this.currentCycle++
