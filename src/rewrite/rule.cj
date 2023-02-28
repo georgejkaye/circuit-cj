@@ -95,6 +95,118 @@ public struct RewriteRule<V, G>
         this.rewrite(e, f)
     }
 }
+func ForkCondition<V, G>(
+    e : Edge<V, G>,
+    f : InterfacedHypergraph<V, G>
+) : Bool
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    if(e.GetCoarity() > 0){
+        let firstTarget = e.GetTarget(0).GetVertex()
+        let outboundTentacles = firstTarget.GetOutTentacles(f)
+        if(outboundTentacles < 2) {
+            return false
+        }
+        for(i in 1..e.GetCoarity()) {
+            let currentTarget = e.GetTarget(i).GetVertex()
+            if(outboundTentacles != currentTarget.GetOutTentacles(f)) {
+                return false
+            }
+        }
+        true
+    } else {
+        false
+    }
+}
+/**
+ * Given an edge with some target vertices that fork a given number of times,
+ * propagate this edge across the vertices so that the edge is copied.
+ *
+ * @param e The edge to propagate
+ * @param outTentacles An array of arrays where outTentacles[i][j] defines the
+             (single) outgoing tentacle of the jth target vertex of the ith copy
+* @return The hash set of next elements and removed elements
+*/
+func PropagateAcrossFork<V, G>(
+    e : Edge<V, G>,
+    outTentacles : Array<Array<Option<TentacleType<V, G>>>>
+) : (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    let nextElements = HashSet<TraversalElement<V, G>>()
+    // We use the original edge as one of the copies to reduce redundant
+    // creation of edges. This edge also retains the original target vertices.
+    nextElements.put(EDGE(e))
+    for(i in 1..outTentacles.size) {
+        // Get the out tentacles for this copy
+        let targetDestinations = outTentacles[i]
+        // Make the targets for this edge
+        let newTargets = map({
+            t : Tentacle<V, G> =>
+                Tentacle(Vertex<V, G>(t.GetWidth()), false, false)
+        }, e.GetTargets())
+        // Make the edge copy: it forks the original sources rather than targets
+        let edgeCopy = Edge(
+            e.GetLabel(),
+            e.GetSources(),
+            newTargets,
+            e.GetSubgraph(),
+            e.GetOwner()
+        )
+        nextElements.put(EDGE(edgeCopy))
+        // Send tentacles to each target vertex
+        for(i in 0..targetDestinations.size) {
+            let td = targetDestinations[i]
+            let targetVertex = newTargets[i].GetVertex()
+            match(td){
+                case None => ()
+                case Some(tt) =>
+                    match(tt) {
+                        case EDGE_TENTACLE(ec) =>
+                            ec.GetEdge().SetSource(
+                                ec.GetIndex(), targetVertex, false
+                            )
+                        case INTERFACE_TENTACLE(f, i) =>
+                            f.ReplaceOutput(i, targetVertex)
+                    }
+            }
+        }
+    }
+    (nextElements, HashSet())
+}
+/**
+ * Get an array of out tentacles from a given target of an edge, in an
+ * arbitrary order
+ *
+ * @param f The interfaced hypergraph we are rewriting in
+ * @param e The edge
+ * @param i The index of the target
+ * @return The array of outgoing tentacles, in an arbitrary order
+ */
+func GetOutgoingTentacles<V, G>(
+    f : InterfacedHypergraph<V, G>,
+    e : Edge<V, G>,
+    i : Int64
+) : Array<TentacleType<V, G>>
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    let tentacleTargets = ArrayList<TentacleType<V, G>>()
+    // Values always have precisely one target
+    let target = e.GetTarget(0).GetVertex()
+    for(ec in target.GetOutEdges()) {
+        tentacleTargets.append(EDGE_TENTACLE(ec))
+    }
+    for(it in f.GetOutputPositions(target)) {
+        tentacleTargets.append(INTERFACE_TENTACLE(f, it))
+    }
+    tentacleTargets.toArray()
+}
 /**
  * Get the rewrite rule for copying values across a fork, i.e. a vertex with
  * multiple out tentacles.
@@ -111,57 +223,16 @@ func GetForkRule<V, G>() : RewriteRule<V, G>
         VALUE,
         {
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
-                // VALUE or SIGNAL edges can only have one target
-                // although it may be of arbitrary width
-                let v = e.GetTargets()[0].vertex
-                if(!(v.GetOutEdges().size + f.GetOutputPositions(v).size > 1)){
-                    None
-                } else {
-                    let nextEdges = HashSet<TraversalElement<V, G>>()
-                    let removedEdges = HashSet<TraversalElement<V, G>>()
-                    let target = e.GetTarget(0).GetVertex()
-                    let outEdges = HashSet<EdgeConnection<V, G>>(
-                        target.GetOutEdges()
-                    )
-                    // Create a new edge and target for each outgoing tentacle
-                    // there is from this vertex
-                    func CreateForkedEdge(
-                        forkFn : (Vertex<V, G>) -> Unit
-                    ) : Edge<V, G> {
-                        let newTarget = Vertex<V, G>(target.GetWidth())
-                        let newEdge = Edge(
-                            e.GetLabel(),
-                            Array<Vertex<V, G>>(),
-                            [newTarget],
-                            e.GetSubgraph(),
-                            f.GetGraph()
-                        )
-                        forkFn(newTarget)
-                        newEdge
-                    }
-                    // The value needs to be forked for every edge this vertex
-                    // is in the sources of
-                    for(ec in outEdges) {
-                        let newValueEdge = CreateForkedEdge(
-                            { v =>
-                                ec.GetEdge().SetSource(ec.GetIndex(), v, false)
-                            }
-                        )
-                        nextEdges.put(EDGE(newValueEdge))
-                    }
-                    // The value also needs to be forked if it is in the
-                    // outputs of a graph
-                    for(ie in HashSet(v.GetInterfacedOutputs())) {
-                        CreateForkedEdge(
-                            { v => ie.graph.ReplaceOutput(ie.index, v) }
-                        )
-                    }
-                    f.RemoveEdge(e)
-                    removedEdges.put(EDGE(e))
-                    f.RemoveVertex(target)
-                    removedEdges.put(VERTEX(target))
-                    Some((nextEdges, removedEdges))
-                }
+            if(!ForkCondition(e, f)){
+                None
+            } else {
+                let tentacleTargets = GetOutgoingTentacles(f, e, 0)
+                let tentacleTargetsPerEdge = map(
+                    { tt : TentacleType<V, G> => [Some(tt)] },
+                    tentacleTargets
+                )
+                Some(PropagateAcrossFork(e, tentacleTargetsPerEdge))
+            }
         }
     )
 }
@@ -377,7 +448,7 @@ func GetStubRule<V, G>() : RewriteRule<V, G>
                 for(t in e.GetTargets()) {
                     let v = t.GetVertex()
                     f.RemoveVertex(v)
-                    removeElements.put(VERTEX(v))
+                    removedElements.put(VERTEX(v))
                 }
                 (nextElements, removedElements)
         }
@@ -756,7 +827,7 @@ func GetBottomRule<V, G>(signature : Signature<V, G>)
             if(!ArgumentsAreAllValue(signature.GetBottom(), e)){
                 None
             } else {
-                let args = GetArgs(e)
+                let (argumentEdges, argumentValues) = GetArgs(e)
                 // Get appropriate width bottoms for each target of the edge
                 let bottoms = Array<Array<V>>(e.GetCoarity()){
                     i : Int64 =>
@@ -764,7 +835,9 @@ func GetBottomRule<V, G>(signature : Signature<V, G>)
                             j : Int64 => signature.GetBottom()
                         }
                 }
-                ReplaceGateWithOutputs(signature, f, e, args, bottoms)
+                ReplaceGateWithOutputs<V, G>(
+                    signature, f, e,argumentEdges, bottoms
+                )
             }
         }
     )
@@ -855,52 +928,26 @@ func GetForkBlackboxRule<V, G>(blackBoxTracker : HashMap<Edge<V, G>, Int64>)
                     // with the copy blackbox rule first
                     case None => None
                     case Some(i) =>
-                        let v = e.GetTarget(i).GetVertex()
-                        // Can only fork if there are enough out tentacles
-                        if(!(
-                            v.GetOutEdges().size +
-                            f.GetOutputPositions(v).size > 1
-                        )) {
+                        if(!ForkCondition(e, f)) {
                             None
                         } else {
-                            let newEdges = HashSet<TraversalElement<V, G>>()
-                            let removedEdges = HashSet<TraversalElement<V, G>>()
-                            // Get the original sources so they can be forked
-                            let originalSourceVertices = map(
-                                { t : Tentacle<V, G> => t.GetVertex() },
-                                e.GetSources()
+                            let outgoingTentacles = GetOutgoingTentacles(f, e, i)
+                            let tentacleTargets = map(
+                                { tt : TentacleType<V, G> =>
+                                    Array<Option<TentacleType<V, G>>>(
+                                        e.GetCoarity()
+                                    ) {
+                                        j : Int64 =>
+                                            if(i == j) {
+                                                Some(tt)
+                                            } else {
+                                                None
+                                            }
+                                    }
+                                },
+                                outgoingTentacles
                             )
-                            // Remove the original edge
-                            f.RemoveEdge(e)
-                            removedEdges.put(EDGE(e))
-                            for(t in e.GetSources()) {
-                                t.GetVertex().RemoveOutEdge(e)
-                            }
-                            for(t in e.GetTargets()) {
-                                t.GetVertex().RemoveInEdge(e)
-                            }
-                            // Copy the edge
-                            for(ec in HashSet(v.GetOutEdges())) {
-                                let newTargetVertices = Array<Vertex<V, G>>(e.GetCoarity()) {
-                                    k : Int64 =>
-                                        let originalVertex = e.GetTarget(k).GetVertex()
-                                        let newVertex = Vertex<V, G>(originalVertex.GetWidth())
-                                        ec.GetEdge().SetSource(ec.GetIndex(), newVertex, false)
-                                        newVertex
-                                }
-                                let newEdge = e.Clone(
-                                    originalSourceVertices,
-                                    newTargetVertices,
-                                    f.GetGraph()
-                                )
-                            }
-                            for(v in originalSourceVertices) {
-                                let originalSourceEdge = match(v.GetInEdge()) {
-                                    case None => newEdges.put(VERTEX(v))
-                                    case Some(ec) => newEdges.put(EDGE(ec.GetEdge()))
-                                }
-                            }
-                            Some((newEdges, removedEdges))
+                            Some(PropagateAcrossFork(e, tentacleTargets))
                         }
                 }
             }
