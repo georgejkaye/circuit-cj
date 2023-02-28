@@ -125,6 +125,14 @@ public struct InterfaceElement<V, G> <: Hashable & ToString & Equatable<Interfac
         !(this == rhs)
     }
 }
+public enum TentacleType<V, G>
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    | EDGE_TENTACLE(EdgeConnection<V, G>)
+    | INTERFACE_TENTACLE(InterfacedHypergraph<V, G>, Int64)
+}
 /**
  * A vertex is a wire in a circuit.
  * Vertices can be the source at most one edge, but the target of an
@@ -165,6 +173,9 @@ public class Vertex<V, G>
     }
     public func GetOutEdges() : HashSet<EdgeConnection<V, G>> {
         this.outEdges
+    }
+    public func GetOutTentacles(f : InterfacedHypergraph<V, G>) {
+        this.outEdges.size + f.GetOutputPositions(this).size
     }
     public func SetInEdge(e : Edge<V, G>, i : Int64) : Unit {
         SetInEdge(EdgeConnection(e, i, TARGET))
