@@ -48,68 +48,54 @@ public func append<T>(xs : Array<T>, y : T) {
             }
     }
 }
-public func concat<T>(xs : Array<T>, ys : Array<T>){
-    Array<T>(xs.size + ys.size, {
-        i : Int64 =>
-            if (i < xs.size) {
-                xs[i]
-            } else {
-                ys[i - xs.size]
-            }
-    })
-}
-
-public func printOptString(str : Option<String>) : String {
-    match(str) {
-        case Some(s) => s
-        case None => ""
-    }
-}
-public func printArray<T>(
-    arr : Array<T>,
-    openBracket : String,
-    closeBracket : String,
-    delim : String,
-    print : (T) -> String,
-    reverse : Bool
+/**
+ * Get a bespokely printed string of a collection.
+ *
+ * @param collection
+ * @param printFn The function that generates a string for an element
+ * @param openingBracket
+ * @param closingBracket
+ * @param delimiter
+ */
+public func printCollection<T>(
+    collection : Collection<T>,
+    printFn : (T) -> String,
+    openingBracket!: String = "{",
+    closingBracket!: String = "}",
+    delimiter!: String = ","
 ) : String {
     let str = foldi_left(
         {acc : String, cur : T, i : Int64 =>
-            let delimiter = if(i != arr.size - 1) {
-                delim
+            let delimiter = if(i != collection.size - 1) {
+                delimiter
             } else {
                 ""
             }
-            "${acc}${print(cur)}${delimiter}"
+            "${acc}${printFn(cur)}${delimiter}"
 
-        }, "", arr
+        }, "", collection
     )
-    "${openBracket}${str}${closeBracket}"
+    "${openingBracket}${str}${closingBracket}"
 }
-public func concatArray<T,U,V>(
-    arr1 : Array<T>,
-    arr2 : Array<U>,
-    ft : (T) -> V,
-    fu : (U) -> V
-) : Array<V> {
-    Array<V>(
-        arr1.size + arr2.size,
-    ){
-            i : Int64 =>
-                if(i < arr1.size) {
-                    ft(arr1[i])
-                } else {
-                    fu(arr2[i - arr1.size])
-                }
-    }
-}
-
-
-public func printCollection<T>(ts : Collection<T>) : String where T <: ToString {
-    let contents = fold_left(
-        {acc, cur => "${acc}, ${cur}"},
-        "",
-        ts
+/**
+ * Get a bespokely printed string of an array.
+ *
+ * @param array
+ * @param printFn The function that generates a string for an element
+ * @param openingBracket
+ * @param closingBracket
+ * @param delimiter
+ */
+public func printArray<T>(
+    array : Array<T>,
+    printFn : (T) -> String,
+    openingBracket!: String = "[",
+    closingBracket!: String = "]",
+    delimiter!: String = ",",
+    reverse!: Bool = false
+) : String {
+    printCollection(
+        array, printFn, openingBracket: openingBracket,
+        closingBracket: closingBracket, delimiter: delimiter
     )
-    "{${contents}}"
 }

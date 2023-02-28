@@ -74,7 +74,10 @@ public func GetSignal<V>(v : V, w : Int64) : Signal<V>
 public func GetSignalsString<V>(vs : Array<Signal<V>>) : String
     where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>
 {
-    printArray(vs, "(", ")", ",", { s => s.GetName() }, false)
+    printArray(
+        vs, { s => s.GetName() },
+        openingBracket: "(", closingBracket: ")", delimiter: ","
+    )
 }
 
 public enum WaveformType {
@@ -100,5 +103,8 @@ extend WaveformType <: Hashable & Equatable<WaveformType> {
 public func GetWaveformString<V>(signals : Array<Signal<V>>) : String
     where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>
 {
-    printArray(signals, "", "", " :: ", { s : Signal<V> => s.GetName() }, false)
+    printArray(
+        signals, { s : Signal<V> => s.GetName() },
+        openingBracket: "", closingBracket: "", delimiter: " :: "
+    )
 }

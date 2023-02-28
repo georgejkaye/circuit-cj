@@ -104,7 +104,7 @@ class NonEmptyException <: Exception {
 class IncompatibleLengthException<T> <: Exception where T <: ToString {
     public init(xs : Collection<T>, n : Int64, exact : Bool) {
         let exactText = if (exact) { "" } else { " at least"}
-        let contents = printCollection(xs)
+        let contents = printCollection(xs, { x => "${x}"})
         ErrorMsg(
             "Expected an array of ${exactText}length ${n} but ${contents} is of length ${xs.size}"
         )
