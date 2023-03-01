@@ -24,78 +24,31 @@ public func unsafeGet<T,U>(map : HashMap<T,U>, key: T, exn : ((T)
 public func unsafeGet<T,U>(map : HashMap<T,U>, key: T) : U where T <: Equatable<T> & Hashable {
     unsafeGet<T,U>(map, key, { k : T => throw NoAssociatedValueException("unsafeGet")})
 }
-
-public func Sum(ns : Array<Int64>) : Int64 {
-    fold_left({ acc : Int64, cur : Int64 => acc + cur}, 0, ns)
-}
-public func prepend<T>(x : T, ys : Array<T>) {
-    Array<T>(ys.size + 1){
-        i : Int64 =>
-            if(i == 0) {
-                x
-            } else {
-                ys[i-1]
-            }
+public func Sum<T>(
+    ts : Array<T>, f : (T) -> Int64, start!: Int64 = 0, end!: Int64 = ts.size
+) : Int64 {
+    var sum = 0
+    for(i in start..end) {
+        sum = sum + f(ts[i])
     }
+    sum
 }
-public func append<T>(xs : Array<T>, y : T) {
-    Array<T>(xs.size + 1){
-        i : Int64 =>
-            if(i == xs.size) {
-                y
-            } else {
-                xs[i]
-            }
+public func Sum(
+    ts : Array<Int64>, start! : Int64 = 0, end!: Int64 = ts.size
+) : Int64 {
+    Sum(ts, { i => i }, start: start, end: end)
+}
+public func Product<T>(
+    ts : Array<T>, f : (T) -> Int64, start!: Int64 = 0, end!: Int64 = ts.size
+) : Int64 {
+    var product = 1
+    for(i in start..end) {
+        product = product * f(ts[i])
     }
+    product
 }
-/**
- * Get a bespokely printed string of a collection.
- *
- * @param collection
- * @param printFn The function that generates a string for an element
- * @param openingBracket
- * @param closingBracket
- * @param delimiter
- */
-public func printCollection<T>(
-    collection : Collection<T>,
-    printFn : (T) -> String,
-    openingBracket!: String = "{",
-    closingBracket!: String = "}",
-    delimiter!: String = ","
-) : String {
-    let str = foldi_left(
-        {acc : String, cur : T, i : Int64 =>
-            let delimiter = if(i != collection.size - 1) {
-                delimiter
-            } else {
-                ""
-            }
-            "${acc}${printFn(cur)}${delimiter}"
-
-        }, "", collection
-    )
-    "${openingBracket}${str}${closingBracket}"
-}
-/**
- * Get a bespokely printed string of an array.
- *
- * @param array
- * @param printFn The function that generates a string for an element
- * @param openingBracket
- * @param closingBracket
- * @param delimiter
- */
-public func printArray<T>(
-    array : Array<T>,
-    printFn : (T) -> String,
-    openingBracket!: String = "[",
-    closingBracket!: String = "]",
-    delimiter!: String = ",",
-    reverse!: Bool = false
-) : String {
-    printCollection(
-        array, printFn, openingBracket: openingBracket,
-        closingBracket: closingBracket, delimiter: delimiter
-    )
+public func Product(
+    ts : Array<Int64>, start! : Int64 = 0, end!: Int64 = ts.size
+) : Int64 {
+    Product(ts, { i => i }, start: start, end: end)
 }
