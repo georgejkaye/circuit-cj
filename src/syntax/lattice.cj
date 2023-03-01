@@ -15,25 +15,25 @@ package syntax
  * @param i The length of permutations to compute
  * @return A list of all the permutations of length i
  */
-func GetAllPermutations<T>(
-    elements: HashSet<T>,
+func GetAllPermutations<V>(
+    elements: HashSet<V>,
     i: Int64
-): ArrayList<Array<T>>
-    where T <: Equatable<T> & Hashable
+): Array<Array<V>>
+    where V <: Equatable<V> & Hashable
 {
     if (i == 0) {
-        ArrayList<Array<T>>()
+        Array<Array<V>>()
     } else {
         let smaller = GetAllPermutations(elements, i - 1)
-        let current = ArrayList<Array<T>>()
+        let current = ArrayList<Array<V>>()
         for (perm in smaller) {
             for (elem in elements) {
-                let extended = ArrayList<T>(perm)
+                let extended = ArrayList<V>(perm)
                 extended.append(elem)
                 current.append(extended.toArray())
             }
         }
-        current
+        current.toArray()
     }
 }
 /**
@@ -46,11 +46,11 @@ func GetAllPermutations<T>(
  * @param top The element at the top of the chain
  * @return The length of the longest chain, e.g. bot <= v <= top has length 2
  */
-func ComputeLongestChain<T>(elements : HashSet<T>, bot : T, top : T) : Int64
-    where T <: LessOrEqual<T> & Hashable & Equatable<T> & ToString
+func ComputeLongestChain<V>(elements : HashSet<V>, bot : V, top : V) : Int64
+    where V <: LessOrEqual<V> & Hashable & Equatable<V> & ToString
 {
-    AssertElementInCollection<T>(bot, elements)
-    func ComputeLongestChainLength(currentElement : T) : Int64 {
+    AssertElementInCollection<V>(bot, elements)
+    func ComputeLongestChainLength(currentElement : V) : Int64 {
         if(currentElement == bot) {
             0
         } else {
@@ -84,12 +84,12 @@ enum LatticeIntersection {
  * @param intersection The type of intersection function to compute
  * @return The intersection function
  */
-func ComputeOrderIntersectionOp<T>(
-    elements : HashSet<T>,
+func ComputeOrderIntersectionOp<V>(
+    elements : HashSet<V>,
     intersection : LatticeIntersection
-) : HashMap<T, HashMap<T, T>>
+) : HashMap<V, HashMap<V, V>>
     where
-        T <: Hashable & Equatable<T> & LessOrEqual<T> & ToString
+        V <: Hashable & Equatable<V> & LessOrEqual<V> & ToString
 {
     // Get the functions that determine the direction we go in the lattice
     // and how to rank the resulting candidates
@@ -97,28 +97,28 @@ func ComputeOrderIntersectionOp<T>(
         // The join is the lowest intersection greater than each element
         case JOIN =>
             (
-                { lhs : T, rhs : T => rhs <= lhs },
-                { lhs : T, rhs : T => min(lhs, rhs) }
+                { lhs : V, rhs : V => rhs <= lhs },
+                { lhs : V, rhs : V => min(lhs, rhs) }
             )
         // The meet is the greatest intersection lower than each element
         case MEET =>
             (
-                { lhs : T, rhs : T => lhs <= rhs },
-                { lhs : T, rhs : T => max(lhs, rhs) }
+                { lhs : V, rhs : V => lhs <= rhs },
+                { lhs : V, rhs : V => max(lhs, rhs) }
             )
     }
     // Create the hash map we are going to use to store the results
-    let outerMap = HashMap<T, HashMap<T, T>>()
+    let outerMap = HashMap<V, HashMap<V, V>>()
     for(lhs in elements) {
-        let innerMap = HashMap<T, T>()
+        let innerMap = HashMap<V, V>()
         for(rhs in elements) {
             let element =
                 if(lhs == rhs) {
                     // If elements are equal, then they are already intersected
                     lhs
                 } else {
-                    let lhsElements = HashSet<T>()
-                    let rhsElements = HashSet<T>()
+                    let lhsElements = HashSet<V>()
+                    let rhsElements = HashSet<V>()
                     // Find all elements greater/lower than the two elements
                     for(t in elements) {
                         if(orderFn(t, lhs)) {
@@ -129,12 +129,12 @@ func ComputeOrderIntersectionOp<T>(
                         }
                     }
                     // Find all the common elements
-                    lhsElements.removeIf({ t : T => !rhsElements.contains(t) })
+                    lhsElements.removeIf({ t : V => !rhsElements.contains(t) })
                     // If there are no common elements, then there is no
                     // intersection: this poset is not a lattice
-                    AssertCollectionHasLengthAtLeast<T>(lhsElements, 1)
+                    AssertCollectionHasLengthAtLeast<V>(lhsElements, 1)
                     // Find the 'best' candidate (i.e. greatest/lowest)
-                    fold_left<T>(rankFn, lhsElements).getOrThrow()
+                    fold_left<V>(rankFn, lhsElements).getOrThrow()
                 }
             innerMap.put(rhs, element)
         }
@@ -143,30 +143,30 @@ func ComputeOrderIntersectionOp<T>(
     outerMap
 }
 /**
- * Compute the bottom element of a partially ordered set: the element that
+ * Compute the bottom element of a partially ordered set: Vhe element that
  * is lower than all the others
  *
  * @param elements
  * @return The bottom element of the set
  */
-func ComputeBottom<T>(elements : HashSet<T>) : T
-    where T <: LessOrEqual<T> & Hashable & Equatable<T> & ToString
+func ComputeBottom<V>(elements : HashSet<V>) : V
+    where V <: LessOrEqual<V> & Hashable & Equatable<V> & ToString
 {
     AssertCollectionHasLengthAtLeast(elements, 1)
-    fold_left<T>({ acc, cur => min(acc, cur) }, elements).getOrThrow()
+    fold_left<V>({ acc, cur => min(acc, cur) }, elements).getOrThrow()
 }
 /**
- * Compute the top element of a partially ordered set: the element that
+ * Compute the top element of a partially ordered set: Vhe element that
  * is greater than all the others
  *
  * @param elements
  * @return The top element of the set
  */
-func ComputeTop<T>(elements : HashSet<T>) : T
-    where T <: LessOrEqual<T> & Hashable & Equatable<T> & ToString
+func ComputeTop<V>(elements : HashSet<V>) : V
+    where V <: LessOrEqual<V> & Hashable & Equatable<V> & ToString
 {
     AssertCollectionHasLengthAtLeast(elements, 1)
-    fold_left<T>({ acc, cur => max(acc, cur) }, elements).getOrThrow()
+    fold_left<V>({ acc, cur => max(acc, cur) }, elements).getOrThrow()
 }
 /**
  * Compute the join (least upper bound) function of a partially ordered set
@@ -175,8 +175,8 @@ func ComputeTop<T>(elements : HashSet<T>) : T
  * @param elements
  * @return The join function of the set
  */
-func ComputeJoin<T>(elements : HashSet<T>) : HashMap<T, HashMap<T, T>>
-    where T <: LessOrEqual<T> & Hashable & Equatable<T> & ToString
+func ComputeJoin<V>(elements : HashSet<V>) : HashMap<V, HashMap<V, V>>
+    where V <: LessOrEqual<V> & Hashable & Equatable<V> & ToString
 {
     ComputeOrderIntersectionOp(elements, JOIN)
 }
@@ -187,16 +187,16 @@ func ComputeJoin<T>(elements : HashSet<T>) : HashMap<T, HashMap<T, T>>
  * @param elements
  * @return The meet function of the set
  */
-func ComputeMeet<T>(elements : HashSet<T>) : HashMap<T, HashMap<T, T>>
-    where T <: LessOrEqual<T> & Hashable & Equatable<T> & ToString
+func ComputeMeet<V>(elements : HashSet<V>) : HashMap<V, HashMap<V, V>>
+    where V <: LessOrEqual<V> & Hashable & Equatable<V> & ToString
 {
     ComputeOrderIntersectionOp(elements, MEET)
 }
 /**
  * Struct for finite lattices, an partially ordered set such that each two
  * elements have:
- * - A least upper bound ('join'): the lowest c such that a <= c and b <= c
- * - A greatest lower bound ('meet'): the highest c such that c <= a and c <= b
+ * - A least upper bound ('join'): Vhe lowest c such that a <= c and b <= c
+ * - A greatest lower bound ('meet'): Vhe highest c such that c <= a and c <= b
  *
  * Given a partially ordered set with enough structure, the join and meet can be
  * computed: this is attempted when defining a FiniteLattice and an exception
@@ -208,19 +208,19 @@ func ComputeMeet<T>(elements : HashSet<T>) : HashMap<T, HashMap<T, T>>
  * See also https://en.wikipedia.org/wiki/Lattice_order
  *
  */
-public struct FiniteLattice<T>
-    where T <: LessOrEqual<T> & Equatable<T> & Hashable & ToString
+public struct FiniteLattice<V>
+    where V <: LessOrEqual<V> & Equatable<V> & Hashable & ToString
 {
-    public let elements: HashSet<T>
-    public let join: HashMap<T, HashMap<T, T>>
-    public let meet: HashMap<T, HashMap<T, T>>
-    public let bot : T
-    public let top : T
+    let elements: HashSet<V>
+    let join: HashMap<V, HashMap<V, V>>
+    let meet: HashMap<V, HashMap<V, V>>
+    let bot : V
+    let top : V
     // We cache powers since we often access the same ones a lot
-    let cachedPowers = HashMap<Int64, ArrayList<Array<T>>>()
+    let cachedPowers = HashMap<Int64, Array<Array<V>>>()
     // The longest chain in the lattice is used for computing fixpoints
     let longestChain : Int64
-    public init (elements : HashSet<T>) {
+    public init (elements : HashSet<V>) {
         this.elements = elements
         this.meet = ComputeMeet(elements)
         this.join = ComputeJoin(elements)
@@ -234,13 +234,52 @@ public struct FiniteLattice<T>
      * @param i The width of the powers to enumerate
      * @return A list of powers of elements in this lattice
      */
-    public func EnumeratePowers(i: Int64): ArrayList<Array<T>> {
+    public func EnumeratePowers(i: Int64): Array<Array<V>> {
         match (this.cachedPowers.get(i)) {
             case Some(s) => s
             case None =>
                 let result = GetAllPermutations(this.elements, i)
                 this.cachedPowers.put(i, result)
                 result
+        }
+    }
+
+    ///////////////
+    // TODO
+    ///////////////
+    // Crack definition of input enumeration function
+    ///////////////
+
+    public func EnumerateInputs(ports : Array<Port>) : Array<Array<Array<V>>> {
+        // First compute all the possible permutations for each input wire
+        // inputPowers[i] is the array of possible signals along wire i
+        let inputPowers = map(
+            { p : Port => EnumeratePowers(p.GetWidth()) }, ports
+        )
+        // To avoid having to do expensive concatenations of arrays and things,
+        // we create one array in which the index uniquely defines a single
+        // permutation of inputs
+        //
+        // inputs[i][j] =
+        //    (i / (product  #(perms of k < j) < j)) mod (#(perms of j))
+        //
+        let divisors = Array<Int64>(ports.size){
+            i : Int64 => Product(inputPowers, { ps => ps.size }, end: i)
+        }
+        // Computing the total combinations is easy
+        let totalCombinations = Product(ports, { p => p.GetWidth() })
+        // We enumerate each possible permutation of input wires
+        Array<Array<Array<V>>>(totalCombinations){
+            i : Int64 =>
+                Array<Array<V>>(ports.size){
+                    j : Int64 =>
+                        // Get all the possible permutations for this input
+                        let possiblePowers = inputPowers[j]
+                        let totalPerms = possiblePowers.size
+                        let divisor = divisors[j]
+                        let combinationIndex = (i / divisor) % totalPerms
+                        inputPowers[j][combinationIndex]
+                }
         }
     }
     /**
@@ -250,7 +289,7 @@ public struct FiniteLattice<T>
      * @param rhs
      * @return The join of lhs and rhs
      */
-    public func Join(lhs : T, rhs : T) : T {
+    public func Join(lhs : V, rhs : V) : V {
         AssertElementInCollection(lhs, this.elements)
         AssertElementInCollection(rhs, this.elements)
         this.join.get(lhs).getOrThrow().get(rhs).getOrThrow()
@@ -262,7 +301,7 @@ public struct FiniteLattice<T>
      * @param rhs
      * @return The meet of lhs and rhs
      */
-    public func Meet(lhs : T, rhs : T) : T {
+    public func Meet(lhs : V, rhs : V) : V {
         AssertElementInCollection(lhs, this.elements)
         AssertElementInCollection(rhs, this.elements)
         this.meet.get(lhs).getOrThrow().get(rhs).getOrThrow()
@@ -274,9 +313,9 @@ public struct FiniteLattice<T>
      * @param rhs
      * @return The pointwise join of lhs and rhs
      */
-    public func Join(lhs: Array<T>, rhs: Array<T>) : Array<T> {
-        AssertArraysSameLength<T, T>(lhs, rhs)
-        map2<T, T, T>({ lhs, rhs => this.Join(lhs, rhs) }, lhs, rhs)
+    public func Join(lhs: Array<V>, rhs: Array<V>) : Array<V> {
+        AssertArraysSameLength<V, V>(lhs, rhs)
+        map2<V, V, V>({ lhs, rhs => this.Join(lhs, rhs) }, lhs, rhs)
     }
     /**
      * Compute the pointwise meet of two powers of elements in this lattice
@@ -285,9 +324,9 @@ public struct FiniteLattice<T>
      * @param rhs
      * @return The pointwise meet of lhs and rhs
      */
-    public func Meet(lhs: Array<T>, rhs: Array<T>) : Array<T> {
-        AssertArraysSameLength<T, T>(lhs, rhs)
-        map2<T, T, T>({ lhs, rhs => this.Meet(lhs, rhs) }, lhs, rhs)
+    public func Meet(lhs: Array<V>, rhs: Array<V>) : Array<V> {
+        AssertArraysSameLength<V, V>(lhs, rhs)
+        map2<V, V, V>({ lhs, rhs => this.Meet(lhs, rhs) }, lhs, rhs)
     }
     /**
      * Compute lhs <= rhs for two elements in the lattice
@@ -296,7 +335,7 @@ public struct FiniteLattice<T>
      * @param rhs
      * @return lhs <= rhs
      */
-    public func LTE(lhs : T, rhs : T) : Bool {
+    public func LTE(lhs : V, rhs : V) : Bool {
         lhs <= rhs
     }
     /**
@@ -306,8 +345,8 @@ public struct FiniteLattice<T>
      * @param rhs
      * @return lhs <= rhs
      */
-    public func LTE(lhs: Array<T>, rhs: Array<T>) : Bool {
-        AssertArraysSameLength<T, T>(lhs, rhs)
+    public func LTE(lhs: Array<V>, rhs: Array<V>) : Bool {
+        AssertArraysSameLength<V, V>(lhs, rhs)
         fold_left2({ acc, lhs, rhs => acc && lhs <= rhs }, true, lhs, rhs)
     }
     /**
@@ -319,5 +358,8 @@ public struct FiniteLattice<T>
      */
     public func GetLongestChain(i : Int64) : Int64 {
         this.longestChain * i
+    }
+    public func GetElements() : HashSet<V> {
+        this.elements
     }
 }
