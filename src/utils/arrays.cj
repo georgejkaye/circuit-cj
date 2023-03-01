@@ -50,7 +50,7 @@ public func append<T>(xs : Array<T>, y : T) {
  * @param ys
  * @return The concatenation of xs and ys
  */
-public func concat<T>(xs : Array<T>, ys : Array<T>) {
+public func concat<T>(xs : Array<T>, ys : Array<Y>) {
     Array<T>(xs.size + ys.size){
         i : Int64 =>
             if(i < xs.size) {
@@ -74,13 +74,12 @@ public func printCollection<T>(
     printFn : (T) -> String,
     openingBracket!: String = "{",
     closingBracket!: String = "}",
-    delimiter!: String = ",",
-    newline!: Bool = false
+    delimiter!: String = ","
 ) : String {
     let str = foldi_left(
         {acc : String, cur : T, i : Int64 =>
             let delimiter = if(i != collection.size - 1) {
-                "${delimiter}${if(newline){"\n"}}"
+                delimiter
             } else {
                 ""
             }
@@ -105,10 +104,10 @@ public func printArray<T>(
     openingBracket!: String = "[",
     closingBracket!: String = "]",
     delimiter!: String = ",",
-    newline!: Bool = false
+    reverse!: Bool = false
 ) : String {
     printCollection(
         array, printFn, openingBracket: openingBracket,
-        closingBracket: closingBracket, delimiter: delimiter, newline: newline
+        closingBracket: closingBracket, delimiter: delimiter
     )
 }
