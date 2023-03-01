@@ -14,20 +14,65 @@ public interface PrimitiveSymbol<V>
     where V <: ValueSymbol & Equatable<V> & LessOrEqual<V> {
     func GetEnhancedName(n: Int64, w: Int64): String
 }
-
-public class Signature<V, G> <: HasName & ToString
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+/**
+ * Check that a truth table is monotone with relation to the information order,
+ * i.e. if v <= w then f(v) <= f(w).
+ *
+ * Throws a NonMonotoneFunctionException if it is not.
+ *
+ * @param lattice
+ * @param ports
+ * @param table
+ */
+func CheckTableMonotone<V>(
+    lattice : FiniteLattice<V>,
+    ports : Array<Port>,
+    table : (Array<Array<V>>) -> (Array<Array<V>>)
+) : Unit
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>
 {
-    public let specificationImplementation : HashMap<Specification<V>, ((Array<Array<V>>) -> Array<V>)>
-        = HashMap<Specification<V>, ((Array<Array<V>>) -> Array<V>)>()
+    let inputs = lattice.EnumerateInputs(ports)
+    for(input1 in inputs) {
+        for(input2 in inputs) {
+            if (lattice.LTE(input1, input2)) {
+                let result1 = table(input1)
+                let result2 = table(input2)
+                if(!lattice.LTE(result1, result2)){
+                    throw NonMonotoneFunctionException<V>(
+                        input1, input2, table
+                    )
+                }
+            }
+        }
+    }
+}
+public class Signature<V, G> <: HasName & ToString
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    public let specificationImplementation :
+        HashMap<Specification<V>, ((Array<Array<V>>) -> Array<V>)>
+            = HashMap<Specification<V>, ((Array<Array<V>>) -> Array<V>)>()
     public Signature(
         let name : String,
         let latticeStructure: FiniteLattice<V>,
-        let gateInterpretation: (G) -> ((Array<Array<V>>) -> Array<V>),
+        let usedGates : HashSet<G>,
+        let gateInterpretation: (G) -> ((Array<Array<V>>) -> Array<Array<V>>),
         let toDec: (Array<V>, Bool) -> Option<Int64>
-    ) {}
-    public func GetGate(gate : G) : ((Array<Array<V>>) -> Array<V>) {
+    ) {
+        for(g in usedGates) {
+            CheckTableMonotone(
+                this.latticeStructure, g.GetInputPorts(), gateInterpretation(g)
+            )
+        }
+    }
+    public func GetGate(gate : G) : ((Array<Array<V>>) -> Array<Array<V>>) {
         this.gateInterpretation(gate)
+    }
+    public func GetLattice() : FiniteLattice<V> {
+        this.latticeStructure
     }
     public func Join(v: V, u: V): V {
         this.latticeStructure.Join(v, u)

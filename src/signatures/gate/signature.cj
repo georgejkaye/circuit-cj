@@ -93,7 +93,9 @@ extend GateLevelValue <: ValueSymbol & LessOrEqual<GateLevelValue> & Equatable<G
     * @param w      The width of the resulting list
     * @param x      The decimal number to convert
     */
-    public static func UnsignedDecToSignal(x : Int64, w : Int64) : Signal<GateLevelValue> {
+    public static func UnsignedDecToSignal(
+        x : Int64, w : Int64
+    ) : Signal<GateLevelValue> {
         AssertNonNegative(x)
         let required = log2Ceil(x+1)
         AssertEnoughBits(w, required)
@@ -140,7 +142,9 @@ extend GateLevelValue <: ValueSymbol & LessOrEqual<GateLevelValue> & Equatable<G
     * @param w The width of the bitstring
     * @return The corresponding bitstring
     */
-    public static func SignedDecToSignal(x : Int64, w : Int64) : Signal<GateLevelValue> {
+    public static func SignedDecToSignal(
+        x : Int64, w : Int64
+    ) : Signal<GateLevelValue> {
         let bin = UnsignedDecToSignal(abs(x), w).values
         Invert(bin)
         AddOne(bin)
@@ -161,7 +165,9 @@ type BelnapCircuit = InterfacedHypergraph<GateLevelValue, GateLevelPrimitive>
 /**
  * Instantiate GateLevelPrimitive as a type of gate symbols
  */
-extend GateLevelPrimitive <: PrimitiveSymbol<GateLevelValue> & Equatable<GateLevelPrimitive> {
+extend GateLevelPrimitive <:
+    PrimitiveSymbol<GateLevelValue> & Equatable<GateLevelPrimitive>
+{
     public func hashCode() {
         match (this) {
             case BUF => 0
@@ -306,7 +312,9 @@ func xor(lhs: GateLevelValue, rhs: GateLevelValue) {
  * @param g The Belnap gate
  * @return The function from an array of Belnap values to an array of Belnap values
  */
-func gateLevelInterpretation(g: GateLevelPrimitive): (Array<Array<GateLevelValue>>) -> Array<GateLevelValue> {
+func gateLevelInterpretation(g: GateLevelPrimitive) :
+    (Array<Array<GateLevelValue>>) -> Array<Array<GateLevelValue>>
+{
     {
         ws: Array<Array<GateLevelValue>> =>
             let output = match (g) {
@@ -319,7 +327,7 @@ func gateLevelInterpretation(g: GateLevelPrimitive): (Array<Array<GateLevelValue
                 case XOR => xor(ws[0][0], ws[1][0])
                 case XNOR => not(xor(ws[0][0], ws[1][0]))
             }
-            [output]
+            [[output]]
     }
 }
 /**
@@ -328,7 +336,9 @@ func gateLevelInterpretation(g: GateLevelPrimitive): (Array<Array<GateLevelValue
  * @param signed Whether to interpret this as a signed value
  * @return An option containing the number represented, if appropriate
  */
-func GateLevelValueToDec(values : Array<GateLevelValue>, signed : Bool) : Option<Int64> {
+func GateLevelValueToDec(
+    values : Array<GateLevelValue>, signed : Bool
+) : Option<Int64> {
     var x = 0
     var negative = false
     if (signed) {

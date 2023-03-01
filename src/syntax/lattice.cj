@@ -239,10 +239,8 @@ public struct FiniteLattice<V>
         match (this.cachedPowers.get(i)) {
             case Some(s) => s
             case None =>
-                println("Computing new powers for ${i}")
                 let result = GetAllPermutations(this.elements, i)
                 this.cachedPowers.put(i, result)
-                println("The powers for ${i} are ${result}")
                 result
         }
     }
@@ -352,8 +350,22 @@ public struct FiniteLattice<V>
      * @return lhs <= rhs
      */
     public func LTE(lhs: Array<V>, rhs: Array<V>) : Bool {
-        AssertArraysSameLength<V, V>(lhs, rhs)
+        AssertArraysSameLength(lhs, rhs)
         fold_left2({ acc, lhs, rhs => acc && lhs <= rhs }, true, lhs, rhs)
+    }
+    /**
+     * Compute pointwise lhs <= rhs for two powers of powers of
+     * elements in the lattice
+     *
+     * @param lhs
+     * @param rhs
+     * @return lhs <= rhs
+     */
+    public func LTE(lhs: Array<Array<V>>, rhs : Array<Array<V>>) : Bool {
+        AssertArraysSameLength(lhs, rhs)
+        fold_left2(
+            { acc, lhs, rhs => acc && this.LTE(lhs, rhs)}, true, lhs, rhs
+        )
     }
     /**
      * Get the longest chain in the lattice structure

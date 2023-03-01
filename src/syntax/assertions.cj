@@ -53,27 +53,9 @@ class CannotBitwiseMapPrimitiveException<V, G> <: Exception
     }
 }
 
-func AssertTableMonotone<V>(
-    lattice : FiniteLattice<V>,
-    arity : Int64,
-    table : (Array<V>) -> Array<V>
-) : Unit where V <: ValueSymbol & Equatable<V> & LessOrEqual<V> & LessOrEqual<V> {
-    let inputs = lattice.EnumeratePowers(arity)
-    for(input1 in inputs) {
-        for(input2 in inputs) {
-            if (lattice.LTE(input1, input2)) {
-                let result1 = table(input1)
-                let result2 = table(input2)
-                if(!lattice.LTE(result1, result2)){
-                    throw NonMonotoneFunctionException(input1, input2, table)
-                }
-            }
-        }
-    }
-}
-
 class NonMonotoneFunctionException<T> <: Exception where T <: ToString {
-    public init(l : Array<T>, r : Array<T>, f : (Array<T>) -> Array<T>) {
+    public init(l : Array<Array<T>>, r : Array<Array<T>>, f : (Array<Array<T>>) -> Array<Array<T>>) {
+        ErrorMsg("Found an issue with ${l} and ${r}")
         ErrorMsg("Expected function to be monotone, but f(${l}) = ${f(l)} is not less than f(${r}) = ${f(r)}")
     }
 }
