@@ -123,6 +123,19 @@ public func map<T, U>(f : (T) -> U, xs : Array<T>) : Array<U> {
     Array<U>(xs.size, { i : Int64 => f(xs[i]) })
 }
 /**
+ * Given a function f and a collection xs, create the array ys in which
+ * each element is the result of applying f to each element obtained using the
+ * iterator of xs
+ *
+ * @param The function (elem, index) -> u
+ * @param xs The array
+ * @return The result of the map
+ */
+public func mapCollection<T, U>(f : (T) -> U, xs : Collection<T>) : Array<U> {
+    let iterator = xs.iterator()
+    Array<U>(xs.size, { i : Int64 => f(iterator.next().getOrThrow()) })
+}
+/**
  * Given a function f and an array xs, create the array ys in which
  * ys[i] = f(xs[i], i)
  *
