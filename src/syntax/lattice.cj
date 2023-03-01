@@ -19,17 +19,18 @@ func GetAllPermutations<V>(
     elements: HashSet<V>,
     i: Int64
 ): Array<Array<V>>
-    where V <: Equatable<V> & Hashable
+    where V <: Equatable<V> & Hashable & ToString
 {
     if (i == 0) {
         Array<Array<V>>()
+    } else if (i == 1) {
+        mapCollection({ v : V => [v] }, elements)
     } else {
         let smaller = GetAllPermutations(elements, i - 1)
         let current = ArrayList<Array<V>>()
         for (perm in smaller) {
             for (elem in elements) {
-                let extended = ArrayList<V>(perm)
-                extended.append(elem)
+                let extended = append(perm, elem)
                 current.append(extended.toArray())
             }
         }
@@ -238,42 +239,47 @@ public struct FiniteLattice<V>
         match (this.cachedPowers.get(i)) {
             case Some(s) => s
             case None =>
+                println("Computing new powers for ${i}")
                 let result = GetAllPermutations(this.elements, i)
                 this.cachedPowers.put(i, result)
+                println("The powers for ${i} are ${result}")
                 result
         }
     }
-
-    ///////////////
-    // TODO
-    ///////////////
-    // Crack definition of input enumeration function
-    ///////////////
-
+    /**
+     * Given an array of ports of arbitrary widths, enumerate all the possible
+     * permutations of inputs to these ports.
+     *
+     * @param ports The array of ports
+     * @return An array in which element i is an array of inputs for each
+     *             input wire
+     */
     public func EnumerateInputs(ports : Array<Port>) : Array<Array<Array<V>>> {
         // First compute all the possible permutations for each input wire
         // inputPowers[i] is the array of possible signals along wire i
         let inputPowers = map(
             { p : Port => EnumeratePowers(p.GetWidth()) }, ports
         )
-        // To avoid having to do expensive concatenations of arrays and things,
-        // we create one array in which the index uniquely defines a single
-        // permutation of inputs
+        // We need to return an array containing each possible permutation
+        // of elements in inputPowers. To do this, we generate an array in which
+        // each element is computed as
         //
-        // inputs[i][j] =
-        //    (i / (product  #(perms of k < j) < j)) mod (#(perms of j))
+        //      inputs[i][j] = inputPowers[j][(i / a) mod b]
         //
+        // where a is the product of the number of perms for each input < j,
+        // and b is the number of permutations of size j.
+        //
+        // We compute the divsors in advance
         let divisors = Array<Int64>(ports.size){
             i : Int64 => Product(inputPowers, { ps => ps.size }, end: i)
         }
-        // Computing the total combinations is easy
-        let totalCombinations = Product(ports, { p => p.GetWidth() })
-        // We enumerate each possible permutation of input wires
+        // The total combinations is also a big product
+        let totalCombinations = Product(inputPowers, { ps => ps.size })
+        // Now we can define the array of all permutations
         Array<Array<Array<V>>>(totalCombinations){
             i : Int64 =>
                 Array<Array<V>>(ports.size){
                     j : Int64 =>
-                        // Get all the possible permutations for this input
                         let possiblePowers = inputPowers[j]
                         let totalPerms = possiblePowers.size
                         let divisor = divisors[j]
