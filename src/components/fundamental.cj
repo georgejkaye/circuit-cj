@@ -10,6 +10,28 @@
 
 package components
 
+public func MakeSignal<V, G>(signal : Signal<V>) : InterfacedHypergraph<V, G>
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    let vs = signal.values
+    let wires = map(
+        { v : V =>
+            UseEdgeWithNewOutputs(
+                Label<V, G>.VALUE(v),
+                Array<Vertex<V, G>>(),
+                None<InterfacedHypergraph<V, G>>
+            )[0]
+        },
+        vs
+    )
+    MakeSubcircuit<V, G>(
+        Array<InterfaceWire<V, G>>(),
+        [InterfaceWire(Combine(wires))],
+        SIGNAL(signal)
+    )
+}
 public interface FundamentalBuilder<V, G>
     where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
@@ -50,22 +72,7 @@ extend Signature<V, G> <: FundamentalBuilder<V, G> {
     * @return The circuit containing the signal
     */
     public func MakeSignal(spec : Signal<V>) : InterfacedHypergraph<V, G> {
-        let vs = spec.values
-        let wires = map(
-            { v : V =>
-                UseEdgeWithNewOutputs(
-                    Label<V, G>.VALUE(v),
-                    Array<Vertex<V, G>>(),
-                    None<InterfacedHypergraph<V, G>>
-                )[0]
-            },
-            vs
-        )
-        MakeSubcircuit(
-            Array<InterfaceWire<V, G>>(),
-            [InterfaceWire(Combine(wires))],
-            SIGNAL(spec)
-        )
+        MakeSignal<V, G>(spec)
     }
     /**
     * Make a subcircuit containing a a signal defined as multiple copies of a single value

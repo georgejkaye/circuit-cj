@@ -11,7 +11,65 @@ package components
 
 import utils.*
 
-public interface SubcircuitBuilder<V, G> where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
+/**
+ * Make a subcircuit with some (optionally named) input and
+ * output wires. This circuit can then be used in other subcircuits,
+ * where it will be initially displayed as a single edge, but can
+ * be expanded to show the components if desired.
+ *
+ * @param inputs The inputs of the subcircuit
+ * @param outputs The outputs of the subcircuit
+ * @param label The label to give the subcircuit, which will be displayed
+ *              on its edge
+ * @return The new interfaced hypergraph representing the subcircuit
+ */
+func MakeSubcircuit<V, G>(
+    inputs: Array<InterfaceWire<V, G>>,
+    outputs : Array<InterfaceWire<V, G>>,
+    label : Label<V, G>
+) : InterfacedHypergraph<V, G>
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    for(iv in inputs) {
+        AssertWireHasNoInEdge(iv.GetWire())
+    }
+    let (first, inputsStart, outputsStart) = if(inputs.size > 0) {
+        (inputs[0], 1, 0)
+    } else {
+        (outputs[0], 0, 1)
+    }
+    // We need all of the elements captured in this subcircuit to
+    // be part of the same hypergraphs
+    let owner = first.GetVertex().GetOwner()
+    for(i in inputsStart..inputs.size) {
+        let v = inputs[i].GetVertex()
+        owner.IncludeHypergraph(v.GetOwner())
+    }
+    for(i in outputsStart..outputs.size) {
+        let v = outputs[i].GetVertex()
+        owner.IncludeHypergraph(v.GetOwner())
+    }
+    // Clone the combined hypergraph so that this subcircuit isn't affected
+    // later if we attach more things to the original graph
+    let (newF, vertexMap, _) = owner.Clone()
+    let newInputs = map({iv : InterfaceWire<V, G> =>
+        InterfaceVertex(vertexMap.get(iv.GetVertex()).getOrThrow(), iv.GetName())}, inputs)
+    let newOutputs = map({iv : InterfaceWire<V, G> =>
+        InterfaceVertex(vertexMap.get(iv.GetVertex()).getOrThrow(), iv.GetName())}, outputs)
+    InterfacedHypergraph(
+        newF,
+        newInputs,
+        newOutputs,
+        label
+    )
+}
+public interface SubcircuitBuilder<V, G>
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
     func MakeSubcircuit(
         inputs: Array<InterfaceWire<V, G>>,
         outputs : Array<InterfaceWire<V, G>>,
@@ -81,55 +139,12 @@ public interface SubcircuitBuilder<V, G> where V <: ValueSymbol & Equatable<V> &
 }
 
 extend Signature<V, G> <: SubcircuitBuilder<V, G> {
-    /**
-    * Make a subcircuit with some (optionally named) input and
-    * output wires. This circuit can then be used in other subcircuits,
-    * where it will be initially displayed as a single edge, but can
-    * be expanded to show the components if desired.
-    *
-    * @param inputs The inputs of the subcircuit
-    * @param outputs The outputs of the subcircuit
-    * @param label The label to give the subcircuit, which will be displayed
-    *              on its edge
-    * @return The new interfaced hypergraph representing the subcircuit
-    */
     func MakeSubcircuit(
-        inputs : Array<InterfaceWire<V, G>>,
+        inputs: Array<InterfaceWire<V, G>>,
         outputs : Array<InterfaceWire<V, G>>,
         label : Label<V, G>
     ) : InterfacedHypergraph<V, G> {
-        for(iv in inputs) {
-            AssertWireHasNoInEdge(iv.GetWire())
-        }
-        let (first, inputsStart, outputsStart) = if(inputs.size > 0) {
-            (inputs[0], 1, 0)
-        } else {
-            (outputs[0], 0, 1)
-        }
-        // We need all of the elements captured in this subcircuit to
-        // be part of the same hypergraphs
-        let owner = first.GetVertex().GetOwner()
-        for(i in inputsStart..inputs.size) {
-            let v = inputs[i].GetVertex()
-            owner.IncludeHypergraph(v.GetOwner())
-        }
-        for(i in outputsStart..outputs.size) {
-            let v = outputs[i].GetVertex()
-            owner.IncludeHypergraph(v.GetOwner())
-        }
-        // Clone the combined hypergraph so that this subcircuit isn't affected
-        // later if we attach more things to the original graph
-        let (newF, vertexMap, _) = owner.Clone()
-        let newInputs = map({iv : InterfaceWire<V, G> =>
-            InterfaceVertex(vertexMap.get(iv.GetVertex()).getOrThrow(), iv.GetName())}, inputs)
-        let newOutputs = map({iv : InterfaceWire<V, G> =>
-            InterfaceVertex(vertexMap.get(iv.GetVertex()).getOrThrow(), iv.GetName())}, outputs)
-        InterfacedHypergraph(
-            newF,
-            newInputs,
-            newOutputs,
-            label
-        )
+        MakeSubcircuit<V, G>(inputs, outputs, label)
     }
     /**
      * Make a subcircuit with some (optionally named) input and output wires.
@@ -147,7 +162,7 @@ extend Signature<V, G> <: SubcircuitBuilder<V, G> {
         outputs : Array<InterfaceWire<V, G>>,
         name : String
     ) : InterfacedHypergraph<V, G> {
-        this.MakeSubcircuit(
+        MakeSubcircuit<V, G>(
             inputs,
             outputs,
             COMPOSITE(
@@ -172,7 +187,7 @@ extend Signature<V, G> <: SubcircuitBuilder<V, G> {
         outputs : Array<InterfaceWire<V, G>>,
         label : Label<V, G>
     ) : InterfacedHypergraph<V, G> {
-        this.MakeSubcircuit(
+        MakeSubcircuit<V, G>(
             Array<InterfaceWire<V, G>>(),
             outputs,
             label
