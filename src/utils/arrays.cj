@@ -50,7 +50,7 @@ public func append<T>(xs : Array<T>, y : T) {
  * @param ys
  * @return The concatenation of xs and ys
  */
-public func concat<T>(xs : Array<T>, ys : Array<Y>) {
+public func concat<T>(xs : Array<T>, ys : Array<T>) {
     Array<T>(xs.size + ys.size){
         i : Int64 =>
             if(i < xs.size) {
