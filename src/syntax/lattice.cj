@@ -252,11 +252,19 @@ public struct FiniteLattice<V>
      * @return An array in which element i is an array of inputs for each
      *             input wire
      */
-    public func EnumerateInputs(ports : Array<Port>) : Array<Array<Array<V>>> {
+    public func EnumerateInputs(
+        ports : Array<Port>,
+        fixed!: HashMap<Int64, Array<V>> = HashMap()
+    ) : Array<Array<Array<V>>> {
         // First compute all the possible permutations for each input wire
         // inputPowers[i] is the array of possible signals along wire i
-        let inputPowers = map(
-            { p : Port => EnumeratePowers(p.GetWidth()) }, ports
+        let inputPowers = mapi(
+            { p : Port, i : Int64 =>
+                match(fixed.get(i)){
+                    case None     => EnumeratePowers(p.GetWidth())
+                    case Some(fx) => [fx]
+                }
+            }, ports
         )
         // We need to return an array containing each possible permutation
         // of elements in inputPowers. To do this, we generate an array in which
@@ -280,9 +288,12 @@ public struct FiniteLattice<V>
                     j : Int64 =>
                         let possiblePowers = inputPowers[j]
                         let totalPerms = possiblePowers.size
-                        let divisor = divisors[j]
-                        let combinationIndex = (i / divisor) % totalPerms
-                        inputPowers[j][combinationIndex]
+                        let combinationIndex = if(totalPerms == 1) {
+                            0
+                        } else {
+                            (i / divisors[j]) % totalPerms
+                        }
+                        possiblePowers[combinationIndex]
                 }
         }
     }
