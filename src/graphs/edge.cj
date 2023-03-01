@@ -29,10 +29,10 @@ func CheckSpecCompatibility<V, G>(
     where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     func CheckArrayCompatibility(
-        desired : Array<Port<V>>,
+        desired : Array<Port>,
         actual : Array<Tentacle<V, G>>
     ) : Unit {
-        AssertArrayElementsHaveParameters<Tentacle<V, G>, Port<V>, Int64>(
+        AssertArrayElementsHaveParameters<Tentacle<V, G>, Port, Int64>(
             actual,
             desired,
             { t => t.GetWidth() },
@@ -178,8 +178,8 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
             COMPOSITE(
                 Specification(
                     name,
-                    map({ v => Port<V>(v.GetWidth(), "")}, sources),
-                    map({ v => Port<V>(v.GetWidth(), "")}, targets)
+                    map({ v => Port(v.GetWidth(), "")}, sources),
+                    map({ v => Port(v.GetWidth(), "")}, targets)
                 )
             ),
             sources,
@@ -353,10 +353,10 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
     public operator func !=(right : Edge<V, G>) : Bool {
         this.GetId() != right.GetId()
     }
-    public func GetInputPorts() : Array<Port<V>> {
+    public func GetInputPorts() : Array<Port> {
         this.label.GetInputPorts()
     }
-    public func GetOutputPorts() : Array<Port<V>> {
+    public func GetOutputPorts() : Array<Port> {
         this.label.GetOutputPorts()
     }
     public func hashCode() : Int64 {

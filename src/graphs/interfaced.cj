@@ -47,7 +47,7 @@ public class InterfaceVertex<V, G>
         }
         "${vertex}${nameString}"
     }
-    public func ToPort() : Port<V> {
+    public func ToPort() : Port {
         Port(vertex.GetWidth(), name: name)
     }
     public func IsFeedback() : Bool {
@@ -176,8 +176,8 @@ public class InterfacedHypergraph<V, G>
             COMPOSITE(
                 Specification<V>(
                     name,
-                    map({ iv : InterfaceVertex<V, G> => Port<V>(iv.GetWidth(), name: iv.GetName() )}, inputs),
-                    map({ iv : InterfaceVertex<V, G> => Port<V>(iv.GetWidth(), name: iv.GetName() )}, outputs)
+                    map({ iv : InterfaceVertex<V, G> => Port(iv.GetWidth(), name: iv.GetName() )}, inputs),
+                    map({ iv : InterfaceVertex<V, G> => Port(iv.GetWidth(), name: iv.GetName() )}, outputs)
                 )
             )
         )
@@ -320,10 +320,10 @@ public class InterfacedHypergraph<V, G>
     public func GetCoarity() : Int64 {
         this.outputs.size
     }
-    public func GetInputPorts() : Array<Port<V>> {
+    public func GetInputPorts() : Array<Port> {
         map({ iv : InterfaceVertex<V, G> => iv.ToPort() }, this.inputs )
     }
-    public func GetOutputPorts() : Array<Port<V>> {
+    public func GetOutputPorts() : Array<Port> {
         map({ iv : InterfaceVertex<V, G> => iv.ToPort() }, this.outputs )
     }
     /**

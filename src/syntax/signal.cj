@@ -34,13 +34,13 @@ public struct Signal<V> <: ToString & HasName & Specifiable<V> & HasWidth & Equa
     public func toString() : String {
         "${values}"
     }
-    public func GetInputPorts() : Array<Port<V>> {
+    public func GetInputPorts() : Array<Port> {
         []
     }
     public func GetArity() : Int64 {
         0
     }
-    public func GetOutputPorts() : Array<Port<V>> {
+    public func GetOutputPorts() : Array<Port> {
         [Port(values.size)]
     }
     public func GetCoarity() : Int64 {

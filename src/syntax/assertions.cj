@@ -19,12 +19,12 @@ func AssertSignalsSameWidth<V>(
     )
 }
 
-func AssertPortsSameWidth<V>(
-    array : Array<Port<V>>
-) : Unit where V <: ValueSymbol & Equatable<V> & LessOrEqual<V> {
+func AssertPortsSameWidth(
+    array : Array<Port>
+) : Unit {
     AssertArrayAllSameParameter(
         array,
-        { p : Port<V> => p.GetWidth() },
+        { p : Port => p.GetWidth() },
         Width
     )
 }

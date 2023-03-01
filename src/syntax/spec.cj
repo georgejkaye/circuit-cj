@@ -42,8 +42,8 @@ public class Specification<V>
     public let id : Int64
     public Specification(
         public let name : String,
-        public let inputPorts : Array<Port<V>>,
-        public let outputPorts : Array<Port<V>>
+        public let inputPorts : Array<Port>,
+        public let outputPorts : Array<Port>
     ){
         this.id = nextId
         nextId++
@@ -51,13 +51,13 @@ public class Specification<V>
     public func GetName() : String {
         this.name
     }
-    public func GetInputPorts() : Array<Port<V>> {
+    public func GetInputPorts() : Array<Port> {
         this.inputPorts
     }
     public func GetArity() : Int64 {
         this.GetInputPorts().size
     }
-    public func GetOutputPorts() : Array<Port<V>> {
+    public func GetOutputPorts() : Array<Port> {
         this.outputPorts
     }
     public func GetCoarity() : Int64 {

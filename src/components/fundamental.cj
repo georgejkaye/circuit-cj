@@ -24,8 +24,8 @@ public interface FundamentalBuilder<V, G>
     func UseJoin(a : Wire<V, G>, b : Wire<V, G>) : Wire<V, G>
     func UseBlackbox(
         name : String,
-        domain : Array<Port<V>>,
-        codomain : Array<Port<V>>,
+        domain : Array<Port>,
+        codomain : Array<Port>,
         inputs: Array<Wire<V, G>>
     ) : Array<Wire<V, G>>
 }
@@ -172,8 +172,8 @@ extend Signature<V, G> <: FundamentalBuilder<V, G> {
      */
     public func UseBlackbox(
         name : String,
-        domain : Array<Port<V>>,
-        codomain : Array<Port<V>>,
+        domain : Array<Port>,
+        codomain : Array<Port>,
         inputs: Array<Wire<V, G>>
     ) : Array<Wire<V, G>> {
         UseEdgeWithNewOutputs<V, G, Wire<V, G>>(

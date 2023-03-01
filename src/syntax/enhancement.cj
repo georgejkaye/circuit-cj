@@ -93,9 +93,9 @@ public struct EnhancedPrimitive<V, G> <: HasName & Specifiable<V> & Equatable<En
         }
         "${primitiveString}${enhancementString}"
     }
-    public func GetInputPorts() : Array<Port<V>> {
+    public func GetInputPorts() : Array<Port> {
         let arity = this.GetArity()
-        Array<Port<V>>(arity, {
+        Array<Port>(arity, {
             i : Int64 =>
                 let portWidth = match(this.enhancement) {
                     case BITWISE_MAP(w)    => w
@@ -105,9 +105,9 @@ public struct EnhancedPrimitive<V, G> <: HasName & Specifiable<V> & Equatable<En
                 Port(portWidth, "")
         })
     }
-    public func GetOutputPorts() : Array<Port<V>> {
+    public func GetOutputPorts() : Array<Port> {
         let coarity = this.GetCoarity()
-        Array<Port<V>>(coarity, {
+        Array<Port>(coarity, {
             i : Int64 =>
                 let portWidth = match(this.enhancement) {
                     case BITWISE_MAP(w)    => w

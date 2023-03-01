@@ -157,7 +157,6 @@ public enum GateLevelPrimitive {
  * Internal package type aliases
  */
 type BelnapWire = Wire<GateLevelValue, GateLevelPrimitive>
-type BelnapPort = Port<GateLevelValue>
 type BelnapCircuit = InterfacedHypergraph<GateLevelValue, GateLevelPrimitive>
 /**
  * Instantiate GateLevelPrimitive as a type of gate symbols
@@ -193,7 +192,7 @@ extend GateLevelPrimitive <: PrimitiveSymbol<GateLevelValue> & Equatable<GateLev
             case XNOR => "XNOR"
         }
     }
-    public func GetInputPorts(): Array<BelnapPort> {
+    public func GetInputPorts(): Array<Port> {
         match (this) {
             case BUF => [Port(1, "A")]
             case NOT => [Port(1, "A")]
@@ -208,7 +207,7 @@ extend GateLevelPrimitive <: PrimitiveSymbol<GateLevelValue> & Equatable<GateLev
     public func GetArity(): Int64 {
         this.GetInputPorts().size
     }
-    public func GetOutputPorts(): Array<BelnapPort> {
+    public func GetOutputPorts(): Array<Port> {
         match (this) {
             case BUF => [Port(1, "Z")]
             case NOT => [Port(1, "Z")]

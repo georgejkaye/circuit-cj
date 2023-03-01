@@ -80,11 +80,11 @@ func AssertCompatibleInputOutput<V, G>(
         V <: ValueSymbol & Equatable<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertArrayElementsHaveParameters<Port<V>, Port<V>, Port<V>>(
+    AssertArrayElementsHaveParameters<Port, Port, Port>(
         g.GetInputPorts(),
         f.GetOutputPorts(),
-        { p : Port<V> => p },
-        { p : Port<V> => p },
+        { p : Port => p },
+        { p : Port => p },
         Width
     )
 }

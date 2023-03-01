@@ -37,7 +37,7 @@ public enum Label<V, G> where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, 
     | DELAY(Int64)                                  // A delay parameterised by a width
 }
 extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G>> {
-    public func GetInputPorts() : Array<Port<V>> {
+    public func GetInputPorts() : Array<Port> {
         match(this) {
             case VALUE(_)                      => []
             case SIGNAL(spec)                  => []
@@ -54,7 +54,7 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             case DELAY(w)                      => [Port(w)]
         }
     }
-    public func GetOutputPorts() : Array<Port<V>> {
+    public func GetOutputPorts() : Array<Port> {
         match(this) {
             case VALUE(_)                   => [Port(1)]
             case SIGNAL(spec)               => spec.GetOutputPorts()

@@ -208,7 +208,7 @@ public func UseEdgeWithNewOutputs<V, G, T>(
 {
     let sourceVertices = map({ t : T => t.GetVertex() }, sources)
     let ins = map({ v : Vertex<V, G> => v.GetInEdge() }, sourceVertices)
-    let targets = map({ p : Port<V> => Vertex<V, G>(p.GetWidth()) }, label.GetOutputPorts())
+    let targets = map({ p : Port => Vertex<V, G>(p.GetWidth()) }, label.GetOutputPorts())
     UseEdge(label, sourceVertices, targets, graph)
 }
 
@@ -297,7 +297,7 @@ public func Combine<V, G, T>(ws : Array<T>) : Wire<V, G>
     } else {
         let widths = map({ t : T => t.GetWidth() }, ws)
         UseEdgeWithNewOutputs(
-            BUNDLER(widths, [Sum(widths)]),
+            BUNDLER(widths, [Sum(ws, { t => t.GetWidth() })]),
             ws,
             None
         )[0]
