@@ -74,7 +74,7 @@ public func GetSignal<V>(v : V, w : Int64) : Signal<V>
 public func GetSignalsString<V>(vs : Array<Signal<V>>) : String
     where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>
 {
-    printArray(
+    arrayToString(
         vs, { s => s.GetName() },
         openingBracket: "(", closingBracket: ")", delimiter: ","
     )
@@ -103,7 +103,7 @@ extend WaveformType <: Hashable & Equatable<WaveformType> {
 public func GetWaveformString<V>(signals : Array<Signal<V>>) : String
     where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>
 {
-    printArray(
+    arrayToString(
         signals, { s : Signal<V> => s.GetName() },
         openingBracket: "", closingBracket: "", delimiter: " :: "
     )

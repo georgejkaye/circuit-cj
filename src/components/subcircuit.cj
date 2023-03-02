@@ -494,7 +494,7 @@ extend Signature<V, G> <: SubcircuitBuilder<V, G> {
                     ih.GetOutput(0).GetName()
                 )
             }, args)
-        let argString = printArray(
+        let argString = arrayToString(
             args, { ih : InterfacedHypergraph<V, G> => ih.GetName() },
             openingBracket: "(", closingBracket: ")", delimiter: ","
         )

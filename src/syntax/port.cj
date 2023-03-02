@@ -76,7 +76,7 @@ public class Port <: ToString & Equatable<Port> & Socket {
     }
 }
 public func PrintWidthArray<T>(array : Array<T>) : String where T <: HasWidth {
-    printArray<T>(
+    arrayToString<T>(
         array, { t : T => "${t.GetWidth()}" },
         openingBracket: "[", closingBracket: "]", delimiter: ","
     )

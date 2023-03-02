@@ -69,12 +69,12 @@ public func concat<T>(xs : Array<T>, ys : Array<T>) {
  * @param closingBracket
  * @param delimiter
  */
-public func printCollection<T>(
+public func collectionToString<T>(
     collection : Collection<T>,
     printFn : (T) -> String,
     openingBracket!: String = "{",
     closingBracket!: String = "}",
-    delimiter!: String = ","
+    delimiter!: String = ", "
 ) : String {
     let str = foldi_left(
         {acc : String, cur : T, i : Int64 =>
@@ -98,15 +98,15 @@ public func printCollection<T>(
  * @param closingBracket
  * @param delimiter
  */
-public func printArray<T>(
+public func arrayToString<T>(
     array : Array<T>,
     printFn : (T) -> String,
     openingBracket!: String = "[",
     closingBracket!: String = "]",
-    delimiter!: String = ",",
+    delimiter!: String = ", ",
     reverse!: Bool = false
 ) : String {
-    printCollection(
+    collectionToString(
         array, printFn, openingBracket: openingBracket,
         closingBracket: closingBracket, delimiter: delimiter
     )
