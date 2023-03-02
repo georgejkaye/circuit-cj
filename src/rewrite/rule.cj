@@ -1013,3 +1013,135 @@ func GetForkBlackboxRule<V, G>(blackBoxTracker : HashMap<Edge<V, G>, Int64>)
             }
         )
 }
+func GetAnnihiliationRule<V, G>(
+    ann : Annihilator<V, G>
+) : RewriteRule<V, G>
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    RewriteRule<V, G>(
+        "annihilate-${ann.gate.GetName()}-${ann.index}-${ann.input}",
+        PRIMITIVE,
+        { e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
+            if(e.GetLabel().GetPrimitive() != ann.gate){
+                None
+            } else {
+                let index = ann.index
+                match(e.GetSource(index).GetVertex().GetInEdge()) {
+                    case None => None
+                    case Some(ec) =>
+                        let annihilatingEdge = ec.GetEdge()
+                        let label = annihilatingEdge.GetLabel()
+                        if(!label.IsValue() || label.GetValueArray() != ann.input) {
+                            None
+                        } else {
+                            let nextElements = HashSet<TraversalElement<V, G>>()
+                            let removedElements = HashSet<TraversalElement<V, G>>()
+                            for(i in 0..e.GetArity()) {
+                                let v = e.GetSource(i).GetVertex()
+                                v.RemoveOutEdge(e)
+                                if(i != index) {
+                                    nextElements.put(VERTEX(v))
+                                } else {
+                                    f.RemoveVertex(v)
+                                    removedElements.put(VERTEX(v))
+                                }
+                            }
+                            f.RemoveEdge(e)
+                            removedElements.put(EDGE(e))
+                            f.RemoveEdge(annihilatingEdge)
+                            removedElements.put(EDGE(annihilatingEdge))
+                            let targets = map({
+                                t : Tentacle<V, G> =>
+                                    let v = t.GetVertex()
+                                    v.RemoveInEdge(e)
+                                    v
+                            }, e.GetTargets())
+                            for(i in 0..ann.output.size) {
+                                let signal = ann.output[i]
+                                let resultEdge = MakeValueOrSignal(
+                                    signal,
+                                    [targets[i]],
+                                    f.GetGraph()
+                                )
+                                nextElements.put(EDGE(resultEdge))
+                            }
+                            Some((nextElements, removedElements))
+                        }
+
+                }
+
+            }
+        }
+    )
+}
+func GetIdentityRule<V, G>(
+    ide : Identity<V, G>
+) : RewriteRule<V, G>
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    RewriteRule<V, G>(
+        "identity-${ide.gate.GetName()}-${ide.index}-${ide.input}",
+        PRIMITIVE,
+        { e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
+            if(e.GetLabel().GetPrimitive() != ide.gate){
+                None
+            } else {
+                let index = ide.index
+                match(e.GetSource(index).GetVertex().GetInEdge()) {
+                    case None => None
+                    case Some(ec) =>
+                        let identityEdge = ec.GetEdge()
+                        let label = identityEdge.GetLabel()
+                        if(!label.IsValue() || label.GetValueArray() != ide.input) {
+                            None
+                        } else {
+                            let nextElements = HashSet<TraversalElement<V, G>>()
+                            let removedElements = HashSet<TraversalElement<V, G>>()
+                            for(i in 0..e.GetCoarity()) {
+                                let v = e.GetSource(i).GetVertex()
+                                v.RemoveOutEdge(e)
+                                if(i != index) {
+                                    nextElements.put(VERTEX(v))
+                                } else {
+                                    f.RemoveVertex(v)
+                                    removedElements.put(VERTEX(v))
+                                }
+                            }
+                            f.RemoveEdge(e)
+                            removedElements.put(EDGE(e))
+                            f.RemoveEdge(identityEdge)
+                            removedElements.put(EDGE(identityEdge))
+                            for(i in 0..e.GetCoarity()) {
+                                let actualIndex = if(i < index) {
+                                    i
+                                } else {
+                                    i + 1
+                                }
+                                let source = e.GetSource(actualIndex).GetVertex()
+                                source.RemoveOutEdge(e)
+                                if(i != index) {
+                                    nextElements.put(VERTEX(source))
+                                } else {
+                                    f.RemoveVertex(source)
+                                    removedElements.put(VERTEX(source))
+                                }
+                                let target = e.GetTarget(i).GetVertex()
+                                target.RemoveInEdge(e)
+                                let (retained, removed) =
+                                    MergeVertices(source, target, false)
+                                    nextElements.put(VERTEX(retained))
+                                    removedElements.put(VERTEX(removed))
+                                }
+                                Some((nextElements, removedElements))
+                            }
+                }
+
+            }
+
+        }
+    )
+}
