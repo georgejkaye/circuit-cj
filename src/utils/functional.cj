@@ -24,6 +24,9 @@ public func fold_left<T,U>(
 ) : U {
     var acc = initial
     let iter = xs.iterator()
+    for(i in 0..start) {
+        iter.next()
+    }
     for(i in start..end) {
         let cur = iter.next().getOrThrow()
         acc = f(acc, cur)
@@ -92,6 +95,9 @@ public func foldi_left<T,U>(
 ) : U {
     var acc = initial
     let iter = xs.iterator()
+    for(i in 0..start) {
+        iter.next()
+    }
     for(i in start..end) {
         let cur = iter.next().getOrThrow()
         acc = f(acc, i, cur)
