@@ -189,7 +189,8 @@ public class Evaluator<V, G>
             this.graph,
             rewriteStartingElements,
             HashSet(this.stateJoinEdges),
-            copyBlackBoxes: true
+            copyBlackBoxes: true,
+            allInstantaneous: true
         )
         this.currentCycle++
     }

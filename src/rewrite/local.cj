@@ -42,7 +42,8 @@ func CheckAppropriateRules<V, G>(
     edge : Edge<V, G>,
     f : InterfacedHypergraph<V, G>,
     signature : Signature<V, G>,
-    copyBlackBoxes!: Bool
+    copyBlackBoxes!: Bool = false,
+    allInstantaneous!: Bool = false
 ) : Option<(HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)>
     where
         V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
@@ -59,41 +60,31 @@ func CheckAppropriateRules<V, G>(
     func AddRule(rule : RewriteRule<V, G>) {
         validRules.append(rule)
     }
-    func AddAnyRules() : Unit {
-        AddRule(GetStubRule())
-        AddRule(GetBottomRule(signature))
-    }
-    func AddSignalRules() : Unit {
-        AddRule(GetForkRule())
-    }
-    func AddBundleRules() : Unit {
-        AddRule(GetValueBundleRule(signature))
-    }
-    func AddPrimitiveRules() : Unit {
-        AddRule(GetApplyRule(signature))
-    }
-    func AddJoinRules() : Unit {
-        AddRule(GetJoinRule(signature))
-    }
-    func AddCompositeRules() : Unit {
-        AddRule(GetCompositeRule(signature, true))
-    }
-    AddAnyRules()
+    AddRule(GetStubRule())
+    AddRule(GetBottomRule(signature))
     match(label) {
         case VALUE(_) =>
-            AddSignalRules()
+            AddRule(GetForkRule())
         case SIGNAL(_) =>
-            AddSignalRules()
+            AddRule(GetForkRule())
         case BUNDLER(_, _) =>
-            AddBundleRules()
+            AddRule(GetValueBundleRule(signature))
         case JOIN(_) =>
-            AddJoinRules()
+            AddRule(GetJoinRule(signature))
         case PRIMITIVE(_) =>
-            AddPrimitiveRules()
+            AddRule(GetApplyRule(signature))
+            if(allInstantaneous) {
+                for(ann in signature.GetAnnihilators()) {
+                    AddRule(GetAnnihiliationRule(ann))
+                }
+                for(ide in signature.GetIdentities()) {
+                    AddRule(GetIdentityRule(ide))
+                }
+            }
         case ENHANCED_PRIMITIVE(_) =>
-            AddCompositeRules()
+            AddRule(GetCompositeRule(signature, true))
         case COMPOSITE(_) =>
-            AddCompositeRules()
+            AddRule(GetCompositeRule(signature, true))
         case BLACKBOX(_) =>
             if(copyBlackBoxes) {
                 AddRule(GetCopyBlackboxRule(blackBoxTracker))
@@ -115,7 +106,8 @@ public func RewriteCombinational<V, G>(
     f : InterfacedHypergraph<V, G>,
     starting : HashSet<TraversalElement<V, G>>,
     ending : HashSet<TraversalElement<V, G>>,
-    copyBlackBoxes!: Bool
+    copyBlackBoxes!: Bool = false,
+    allInstantaneous!: Bool = false
 ) : Unit
     where
         V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
@@ -123,7 +115,10 @@ public func RewriteCombinational<V, G>(
 {
     let actionAtEdge = {
         e : Edge<V, G>, data : TraversalData<V, G> =>
-            match(CheckAppropriateRules(e, f, signature, copyBlackBoxes: copyBlackBoxes)) {
+            match(CheckAppropriateRules(
+                e, f, signature,
+                copyBlackBoxes: copyBlackBoxes, allInstantaneous: true
+            )) {
                 case Some(result) => result
                 case None =>
                     let nextElements = HashSet<TraversalElement<V, G>>()
