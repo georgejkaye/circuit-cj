@@ -135,7 +135,7 @@ func ComputeOrderIntersectionOp<V>(
                     // intersection: this poset is not a lattice
                     AssertCollectionHasLengthAtLeast<V>(lhsElements, 1)
                     // Find the 'best' candidate (i.e. greatest/lowest)
-                    fold_left<V>(rankFn, lhsElements).getOrThrow()
+                    fold_left<V>(rankFn, lhsElements)
                 }
             innerMap.put(rhs, element)
         }
@@ -154,7 +154,7 @@ func ComputeBottom<V>(elements : HashSet<V>) : V
     where V <: LessOrEqual<V> & Hashable & Equatable<V> & ToString
 {
     AssertCollectionHasLengthAtLeast(elements, 1)
-    fold_left<V>({ acc, cur => min(acc, cur) }, elements).getOrThrow()
+    fold_left<V>({ acc, cur => min(acc, cur) }, elements)
 }
 /**
  * Compute the top element of a partially ordered set: Vhe element that
@@ -167,7 +167,7 @@ func ComputeTop<V>(elements : HashSet<V>) : V
     where V <: LessOrEqual<V> & Hashable & Equatable<V> & ToString
 {
     AssertCollectionHasLengthAtLeast(elements, 1)
-    fold_left<V>({ acc, cur => max(acc, cur) }, elements).getOrThrow()
+    fold_left<V>({ acc, cur => max(acc, cur) }, elements)
 }
 /**
  * Compute the join (least upper bound) function of a partially ordered set

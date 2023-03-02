@@ -369,7 +369,7 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
                     array: Array<Tentacle<V, G>>
                 ){
                     foldi_left(
-                        { acc : String , cur : Tentacle<V, G>, i : Int64 =>
+                        { acc : String , i : Int64, cur : Tentacle<V, G> =>
                             let portText = "${cur}"
                             let newAcc = if (acc == "") {
                                 ""

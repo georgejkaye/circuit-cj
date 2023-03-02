@@ -47,6 +47,74 @@ func CheckTableMonotone<V>(
         }
     }
 }
+public struct Annihilator<V, G> <: ToString
+     where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    public Annihilator(
+        public let gate : G,
+        public let input : Array<V>,
+        public let index : Int64,
+        public let output : Array<Array<V>>
+    ){}
+    public func toString() {
+        var string = "${this.gate.GetName()}("
+        for(i in 0..index) {
+            string = "${string}-, "
+        }
+        string = "${string}${input}, "
+        let afterEndIndex = this.gate.GetCoarity() -
+            if(index == this.gate.GetCoarity() - 1) {
+                2
+            } else {
+                1
+            }
+        for(i in this.index+1..afterEndIndex){
+            string = "${string} -, "
+        }
+        "${string}-) = ${this.output}"
+    }
+}
+public struct Identity<V, G> <: ToString
+     where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    public Identity(
+        public let gate : G,
+        public let input : Array<V>,
+        public let index : Int64
+    ){}
+    public func toString() {
+        var string = "${this.gate.GetName()}("
+        var beforeIndexString = ""
+        for(i in 0..index) {
+            beforeIndexString = "${beforeIndexString}x${i}, "
+        }
+        var afterIndexString = ""
+        let afterEndIndex = this.gate.GetCoarity() -
+            if(index == this.gate.GetCoarity() - 1) {
+                2
+            } else {
+                1
+            }
+        for(i in this.index+1..afterEndIndex){
+            afterIndexString = "${afterIndexString}x${i}, "
+        }
+        if(index == gate.GetCoarity() - 1) {
+            afterIndexString = "${afterIndexString}x${gate.GetCoarity() - afterEndIndex}"
+        }
+        let input = "(${beforeIndexString}${input}, ${afterIndexString})"
+        let outputBeforeString = if(index == 0) {
+            ""
+        } else {
+            "${beforeIndexString}, "
+        }
+        let output = "(${outputBeforeString}${afterIndexString})"
+        "${this.gate.GetName()}${input} = ${output}"
+    }
+}
 public class Signature<V, G> <: HasName & ToString
     where
         V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
@@ -66,6 +134,76 @@ public class Signature<V, G> <: HasName & ToString
             CheckTableMonotone(
                 this.latticeStructure, g.GetInputPorts(), gateInterpretation(g)
             )
+            let combinations = GetAnnihilationAndIdentityRules(g)
+        }
+    }
+    func GetAnnihilationAndIdentityRules(gate : G) {
+        let arity = gate.GetArity()
+        if(arity >= 2) {
+            let function = this.gateInterpretation(gate)
+            // List of annihilators: each element is a tuple
+            // (annihilator, port number, result of annihilation)
+            let annihilators = ArrayList<Annihilator<V, G>>()
+            let identities = ArrayList<Identity<V, G>>()
+            for(i in 0..gate.GetInputPorts().size){
+                let port = gate.GetInputPort(i)
+                let possibleInputsOnThisWire =
+                    this.latticeStructure.EnumeratePowers(port.GetWidth())
+                for(fixedInput in possibleInputsOnThisWire) {
+                    let possibleInputsOnAllWires =
+                        this.latticeStructure.EnumerateInputs(
+                            gate.GetInputPorts(),
+                            fixed: HashMap([(i, fixedInput)])
+                        )
+                    let firstInput = possibleInputsOnAllWires[0]
+                    let firstOutput = function(firstInput)
+                    let candidateAnnihiliationResult = firstOutput
+                    func CheckIfIdentity(
+                        input : Array<Array<V>>, output : Array<Array<V>>
+                    ) {
+                        foldi_left(
+                            { acc, j, cur =>
+                                let correspondingInput =
+                                    if(j < i) {
+                                        input[j]
+                                    } else {
+                                        input[j + 1]
+                                    }
+                                    acc && correspondingInput == cur
+                            },
+                            true,
+                            output
+                        )
+                    }
+                    let currentIsIdentity = CheckIfIdentity(firstInput, firstOutput)
+                    let (isAnnihilator, isIdentity) = fold_left(
+                        { acc, currentInput =>
+                            let (oldIsAnnihilator, oldIsIdentity) = acc
+                            let currentOutput = function(currentInput)
+                            let newIsAnnihilator =
+                                oldIsAnnihilator &&
+                                currentOutput == candidateAnnihiliationResult
+                            let newIsIdentity =
+                                oldIsIdentity &&
+                                    CheckIfIdentity(currentInput, currentOutput)
+                            (newIsAnnihilator, newIsIdentity)
+                        }, (true, true),
+                        possibleInputsOnAllWires,
+                        start: 1
+                    )
+                    if(isAnnihilator) {
+                        annihilators.append(
+                            Annihilator(
+                                gate, fixedInput, i,
+                                candidateAnnihiliationResult
+                            )
+                        )
+                    }
+                    if(isIdentity) {
+                        identities.append(Identity(gate, fixedInput, i))
+                    }
+                }
+            }
         }
     }
     public func GetGate(gate : G) : ((Array<Array<V>>) -> Array<Array<V>>) {
