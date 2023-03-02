@@ -8,16 +8,16 @@
  */
 package utils
 /**
- * Get the maximum element in an iterable of elements which can be mapped to
+ * Get the maximum element in a collection of elements which can be mapped to
  * comparables, given some minimum threshold
  *
- * @param xs The iterable
+ * @param xs The collection
  * @param lowest Some predetermined base minimum element
  * @param f A function mapping each element in xs to a comparable
  * @return The highest element
  */
 public func max<T, U>(
-    xs : Iterable<T>, lowest : U, f : (T) -> U
+    xs : Collection<T>, lowest : U, f : (T) -> U
 ): U where U <: Comparable<U> {
     fold_left({ acc : U, cur : T => max(acc, f(cur))}, lowest, xs)
 }

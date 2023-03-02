@@ -9,43 +9,47 @@
 package utils
 /**
  * Given some initial value init, a function (acc1, cur) -> acc2, and an
- * iterable xs, compute
+ * collection xs, compute
  *
  *     f(... f(f(init, xs[0]), xs[1]) ...), xs[n-1])
  *
  * @param f The function (acc, cur) -> new acc
  * @param initial The initial value of the accumulator
- * @param xs The iterable
+ * @param xs The collection
  * @return The result of the fold
  */
 public func fold_left<T,U>(
-    f : (U, T) -> U, initial : U,  xs : Iterable<T>
+    f : (U, T) -> U, initial : U,  xs : Collection<T>,
+    start!: Int64 = 0, end!: Int64 = xs.size
 ) : U {
     var acc = initial
-    for (x in xs) {
-        acc = f(acc, x)
+    let iter = xs.iterator()
+    for(i in start..end) {
+        let cur = iter.next().getOrThrow()
+        acc = f(acc, cur)
     }
     acc
 }
 /**
- * Given a function (acc1, cur) -> acc2, and an iterable xs, compute
+ * Given a function (acc1, cur) -> acc2, and a collection xs, compute
  *
  *     f(... f(f(xs[0], xs[1]), xs[2]) ...), xs[n-1])
  *
- * This can fail: returns None if there is no such element xs[0]
+ * This throws a NoneValueException if the collection is empty
  *
  * @param f The function (acc, cur) -> new acc
  * @param initial The initial value of the accumulator
- * @param xs The iterable
+ * @param xs The collection
  * @return Some result of the fold if successful, None otherwise
  */
-public func fold_left<T>(f : (T, T) -> T, xs : Iterable<T>) : Option<T> {
-    var acc = None<T>
-    for (x in xs) {
-        acc = match(acc) {
-            case None => x
-            case Some(y) => f(y, x)
-        }
+public func fold_left<T>(
+    f : (T, T) -> T, xs : Collection<T>, end!: Int64 = xs.size
+) : T {
+    let iter = xs.iterator()
+    var acc = iter.next().getOrThrow()
+    for(i in 1..end) {
+        let cur = iter.next().getOrThrow()
+        acc = f(acc, cur)
     }
     acc
 }
@@ -83,13 +87,14 @@ public func fold_left2<T, U, V>(
  * @return The result of the fold
  */
 public func foldi_left<T,U>(
-    f : (U, T, Int64) -> U, initial : U, xs : Iterable<T>
+    f : (U, Int64, T) -> U, initial : U,  xs : Collection<T>,
+    start!: Int64 = 0, end!: Int64 = xs.size
 ) : U {
     var acc = initial
-    var i = 0
-    for (x in xs) {
-        acc = f(acc, x, i)
-        i++
+    let iter = xs.iterator()
+    for(i in start..end) {
+        let cur = iter.next().getOrThrow()
+        acc = f(acc, i, cur)
     }
     acc
 }

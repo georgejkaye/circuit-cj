@@ -77,7 +77,7 @@ public func collectionToString<T>(
     delimiter!: String = ", "
 ) : String {
     let str = foldi_left(
-        {acc : String, cur : T, i : Int64 =>
+        {acc : String, i : Int64, cur : T =>
             let delimiter = if(i != collection.size - 1) {
                 delimiter
             } else {
