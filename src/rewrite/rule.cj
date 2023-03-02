@@ -410,7 +410,7 @@ func GetApplyRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
         PRIMITIVE,
         {
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
-                if(!ApplyPreconditions(e, f)){
+                if(!ApplyPreconditions(e)){
                     None
                 } else {
                     // This edge is guaranteed to be a primitive
@@ -420,10 +420,14 @@ func GetApplyRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
                     let function = signature.GetGate(prim)
                     // Get the arguments to the gate
                     let (argumentEdges, argumentValues) = GetArgs(e)
+                    let actualArgumentValues = map(
+                        { vs : Option<Array<V>> => vs.getOrThrow() },
+                        argumentValues
+                    )
                     // Compute the outputs of the gate and replace accordingly
-                    let result = function(argumentValues)
+                    let result = function(actualArgumentValues)
                     ReplaceGateWithOutputs(
-                        signature, f, e, argumentEdges, [result]
+                        signature, f, e, argumentEdges, result
                     )
                 }
         }
@@ -504,16 +508,15 @@ func GetJoinRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
         NJOIN,
         {
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
-                if(!ApplyPreconditions(e, f)){
-                    None
-                } else {
-                    // The join is just a special kind of gate, so we follow
-                    // the same procedure
-                    let (argumentEdges, argumentValues) = GetArgs(e)
+                // The join is just a special kind of gate, so we follow
+                // the same procedure
+                let (argumentEdges, argumentValues) = GetArgs(e)
+                try {
                     // We know a join always has two arguments so we can
                     // access them explicitly
                     let result = signature.Join(
-                        argumentValues[0], argumentValues[1]
+                        argumentValues[0].getOrThrow(),
+                        argumentValues[1].getOrThrow()
                     )
                     Some(
                         ReplaceGateWithOutputs(
@@ -522,6 +525,10 @@ func GetJoinRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
                             [result]
                         )
                     )
+                // If not everything is an argument, an exception will be
+                // thrown when we try to read the contents of a None
+                } catch(e : NoneValueException) {
+                    return None
                 }
         }
     )
@@ -983,7 +990,8 @@ func GetForkBlackboxRule<V, G>(blackBoxTracker : HashMap<Edge<V, G>, Int64>)
                         if(!ForkCondition(e, f)) {
                             None
                         } else {
-                            let outgoingTentacles = GetOutgoingTentacles(f, e, i)
+                            let outgoingTentacles =
+                                GetOutgoingTentacles(f, e, i)
                             let tentacleTargets = map(
                                 { tt : TentacleType<V, G> =>
                                     Array<Option<TentacleType<V, G>>>(
