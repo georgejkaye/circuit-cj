@@ -115,14 +115,88 @@ public struct Identity<V, G> <: ToString
         "${this.gate.GetName()}${input} = ${output}"
     }
 }
+func GetAnnihilationAndIdentityRules<V, G>(
+    gate : G,
+    latticeStructure : FiniteLattice<V>,
+    gateInterpretation : (Array<Array<V>>) -> Array<Array<V>>,
+    annihilatorsList : ArrayList<Annihilator<V, G>>,
+    identitiesList : ArrayList<Identity<V, G>>
+) : Unit
+     where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    // Only gates with multiple inputs can have annihilator and identity rules
+    let arity = gate.GetArity()
+    if(arity >= 2) {
+        for(i in 0..gate.GetInputPorts().size){
+            let port = gate.GetInputPort(i)
+            let possibleInputsOnThisWire =
+                latticeStructure.EnumeratePowers(port.GetWidth())
+            for(fixedInput in possibleInputsOnThisWire) {
+                let possibleInputsOnAllWires =
+                    latticeStructure.EnumerateInputs(
+                        gate.GetInputPorts(),
+                        fixed: HashMap([(i, fixedInput)])
+                    )
+                let firstInput = possibleInputsOnAllWires[0]
+                let firstOutput = gateInterpretation(firstInput)
+                let candidateAnnihiliationResult = firstOutput
+                func CheckIfIdentity(
+                    input : Array<Array<V>>, output : Array<Array<V>>
+                ) {
+                    foldi_left(
+                        { acc, j, cur =>
+                            let correspondingInput =
+                                if(j < i) {
+                                    input[j]
+                                } else {
+                                    input[j + 1]
+                                }
+                                acc && correspondingInput == cur
+                        },
+                        true,
+                        output
+                    )
+                }
+                let currentIsIdentity = CheckIfIdentity(firstInput, firstOutput)
+                let (isAnnihilator, isIdentity) = fold_left(
+                    { acc, currentInput =>
+                        let (oldIsAnnihilator, oldIsIdentity) = acc
+                        let currentOutput = gateInterpretation(currentInput)
+                        let newIsAnnihilator =
+                            oldIsAnnihilator &&
+                            currentOutput == candidateAnnihiliationResult
+                        let newIsIdentity =
+                            oldIsIdentity &&
+                                CheckIfIdentity(currentInput, currentOutput)
+                        (newIsAnnihilator, newIsIdentity)
+                    }, (true, true),
+                    possibleInputsOnAllWires,
+                    start: 1
+                )
+                if(isAnnihilator) {
+                    annihilatorsList.append(
+                        Annihilator(
+                            gate, fixedInput, i,
+                            candidateAnnihiliationResult
+                        )
+                    )
+                }
+                if(isIdentity) {
+                    identitiesList.append(Identity(gate, fixedInput, i))
+                }
+            }
+        }
+    }
+}
 public class Signature<V, G> <: HasName & ToString
     where
         V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    public let specificationImplementation :
-        HashMap<Specification<V>, ((Array<Array<V>>) -> Array<V>)>
-            = HashMap<Specification<V>, ((Array<Array<V>>) -> Array<V>)>()
+    public let annihilators : Array<Annihilator<V, G>>
+    public let identities : Array<Identity<V, G>>
     public Signature(
         let name : String,
         let latticeStructure: FiniteLattice<V>,
@@ -130,81 +204,19 @@ public class Signature<V, G> <: HasName & ToString
         let gateInterpretation: (G) -> ((Array<Array<V>>) -> Array<Array<V>>),
         let toDec: (Array<V>, Bool) -> Option<Int64>
     ) {
+        let annihilatorsList = ArrayList<Annihilator<V, G>>()
+        let identitiesList= ArrayList<Identity<V, G>>()
         for(g in usedGates) {
             CheckTableMonotone(
                 this.latticeStructure, g.GetInputPorts(), gateInterpretation(g)
             )
-            let combinations = GetAnnihilationAndIdentityRules(g)
+            GetAnnihilationAndIdentityRules(
+                g, latticeStructure, gateInterpretation(g),
+                annihilatorsList, identitiesList
+            )
         }
-    }
-    func GetAnnihilationAndIdentityRules(gate : G) {
-        let arity = gate.GetArity()
-        if(arity >= 2) {
-            let function = this.gateInterpretation(gate)
-            // List of annihilators: each element is a tuple
-            // (annihilator, port number, result of annihilation)
-            let annihilators = ArrayList<Annihilator<V, G>>()
-            let identities = ArrayList<Identity<V, G>>()
-            for(i in 0..gate.GetInputPorts().size){
-                let port = gate.GetInputPort(i)
-                let possibleInputsOnThisWire =
-                    this.latticeStructure.EnumeratePowers(port.GetWidth())
-                for(fixedInput in possibleInputsOnThisWire) {
-                    let possibleInputsOnAllWires =
-                        this.latticeStructure.EnumerateInputs(
-                            gate.GetInputPorts(),
-                            fixed: HashMap([(i, fixedInput)])
-                        )
-                    let firstInput = possibleInputsOnAllWires[0]
-                    let firstOutput = function(firstInput)
-                    let candidateAnnihiliationResult = firstOutput
-                    func CheckIfIdentity(
-                        input : Array<Array<V>>, output : Array<Array<V>>
-                    ) {
-                        foldi_left(
-                            { acc, j, cur =>
-                                let correspondingInput =
-                                    if(j < i) {
-                                        input[j]
-                                    } else {
-                                        input[j + 1]
-                                    }
-                                    acc && correspondingInput == cur
-                            },
-                            true,
-                            output
-                        )
-                    }
-                    let currentIsIdentity = CheckIfIdentity(firstInput, firstOutput)
-                    let (isAnnihilator, isIdentity) = fold_left(
-                        { acc, currentInput =>
-                            let (oldIsAnnihilator, oldIsIdentity) = acc
-                            let currentOutput = function(currentInput)
-                            let newIsAnnihilator =
-                                oldIsAnnihilator &&
-                                currentOutput == candidateAnnihiliationResult
-                            let newIsIdentity =
-                                oldIsIdentity &&
-                                    CheckIfIdentity(currentInput, currentOutput)
-                            (newIsAnnihilator, newIsIdentity)
-                        }, (true, true),
-                        possibleInputsOnAllWires,
-                        start: 1
-                    )
-                    if(isAnnihilator) {
-                        annihilators.append(
-                            Annihilator(
-                                gate, fixedInput, i,
-                                candidateAnnihiliationResult
-                            )
-                        )
-                    }
-                    if(isIdentity) {
-                        identities.append(Identity(gate, fixedInput, i))
-                    }
-                }
-            }
-        }
+        this.annihilators = annihilatorsList.toArray()
+        this.identities = identitiesList.toArray()
     }
     public func GetGate(gate : G) : ((Array<Array<V>>) -> Array<Array<V>>) {
         this.gateInterpretation(gate)
@@ -232,6 +244,15 @@ public class Signature<V, G> <: HasName & ToString
     }
     public func GetLongestChain(i : Int64) : Int64 {
         this.latticeStructure.GetLongestChain(i)
+    }
+    public func GetUsedGates() : HashSet<G> {
+        this.usedGates
+    }
+    public func GetAnnihilators() : Array<Annihilator<V, G>> {
+        this.annihilators
+    }
+    public func GetIdentities() : Array<Identity<V, G>> {
+        this.identities
     }
     public func GetName() : String {
         this.name
