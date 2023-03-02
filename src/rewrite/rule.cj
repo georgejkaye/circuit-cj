@@ -14,6 +14,10 @@ from std import collection.ArrayList
 import components.*
 import utils.*
 
+/**
+ * Entry point to a rewrite rule: the category of label that triggers
+ * a rewrite attempt
+ */
 public enum EntryPoint {
     | VALUE
     | PRIMITIVE
@@ -243,10 +247,7 @@ func GetForkRule<V, G>() : RewriteRule<V, G>
  * @param f The interfaced graph we are rewriting in
  * @return If the apply preconditions are met
  */
-func ApplyPreconditions<V, G>(
-    e : Edge<V, G>,
-    f : InterfacedHypergraph<V, G>
-) : Bool
+func ApplyPreconditions<V, G>(e : Edge<V, G>) : Bool
     where
         V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -279,20 +280,51 @@ func ApplyPreconditions<V, G>(
  * @param e The edge
  * @return An array of the argument edges and an array of the argument values
  */
-func GetArgs<V, G>(e : Edge<V, G>) : (Array<Edge<V, G>>, Array<Array<V>>)
+func GetArgs<V, G>(e : Edge<V, G>) : (Array<Option<Edge<V, G>>>, Array<Option<Array<V>>>)
     where
         V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let argumentEdges = map({
-            t : Tentacle<V, G> => t.vertex.GetInEdge().getOrThrow().GetEdge()
+            t : Tentacle<V, G> =>
+                match(t.vertex.GetInEdge()) {
+                    case None => None<Edge<V, G>>
+                    case Some(ec) =>
+                        let edge = ec.GetEdge()
+                        if(edge.GetLabel().IsValue()) {
+                            Some(edge)
+                        } else {
+                            None<Edge<V, G>>
+                        }
+                }
         }, e.GetSources()
     )
     let argumentValues = map({
-            e : Edge<V, G> => e.GetLabel().GetValueArray()
+            arg : Option<Edge<V, G>> =>
+                match(arg) {
+                    case None => None<Array<V>>
+                    case Some(e) => e.GetLabel().GetValueArray()
+                }
         }, argumentEdges
     )
     (argumentEdges, argumentValues)
+}
+func MakeValueOrSignal<V, G>(
+    vs : Array<V>,
+    targets : Array<Vertex<V, G>>,
+    owner : Hypergraph<V, G>
+) : Edge<V, G>
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    let (label, graph) = if(vs.size == 1) {
+        (Label<V, G>.VALUE(vs[0]), None<InterfacedHypergraph<V, G>>)
+    } else {
+        let signal = Signal(vs)
+        (Label<V, G>.SIGNAL(signal), Some(MakeSignal<V, G>(signal)))
+    }
+    Edge(label, Array<Vertex<V, G>>(), targets, graph, owner)
 }
 /**
  * Given an edge, its argument edges and an array of array of output values,
@@ -309,10 +341,10 @@ func GetArgs<V, G>(e : Edge<V, G>) : (Array<Edge<V, G>>, Array<Array<V>>)
     signature : Signature<V, G>,
     f : InterfacedHypergraph<V, G>,
     e : Edge<V, G>,
-    args : Array<Edge<V, G>>,
+    args : Array<Option<Edge<V, G>>>,
     results : Array<Array<V>>
 ) : (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)
-     where
+    where
         V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
@@ -320,8 +352,9 @@ func GetArgs<V, G>(e : Edge<V, G>) : (Array<Edge<V, G>>, Array<Array<V>>)
     let removedEdges = HashSet<TraversalElement<V, G>>()
     // Each argument edge must be discarded
     for(arg in args) {
-        f.RemoveEdge(arg)
-        removedEdges.put(EDGE(arg))
+        let actualArg = arg.getOrThrow()
+        f.RemoveEdge(actualArg)
+        removedEdges.put(EDGE(actualArg))
     }
     // Each source of the gate edge must be discarded
     for(t in e.GetSources()) {
@@ -512,6 +545,25 @@ func ArgumentIsAllValue<V, G>(v : V, e : Edge<V, G>, i : Int64) : Bool
         case Some(e) => e.GetEdge().GetLabel().IsAllValue(v)
     }
 }
+func OneArgumentIsValues<V, G>(
+    values : Array<V>, e : Edge<V, G>
+) : Option<Int64>
+    where
+        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    let (argumentEdges, argumentValues) = GetArgs(e)
+    for(i in 0..argumentValues.size) {
+        match(argumentValues[i]) {
+            case None => ()
+            case Some(vs) =>
+                if(vs == values) {
+                    return Some(i)
+                }
+        }
+    }
+    None
+}
 /**
  * Check if all the arguments to an edge are signals in which all the elements
  * are a specific value.
@@ -547,7 +599,7 @@ func ArgumentsAreAllValue<V, G>(v : V, e : Edge<V, G>) : Bool
  * @param f The interfaced graph we are rewriting in
  * @return Hash sets for next elements and removed elements
  */
-func RemoveBinaryArgumentAndPassthrough<V, G>(
+func PerformPassthroughRewrite<V, G>(
     e : Edge<V, G>,
     i : Int64,
     f : InterfacedHypergraph<V, G>
@@ -613,7 +665,7 @@ func GetJoinUnitRule<V, G>(
                 if(!ArgumentIsAllValue(signature.GetBottom(), e, i)){
                     None
                 } else {
-                    Some(RemoveBinaryArgumentAndPassthrough(e, i, f))
+                    Some(PerformPassthroughRewrite(e, i, f))
                 }
         }
     )
@@ -698,7 +750,7 @@ func GetEnhancedRule<V, G>(signature : Signature<V, G>)
         ENHANCED,
         { e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
             // Only rewrite enhanced edges if all their arguments are signals
-            if(!ApplyPreconditions(e, f)){
+            if(!ApplyPreconditions(e)){
                 None
             } else {
                 Some(ExpandSubgraphRewrite(e, f))
@@ -744,7 +796,7 @@ func GetValueBundleRule<V, G>(signature : Signature<V, G>)
         BUNDLE,
         {
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
-                if(!ApplyPreconditions(e, f)){
+                if(!ApplyPreconditions(e)){
                     None
                 } else {
                     let newElements = HashSet<TraversalElement<V, G>>()
@@ -836,7 +888,7 @@ func GetBottomRule<V, G>(signature : Signature<V, G>)
                         }
                 }
                 ReplaceGateWithOutputs<V, G>(
-                    signature, f, e,argumentEdges, bottoms
+                    signature, f, e, argumentEdges, bottoms
                 )
             }
         }
