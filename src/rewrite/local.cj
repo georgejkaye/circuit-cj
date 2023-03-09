@@ -23,17 +23,17 @@ func AttemptRewriteRule<V, G>(
     f : InterfacedHypergraph<V, G>
 ) : Option<(HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)>
     where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     match(rule.Rewrite(e, f)) {
         case None =>
-            Debug("Did not rewrite ${e} with ${rule.name}")
+            // Debug("Did not rewrite ${e} with ${rule.name}")
             None
         case Some(result) =>
-            Debug("Rewrote ${e} with ${rule.name}")
-            // signature.WriteDotToFile(f, 2, "rewrite-${y}-${rule.GetName()}")
-            // y++
+            // Debug("Rewrote ${e} with ${rule.name}")
+            // f.WriteDotToFile(2, "rewrite-${y}-${e.GetId()}-${rule.GetName()}")
+            y++
             Some(result)
     }
 }
@@ -46,7 +46,7 @@ func CheckAppropriateRules<V, G>(
     allInstantaneous!: Bool = false
 ) : Option<(HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)>
     where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let label = edge.GetLabel()
@@ -110,7 +110,7 @@ public func RewriteCombinational<V, G>(
     allInstantaneous!: Bool = false
 ) : Unit
     where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let actionAtEdge = {
@@ -162,7 +162,7 @@ public func RewriteCombinational<V, G>(
     copyBlackBoxes!: Bool
 ) : Unit
     where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     RewriteCombinational(
@@ -179,7 +179,7 @@ public func RewriteCombinational<V, G>(
     copyBlackBoxes!: Bool
 ) : Unit
     where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     RewriteCombinational(

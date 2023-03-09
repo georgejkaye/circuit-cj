@@ -15,7 +15,7 @@ import debug.*
 
 public class Evaluator<V, G>
     where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     var currentCycle = 0
@@ -63,8 +63,8 @@ public class Evaluator<V, G>
                 let joinEdge = this.coreEdge.NextEdgeLeft(i).GetEdge()
                 let stateEdge = joinEdge.NextEdgeLeft(0).GetEdge()
                 stateEdge.Clone(
-                    Array<Vertex<V, G>>(),
-                    [coreCopyEdge.GetSource(i).GetVertex()],
+                    Array<Tentacle<V, G>>(),
+                    [coreCopyEdge.GetSource(i)],
                     appliedCoreGraph
                 )
         }
@@ -73,8 +73,8 @@ public class Evaluator<V, G>
                 Edge(
                     GetSignalLabel<V, G>(signal.GetValues()),
                     Array<Vertex<V, G>>(),
-                    [coreCopyEdge.GetSource(this.stateWires + i).GetVertex()],
-                    this.sig.MakeSignal(signal),
+                    [coreCopyEdge.GetSourceVertex(this.stateWires + i)],
+                    MakeSignal<V, G>(signal),
                     appliedCoreGraph
                 )
             },
@@ -102,25 +102,21 @@ public class Evaluator<V, G>
         let splitJoinVertices = Array<(Vertex<V, G>, Vertex<V, G>)>(this.stateWires) {
             i : Int64 =>
                 let joinSourceLeft =
-                    this.coreEdge
-                        .NextEdgeLeft(i)
-                        .GetEdge()
-                        .GetSource(0)
-                        .GetVertex()
-                SplitVertex(joinSourceLeft)
+                    this.coreEdge.NextEdgeLeft(i).GetEdge().GetSourceVertex(0)
+                joinSourceLeft.SplitVertex()
         }
-        let coreCopyInputs = Array<Vertex<V, G>>(this.coreEdge.GetArity()) {
+        let coreCopyInputs = Array<Tentacle<V, G>>(this.coreEdge.GetArity()) {
             i : Int64 =>
                 if(i < this.stateWires) {
-                    splitJoinVertices[i][0]
+                    Tentacle(splitJoinVertices[i][0])
                 } else {
                     let signal = signals[i - this.stateWires]
                     let signalLabel = GetSignalLabel<V, G>(signal.GetValues())
-                    let signalVertex = Vertex<V, G>(signal.GetWidth())
+                    let signalVertex = Vertex<V, G>(signal.GetWidth(), None)
                     let signalSubgraph = if(signal.GetValues().size == 1) {
                         None<InterfacedHypergraph<V, G>>
                     } else {
-                        this.sig.MakeSignal(signal)
+                        MakeSignal<V, G>(signal)
                     }
                     let signalEdge = Edge(
                         signalLabel,
@@ -129,22 +125,24 @@ public class Evaluator<V, G>
                         signalSubgraph,
                         this.graph.GetGraph()
                     )
-                    signalVertex
+                    Tentacle(signalVertex)
                 }
         }
-        let coreCopyOutputs = Array<Vertex<V, G>>(this.coreEdge.GetCoarity()) {
+        let coreCopyOutputs = Array<Tentacle<V, G>>(this.coreEdge.GetCoarity()) {
             i : Int64 =>
                 if(i < this.stateWires) {
-                    splitJoinVertices[i][1]
+                    Tentacle(splitJoinVertices[i][1])
                 } else {
                     let outputVertex = nextOutputVertices[i - this.stateWires]
                     // We are going to insert the register containing the
                     // output subcircuit in between the previous register
                     // and the main graph
-                    let (leftVertex, rightVertex) = SplitVertex(outputVertex)
+                    let (leftVertex, rightVertex) = outputVertex.SplitVertex()
                     // Make the delay edge for this output
                     let outputWidth = outputVertex.GetWidth()
-                    let delayTarget = Vertex<V, G>(outputWidth)
+                    let delayTarget = Vertex<V, G>(
+                        outputWidth, Some(this.graph.GetGraph())
+                    )
                     let delayEdge = Edge(
                         DELAY(outputWidth),
                         [leftVertex],
@@ -152,9 +150,11 @@ public class Evaluator<V, G>
                         None,
                         this.graph.GetGraph()
                     )
-                    // The ith target from the output subgraph is the first source
-                    // of this register's join edge
-                    let outputTarget = Vertex<V, G>(outputWidth)
+                    // The ith target from the output subgraph is the first
+                    // source of this register's join edge
+                    let outputTarget = Vertex<V, G>(
+                        outputWidth, Some(this.graph.GetGraph())
+                    )
                     let joinEdge = Edge(
                         JOIN(outputWidth),
                         [outputTarget, delayTarget],
@@ -162,7 +162,7 @@ public class Evaluator<V, G>
                         None,
                         this.graph.GetGraph()
                     )
-                    joinEdge.GetSource(0).GetVertex()
+                    Tentacle(joinEdge.GetSourceVertex(0))
                 }
         }
         let coreCopyEdge = this.coreEdge.Clone(
@@ -204,7 +204,7 @@ public class Evaluator<V, G>
  */
 func BurstSequentialGraphs<V, G>(f : InterfacedHypergraph<V, G>) : Unit
     where
-        V <: ValueSymbol & Equatable<V>,
+        V <: ValueSymbol<V> & Equatable<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     var sequentialEdges = f.GetSequentialData().sequentialEdges.size
@@ -244,7 +244,7 @@ func MakeRegisterJoin<V, G>(
     Signal<V>,
     Vertex<V, G>
 ) where
-    V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+    V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
     G <: PrimitiveSymbol<V> & Equatable<G>
 {
     // We can only turn a delay or a value into a register
@@ -253,9 +253,9 @@ func MakeRegisterJoin<V, G>(
     if(!isDelay && !isValue) {
         throw IncompatibleVariantException(e.GetLabel(), "DELAY/VALUE")
     }
-    let target = e.GetTarget(0).GetVertex()
+    let target = e.GetTargetVertex(0)
     let width = target.GetWidth()
-    let (leftVertex, rightVertex) = SplitVertex(target)
+    let (leftVertex, rightVertex) = target.SplitVertex()
     let bot = sig.UseSignal(sig.GetBottom(), width)
     let (valueTarget, delayTarget, delayEdge, signal) = if(isDelay) {
         (
@@ -265,7 +265,7 @@ func MakeRegisterJoin<V, G>(
             Signal(sig.GetBottom(), width)
         )
     } else {
-        let newVertex = Vertex<V, G>(width)
+        let newVertex = f.GetGraph().AddNewVertex(width)
         let delayEdge = Edge(
             DELAY(width),
             [bot.GetVertex()],
@@ -307,7 +307,7 @@ func ConvertToMealyForm<V, G>(
     Edge<V, G>,
     Int64
 ) where
-    V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+    V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
     G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let sequentialData = f.GetSequentialData()
@@ -348,7 +348,7 @@ func EliminateInstantFeedback<V, G>(
     sig : Signature<V, G>,
     f : InterfacedHypergraph<V, G>
 ) : Unit where
-    V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+    V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
     G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let feedbackConnections = f.GetSequentialData().feedbackConnections
@@ -359,7 +359,7 @@ func EliminateInstantFeedback<V, G>(
             "PreMealyCore(${f.GetName()})"
         )
     for(i in 0..feedbackWires) {
-        let (left, right) = SplitVertex(feedbackVertices[i])
+        let (left, right) = feedbackVertices[i].SplitVertex()
         let bot = Edge(
             GetSignalLabel<V, G>(
                 sig.GetBottom(),
@@ -372,21 +372,26 @@ func EliminateInstantFeedback<V, G>(
         )
     }
     let feedbackOutputs = Array<Vertex<V, G>>(feedbackWires){
-        i : Int64 => coreEdge.GetTarget(i).GetVertex()
+        i : Int64 => coreEdge.GetTargetVertex(i)
     }
     let iterations = sig.GetLongestChain(feedbackWires)
     let coreEdges = HashSet([coreEdge])
     for(it in 0..iterations) {
-        let copyInputs = Array<Vertex<V, G>>(coreEdge.GetArity()) {
+        let copyInputs = Array<Tentacle<V, G>>(coreEdge.GetArity()) {
             i : Int64 =>
-                if(i < feedbackWires) {
-                    feedbackOutputs[i]
-                } else {
-                    f.GetInput(i - feedbackWires).GetVertex()
-                }
+                let vertex =
+                    if(i < feedbackWires) {
+                        feedbackOutputs[i]
+                    } else {
+                        f.GetInput(i - feedbackWires).GetVertex()
+                    }
+                Tentacle<V, G>(vertex)
         }
-        let copyOutputs = Array<Vertex<V, G>>(coreEdge.GetCoarity()) {
-            i : Int64 => Vertex(coreEdge.GetTarget(i).GetWidth())
+        let copyOutputs = Array<Tentacle<V, G>>(coreEdge.GetCoarity()) {
+            i : Int64 =>
+                Tentacle(
+                    f.GetGraph().AddNewVertex(coreEdge.GetTarget(i).GetWidth())
+                )
         }
         let coreCopy = coreEdge.Clone(
             copyInputs,
@@ -394,14 +399,26 @@ func EliminateInstantFeedback<V, G>(
             f.GetGraph()
         )
         for(i in 0..feedbackWires) {
-            feedbackOutputs[i] = copyOutputs[i]
+            feedbackOutputs[i] = copyOutputs[i].GetVertex()
         }
         for(i in 0..f.GetCoarity()) {
-            f.ReplaceOutput(i, copyOutputs[i + feedbackWires])
+            f.ReplaceOutput(i, copyOutputs[i + feedbackWires].GetVertex())
         }
         coreEdges.put(coreCopy)
     }
     for(e in coreEdges) {
         e.BurstSubgraph()
+    }
+}
+
+extend Evaluator<V, G> where V <: Decimal<V> {
+    public func PerformCycle(inputs : Array<Int64>, signed!: Bool) : Unit {
+        let inputSignals = mapi(
+            { v : Int64, i : Int64 =>
+                V.DecToSignal(v, this.graph.GetInput(i).GetWidth(), signed)
+            },
+            inputs
+        )
+        this.PerformCycle(inputSignals)
     }
 }
