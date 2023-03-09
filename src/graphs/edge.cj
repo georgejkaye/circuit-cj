@@ -26,7 +26,7 @@ func CheckSpecCompatibility<V, G>(
     inputs: Array<Tentacle<V, G>>,
     outputs: Array<Tentacle<V, G>>
 ) : Unit
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     func CheckArrayCompatibility(
         desired : Array<Port>,
@@ -44,13 +44,16 @@ func CheckSpecCompatibility<V, G>(
     CheckArrayCompatibility(spec.GetOutputPorts(), outputs)
 }
 public interface HasTentacle<V, G> <: ContainsVertex<V, G>
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     func IsFeedback() : Bool
     func IsDelay() : Bool
 }
-public struct Tentacle<V, G> <: ToString & HasWidth & HasTentacle<V, G>
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+public struct Tentacle<V, G>
+    <: ToString & HasWidth & HasTentacle<V, G> & Ownable<V, G>
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public Tentacle(
         public let vertex : Vertex<V, G>,
@@ -69,6 +72,9 @@ public struct Tentacle<V, G> <: ToString & HasWidth & HasTentacle<V, G>
         }
         "${vertex}${extraDetails}"
     }
+    public init(v : Vertex<V, G>) {
+        this(v, false, false)
+    }
     public func GetVertex() : Vertex<V, G> {
         this.vertex
     }
@@ -81,8 +87,11 @@ public struct Tentacle<V, G> <: ToString & HasWidth & HasTentacle<V, G>
     public func IsDelay() : Bool {
         this.delay
     }
+    public func GetOwner() : Hypergraph<V, G> {
+        this.GetVertex().GetOwner()
+    }
 }
-public enum TentacleOrigin<V, G> where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
+public enum TentacleOrigin<V, G> where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
     | FROM_EDGE(EdgeConnection<V, G>)
     | FROM_VERTEX(Vertex<V, G>)
 }
@@ -106,84 +115,72 @@ extend TentacleOrigin<V, G> <: HasWidth & ToString {
  * They can have multiple sources and target vertices, and also
  * an optional subgraph representing the internal construction.
  */
-public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable & ToString & Hashable
+public class Edge<V, G>
+    <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable &
+        ToString & Hashable & Ownable<V, G>
     where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let id : Int64 = GetNextId()
-    public Edge(
-        let label: Label<V, G>,
-        let sources : Array<Tentacle<V, G>>,
-        let targets : Array<Tentacle<V, G>>,
-        let subgraph : Option<InterfacedHypergraph<V, G>>,
-        var owner : Hypergraph<V, G>
+    let label : Label<V, G>
+    let sources : Array<Tentacle<V, G>>
+    let targets : Array<Tentacle<V, G>>
+    let subgraph : Option<InterfacedHypergraph<V, G>>
+    var owner : Hypergraph<V, G>
+    public init(
+        label: Label<V, G>,
+        sources : Array<Tentacle<V, G>>,
+        targets : Array<Tentacle<V, G>>,
+        subgraph : Option<InterfacedHypergraph<V, G>>,
+        owner : Option<Hypergraph<V, G>>
     ){
         // Vertices cannot be the targets of multiple edges
         AssertTargetsUnassigned(targets)
         // Check the ports of the label agree
         CheckSpecCompatibility(label, sources, targets)
-        // All sources and targets need to belong to the same graph
+        this.label = label
+        this.sources = sources
+        this.targets = targets
+        this.subgraph = subgraph
+        // Merge all the hypergraphs of the vertices into one
+        // If we specified an owner for this edge as a constructor argument,
+        // this is the 'base' owner the vertices are all merged into; otherwise
+        // we use the result of the merge
+        let sourceOwner = MergeHypergraphs(sources, initial: owner)
+        let targetOwner = MergeHypergraphs(targets, initial: sourceOwner)
+        this.owner = match(targetOwner) {
+            case Some(f) => f
+            case None => Hypergraph<V, G>()
+        }
+        // Add this edge as an out edge to the sources
         ForEachSource({ v, i =>
             v.AddOutEdge(this, i)
-            this.owner.IncludeHypergraph(v.GetOwner())
         })
+        // Add this edge as an in edge to the sources
         ForEachTarget({ v, i =>
             v.SetInEdge(this, i)
-            this.owner.IncludeHypergraph(v.GetOwner())
         })
-        // As does does this edge itself
+        // Add this edge to its new owner
         this.owner.AddEdge(this)
     }
     public init(
         label : Label<V, G>,
-        sources : Array<Tentacle<V, G>>,
-        targets : Array<Tentacle<V, G>>,
-        subgraph : Option<InterfacedHypergraph<V, G>>
-    ){
-        this(
-            label,
-            sources,
-            targets,
-            subgraph,
-            Hypergraph()
-        )
-    }
-    public init(
-        label : Label<V, G>,
         sources : Array<Vertex<V, G>>,
         targets : Array<Vertex<V, G>>,
         subgraph : Option<InterfacedHypergraph<V, G>>,
-        owner : Option<Hypergraph<V, G>>
+        owner: Option<Hypergraph<V, G>>
     ){
         this(
             label,
-            map({ v : Vertex<V, G> => Tentacle(v, false, label.IsDelay()) }, sources),
-            map({ v : Vertex<V, G> => Tentacle(v, false, false) }, targets),
-            subgraph,
-            match(owner) {
-                case None => Hypergraph<V, G>()
-                case Some(f) => f
-            }
-        )
-    }
-    public init(
-        name : String,
-        sources : Array<Vertex<V, G>>,
-        targets : Array<Vertex<V, G>>,
-        subgraph : Option<InterfacedHypergraph<V, G>>,
-        owner : Option<Hypergraph<V, G>>
-    ){
-        this(
-            COMPOSITE(
-                Specification(
-                    name,
-                    map({ v => Port(v.GetWidth(), "")}, sources),
-                    map({ v => Port(v.GetWidth(), "")}, targets)
-                )
+            map(
+                { v : Vertex<V, G> => Tentacle(v, false, label.IsDelay()) },
+                sources
             ),
-            sources,
-            targets,
+            map(
+                { v : Vertex<V, G> => Tentacle(v, false, false) },
+                targets
+            ),
             subgraph,
             owner
         )
@@ -220,8 +217,22 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
     }
     public func SetOwner(f : Hypergraph<V, G>) : Unit {
         if(this.owner != f){
-            this.owner.RemoveEdge(this)
+            let oldOwner = this.owner
             this.owner = f
+            oldOwner.RemoveEdge(this)
+            // Need to move the sources and targets from the old owner to the
+            // new owner: removing the edge from the graph also removes it
+            // from the vertices' tentacles
+            for(i in 0..this.GetArity()) {
+                let v = this.GetSource(i).GetVertex()
+                v.SetOwner(f)
+                v.AddOutEdge(this, i)
+            }
+            for(i in 0..this.GetCoarity()) {
+                let v = this.GetTarget(i).GetVertex()
+                v.SetOwner(f)
+                v.SetInEdge(this, i)
+            }
         }
     }
     func SetVertex(
@@ -238,28 +249,32 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
             this.owner.AddVertex(newVertex)
     }
     public func SetSource(i : Int64, newVertex : Vertex<V, G>, feedback: Bool) : Unit {
-        SetVertex(
-            i,
-            newVertex,
-            feedback,
-            this.sources,
-            { oldVertex, newVertex =>
-                oldVertex.RemoveOutEdge(this, i)
-                newVertex.AddOutEdge(this, i)
-            }
-        )
+        if(this.GetSourceVertex(i) != newVertex) {
+            SetVertex(
+                i,
+                newVertex,
+                feedback,
+                this.sources,
+                { oldVertex, newVertex =>
+                    oldVertex.RemoveOutEdge(this, i)
+                    newVertex.AddOutEdge(this, i)
+                }
+            )
+        }
     }
     public func SetTarget(i : Int64, newVertex : Vertex<V, G>) : Unit {
-        SetVertex(
-            i,
-            newVertex,
-            false,
-            this.targets,
-            { oldVertex, newVertex =>
-                oldVertex.RemoveInEdge()
-                newVertex.SetInEdge(this, i)
-            }
-        )
+        if(this.GetTargetVertex(i) != newVertex) {
+            SetVertex(
+                i,
+                newVertex,
+                false,
+                this.targets,
+                { oldVertex, newVertex =>
+                    oldVertex.RemoveInEdge()
+                    newVertex.SetInEdge(this, i)
+                }
+            )
+        }
     }
     public func RemoveFeedback(i : Int64) : Unit {
         let t = this.GetSource(i)
@@ -270,6 +285,9 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
     public func GetSource(i : Int64) : Tentacle<V, G> {
         this.sources[i]
     }
+    public func GetSourceVertex(i : Int64) : Vertex<V, G> {
+        this.GetSource(i).GetVertex()
+    }
     public func GetSources() : Array<Tentacle<V, G>> {
         this.sources
     }
@@ -278,6 +296,9 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
     }
     public func GetTarget(i : Int64) : Tentacle<V, G> {
         this.targets[i]
+    }
+    public func GetTargetVertex(i : Int64) : Vertex<V, G> {
+        this.GetTarget(i).GetVertex()
     }
     public func GetTargets() : Array<Tentacle<V, G>> {
         this.targets
@@ -310,9 +331,8 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
                             case Some(v) => v
                             case None => originalChildVertex
                         }
-                        let (retainedVertex, oldVertex) =
-                            MergeVertices(parentVertex, actualChildVertex, parent.feedback)
-                        mergeMap.put(oldVertex, retainedVertex)
+                        parentVertex.MergeVertex(actualChildVertex, parent.feedback)
+                        mergeMap.put(actualChildVertex, parentVertex)
                     }
                 }
                 for(t in this.GetSources()) {
@@ -363,14 +383,14 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
         this.id
     }
     public func NextEdgeLeft(i : Int64) : EdgeConnection<V, G> {
-        this.GetSource(i).GetVertex().GetInEdge().getOrThrow()
+        this.GetSourceVertex(i).GetInEdge().getOrThrow()
     }
     public func NextEdgesRight(i : Int64) : HashSet<EdgeConnection<V, G>> {
-        this.GetTarget(i).GetVertex().GetOutEdges()
+        this.GetTargetVertex(i).GetOutEdges()
     }
     public func Clone(
-        sources : Array<Vertex<V, G>>,
-        targets : Array<Vertex<V, G>>,
+        sources : Array<Tentacle<V, G>>,
+        targets : Array<Tentacle<V, G>>,
         owner : Hypergraph<V, G>
     ) : Edge<V, G> {
         AssertArrayHasLength(sources, this.sources.size)
@@ -390,9 +410,9 @@ public class Edge<V, G> <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable
     public func Clone(
         owner : Hypergraph<V, G>
     ) : Edge<V, G> {
-        Clone(
-            map({ t => Vertex(t.GetWidth()) }, this.GetSources()),
-            map({ t => Vertex(t.GetWidth()) }, this.GetTargets()),
+        this.Clone(
+            map({ t => Tentacle(owner.AddNewVertex(t.GetWidth())) }, this.GetSources()),
+            map({ t => Tentacle(owner.AddNewVertex(t.GetWidth())) }, this.GetTargets()),
             owner
         )
     }

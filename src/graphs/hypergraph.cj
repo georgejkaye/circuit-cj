@@ -14,7 +14,7 @@ from std import collection.HashSet
 
 public enum WellformednessIssue<V, G>
     where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     | InputNotAssigned(Int64)
@@ -42,7 +42,7 @@ extend WellformednessIssue<V, G> <: ToString {
 }
 public struct SequentialData<V, G>
     where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public let delayEdges : HashSet<Edge<V, G>> = HashSet<Edge<V, G>>()
@@ -59,7 +59,7 @@ public struct SequentialData<V, G>
 }
 func GetVerticesFromEdges<V, G>(es : HashSet<Edge<V, G>>) : HashSet<Vertex<V, G>>
     where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let vertices = HashSet<Vertex<V, G>>()
@@ -80,11 +80,11 @@ func GetVerticesFromEdges<V, G>(es : HashSet<Edge<V, G>>) : HashSet<Vertex<V, G>
  */
 public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<V, G>> & Hashable
     where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let id : Int64 = GetNextId()
-    let name : String
+    let name : String = "hg${id}"
     let vertices : HashSet<Vertex<V, G>>
     let edges : HashSet<Edge<V, G>>
     // Edges with no sources and vertices with no in edge
@@ -95,33 +95,20 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
     let sequentialData : SequentialData<V, G> = SequentialData<V, G>()
     // The interfaced hypergraphs that depend on this hypergraph
     let interfacedOwners : HashSet<InterfacedHypergraph<V, G>> = HashSet<InterfacedHypergraph<V, G>>()
-    /*
-     * Define hypergraph with set of vertices and set of edges
-     *
-     * @param vertices The set of vertices
-     * @param edges The set of edges
-     */
-    public init (vertices : HashSet<Vertex<V, G>>, edges : HashSet<Edge<V, G>>){
+    public init (
+        vertices : HashSet<Vertex<V, G>>,
+        edges : HashSet<Edge<V, G>>
+    ) {
         this.vertices = vertices
         this.edges = edges
-        this.name = "h${this.id}"
-        for (v in this.vertices) {
-            v.SetOwner(this)
-            this.AddVertexToHypergraphData(v)
-        }
-        for (e in this.edges) {
+        for(e in edges) {
             e.SetOwner(this)
             this.AddEdgeToHypergraphData(e)
         }
-    }
-    /*
-     * Define hypergraph with just a set of edges. The vertices
-     * will be populated from the sources and targets of these edges
-     *
-     * @param edges The set of edges
-     */
-    public init (edges : HashSet<Edge<V, G>>){
-        this(GetVerticesFromEdges(edges), edges)
+        for(v in vertices) {
+            v.SetOwner(this)
+            this.AddVertexToHypergraphData(v)
+        }
     }
     /**
      * Define an empty hypergraph
@@ -190,6 +177,17 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
     public func GetRightmostTraversalElements() : HashSet<TraversalElement<V, G>> {
         this.rightmostTraversalElements
     }
+    public func AddNewVertex(width : Int64) : Vertex<V, G> {
+        Vertex(width, this)
+    }
+    public func AddNewEdge(
+        label : Label<V, G>,
+        sources : Array<Vertex<V, G>>,
+        targets : Array<Vertex<V, G>>,
+        subgraph : Option<InterfacedHypergraph<V, G>>
+    ) : Edge<V, G> {
+        Edge(label, sources, targets, subgraph, this)
+    }
     func AddVertexToTraversalElements(
         traversalElements : HashSet<TraversalElement<V, G>>,
         direction : TraversalDirection,
@@ -252,7 +250,9 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         this.sequentialData.delayEdges.remove(e)
         this.sequentialData.valueEdges.remove(e)
         this.sequentialData.sequentialEdges.remove(e)
-        this.sequentialData.feedbackConnections.removeIf({ ec : EdgeConnection<V, G> => ec.GetEdge() == e})
+        this.sequentialData.feedbackConnections.removeIf(
+            { ec : EdgeConnection<V, G> => ec.GetEdge() == e}
+        )
         this.sequentialData.combinationalEdges.remove(e)
     }
     func RemoveVertexFromHypergraphData(v : Vertex<V, G>) : Unit {
@@ -284,20 +284,55 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
     public func GetVertices() : HashSet<Vertex<V, G>> {
         this.vertices
     }
+    public func AddElement(elem : Ownable<V, G>) : Unit {
+        match(elem) {
+            case e : Edge<V, G> => this.AddEdge(e)
+            case v : Vertex<V, G> => this.AddVertex(v)
+            case _ => throw IllegalArgumentException()
+        }
+    }
     public func AddVertex(v : Vertex<V, G>) : Unit {
-        this.vertices.put(v)
         v.SetOwner(this)
+        this.vertices.put(v)
         this.AddVertexToHypergraphData(v)
     }
+    public func AddVertices(vs : Collection<Vertex<V, G>>) : Unit {
+        for(v in vs) {
+            this.AddVertex(v)
+        }
+    }
     public func RemoveVertex(v : Vertex<V, G>) : Unit {
+        match(v.GetInEdge()) {
+            case None => ()
+            case Some(ec) =>
+                AssertNotOwnedBy(ec.GetEdge(), this)
+        }
+        for(ec in v.GetOutEdges()) {
+            AssertNotOwnedBy(ec.GetEdge(), this)
+        }
+        AssertEmpty(v.GetInterfacedInputs(), InEdge)
+        AssertEmpty(v.GetInterfacedOutputs(), OutEdges)
         this.vertices.remove(v)
         this.RemoveVertexFromHypergraphData(v)
     }
     public func RemoveFeedbackConnection(ec : EdgeConnection<V, G>) : Unit {
         this.sequentialData.feedbackConnections.remove(ec)
     }
+    /**
+     * Remove an edge from the hypergraph.
+     * Does not remove its sources and targets, but does remove the edge from
+     * their out-edges and in-edges respectively.
+     *
+     * @param e The edge
+     */
     func RemoveEdge(e : Edge<V, G>) {
         this.edges.remove(e)
+        for(t in e.GetSources()) {
+            t.GetVertex().RemoveOutEdge(e)
+        }
+        for(t in e.GetTargets()) {
+            t.GetVertex().RemoveInEdge(e)
+        }
         RemoveEdgeFromHypergraphData(e)
     }
     public func AddInterfacedOwner(f : InterfacedHypergraph<V, G>) : Unit {
@@ -338,17 +373,11 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         }
         issues
     }
-    public func ReplaceVertex(v : Vertex<V, G>, w : Vertex<V, G>) : Unit {
-        this.vertices.remove(v)
-        this.vertices.put(w)
-    }
     public func IncludeHypergraph(f : Hypergraph<V, G>) : Unit {
-        let newEdges = HashSet<Edge<V, G>>(f.GetEdges())
-        let newVertices = HashSet<Vertex<V, G>>(f.GetVertices())
-        for(e in newEdges) {
+        for(e in HashSet(f.GetEdges())) {
             this.AddEdge(e)
         }
-        for(v in newVertices) {
+        for(v in HashSet(f.GetVertices())) {
             this.AddVertex(v)
         }
     }
@@ -415,12 +444,13 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
      */
     public func Clone() : (Hypergraph<V, G>, HashMap<Vertex<V, G>, Vertex<V, G>>, HashMap<Edge<V, G>, Edge<V, G>>) {
         Debug("Cloning ${this}")
+        let newHypergraph = Hypergraph<V, G>()
         let newVertices = HashSet<Vertex<V, G>>()
         let vertexMap = HashMap<Vertex<V, G>,Vertex<V, G>>()
         let newEdges = HashSet<Edge<V, G>>()
         let edgeMap = HashMap<Edge<V, G>, Edge<V, G>>()
         for (vertex in this.vertices) {
-            let newVertex = Vertex<V, G>(vertex.GetWidth())
+            let newVertex = Vertex<V, G>(vertex.GetWidth(), newHypergraph)
             newVertices.put(newVertex)
             vertexMap.put(vertex, newVertex)
         }
@@ -433,15 +463,11 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
             }
             let newSources = CloneTentacles(edge.GetSources())
             let newTargets = CloneTentacles(edge.GetTargets())
-            let newSubgraph = match(edge.GetSubgraph()){
-                case None => None<InterfacedHypergraph<V, G>>
-                case Some(g) => Some(g.Clone())
-            }
-            let newEdge = Edge(edge.GetLabel(), newSources, newTargets, newSubgraph, Hypergraph<V, G>())
+            let newEdge = edge.Clone(newSources, newTargets, newHypergraph)
             newEdges.put(newEdge)
             edgeMap.put(edge, newEdge)
         }
-        (Hypergraph(newVertices, newEdges), vertexMap, edgeMap)
+        (newHypergraph, vertexMap, edgeMap)
     }
     public func RemoveSubgraphElements(f : InterfacedHypergraph<V, G>) : Unit {
         for(v in f.GetVertices()){
@@ -462,10 +488,9 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         ) : (Vertex<V, G>, Vertex<V, G>) {
             match(to) {
                 case FROM_EDGE(ec) =>
-                    SliceTentacle(ec)
+                    ec.SliceTentacle()
                 case FROM_VERTEX(v) =>
-                    let newVertex = Vertex<V, G>(v.GetWidth())
-                    v.GetOwner().AddVertex(newVertex)
+                    let newVertex = this.AddNewVertex(v.GetWidth())
                     match(vt) {
                         case SOURCE =>
                             let inputs = HashSet(v.GetInterfacedInputs())
@@ -491,16 +516,27 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
             { to : TentacleOrigin<V, G> => SliceInterfaceVertex(to, TARGET) },
             outputs
         )
-        let childInputs = map({ vs : (Vertex<V, G>, Vertex<V, G>) => vs[1] }, slicedInputs)
-        let childOutputs = map({ vs : (Vertex<V, G>, Vertex<V, G>) => vs[0] }, slicedOutputs)
-        let parentInputs = map({ vs : (Vertex<V, G>, Vertex<V, G>) => vs[0] },  slicedInputs)
-        let parentOutputs = map({ vs : (Vertex<V, G>, Vertex<V, G>) => vs[1] }, slicedOutputs)
-        let subgraph = Hypergraph<V, G>()
+        let childInputs = map(
+            { vs : (Vertex<V, G>, Vertex<V, G>) => vs[1] }, slicedInputs
+        )
+        let childOutputs = map(
+            { vs : (Vertex<V, G>, Vertex<V, G>) => vs[0] }, slicedOutputs
+        )
+        let parentInputs = map(
+            { vs : (Vertex<V, G>, Vertex<V, G>) => vs[0] }, slicedInputs
+        )
+        let parentOutputs = map(
+            { vs : (Vertex<V, G>, Vertex<V, G>) => vs[1] }, slicedOutputs
+        )
+                let subgraphVertices = HashSet<Vertex<V, G>>()
+        let subgraphEdges = HashSet<Edge<V, G>>()
         let actionAtVertex = { v : Vertex<V, G> =>
-            subgraph.AddVertex(v)
+            subgraphVertices.put(v)
+            ()
         }
         let actionAtEdge = { e : Edge<V, G> =>
-            subgraph.AddEdge(e)
+            subgraphEdges.put(e)
+            ()
         }
         func TraverseGraphFromEnd(starting : Array<Vertex<V, G>>) : Unit {
             let startingSet = HashSet<TraversalElement<V, G>>()
@@ -517,18 +553,18 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         }
         TraverseGraphFromEnd(childInputs)
         TraverseGraphFromEnd(childOutputs)
+        let newSubgraph = Hypergraph<V, G>(subgraphVertices, subgraphEdges)
         let interfacedSubgraph = InterfacedHypergraph(
-            subgraph,
+            newSubgraph,
             map({ v => InterfaceVertex(v, "") }, childInputs),
             map({ v => InterfaceVertex(v, "") }, childOutputs),
             label
         )
-        let newEdge = Edge<V, G>(
+        let newEdge = this.AddNewEdge(
             label,
             parentInputs,
             parentOutputs,
-            Some(interfacedSubgraph),
-            Some(this)
+            Some(interfacedSubgraph)
         )
         (interfacedSubgraph, newEdge)
     }
@@ -556,11 +592,82 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         }
     }
 }
-public func EmptyGraph<V, G>() : Hypergraph<V, G>
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+public interface Ownable<V, G>
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    Hypergraph(
-        HashSet<Vertex<V, G>>(),
-        HashSet<Edge<V, G>>()
-    )
+    func GetOwner() : Hypergraph<V, G>
+}
+public interface CircuitBuilder<V, G>
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    func InitCircuit() : Hypergraph<V, G>
+}
+
+extend Signature<V, G> <: CircuitBuilder<V, G> {
+    public func InitCircuit() : Hypergraph<V, G> {
+        Hypergraph<V, G>()
+    }
+}
+public func MergeHypergraphs<V, G>(
+    primary : Hypergraph<V, G>, b : Ownable<V, G>
+) : Hypergraph<V, G>
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    let secondary = b.GetOwner()
+    if(primary != secondary) {
+        for(e in HashSet<Edge<V, G>>(secondary.GetEdges())) {
+            primary.AddEdge(e)
+        }
+        for(v in HashSet<Vertex<V, G>>(secondary.GetVertices())){
+            primary.AddVertex(v)
+        }
+    }
+    primary
+}
+public func MergeHypergraphs<V, G, T, U>(a : T, b : U) : Hypergraph<V, G>
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>,
+        T <: Ownable<V, G>,
+        U <: Ownable<V, G>
+{
+    MergeHypergraphs(a.GetOwner(), b)
+}
+public func MergeHypergraphs<V, G, T>(
+    elems : Array<T>,
+    initial!: Option<Hypergraph<V, G>> = None
+) : Option<Hypergraph<V, G>>
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>,
+        T <: Ownable<V, G>
+{
+    if(elems.size == 0) {
+        initial
+    } else if(elems.size == 1) {
+        let actualInitial = match(initial) {
+            case Some(f) => MergeHypergraphs(f, elems[0])
+            case None    => elems[0].GetOwner()
+        }
+        Some(actualInitial)
+    } else {
+        let (actualInitial, startIndex) = match(initial) {
+            case Some(f) => (f, 0)
+            case None    => (elems[0].GetOwner(), 1)
+        }
+        Some(
+            fold_left<T, Hypergraph<V, G>>(
+                { acc, cur => MergeHypergraphs<V, G>(acc, cur) },
+                actualInitial,
+                elems,
+                start: startIndex,
+            )
+        )
+    }
 }

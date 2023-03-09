@@ -12,19 +12,13 @@ package graphs
 public class InterfaceVertex<V, G>
     <: Socket & HasTentacle<V, G>
     where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public InterfaceVertex(
         public let vertex : Vertex<V, G>,
         public let name : Option<String>
     ){}
-    public init(
-        w : Int64,
-        name : Option<String>
-    ){
-        this(Vertex(w), name)
-    }
     public func GetWidth() : Int64 {
         this.vertex.GetWidth()
     }
@@ -58,7 +52,7 @@ public class InterfaceVertex<V, G>
     }
 }
 func AddToInterfaceMap<V, G>(v : Vertex<V, G>, i : Int64, interfaceMap : HashMap<Vertex<V, G>, HashSet<Int64>>) : Unit
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     match(interfaceMap.get(v)) {
         case None =>
@@ -75,7 +69,7 @@ func AddToInterfaceMap<V, G>(v : Vertex<V, G>, i : Int64, interfaceMap : HashMap
 public class InterfacedHypergraph<V, G>
     <: Hashable & Identifiable & ToString & Specifiable<V> & Equatable<InterfacedHypergraph<V, G>> & HasName
     where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let uniqueId : Int64 = GetNextId()
@@ -540,7 +534,7 @@ public class InterfacedHypergraph<V, G>
         label : String
     ) : (Array<Vertex<V, G>>, Edge<V, G>, InterfacedHypergraph<V, G>) {
         let slicedVertices = map(
-            { ec : EdgeConnection<V, G> => SliceTentacle(ec)},
+            { ec : EdgeConnection<V, G> => ec.SliceTentacle() },
             connections
         )
         let subgraphArity = connections.size + this.GetArity()
@@ -568,12 +562,13 @@ public class InterfacedHypergraph<V, G>
         )
         let mergedVertices = Array<Vertex<V, G>>(slicedVertices.size){
             i : Int64 =>
-                let (primary, secondary) = MergeVertices(
-                    newEdge.GetSource(i).GetVertex(),
-                    newEdge.GetTarget(i).GetVertex(),
+                let primaryVertex = newEdge.GetSourceVertex(i)
+                primaryVertex.MergeVertex(
+                    newEdge.GetTargetVertex(i),
                     true
                 )
-                primary
+                primaryVertex
+
         }
         (mergedVertices, newEdge, newGraph)
     }

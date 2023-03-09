@@ -23,9 +23,10 @@ extend VertexType <: ToString {
  * An EdgeConnection specifies an edge that a vertex
  * is a source or target of, and which index it is.
  */
-public struct EdgeConnection<V, G> <: ToString & Equatable<EdgeConnection<V, G>> & Hashable
+public struct EdgeConnection<V, G>
+    <: ToString & Equatable<EdgeConnection<V, G>> & Hashable & Ownable<V, G>
     where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public EdgeConnection(
@@ -78,6 +79,25 @@ public struct EdgeConnection<V, G> <: ToString & Equatable<EdgeConnection<V, G>>
     public func GetVertexType() : VertexType {
         this.vertexType
     }
+    public func SliceTentacle() : (Vertex<V, G>, Vertex<V, G>) {
+        let existingVertex = this.GetVertex()
+        let owner = this.GetEdge().GetOwner()
+        let slicedVertex = owner.AddNewVertex(existingVertex.GetWidth())
+        let edge = this.GetEdge()
+        let index = this.GetIndex()
+        let (leftVertex, rightVertex) = match(this.GetVertexType()) {
+            case SOURCE =>
+                edge.SetSource(index, slicedVertex, false)
+                (existingVertex, slicedVertex)
+            case TARGET =>
+                edge.SetTarget(index, slicedVertex)
+                (slicedVertex, existingVertex)
+        }
+        (leftVertex, rightVertex)
+    }
+    public func GetOwner() : Hypergraph<V, G> {
+        this.GetEdge().GetOwner()
+    }
 }
 public enum InterfaceType {
     | INPUT
@@ -104,7 +124,7 @@ extend InterfaceType <: ToString & Hashable & Equatable<InterfaceType> {
     }
 }
 public struct InterfaceElement<V, G> <: Hashable & ToString & Equatable<InterfaceElement<V, G>>
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let id : Int64 = GetNextId()
     public InterfaceElement(
@@ -127,7 +147,7 @@ public struct InterfaceElement<V, G> <: Hashable & ToString & Equatable<Interfac
 }
 public enum TentacleType<V, G>
     where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     | EDGE_TENTACLE(EdgeConnection<V, G>)
@@ -139,9 +159,10 @@ public enum TentacleType<V, G>
  * arbitrary number of edges, which represents forking wires.
  */
 public class Vertex<V, G>
-    <: Identifiable & Equatable<Vertex<V, G>> & Hashable & ToString & HasWidth & Socket
+    <: Identifiable & Equatable<Vertex<V, G>> & Hashable
+        & ToString & HasWidth & Socket & Ownable<V, G>
     where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let width : Int64
@@ -149,18 +170,19 @@ public class Vertex<V, G>
     var inEdge : Option<EdgeConnection<V, G>> = None
     var outEdges : HashSet<EdgeConnection<V, G>> = HashSet<EdgeConnection<V, G>>()
     var feedback : Int64 = 0
-    var owner : Hypergraph<V, G> = Hypergraph<V, G>()
+    var owner : Hypergraph<V, G>
     let interfacedInputs : HashSet<InterfaceElement<V, G>> = HashSet<InterfaceElement<V, G>>()
     let interfacedOutputs : HashSet<InterfaceElement<V, G>> = HashSet<InterfaceElement<V, G>>()
-    public init(width: Int64){
+    public init(width: Int64, owner : Option<Hypergraph<V, G>>){
         this.width = width
+        this.owner = match(owner) {
+            case None => Hypergraph<V, G>()
+            case Some(f) => f
+        }
         this.owner.AddVertex(this)
     }
-    public init() {
-        this(1)
-    }
     public func Clone() : Vertex<V, G> {
-        Vertex(this.width)
+        Vertex(this.width, this.owner)
     }
     public func GetId() : Int64 {
         this.id
@@ -280,8 +302,16 @@ public class Vertex<V, G>
     }
     public func SetOwner(f : Hypergraph<V, G>) : Unit {
         if(this.owner != f){
-            this.owner.RemoveVertex(this)
+            let oldOwner = this.owner
             this.owner = f
+            match(this.GetInEdge()) {
+                case None => ()
+                case Some(ec) => ec.GetEdge().SetOwner(f)
+            }
+            for(ec in HashSet(this.GetOutEdges())) {
+                ec.GetEdge().SetOwner(f)
+            }
+            oldOwner.RemoveVertex(this)
         }
     }
     public func hashCode() : Int64 {
@@ -320,11 +350,77 @@ public class Vertex<V, G>
     public func RemoveAsOutput() : Unit {
         this.interfacedOutputs.clear()
     }
+    /**
+     * Merge a vertex v that belongs to the parent graph into this one. Updates
+     * the corresponding edges appropriately; v will be orphaned after this
+     * operation. If both this vertex and v already have an in edge, throws an
+     * exception: we do not permit vertices to have multiple in edges.
+     *
+     * @param w The vertex to be merged into this one
+    */
+    public func MergeVertex(t : Vertex<V, G>, instant : Bool) : Unit {
+        // Get the actual vertex object
+        let v = t.GetVertex()
+        // We can only merge in a vertex owned by the same graph
+        let owner = MergeHypergraphs(this.GetOwner(), t)
+        // We cannot allow the merged vertex to have multiple in edge
+        AssertAtMostOneInEdge(this, v)
+        // Any edge connected to the merging vertex must be updated
+        match(v.GetInEdge()) {
+            case None => ()
+            case Some(ec) => ec.GetEdge().SetTarget(ec.GetIndex(), this)
+        }
+        for(ec in Array(v.GetOutEdges())) {
+            ec.GetEdge().SetSource(ec.GetIndex(), this, instant)
+        }
+        /**
+         * Update an interface containing the merging vertex v and replace it
+         * with this vertex.
+         *
+         * @param ie The interface element
+         */
+        func UpdateInterfaces(ie : InterfaceElement<V, G>) {
+            let graph = ie.graph
+            let index = ie.index
+            match(ie.interfaceType) {
+                case INPUT => graph.ReplaceInput(index, this)
+                case OUTPUT => graph.ReplaceOutput(index, this)
+            }
+        }
+        // Update any inputs that reference the merging vertex
+        for(ie in HashSet(v.GetInterfacedInputs())) {
+            UpdateInterfaces(ie)
+        }
+        // Update any outputs that reference the merging vertex
+        for(ie in HashSet(v.GetInterfacedOutputs())) {
+            UpdateInterfaces(ie)
+        }
+        // Remove the old vertex from the graph now it has been detached
+        owner.RemoveVertex(t)
+
+    }
+    public func SplitVertex() : (Vertex<V, G>, Vertex<V, G>) {
+        let leftVertex = this
+        let rightVertex = this.GetOwner().AddNewVertex(leftVertex.GetWidth())
+        let outEdges = HashSet<EdgeConnection<V, G>>(leftVertex.GetOutEdges())
+        for(ec in HashSet(leftVertex.GetOutEdges())) {
+            ec.GetEdge().SetSource(
+                ec.GetIndex(),
+                rightVertex,
+                ec.GetEdge().GetSource(ec.GetIndex()).feedback
+            )
+        }
+        for(ie in HashSet(leftVertex.GetInterfacedOutputs())) {
+            ie.graph.ReplaceOutput(ie.index, rightVertex)
+            leftVertex.RemoveAsOutput(ie.graph, ie.index)
+        }
+        (leftVertex, rightVertex)
+    }
 }
 
 public interface ContainsVertex<V, G>
     where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     func GetVertex() : Vertex<V, G>

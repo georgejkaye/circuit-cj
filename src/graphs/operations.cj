@@ -27,7 +27,7 @@ public func MergeVertices<T, U, V, G>(
     where
         T <: ContainsVertex<V, G>,
         U <: ContainsVertex<V, G>,
-        V <: ValueSymbol & Equatable<V>,
+        V <: ValueSymbol<V> & Equatable<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertAtMostOneInEdge(t, u)
@@ -56,11 +56,14 @@ public func MergeVertices<T, U, V, G>(
         UpdateInterfaces(ie)
     }
     // Make sure the old vertex isn't part of a hypergraph any more
-    w.GetOwner().RemoveVertex(w)
+    // w.GetOwner().RemoveVertex(w)
     (v, w)
 }
 public func MergeVertices<T, V, G>(vs : Array<T>) : Vertex<V, G>
-    where T <: ContainsVertex<V, G>, V <: ValueSymbol & Equatable<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where
+        T <: ContainsVertex<V, G>,
+        V <: ValueSymbol<V> & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertAtMostOneInEdge<T, V, G>(vs)
     let retainedVertex = vs[0].GetVertex()
@@ -83,41 +86,6 @@ public func MergeVertices<T, V, G>(vs : Array<T>) : Vertex<V, G>
     }
     retainedVertex
 }
-public func SplitVertex<V, G>(v : Vertex<V, G>) : (Vertex<V, G>, Vertex<V, G>)
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
-{
-    let leftVertex = v
-    let rightVertex = Vertex<V, G>(v.GetWidth())
-    leftVertex.GetOwner().AddVertex(rightVertex)
-    let outEdges = HashSet<EdgeConnection<V, G>>(v.GetOutEdges())
-    for(ec in HashSet(leftVertex.GetOutEdges())) {
-        ec.GetEdge().SetSource(ec.GetIndex(), rightVertex, ec.GetEdge().GetSource(ec.GetIndex()).feedback)
-    }
-    for(ie in HashSet(v.GetInterfacedOutputs())) {
-        ie.graph.ReplaceOutput(ie.index, rightVertex)
-        leftVertex.RemoveAsOutput(ie.graph, ie.index)
-    }
-    (leftVertex, rightVertex)
-}
-public func SliceTentacle<V, G>(
-    ec : EdgeConnection<V, G>
-) : (Vertex<V, G>, Vertex<V, G>)
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
-{
-    let existingVertex = ec.GetVertex()
-    let slicedVertex = Vertex<V, G>(existingVertex.GetWidth())
-    let edge = ec.GetEdge()
-    let index = ec.GetIndex()
-    let (leftVertex, rightVertex) = match(ec.GetVertexType()) {
-        case SOURCE =>
-            edge.SetSource(index, slicedVertex, false)
-            (existingVertex, slicedVertex)
-        case TARGET =>
-            edge.SetTarget(index, slicedVertex)
-            (slicedVertex, existingVertex)
-    }
-    (leftVertex, rightVertex)
-}
 /**
  * Depending on a flag, clone an interfaced hypergraph, or just get a
  * tuple of its underlying graph and its interfaced
@@ -129,7 +97,7 @@ func CloneOrRetain<V, G>(
     f : InterfacedHypergraph<V, G>,
     clone : Bool
 ) : (Hypergraph<V, G>, Array<InterfaceVertex<V, G>>, Array<InterfaceVertex<V, G>>)
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     if(clone) {
         let (newGraph, newInputs, newOutputs, _, _) = f.CloneGraph()
@@ -151,7 +119,7 @@ func Seq<V, G>(
     g : InterfacedHypergraph<V, G>,
     clone : Bool
 ) : InterfacedHypergraph<V, G>
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertCompatibleInputOutput(f, g)
     // If necessary, clone the graphs
@@ -159,18 +127,20 @@ func Seq<V, G>(
     let (newG, newGInputs, newGOutputs) = CloneOrRetain(g, clone)
     // The outputs of f and the inputs of g must be merged pointwise
     for (i in 0..f.GetCoarity()){
-        MergeVertices(newFOutputs[i], newGInputs[i], false)
+        newFOutputs[i].GetVertex().MergeVertex(
+            newGInputs[i].GetVertex(), false
+        )
     }
     let fVertices = newF.GetVertices()
     let gVertices = newG.GetVertices()
     // The 'unmerged' inputs of g must be removed from the graph to avoid duplicates
     gVertices.removeAll(map({ iv : InterfaceVertex<V, G> => iv.GetVertex() }, newGInputs))
     // Create the new sets of vertices are edges
-    let newVertices = fVertices
-    newVertices.putAll(gVertices)
-    let newEdges = newF.GetEdges()
-    newEdges.putAll(newG.GetEdges())
-    let newGraph = Hypergraph(newVertices, newEdges)
+    let newGraph = Hypergraph<V, G>()
+    newGraph.AddEdges(newF.GetEdges())
+    newGraph.AddEdges(newG.GetEdges())
+    newGraph.AddVertices(fVertices)
+    newGraph.AddVertices(gVertices)
     InterfacedHypergraph(
         newGraph,
         newFInputs,
@@ -185,7 +155,7 @@ func Seq<V, G>(
  * @return The composed hypergraph m->p
  */
 public func Seq<V, G>(f : InterfacedHypergraph<V, G>, g : InterfacedHypergraph<V, G>) : InterfacedHypergraph<V, G>
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     Seq(f, g, true)
 }
@@ -199,7 +169,7 @@ public func Seq<V, G>(f : InterfacedHypergraph<V, G>, g : InterfacedHypergraph<V
  * @return The result of the parallel composition
  */
 func Par<V, G>(f : InterfacedHypergraph<V, G>, g : InterfacedHypergraph<V, G>, clone : Bool) : InterfacedHypergraph<V, G>
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     // If necessary, clone the graphs
     let (newF, newFInputs, newFOutputs) = CloneOrRetain(f, clone)
@@ -207,10 +177,11 @@ func Par<V, G>(f : InterfacedHypergraph<V, G>, g : InterfacedHypergraph<V, G>, c
     // All the vertices of the original graph are preserved
     let fVertices = newF.GetVertices()
     let gVertices = newG.GetVertices()
-    let newVertices = fVertices
-    newVertices.putAll(gVertices)
-    let newEdges = newF.GetEdges()
-    newEdges.putAll(newG.GetEdges())
+    let newGraph = Hypergraph<V, G>()
+    newGraph.AddEdges(newF.GetEdges())
+    newGraph.AddEdges(newG.GetEdges())
+    newGraph.AddVertices(fVertices)
+    newGraph.AddVertices(gVertices)
     // Concatenate the inputs and outputs
     let newInputs = Array<InterfaceVertex<V, G>>(f.GetArity() + g.GetArity(), {
         i => if(i < newFInputs.size) {
@@ -226,7 +197,6 @@ func Par<V, G>(f : InterfacedHypergraph<V, G>, g : InterfacedHypergraph<V, G>, c
             newGOutputs[i - f.GetArity()]
         }
     })
-    let newGraph = Hypergraph(newVertices, newEdges)
     InterfacedHypergraph(
         newGraph,
         newInputs,
@@ -242,7 +212,7 @@ func Par<V, G>(f : InterfacedHypergraph<V, G>, g : InterfacedHypergraph<V, G>, c
  * @return The result of the parallel composition
  */
 public func Par<V, G>(f : InterfacedHypergraph<V, G>, g : InterfacedHypergraph<V, G>) : InterfacedHypergraph<V, G>
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     Par(f, g, true)
 }

@@ -351,11 +351,11 @@ public func ConvertStringIndentListToString(list : ArrayList<DotLine>) : String 
  * Interface to extend signatures with ability to draw dot graphs
  */
 public interface DotDrawer<V, G>
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    func WriteDotToFile(f : InterfacedHypergraph<V, G>, depth : Int64, file : String) : Unit
+    func WriteDotToFile(depth : Int64, file : String) : Unit
 }
-extend Signature<V, G> <: DotDrawer<V, G> {
+extend InterfacedHypergraph<V, G> <: DotDrawer<V, G> {
     /**
      * Append dotlines for an edge to a list of content dotlines
      * @param e The edge
@@ -368,13 +368,13 @@ extend Signature<V, G> <: DotDrawer<V, G> {
     ) : Unit {
         let style = match(e.GetLabel()){
             case VALUE(v) =>
-                if(v == this.GetBottom()) {
+                if(v == V.GetDisconnected()) {
                     bottomStyle
                 } else {
                     valueStyle
                 }
             case SIGNAL(spec) =>
-                if(spec.IsAll(this.GetBottom())) {
+                if(spec.IsAll(V.GetDisconnected())) {
                     bottomStyle
                 } else {
                     signalStyle
@@ -747,13 +747,12 @@ extend Signature<V, G> <: DotDrawer<V, G> {
      * @param file The file name to write to
      */
     public func WriteDotToFile(
-        f : InterfacedHypergraph<V, G>,
         depth : Int64,
         file : String
     ) : Unit {
         let filename = GetDotFile(file)
         Info("Writing dot file ${filename}")
-        let dot = GenerateDotGraph(f, depth)
+        let dot = GenerateDotGraph(this, depth)
         let fs = File(filename, CreateOrTruncate(false))
         fs.write(dot.toUtf8Array())
         fs.close()
