@@ -12,18 +12,28 @@ import utils.map
 public enum ParamType {
     | Width
     | InEdge
+    | OutEdges
     | Owner
     | Inputs
     | Outputs
+    | Values
+    | Signals
+    | Wires
+    | InstantFeedback
 }
 extend ParamType <: ToString {
     public func toString() : String {
         match(this) {
-            case Width => "width"
-            case InEdge => "in edges"
-            case Owner => "owner"
-            case Inputs => "inputs"
-            case Outputs => "outputs"
+            case Width           => "width"
+            case InEdge          => "in edges"
+            case OutEdges        => "out edges"
+            case Owner           => "owner"
+            case Inputs          => "inputs"
+            case Outputs         => "outputs"
+            case Values          => "values"
+            case Signals         => "signals"
+            case Wires           => "wires"
+            case InstantFeedback => "non-delay-guarded feedback"
         }
     }
 }
@@ -37,18 +47,18 @@ public func AssertAtLeast(i : Int64, t : Int64) : Unit {
         throw InsufficientParameterException(i, t)
     }
 }
-public func AssertNonEmpty<T>(collection : Collection<T>, contents : String) : Unit {
+public func AssertNonEmpty<T>(collection : Collection<T>, contents : ParamType) : Unit {
     if(collection.size == 0) {
         throw EmptyException(contents)
     }
 }
-public func AssertArrayArraysNonEmpty<T>(xss : Array<Array<T>>, contents : String) : Unit {
+public func AssertArrayArraysNonEmpty<T>(xss : Array<Array<T>>, contents : ParamType) : Unit {
     AssertNonEmpty(xss, contents)
     for(xs in xss) {
         AssertNonEmpty(xs, contents)
     }
 }
-public func AssertEmpty<T>(collection : Collection<T>, contents : String) : Unit {
+public func AssertEmpty<T>(collection : Collection<T>, contents : ParamType) : Unit {
     if(collection.size != 0) {
         throw NonEmptyException(contents)
     }
@@ -138,7 +148,7 @@ public func AssertArrayAllSameParameter<T, U>(
     fn : (T) -> U,
     paramType : ParamType
 ) : U where T <: ToString, U <: ToString & Equatable<U> {
-    AssertNonEmpty(xs, "${paramType}")
+    AssertNonEmpty(xs, paramType)
     let targetParam = fn(xs[0])
     for(i in 1..xs.size) {
         let current = xs[i]
