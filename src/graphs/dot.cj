@@ -6,15 +6,11 @@
  * @author George Kaye
  * @since 0.1
  */
-
 package graphs
-
 import debug.*
 import settings.*
 import utils.*
-
 from std import fs.*
-
 let tableStyle = [
     ("border", "0"),
     ("cellborder", "1"),
@@ -116,16 +112,6 @@ public enum IndentInstruction {
     | Deindent      // Indent one fewer starting from this line
     | SameLine      // Indent and toggle inline mode
 }
-extend IndentInstruction <: ToString {
-    public func toString() : String {
-        match(this) {
-            case Preserve => "Preserve"
-            case Indent => "Indent"
-            case Deindent => "Deindent"
-            case SameLine => "SameLine"
-        }
-    }
-}
 /**
  * Record for storing a line of dot code along with a relevant
  * indentation instruction
@@ -184,12 +170,18 @@ func MakeElem(
         " ${optionString}"
     }
     // Add the opening html tag
-    let opener = DotLine("<${tag}${optionStringSpaced}>", if(inline) { SameLine } else { Indent })
+    let opener = DotLine(
+        "<${tag}${optionStringSpaced}>",
+        if(inline) { SameLine } else { Indent }
+    )
     elementContent.append(opener)
     // Generate the dotlines for the content inside this element
     generateElemContents(elementContent, false)
     // Add the closing html tag
-    let closer = DotLine("</${tag}>", if(inline) { SameLine } else { Deindent })
+    let closer = DotLine(
+        "</${tag}>",
+        if(inline) { SameLine } else { Deindent }
+    )
     elementContent.append(closer)
 }
 /**
@@ -227,9 +219,10 @@ func DrawOptions(selector : String, opts : Array<(String, String)>) : DotLine {
     DotLine("${selector}${options}", Preserve)
 }
 /**
- * Convert an array of source or target ports into an HTML table in which each cell
- * contains the name of the port, if present, and the width of the port. These ports
- * can be used as the ports of a parent HTML node.
+ * Convert an array of source or target ports into an HTML table in which each
+ * cell contains the name of the port, if present, and the width of the port.
+ * These ports can be used as the ports of a parent HTML node.
+ *
  * @param ports The array of ports
  * @param id The id string of the parent edge
  * @param elementContent The element content arraylist to fill
@@ -242,22 +235,29 @@ func MakePorts<T>(
     MakeElem("td", [], elementContent, false, {elementContent, inline =>
         MakeElem("table", [], elementContent, false, {elementContent, inline =>
             for (i in 0..ports.size) {
-                MakeElem("tr", [], elementContent, true, {elementContent, inline =>
+                MakeElem("tr", [], elementContent, true,
+                    {elementContent, inline =>
                         let portStyle =  [
                             ("height", "${portHeight}"),
                             ("width", "${portWidth}"),
                             ("port", "${prefix}${i}")
                         ]
-                        MakeElem("td", portStyle, elementContent, false, {elementContent, inline =>
-                            let port = ports[i]
-                            // The port contains the port name (if one is given)
-                            // and the width of the port
-                            let portText = match(port.GetName()){
-                                case None => "${port.GetWidth()}"
-                                case Some(str) => "${str}:${port.GetWidth()}"
+                        MakeElem("td", portStyle, elementContent, false,
+                            {elementContent, inline =>
+                                let port = ports[i]
+                                // The port contains the port name (if given)
+                                // and the width of the port
+                                let portText = match(port.GetName()){
+                                    case None =>
+                                        "${port.GetWidth()}"
+                                    case Some(str) =>
+                                        "${str}:${port.GetWidth()}"
+                                }
+                                elementContent.append(
+                                    DotLine(portText, Preserve)
+                                )
                             }
-                            elementContent.append(DotLine(portText, Preserve))
-                        })
+                        )
                     }
                 )
             }
@@ -303,26 +303,39 @@ func indentString(n : Int64, str : String) : String {
 * @param list The arraylist of dotlines
 * @return The corresponding dot code
 */
-public func ConvertStringIndentListToString(list : ArrayList<DotLine>) : String {
+public func ConvertStringIndentListToString(
+    list : ArrayList<DotLine>
+) : String {
     let (output, _, _) =
         fold_left(
             { acc : (String, Int64, Bool) , dl : DotLine =>
                 // (previous lines, current indent)
                 let (accString, accIndent, accSameLine) = acc
                 // The instruction determines the current and next indent
-                let (curIndent, nextIndent, nextSameLine) = match(dl.instruction) {
-                    // Indent the next line
-                    case Indent => (accIndent, accIndent + 1, accSameLine)
-                    // Deindent the current line
-                    case Deindent => (accIndent - 1, accIndent - 1, accSameLine)
-                    // Do nothing
-                    case Preserve => (accIndent, accIndent, accSameLine)
-                    // Toggle newlines
-                    case SameLine => (
-                        if(accSameLine) { accIndent - 1 } else { accIndent },
-                        if(!accSameLine) { accIndent + 1 } else { accIndent - 1},
-                        !accSameLine
-                    )
+                let (curIndent, nextIndent, nextSameLine) =
+                    match(dl.instruction) {
+                        // Indent the next line
+                        case Indent =>
+                            (accIndent, accIndent + 1, accSameLine)
+                        // Deindent the current line
+                        case Deindent =>
+                            (accIndent - 1, accIndent - 1, accSameLine)
+                        // Do nothing
+                        case Preserve =>
+                            (accIndent, accIndent, accSameLine)
+                        // Toggle newlines
+                        case SameLine =>
+                            let nextIndent = if(accSameLine) {
+                                accIndent - 1
+                            } else {
+                                accIndent
+                            }
+                            let nextSameLine = if(!accSameLine) {
+                                accIndent + 1
+                            } else {
+                                accIndent - 1
+                            }
+                            (nextIndent, nextSameLine, !accSameLine)
                 }
                 let line = if(accSameLine) {
                     dl.str
@@ -414,8 +427,8 @@ func DrawEdgeNode<V, G>(
     )
 }
 /**
- * Draw a box node (normally used to represent a hyperedge) which may have sources,
- * targets and a label.
+ * Draw a box node (normally used to represent a hyperedge) which may have
+ * sources, targets and a label.
  *
  * @param id The id of the edge
  * @param style The style to apply to this node
@@ -461,19 +474,23 @@ func DrawBoxNode<V, G, T1, U1, T2, U2>(
             // Draw the label, if there is one
             match(label) {
                 case None => ()
-                case Some(s) => MakeElem("td", [], elementContent, true, {elementContent, inline =>
-                    let text = if(IsDebugDot()){
-                        "${id}: ${s}"
-                    } else {
-                        s
+                case Some(s) => MakeElem("td", [], elementContent, true,
+                    {elementContent, inline =>
+                        let text = if(IsDebugDot()){
+                            "${id}: ${s}"
+                        } else {
+                            s
+                        }
+                        elementContent.append(DotLine(text, Preserve))
                     }
-                    elementContent.append(DotLine(text, Preserve))
-                })
+                )
             }
             // Draw right ports, if there are any
             if(rightVertices.size > 0) {
                 MakePorts(rightPorts, "e", elementContent)
-                DrawConnections(id, rightVertices, false, TARGET, connectionContent)
+                DrawConnections(
+                    id, rightVertices, false, TARGET, connectionContent
+                )
             }
         })
     })
@@ -507,7 +524,9 @@ func DrawSubgraphInterfaceConnections<V, G>(
             case TARGET => ("outputs", "w", false)
         }
         let eText = "\"${g.GetId()}_${interfaceText}\":${portPrefix}${i}"
-        DrawConnection(v.GetVertex(), eText, vertexFirst, connectionContent, v.feedback)
+        DrawConnection(
+            v.GetVertex(), eText, vertexFirst, connectionContent, v.feedback
+        )
     }
 }
 /**
@@ -537,14 +556,14 @@ func DrawEdge<V, G>(
             case Some(g) =>
                 omittedEdges.put(e.GetId())
                 DrawInterfacedHypergraph(
-                    g,
-                    e,
-                    depth - 1,
-                    omittedEdges,
-                    elementContent
+                    g, e, depth - 1, omittedEdges, elementContent
                 )
-                DrawSubgraphInterfaceConnections(g, e.GetSources(), SOURCE, connectionContent)
-                DrawSubgraphInterfaceConnections(g, e.GetTargets(), TARGET, connectionContent)
+                DrawSubgraphInterfaceConnections(
+                    g, e.GetSources(), SOURCE, connectionContent
+                )
+                DrawSubgraphInterfaceConnections(
+                    g, e.GetTargets(), TARGET, connectionContent
+                )
         }
     } else {
         DrawEdgeNode(e, elementContent, connectionContent)
@@ -605,9 +624,18 @@ func DrawConnection<V, G, T>(
     }
     connectionContent.append(DotLine(fullConnectionString, Preserve))
 }
+/**
+ * Given an array of tentacle-like objects which should be connected to a
+ * particular box-like node, draw the tentacles in question.
+ *
+ * @param boxId the id of the box-like node to connect to
+ * @param tentacles The array of tentacle-like objects to draw
+ * @param isLeft Whether the tentacle-like object originates from the left
+ * @param connectionConent The list of connection dot lines
+ */
 func DrawConnections<V, G, T>(
     boxId : String,
-    vertices : Array<T>,
+    tentacles : Array<T>,
     isLeft : Bool,
     vertexType : VertexType,
     connectionContent : ArrayList<DotLine>
@@ -621,15 +649,27 @@ func DrawConnections<V, G, T>(
         case SOURCE => "w"
         case TARGET => "e"
     }
-    for(i in 0..vertices.size) {
-        let v = vertices[i]
+    for(i in 0..tentacles.size) {
+        let v = tentacles[i]
         let eText = "${boxId}:${portPrefix}${i}"
-        DrawConnection(v.GetVertex(), eText, isLeft, connectionContent, v.IsFeedback())
+        DrawConnection(
+            v.GetVertex(), eText, isLeft, connectionContent, v.IsFeedback()
+        )
     }
 }
+/**
+ * Draw an interface for a graph: a grey box with ports labelled by a width
+ * and a name, if the latter is provided
+ *
+ * @param The id of the graph the interface is being made for
+ * @param vertices The array of interface vertices that make up the interface
+ * @param isInputs Whether this is an input interface
+ * @param elementContent The list of element dot lines
+ * @param connectionContent The list of connection dot lines
+ */
 func DrawInterface<V, G>(
     id : String,
-    childVertices : Array<InterfaceVertex<V, G>>,
+    vertices : Array<InterfaceVertex<V, G>>,
     isInputs : Bool,
     elementContent : ArrayList<DotLine>,
     connectionContent : ArrayList<DotLine>
@@ -638,24 +678,27 @@ func DrawInterface<V, G>(
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    let interfaceName = "\"${id}_${ if(isInputs) { "inputs" } else { "outputs" }}\""
+    let interfaceName =
+        "\"${id}_${ if(isInputs) { "inputs" } else { "outputs" }}\""
     let (leftVertices, rightVertices) = if(isInputs) {
-        (Array<InterfaceVertex<V, G>>(), childVertices)
+        (Array<InterfaceVertex<V, G>>(), vertices)
     } else {
         (childVertices, Array<InterfaceVertex<V, G>>())
     }
     DrawBoxNode(
-        interfaceName,
-        interfaceStyle,
-        leftVertices,
-        leftVertices,
-        None<String>,
-        rightVertices,
-        rightVertices,
-        elementContent,
-        connectionContent
+        interfaceName, interfaceStyle, leftVertices, leftVertices, None<String>,
+        rightVertices, rightVertices, elementContent, connectionContent
     )
 }
+/**
+ * Get the dot lines for beginning a graph. If this graph has a parent,
+ * it will be denoted as a subgraph cluster; otherwise it will be an ordinary
+ * graph.
+ *
+ * @param label The name of the graph
+ * @param parent The optional parent edge
+ * @param elementContent the list of element dotlines
+ */
 func DrawOpeningContent<V, G>(
     label : String,
     parent : Option<Edge<V, G>>,
@@ -686,13 +729,17 @@ func DrawOpeningContent<V, G>(
     let labelLine = DotLine(labelText, Preserve)
     elementContent.append(labelLine)
 }
+/**
+ * Get the closing content for a dot graph.
+ *
+ * @param elementContent The list of element dotlines
+ */
 func DrawClosingContent(
     elementContent : ArrayList<DotLine>
 ) : Unit {
     let closingText = DotLine("}", Deindent)
     elementContent.append(closingText)
 }
-
 /**
  * Draw the interfaces of an interfaced hypergraph as grey boxes,
  * labelled with the widths, and the port names if appropriate.
