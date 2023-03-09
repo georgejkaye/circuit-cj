@@ -5,71 +5,60 @@ import utils.*
 
 from std import math.abs
 
-/**
- * Unary gates
- */
-
 public func BufGate(
     a : BelnapWire
 ) : BelnapWire {
-    belnapSignature.UseUnaryGate(BUF, a)
+    UseUnaryGate(BUF, a)[0]
 }
 public func NotGate(
     a : BelnapWire
 ) : BelnapWire {
-    belnapSignature.UseUnaryGate(NOT, a)
+    UseUnaryGate(NOT, a)[0]
 }
-
-/**
- * Binary gates
- */
-
 public func AndGate(
     a : BelnapWire,
     b : BelnapWire
 ) : BelnapWire {
-    belnapSignature.UseBinaryGate(AND, a, b)
+    UseBinaryGate(AND, a, b)[0]
 }
 public func OrGate(
     a : BelnapWire,
     b : BelnapWire
 ) : BelnapWire {
-    belnapSignature.UseBinaryGate(OR, a, b)
+    UseBinaryGate(OR, a, b)[0]
 }
 public func NandGate(
     a : BelnapWire,
     b : BelnapWire
 ) : BelnapWire {
-    belnapSignature.UseBinaryGate(NAND, a, b)
+    UseBinaryGate(NAND, a, b)[0]
 }
 public func NorGate(
     a : BelnapWire,
     b : BelnapWire
 ) : BelnapWire {
-    belnapSignature.UseBinaryGate(NOR, a, b)
+    UseBinaryGate(NOR, a, b)[0]
 }
 public func XorGate(
     a : BelnapWire,
     b : BelnapWire
 ) : BelnapWire {
-    belnapSignature.UseBinaryGate(XOR, a, b)
+    UseBinaryGate(XOR, a, b)[0]
 }
 public func XnorGate(
     a : BelnapWire,
     b : BelnapWire
 ) : BelnapWire {
-    belnapSignature.UseBinaryGate(XNOR, a, b)
+    UseBinaryGate(XNOR, a, b)[0]
 }
-
-
 /**
- * Perform an unsigned extension on a wire, i.e. add a false as its msb
- * @param w The input wire
- * @return The wire with an extra bit
- */
+* Perform an unsigned extension on a wire, i.e. add a false as its msb
+* @param w The input wire
+* @return The wire with an extra bit
+*/
 public func UnsignedExtend(
     w : BelnapWire
 ) : BelnapWire {
-    let waveform = belnapSignature.ConstantZero()
+    let waveform = belnapSignature.UseConstantZero(width: 1)
     Combine([waveform, w])
 }

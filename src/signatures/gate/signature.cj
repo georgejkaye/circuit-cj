@@ -19,7 +19,15 @@ public enum GateLevelValue {
 /**
  * Instantiate Belnap values as a type of value symbols
  */
-extend GateLevelValue <: ValueSymbol & LessOrEqual<GateLevelValue> & Equatable<GateLevelValue> & Decimal<GateLevelValue> {
+extend GateLevelValue
+    <: ValueSymbol<GateLevelValue> &
+        LessOrEqual<GateLevelValue> &
+        Equatable<GateLevelValue> &
+        Decimal<GateLevelValue>
+{
+    public static func GetDisconnected() : GateLevelValue {
+        NONE
+    }
     public func hashCode(): Int64 {
         match (this) {
             case NONE => 0
@@ -161,7 +169,8 @@ public enum GateLevelPrimitive {
  * Internal package type aliases
  */
 type BelnapWire = Wire<GateLevelValue, GateLevelPrimitive>
-type BelnapCircuit = InterfacedHypergraph<GateLevelValue, GateLevelPrimitive>
+type BelnapCircuit = Hypergraph<GateLevelValue, GateLevelPrimitive>
+type BelnapInterfacedCircuit = InterfacedHypergraph<GateLevelValue, GateLevelPrimitive>
 /**
  * Instantiate GateLevelPrimitive as a type of gate symbols
  */
