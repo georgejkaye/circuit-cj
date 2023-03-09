@@ -24,7 +24,7 @@ extend VertexType <: ToString {
  * is a source or target of, and which index it is.
  */
 public struct EdgeConnection<V, G>
-    <: ToString & Equatable<EdgeConnection<V, G>> & Hashable & Ownable<V, G>
+    <: ToString & Equatable<EdgeConnection<V, G>> & Hashable & GraphElement<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -81,7 +81,7 @@ public struct EdgeConnection<V, G>
     }
     public func SliceTentacle() : (Vertex<V, G>, Vertex<V, G>) {
         let existingVertex = this.GetVertex()
-        let owner = this.GetEdge().GetOwner()
+        let owner = this.GetEdge().GetGraph()
         let slicedVertex = owner.AddNewVertex(existingVertex.GetWidth())
         let edge = this.GetEdge()
         let index = this.GetIndex()
@@ -95,8 +95,8 @@ public struct EdgeConnection<V, G>
         }
         (leftVertex, rightVertex)
     }
-    public func GetOwner() : Hypergraph<V, G> {
-        this.GetEdge().GetOwner()
+    public func GetGraph() : Hypergraph<V, G> {
+        this.GetEdge().GetGraph()
     }
 }
 public enum InterfaceType {
@@ -160,7 +160,7 @@ public enum TentacleType<V, G>
  */
 public class Vertex<V, G>
     <: Identifiable & Equatable<Vertex<V, G>> & Hashable
-        & ToString & HasWidth & Socket & Ownable<V, G>
+        & ToString & HasWidth & Socket & GraphElement<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -297,7 +297,7 @@ public class Vertex<V, G>
     public operator func !=(right : Vertex<V, G>) : Bool {
         this.GetId() != right.GetId()
     }
-    public func GetOwner() : Hypergraph<V, G> {
+    public func GetGraph() : Hypergraph<V, G> {
         this.owner
     }
     public func SetOwner(f : Hypergraph<V, G>) : Unit {
@@ -362,7 +362,7 @@ public class Vertex<V, G>
         // Get the actual vertex object
         let v = t.GetVertex()
         // We can only merge in a vertex owned by the same graph
-        let owner = MergeHypergraphs(this.GetOwner(), t)
+        let owner = MergeHypergraphs(this.GetGraph(), t)
         // We cannot allow the merged vertex to have multiple in edge
         AssertAtMostOneInEdge(this, v)
         // Any edge connected to the merging vertex must be updated
@@ -401,7 +401,7 @@ public class Vertex<V, G>
     }
     public func SplitVertex() : (Vertex<V, G>, Vertex<V, G>) {
         let leftVertex = this
-        let rightVertex = this.GetOwner().AddNewVertex(leftVertex.GetWidth())
+        let rightVertex = this.GetGraph().AddNewVertex(leftVertex.GetWidth())
         let outEdges = HashSet<EdgeConnection<V, G>>(leftVertex.GetOutEdges())
         for(ec in HashSet(leftVertex.GetOutEdges())) {
             ec.GetEdge().SetSource(

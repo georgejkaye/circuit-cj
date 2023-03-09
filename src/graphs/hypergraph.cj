@@ -263,7 +263,7 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         this.sequentialData
     }
     public func AddEdgeAndVertices(e : Edge<V, G>) : Unit {
-        this.IncludeHypergraph(e.GetOwner())
+        this.IncludeHypergraph(e.GetGraph())
     }
     public func AddEdge(e : Edge<V, G>) : Unit {
         this.edges.put(e)
@@ -284,7 +284,7 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
     public func GetVertices() : HashSet<Vertex<V, G>> {
         this.vertices
     }
-    public func AddElement(elem : Ownable<V, G>) : Unit {
+    public func AddElement(elem : GraphElement<V, G>) : Unit {
         match(elem) {
             case e : Edge<V, G> => this.AddEdge(e)
             case v : Vertex<V, G> => this.AddVertex(v)
@@ -592,12 +592,12 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         }
     }
 }
-public interface Ownable<V, G>
+public interface GraphElement<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    func GetOwner() : Hypergraph<V, G>
+    func GetGraph() : Hypergraph<V, G>
 }
 public interface CircuitBuilder<V, G>
     where
@@ -613,13 +613,13 @@ extend Signature<V, G> <: CircuitBuilder<V, G> {
     }
 }
 public func MergeHypergraphs<V, G>(
-    primary : Hypergraph<V, G>, b : Ownable<V, G>
+    primary : Hypergraph<V, G>, b : GraphElement<V, G>
 ) : Hypergraph<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    let secondary = b.GetOwner()
+    let secondary = b.GetGraph()
     if(primary != secondary) {
         for(e in HashSet<Edge<V, G>>(secondary.GetEdges())) {
             primary.AddEdge(e)
@@ -634,10 +634,10 @@ public func MergeHypergraphs<V, G, T, U>(a : T, b : U) : Hypergraph<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>,
-        T <: Ownable<V, G>,
-        U <: Ownable<V, G>
+        T <: GraphElement<V, G>,
+        U <: GraphElement<V, G>
 {
-    MergeHypergraphs(a.GetOwner(), b)
+    MergeHypergraphs(a.GetGraph(), b)
 }
 public func MergeHypergraphs<V, G, T>(
     elems : Array<T>,
@@ -646,20 +646,20 @@ public func MergeHypergraphs<V, G, T>(
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>,
-        T <: Ownable<V, G>
+        T <: GraphElement<V, G>
 {
     if(elems.size == 0) {
         initial
     } else if(elems.size == 1) {
         let actualInitial = match(initial) {
             case Some(f) => MergeHypergraphs(f, elems[0])
-            case None    => elems[0].GetOwner()
+            case None    => elems[0].GetGraph()
         }
         Some(actualInitial)
     } else {
         let (actualInitial, startIndex) = match(initial) {
             case Some(f) => (f, 0)
-            case None    => (elems[0].GetOwner(), 1)
+            case None    => (elems[0].GetGraph(), 1)
         }
         Some(
             fold_left<T, Hypergraph<V, G>>(

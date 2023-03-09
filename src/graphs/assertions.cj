@@ -117,7 +117,7 @@ public func AssertOwnedBy<V, G>(v : Vertex<V, G>, f : Hypergraph<V, G>) : Unit
         V <: ValueSymbol<V> & Equatable<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    if(v.GetOwner() != f) {
+    if(v.GetGraph() != f) {
         throw BadOwnershipException(v, f, true)
     }
 }
@@ -132,7 +132,7 @@ public func AssertAllOwnedBy<V, G, T>(
     AssertArrayElementsHaveParameter<T, Hypergraph<V, G>>(
         vs,
         f,
-        { t : T => t.GetVertex().GetOwner() },
+        { t : T => t.GetVertex().GetGraph() },
         Owner
     )
 }
@@ -144,7 +144,7 @@ public func AssertAllOwnedBySame<V, G, T>(vs : Array<T>) : Hypergraph<V, G>
 {
     AssertArrayAllSameParameter<T, Hypergraph<V, G>>(
         vs,
-        { t : T => t.GetVertex().GetOwner() },
+        { t : T => t.GetVertex().GetGraph() },
         Owner
     )
 }
@@ -153,7 +153,7 @@ public func AssertNotOwnedBy<V, G>(e : Edge<V, G>, f : Hypergraph<V, G>) : Unit
         V <: ValueSymbol<V> & Equatable<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    if(e.GetOwner() == f) {
+    if(e.GetGraph() == f) {
         throw BadOwnershipException(e, f, false)
     }
 }

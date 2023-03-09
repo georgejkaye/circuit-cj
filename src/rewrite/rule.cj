@@ -161,7 +161,7 @@ func PropagateAcrossFork<V, G>(
             e.GetSources(),
             newTargets,
             e.GetSubgraph(),
-            e.GetOwner()
+            e.GetGraph()
         )
         nextElements.put(EDGE(edgeCopy))
         // Send tentacles to each target vertex

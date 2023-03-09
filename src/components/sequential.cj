@@ -147,7 +147,7 @@ public func UseDelay<V, G>(
             Label<V,G>.DELAY(width),
             [inputWire],
             None<InterfacedHypergraph<V, G>>,
-            input.GetVertex().GetOwner()
+            input.GetVertex().GetGraph()
         )[0]
     }
     inputWire

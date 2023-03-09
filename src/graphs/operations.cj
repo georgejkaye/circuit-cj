@@ -56,7 +56,7 @@ public func MergeVertices<T, U, V, G>(
         UpdateInterfaces(ie)
     }
     // Make sure the old vertex isn't part of a hypergraph any more
-    // w.GetOwner().RemoveVertex(w)
+    // w.GetGraph().RemoveVertex(w)
     (v, w)
 }
 public func MergeVertices<T, V, G>(vs : Array<T>) : Vertex<V, G>
@@ -82,7 +82,7 @@ public func MergeVertices<T, V, G>(vs : Array<T>) : Vertex<V, G>
         for(ie in discardedVertex.GetInterfacedOutputs()) {
             ie.graph.ReplaceOutput(ie.index, retainedVertex)
         }
-        discardedVertex.GetOwner().RemoveVertex(discardedVertex)
+        discardedVertex.GetGraph().RemoveVertex(discardedVertex)
     }
     retainedVertex
 }

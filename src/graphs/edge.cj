@@ -50,7 +50,7 @@ public interface HasTentacle<V, G> <: ContainsVertex<V, G>
     func IsDelay() : Bool
 }
 public struct Tentacle<V, G>
-    <: ToString & HasWidth & HasTentacle<V, G> & Ownable<V, G>
+    <: ToString & HasWidth & HasTentacle<V, G> & GraphElement<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -87,8 +87,8 @@ public struct Tentacle<V, G>
     public func IsDelay() : Bool {
         this.delay
     }
-    public func GetOwner() : Hypergraph<V, G> {
-        this.GetVertex().GetOwner()
+    public func GetGraph() : Hypergraph<V, G> {
+        this.GetVertex().GetGraph()
     }
 }
 public enum TentacleOrigin<V, G> where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
@@ -117,7 +117,7 @@ extend TentacleOrigin<V, G> <: HasWidth & ToString {
  */
 public class Edge<V, G>
     <: Specifiable<V> & Equatable<Edge<V, G>> & Identifiable &
-        ToString & Hashable & Ownable<V, G>
+        ToString & Hashable & GraphElement<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -212,7 +212,7 @@ public class Edge<V, G>
         ForEachVertex(this.sources, f)
         ForEachVertex(this.targets, f)
     }
-    public func GetOwner() : Hypergraph<V, G> {
+    public func GetGraph() : Hypergraph<V, G> {
         this.owner
     }
     public func SetOwner(f : Hypergraph<V, G>) : Unit {
@@ -311,14 +311,14 @@ public class Edge<V, G>
             case None => (this.GetSources(), this.GetTargets())
             case Some(f) =>
                 let mergeMap = HashMap<Vertex<V, G>, Vertex<V, G>>()
-                this.GetOwner().RemoveEdge(this)
+                this.GetGraph().RemoveEdge(this)
                 for(v in f.GetInputs()) {
                     v.GetVertex().RemoveAsInput(f)
                 }
                 for(v in f.GetOutputs()) {
                     v.GetVertex().RemoveAsOutput(f)
                 }
-                this.GetOwner().IncludeHypergraph(f.GetGraph())
+                this.GetGraph().IncludeHypergraph(f.GetGraph())
                 func MergeInterfaces(
                     parentVertices : Array<Tentacle<V, G>>,
                     childVertices : Array<InterfaceVertex<V, G>>

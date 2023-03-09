@@ -117,6 +117,6 @@ public func UseBlackbox<V, G>(
         ),
         inputs,
         None<InterfacedHypergraph<V, G>>,
-        inputs[0].GetVertex().GetOwner()
+        inputs[0].GetVertex().GetGraph()
     )
 }

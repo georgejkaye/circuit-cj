@@ -19,7 +19,7 @@ import syntax.*
  */
 public class Wire<V, G>
     <: Identifiable & ToString & ContainsVertex<V, G> &
-        HasWidth & Ownable<V, G>
+        HasWidth & GraphElement<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -30,7 +30,7 @@ public class Wire<V, G>
         this.vertex = v
     }
     public func SetVertex(v : Vertex<V, G>) : Unit {
-        let owner = v.GetOwner()
+        let owner = v.GetGraph()
         this.vertex = v
     }
     public func GetId() : Int64 {
@@ -45,8 +45,8 @@ public class Wire<V, G>
     public func GetVertex() : Vertex<V, G> {
         this.vertex
     }
-    public func GetOwner() : Hypergraph<V, G> {
-        this.GetVertex().GetOwner()
+    public func GetGraph() : Hypergraph<V, G> {
+        this.GetVertex().GetGraph()
     }
 }
 public interface ContainsWire<V, G> <: HasWidth & ContainsVertex<V, G>
@@ -131,7 +131,7 @@ extend Signature<V, G> <: WireUser<V, G>
  */
 public class InterfaceWire<V, G>
     <: ContainsWire<V, G> & ToString & ContainsVertex<V, G> &
-        Socket & Ownable<V, G>
+        Socket & GraphElement<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -172,8 +172,8 @@ public class InterfaceWire<V, G>
     public operator func !=(rhs : Socket) {
         !(this == rhs)
     }
-    public func GetOwner() : Hypergraph<V, G> {
-        this.GetVertex().GetOwner()
+    public func GetGraph() : Hypergraph<V, G> {
+        this.GetVertex().GetGraph()
     }
 }
 /**
@@ -304,7 +304,7 @@ public func Split<V, G, T>(w : T, vs : Array<Int64>) : Array<Wire<V, G>>
         BUNDLER([w.GetWidth()], vs),
         [w],
         None<InterfacedHypergraph<V, G>>,
-        w.GetVertex().GetOwner()
+        w.GetVertex().GetGraph()
     )
 }
 /**
@@ -363,7 +363,7 @@ public func Combine<V, G, T>(ws : Array<T>) : Wire<V, G>
             BUNDLER(widths, [Sum(ws, { t => t.GetWidth() })]),
             ws,
             None,
-            ws[0].GetVertex().GetOwner()
+            ws[0].GetVertex().GetGraph()
         )[0]
     }
 }
