@@ -14,14 +14,14 @@ package examples.gate
 public func CyclicCombinational(delays!: Bool) {
     let x = sig.UseWire(1)
     let c = sig.UseWire(1)
-    let bottom = sig.UseWire(1)
-    let muxa = Mux2(c, x, bottom)
+    let feedback = sig.UseWire(1)
+    let muxa = Mux2(c, x, feedback)
     let muxaWire = if(delays) {
-        sig.UseDelay(muxa)
+        UseDelay(muxa)
     } else {
         muxa
     }
-    let f = sig.UseBlackbox(
+    let f = UseBlackbox(
         "F",
         [Port(1, "A")],
         [Port(1, "Z")],
@@ -29,24 +29,24 @@ public func CyclicCombinational(delays!: Bool) {
     )[0]
     let muxb = Mux2(c, f, x)
     let muxbWire = if(delays) {
-        sig.UseDelay(muxb)
+        UseDelay(muxb)
     } else {
         muxb
     }
-    let g = sig.UseBlackbox(
+    let g = UseBlackbox(
         "G",
         [Port(1, "A")],
         [Port(1, "Z")],
         [muxbWire]
     )[0]
-    sig.Feedback(g, bottom)
+    Feedback(g, feedback)
     let muxc = Mux2(c, g, f)
     let muxcWire = if(delays) {
-        sig.UseDelay(muxc)
+        UseDelay(muxc)
     } else {
         muxc
     }
-    sig.MakeSubcircuit(
+    MakeSubcircuit(
         [InterfaceWire(x, "x"), InterfaceWire(c, "c")],
         [InterfaceWire(muxcWire, "z")],
         "cyclic_combinational"

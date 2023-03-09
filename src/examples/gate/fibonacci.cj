@@ -17,19 +17,19 @@ package examples.gate
  */
 public func Fibonacci(n : Int64, width : Int64) : Circuit_ {
     let output = if (n == 0) {
-        sig.Zero(width)
+        sig.UseInstantZero(width: width)
     } else if (n == 1) {
-        sig.UseUnsignedSignalFromInt(1, width)
+        sig.UseSignalFromInt(1, width: width, signed: false)
     } else {
-        let fiba = sig.UseSubcircuit_1(Fibonacci(n - 2, width), Array<Wire_>())
-        let fibb = sig.UseSubcircuit_1(Fibonacci(n - 1, width), Array<Wire_>())
+        let fiba = UseSubcircuit_1(Fibonacci(n - 2, width), Array<Wire_>())
+        let fibb = UseSubcircuit_1(Fibonacci(n - 1, width), Array<Wire_>())
         UseRippleAdder(
             fiba,
             fibb,
-            sig.Zero(1)
+            sig.UseInstantZero(width: 1)
         )[0]
     }
-    sig.MakeSubcircuit(
+    MakeSubcircuit(
         Array<InterfaceWire_>(),
         [InterfaceWire(output, "Z")],
         "fibonacci_${n}"

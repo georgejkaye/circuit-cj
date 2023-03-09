@@ -27,7 +27,7 @@ func FullAdder() {
     let carryXor = XorGate(inputC, inputXor)
     let carryAnd = AndGate(inputC, inputXor)
     let carryOr = OrGate(inputAnd, carryAnd)
-    sig.MakeSubcircuit([
+    MakeSubcircuit([
             InterfaceWire(inputA, "A"),
             InterfaceWire(inputB, "B"),
             InterfaceWire(inputC, "C")
@@ -49,7 +49,7 @@ func MultibitFullAdder(width : Int64) {
     let c = sig.UseWire(1)
     let (sum, carry) = BitwiseRippleMap(
         { acc : Wire_, cur : Array<Wire_> =>
-            sig.UseSubcircuit_2(
+            UseSubcircuit_2(
                 FullAdder(),
                 [cur[0], cur[1], acc]
             )
@@ -57,7 +57,7 @@ func MultibitFullAdder(width : Int64) {
         c,
         [a, b]
     )
-    sig.MakeSubcircuit([
+    MakeSubcircuit([
             InterfaceWire(a, "A"),
             InterfaceWire(b, "B"),
             InterfaceWire(c, "C")
@@ -80,7 +80,7 @@ public func AddSub(width : Int64) {
     let c = sig.UseWire(1)
     // To allow subtraction
     let xorGates = Xor(b, Replicate(c, width))
-    let (sum, carry) = sig.UseSubcircuit_2(MultibitFullAdder(width), [a, b, c])
+    let (sum, carry) = UseSubcircuit_2(MultibitFullAdder(width), [a, b, c])
     let finalBitA = Msb(a)
     let finalBitB = Msb(xorGates)
     let finalBitSum = Msb(sum)
@@ -97,7 +97,7 @@ public func AddSub(width : Int64) {
             NotGate(finalBitA)
         ])
     )
-    sig.MakeSubcircuit([
+    MakeSubcircuit([
             InterfaceWire(a, "A"),
             InterfaceWire(b, "B"),
             InterfaceWire(c, "C")
@@ -122,7 +122,7 @@ public func ALU(w : Int64){
     let c1 = sig.UseWire(1)
     let and = And(a, b)
     let or = Or(a, b)
-    let (sum, overflow, carry) = sig.UseSubcircuit_3(AddSub(w), [a, b, c0])
+    let (sum, overflow, carry) = UseSubcircuit_3(AddSub(w), [a, b, c0])
     let mux1 = Mux2(c1, and, or)
     let mux2 = Mux2(c1, mux1, sum)
 
@@ -131,7 +131,7 @@ public func ALU(w : Int64){
     let zero = Not(notzero)
     let negative = Msb(result)
 
-    sig.MakeSubcircuit([
+    MakeSubcircuit([
             InterfaceWire(a, "A"),
             InterfaceWire(b, "B"),
             InterfaceWire(c0, "C0"),

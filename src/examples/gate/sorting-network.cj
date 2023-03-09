@@ -21,7 +21,7 @@ import utils.*
  * @return The two output wires of the comparator
  */
 func SortingComparator(width : Int64, w1 : Wire_, w2 : Wire_) : (Wire_, Wire_) {
-    let cmp = sig.UseBlackbox(
+    let cmp = UseBlackbox(
         "cmp${width}",
         [Port(width), Port(width)],
         [Port(width), Port(width)],
@@ -49,7 +49,7 @@ public func SortingNetwork(width : Int64, inputs : Int64) : Circuit_ {
         } else {
             // Otherwise we recursively sort the first inputs-1 wires
             let smallerWires = Array<Wire_>(inputWires.size - 1){i : Int64 => inputWires[i]}
-            let smallerNetwork = sig.UseSubcircuit(
+            let smallerNetwork = UseSubcircuit(
                 SortingNetwork(width, inputs - 1),
                 smallerWires
             )
@@ -65,7 +65,7 @@ public func SortingNetwork(width : Int64, inputs : Int64) : Circuit_ {
             )
             prepend(final, output)
         }
-    sig.MakeSubcircuit(
+    MakeSubcircuit(
         NameWires(inputWires, { i : Int64 => "I${i}"}),
         NameWires(outputWires, { i : Int64 => "O${i}"}),
         "sort${inputs}_${width}"
