@@ -21,9 +21,15 @@ public interface HasName {
 }
 public interface HasOptionalName {
     func GetName() : Option<String>
+    func GetNameString() : String {
+        match(this.GetName()) {
+            case None => ""
+            case Some(n) => n
+        }
+    }
 }
 public interface Socket <: HasWidth & HasOptionalName & ToString {}
-public interface Specifiable<V> where V <: ValueSymbol & Equatable<V> & LessOrEqual<V> {
+public interface Specifiable<V> where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> {
     func GetInputPorts() : Array<Port>
     func GetInputPort(i : Int64) : Port {
         this.GetInputPorts()[i]

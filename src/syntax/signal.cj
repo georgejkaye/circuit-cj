@@ -12,12 +12,14 @@ package syntax
 
 import assertions.*
 
-public struct Signal<V> <: ToString & HasName & Specifiable<V> & HasWidth & Equatable<Signal<V>>
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V> {
+public struct Signal<V>
+    <: ToString & HasName & Specifiable<V> & HasWidth & Equatable<Signal<V>>
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
+{
     public Signal(
         public let values : Array<V>
     ){
-        AssertNonEmpty(values, "values")
+        AssertNonEmpty(values, Values)
     }
     public init(v: V, n : Int64) {
         this(Array<V>(n, {i : Int64 => v}))
@@ -66,13 +68,13 @@ public struct Signal<V> <: ToString & HasName & Specifiable<V> & HasWidth & Equa
 }
 
 public func GetSignal<V>(v : V, w : Int64) : Signal<V>
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
 {
     Signal(Array<V>(w){ i : Int64 => v })
 }
 
 public func GetSignalsString<V>(vs : Array<Signal<V>>) : String
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
 {
     arrayToString(
         vs, { s => s.GetName() },
@@ -101,7 +103,7 @@ extend WaveformType <: Hashable & Equatable<WaveformType> {
     }
 }
 public func GetWaveformString<V>(signals : Array<Signal<V>>) : String
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
 {
     arrayToString(
         signals, { s : Signal<V> => s.GetName() },

@@ -7,11 +7,16 @@ package syntax
 
 from std import collection.HashSet, collection.HashMap
 
-public interface ValueSymbol <: Hashable & HasName & ToString {}
+public interface ValueSymbol<V> <: Hashable & HasName & ToString {
+    // HACK: ideally we want to have this returning an element
+    // of the type the interface is being implemented on, but I don't
+    // know whether this is possible
+    static func GetDisconnected() : V
+}
 
 public interface PrimitiveSymbol<V>
     <: Specifiable<V> & HasName & ToString & Hashable
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V> {
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> {
     func GetEnhancedName(n: Int64, w: Int64): String
 }
 /**
@@ -30,7 +35,7 @@ func CheckTableMonotone<V>(
     table : (Array<Array<V>>) -> (Array<Array<V>>)
 ) : Unit
     where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
 {
     let inputs = lattice.EnumerateInputs(ports)
     for(input1 in inputs) {
@@ -49,7 +54,7 @@ func CheckTableMonotone<V>(
 }
 public struct Annihilator<V, G> <: ToString
      where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public Annihilator(
@@ -78,7 +83,7 @@ public struct Annihilator<V, G> <: ToString
 }
 public struct Identity<V, G> <: ToString
      where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public Identity(
@@ -123,7 +128,7 @@ func GetAnnihilationAndIdentityRules<V, G>(
     identitiesList : ArrayList<Identity<V, G>>
 ) : Unit
      where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     // Only gates with multiple inputs can have annihilator and identity rules
@@ -190,11 +195,12 @@ func GetAnnihilationAndIdentityRules<V, G>(
         }
     }
 }
-public class Signature<V, G> <: HasName & ToString
+public class Signature<V, G> <: HasName & ToString & Equatable<Signature<V, G>>
     where
-        V <: ValueSymbol & Equatable<V> & LessOrEqual<V>,
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
+    let uniqueId : Int64 = GetNextId()
     public let annihilators : Array<Annihilator<V, G>>
     public let identities : Array<Identity<V, G>>
     public Signature(
@@ -217,6 +223,15 @@ public class Signature<V, G> <: HasName & ToString
         }
         this.annihilators = annihilatorsList.toArray()
         this.identities = identitiesList.toArray()
+    }
+    public func GetId() : Int64 {
+        this.uniqueId
+    }
+    public operator func ==(rhs : Signature<V, G>) {
+        this.GetId() == rhs.GetId()
+    }
+    public operator func !=(rhs : Signature<V, G>) {
+        !(this == rhs)
     }
     public func GetGate(gate : G) : ((Array<Array<V>>) -> Array<Array<V>>) {
         this.gateInterpretation(gate)

@@ -35,7 +35,7 @@ extend Enhancement <: Equatable<Enhancement> {
 }
 
 public func CheckRippleSuitability<V, G>(primitive : G) : Unit
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let inputs = primitive.GetInputPorts()
     let outputs = primitive.GetOutputPorts()
@@ -50,14 +50,14 @@ public func CheckRippleSuitability<V, G>(primitive : G) : Unit
 }
 
 public func CheckBitwiseMapSuitability<V, G>(primitive : G) : Unit
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertPortsSameWidth(primitive.GetInputPorts())
     AssertPortsSameWidth(primitive.GetOutputPorts())
 }
 
 public struct EnhancedPrimitive<V, G> <: HasName & Specifiable<V> & Equatable<EnhancedPrimitive<V, G>>
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public EnhancedPrimitive(
         public let primitive : G,

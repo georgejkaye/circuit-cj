@@ -11,7 +11,7 @@ package syntax
 
 func AssertSignalsSameWidth<V>(
     vs : Array<Signal<V>>
-) : Int64 where V <: ValueSymbol & Equatable<V> & LessOrEqual<V> {
+) : Int64 where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> {
     AssertArrayAllSameParameter<Signal<V>, Int64>(
         vs,
         { v : Signal<V> => v.GetWidth() },
@@ -30,7 +30,7 @@ func AssertPortsSameWidth(
 }
 
 class CannotRipplePrimitiveException<V, G> <: Exception
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public init(primitive : G) {
         ErrorMsg(
@@ -42,7 +42,7 @@ class CannotRipplePrimitiveException<V, G> <: Exception
 }
 
 class CannotBitwiseMapPrimitiveException<V, G> <: Exception
-    where V <: ValueSymbol & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public init(primitive : G) {
         ErrorMsg(
