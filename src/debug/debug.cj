@@ -1,14 +1,12 @@
 /**
- * debug.cj
+ * debug/debug.cj
  *
- * This file contains functions that can be used to print debug information to the console
+ * This file contains functions that can be used to print debug information
+ *
+ * @author George Kaye
+ * @since 0.1
  */
 package debug
-
-/**
- * Debug settings
- */
-
 /** Whether the debug messages are printed */
 var debugMessages = false
 /**
@@ -30,7 +28,6 @@ public func SetDebugMessages(b : Bool){
 public func DebugMessagesOn(){
     debugMessages
 }
-
 enum MessageType{ DEBUG | ERROR | WARNING | INFO | TODO }
 extend MessageType <: ToString {
     public func toString(){
@@ -43,29 +40,57 @@ extend MessageType <: ToString {
         }
     }
 }
-
+/**
+ * Print a message to the console, in the form of
+ *
+ * [TYPE] This is a message
+ *
+ * @param mt The message type
+ * @param msg The message to print
+ */
 func PrintMessage(mt : MessageType, msg : String) : Unit {
     println("${mt}: ${msg}")
 }
-
+/**
+ * Print a [DEBUG] message, if debug messages are enabled.
+ *
+ * @param msg The message to print
+ */
 public func Debug(msg : String) : Unit {
     if(DebugMessagesOn()){
         PrintMessage(DEBUG, msg)
     }
 }
-
-public func ErrorMsg(fnc : String, msg : String) : Unit {
+/**
+ * Print an [ERROR] message.
+ * Does *not* halt execution.
+ *
+ * @param msg The message to print
+ */
+public func ErrorMsg(msg : String) : Unit {
     PrintMessage(ERROR, msg)
 }
-
-public func Warning(fnc: String, msg: String) : Unit {
+/**
+ * Print a [WARNING] message.
+ *
+ * @param msg The message to print
+ */
+public func Warning(msg: String) : Unit {
     PrintMessage(WARNING, msg)
 }
-
-public func Info(msg: String) : Unit {
+/**
+ * Print an [INFO] message.
+ *
+ * @param msg The message to print
+ */
+public func Info(msg : String) : Unit {
     PrintMessage(INFO, msg)
 }
-
+/**
+ * Print a [TODO] message.
+ *
+ * @param msg The message to print
+ */
 public func TodoMessage(msg : String) : Unit {
     PrintMessage(TODO, msg)
 }
