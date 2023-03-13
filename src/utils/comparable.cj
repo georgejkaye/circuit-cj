@@ -7,6 +7,7 @@
  * @since 0.2
  */
 package utils
+from std import math.MathExtension
 /**
  * Get the maximum element in a collection of elements which can be mapped to
  * comparables, given some minimum threshold

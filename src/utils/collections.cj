@@ -70,10 +70,8 @@ public func concat<T>(xs : Array<T>, ys : Array<T>) {
  * @param delimiter
  */
 public func collectionToString<T>(
-    collection : Collection<T>,
-    printFn : (T) -> String,
-    openingBracket!: String = "{",
-    closingBracket!: String = "}",
+    collection : Collection<T>, printFn : (T) -> String,
+    openingBracket!: String = "{", closingBracket!: String = "}",
     delimiter!: String = ", "
 ) : String {
     let str = foldi_left(
@@ -99,15 +97,25 @@ public func collectionToString<T>(
  * @param delimiter
  */
 public func arrayToString<T>(
-    array : Array<T>,
-    printFn : (T) -> String,
-    openingBracket!: String = "[",
-    closingBracket!: String = "]",
-    delimiter!: String = ", ",
-    reverse!: Bool = false
+    array : Array<T>, printFn : (T) -> String,
+    openingBracket!: String = "[", closingBracket!: String = "]",
+    delimiter!: String = ", "
 ) : String {
     collectionToString(
         array, printFn, openingBracket: openingBracket,
         closingBracket: closingBracket, delimiter: delimiter
     )
+}
+/**
+ * Attempt to get the value mapped to by a key in a hashmap in an unsafe way,
+ * throwing NoneException if it doesn't exist.
+ *
+ * @param map
+ * @param key
+ * @return The value mapped by the key
+ */
+public func unsafeGet<T,U>(map : HashMap<T,U>, key: T) : U
+    where T <: Equatable<T> & Hashable
+{
+    map.get(key).getOrThrow()
 }
