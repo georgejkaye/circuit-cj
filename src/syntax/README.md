@@ -2,21 +2,14 @@
 
 Files specifying the syntax of sequential circuits.
 
-## [`label.cj`](label.cj)
+## Files
 
-Contains the definition of the `Label` enum.
-Effectively, a `Label` is a generator in the free categorical sense.
-
-## [`library.cj`](library.cj)
-
-Contains specifications for the predefined `Primitive`, `Composite` and `Blackbox` classes of generators.
-
-## [`port.cj`](port.cj)
-
-Contains the definition of the `Port` record.
-A `Port` is a width with an optional name: these specify the individual inputs and outputs of generators.
-
-## [`value.cj`](value.cj)
-
-Contains the definition of the `Value` enum.
-A `Value` is one of the signals that flow in circuit wires.
+* [`enhancement.cj`](enhancement.cj) Bitwise, ripple enhancements of primitives
+* [`label.cj`](label.cj) Definition of `Label`
+* [`lattice.cj`](lattice.cj) Definition of finite lattices
+* [`port.cj`](port.cj) Definition of `Port` and associated interfaces
+* [`signal.cj`](signal.cj) Definition of signals, multiple values in a bus
+* [`signature.cj`](signature.cj) Definition of `Signatures` that specify the
+                            components of circuits
+* [`spec.cj`](spec.cj) Definition of `Specification` for specifying
+                            input and output ports

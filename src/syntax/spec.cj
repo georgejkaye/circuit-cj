@@ -7,10 +7,10 @@
  * @author George Kaye
  * @since 0.2
  */
-
 package syntax
 /**
  * Convert a given decimal ASCII code to a string
+ *
  * @param n The decimal number
  * @return The corresponding ascii character as a string
  */
@@ -29,39 +29,33 @@ public func numToUppercaseLetter(n : Int64) : String {
     ASCIIToString(65 + UInt32(n))
 }
 /**
- * A specification defines an arbitrary label with a name and arrays of input/output ports
+ * A specification defines an arbitrary label with a name and arrays of
+ * input/output ports
  */
 public class Specification<V>
-    <: Specifiable<V> & HasName & Equatable<Specification<V>> & Hashable
-    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
+     <: Specifiable<V> & HasName & Equatable<Specification<V>>
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
 {
-    static var nextId = 0
-    public let id : Int64
+    let id : Int64
     public Specification(
-        public let name : String,
-        public let inputPorts : Array<Port>,
-        public let outputPorts : Array<Port>
+        let name : String,
+        let inputPorts : Array<Port>,
+        let outputPorts : Array<Port>
     ){
-        this.id = nextId
-        nextId++
+        this.id = GetNextId()
     }
     public func GetName() : String {
         this.name
     }
+    public func toString() : String {
+        this.GetName()
+    }
     public func GetInputPorts() : Array<Port> {
         this.inputPorts
     }
-    public func GetArity() : Int64 {
-        this.GetInputPorts().size
-    }
     public func GetOutputPorts() : Array<Port> {
         this.outputPorts
-    }
-    public func GetCoarity() : Int64 {
-        this.GetOutputPorts().size
-    }
-    public func toString() : String {
-        this.GetName()
     }
     public operator func ==(rhs : Specification<V>) {
         this.name == rhs.name &&

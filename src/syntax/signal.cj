@@ -7,11 +7,11 @@
  * @author George Kaye
  * @since 0.2
  */
-
 package syntax
-
 import assertions.*
-
+/**
+ * A signal is an array of values.
+ */
 public struct Signal<V>
     <: ToString & HasName & Specifiable<V> & HasWidth & Equatable<Signal<V>>
     where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
@@ -21,9 +21,20 @@ public struct Signal<V>
     ){
         AssertNonEmpty(values, Values)
     }
+    /**
+     * Create a signal with one value multiple times in parallel.
+     *
+     * @param v The value
+     * @param n The number of times to have the value
+     */
     public init(v: V, n : Int64) {
         this(Array<V>(n, {i : Int64 => v}))
     }
+    /**
+     * Create a signal of width 1
+     *
+     * @param v The single element of the signal
+     */
     public init(v : V) {
         this([v])
     }
@@ -57,6 +68,10 @@ public struct Signal<V>
     public operator func !=(rhs : Signal<V>) : Bool {
         !(this == rhs)
     }
+    /**
+     * @param v a value
+     * @return Whether each element of this signal is v
+     */
     public func IsAll(v : V) : Bool {
         for(value in this.values) {
             if(value != v) {
@@ -66,14 +81,14 @@ public struct Signal<V>
         true
     }
 }
-
-public func GetSignal<V>(v : V, w : Int64) : Signal<V>
-    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
-{
-    Signal(Array<V>(w){ i : Int64 => v })
-}
-
-public func GetSignalsString<V>(vs : Array<Signal<V>>) : String
+/**
+ * Given an array of signals, get a string representing them as arguments to a
+ * circuit, i.e. a string of the form (s1, s2, s3, ...)
+ *
+ * @param vs The array
+ * @return The signa
+ */
+public func GetArgumentString<V>(vs : Array<Signal<V>>) : String
     where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
 {
     arrayToString(
@@ -81,27 +96,24 @@ public func GetSignalsString<V>(vs : Array<Signal<V>>) : String
         openingBracket: "(", closingBracket: ")", delimiter: ","
     )
 }
-
+/**
+ * Types of waveform used in circuits.
+ */
 public enum WaveformType {
+    // A waveform with finitely many elements and an input wire
     | FINITE_OPEN
+    // A waveform with finitely many elements followed by a disconnected value
     | FINITE_CLOSED
+    // An waveform with finitely many elements under a loop
     | INFINITE
 }
-extend WaveformType <: Hashable & Equatable<WaveformType> {
-    public func hashCode() : Int64 {
-        match(this) {
-            case FINITE_OPEN => 0
-            case FINITE_CLOSED => 1
-            case INFINITE => 2
-        }
-    }
-    public operator func == (rhs : WaveformType) {
-        this.hashCode() == rhs.hashCode()
-    }
-    public operator func != (rhs : WaveformType) {
-        !(this == rhs)
-    }
-}
+/**
+ * Given an array of signals, get a string representing their waveform, i.e.
+ * a string of the form s1 :: s2 :: s3 :: ...
+ *
+ * @param signals
+ * @return The waveform string
+ */
 public func GetWaveformString<V>(signals : Array<Signal<V>>) : String
     where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
 {

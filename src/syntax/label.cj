@@ -7,85 +7,140 @@
  * @author George Kaye
  * @since 0.2
  */
-
 package syntax
-
 import utils.*
-
 from std import collection.ArrayList
-
+/**
+ * Enum for the different types of generators
+ */
+public enum Label<V, G>
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    // A basic value 0 -> 1
+    | VALUE(V)
+    // A collection of values 0 -> n
+    | SIGNAL(Signal<V>)
+    // A join of a signal and a delay
+    | REGISTER(Signal<V>)
+    // A sequence of signals over time
+    | OPEN_WAVEFORM(Array<Signal<V>>)
+    // A sequence of signals over time, capped with a disconnect
+    | CLOSED_WAVEFORM(Array<Signal<V>>)
+    // A sequence of signals over time that repeats periodically
+    | INFINITE_WAVEFORM(Array<Signal<V>>)
+    // A bundler changes how wires are bundled
+    | BUNDLER(Array<Int64>, Array<Int64>)
+    // Join two wires together
+    | JOIN(Int64)
+    // The simplest building blocks of circuits
+    | PRIMITIVE(G)
+    // An primitive that has been enhanced (e.g. a bitwise variant)
+    | ENHANCED_PRIMITIVE(EnhancedPrimitive<V, G>)
+    // A composite of primitives
+    | COMPOSITE(Specification<V>)
+     // A black box with arbitrary name, arity and coarity
+    | BLACKBOX(Specification<V>)
+    // A delay parameterised by a width
+    | DELAY(Int64)
+}
 /**
  * Unicode character for omega, used to denote infinite waveforms
  */
 let omega = "\u{03C9}"
-/**
- * Enum for the different types of generators
- */
-public enum Label<V, G> where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G> {
-    | VALUE(V)                                      // A basic value 0 -> 1
-    | SIGNAL(Signal<V>)                             // A collection of values 0 -> n
-    | REGISTER(Signal<V>)                           // A join of a signal and a delay
-    | OPEN_WAVEFORM(Array<Signal<V>>)               // A sequence of signals over time
-    | CLOSED_WAVEFORM(Array<Signal<V>>)             // A sequence of signals over time, capped with a disconnect
-    | INFINITE_WAVEFORM(Array<Signal<V>>)           // A sequence of signals over time that repeats periodically
-    | BUNDLER(Array<Int64>, Array<Int64>)           // A bundler changes how wires are bundled
-    | JOIN(Int64)                                   // Join two wires together
-    | PRIMITIVE(G)                                  // The simplest building blocks of circuits
-    | ENHANCED_PRIMITIVE(EnhancedPrimitive<V, G>)   // An primitive that has been enhanced (e.g. a bitwise variant)
-    | COMPOSITE(Specification<V>)                   // A composite of primitives
-    | BLACKBOX(Specification<V>)                    // A black box with arbitrary name and codomain
-    | DELAY(Int64)                                  // A delay parameterised by a width
-}
-extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G>> {
+let bundleExpand = "\u{25C1}"
+let bundleCombine = "\u{25B7}"
+extend Label<V, G>
+    <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G>>
+{
     public func GetInputPorts() : Array<Port> {
         match(this) {
-            case VALUE(_)                      => []
-            case SIGNAL(spec)                  => []
-            case REGISTER(signal)              => [Port(signal.GetWidth())]
-            case OPEN_WAVEFORM(signals)        => [Port(signals[0].GetWidth())]
-            case CLOSED_WAVEFORM(signals)      => []
-            case INFINITE_WAVEFORM(signals)    => []
-            case BUNDLER(ms, _)                => map({ i : Int64 => Port(i)}, ms)
-            case JOIN(w)                       => [Port(w), Port(w)]
-            case PRIMITIVE(prim)               => prim.GetInputPorts()
-            case ENHANCED_PRIMITIVE(eprim)     => eprim.GetInputPorts()
-            case COMPOSITE(spec)               => spec.GetInputPorts()
-            case BLACKBOX(spec)                => spec.GetInputPorts()
-            case DELAY(w)                      => [Port(w)]
+            case VALUE(_) =>
+                []
+            case SIGNAL(spec) =>
+                []
+            case REGISTER(signal) =>
+                [Port(signal.GetWidth())]
+            case OPEN_WAVEFORM(signals) =>
+                [Port(signals[0].GetWidth())]
+            case CLOSED_WAVEFORM(signals) =>
+                []
+            case INFINITE_WAVEFORM(signals) =>
+                []
+            case BUNDLER(ms, _) =>
+                map({ i : Int64 => Port(i)}, ms)
+            case JOIN(w) =>
+                [Port(w), Port(w)]
+            case PRIMITIVE(prim) =>
+                prim.GetInputPorts()
+            case ENHANCED_PRIMITIVE(eprim) =>
+                eprim.GetInputPorts()
+            case COMPOSITE(spec) =>
+                spec.GetInputPorts()
+            case BLACKBOX(spec) =>
+                spec.GetInputPorts()
+            case DELAY(w) =>
+                [Port(w)]
         }
     }
     public func GetOutputPorts() : Array<Port> {
         match(this) {
-            case VALUE(_)                   => [Port(1)]
-            case SIGNAL(spec)               => spec.GetOutputPorts()
-            case REGISTER(signal)           => [Port(signal.GetWidth())]
-            case OPEN_WAVEFORM(signals)     => [Port(signals[0].GetWidth())]
-            case CLOSED_WAVEFORM(signals)   => [Port(signals[0].GetWidth())]
-            case INFINITE_WAVEFORM(signals) => [Port(signals[0].GetWidth())]
-            case BUNDLER(ms, ns)            => map({ i : Int64 => Port(i)}, ns)
-            case JOIN(w)                    => [Port(w)]
-            case PRIMITIVE(prim)            => prim.GetOutputPorts()
-            case ENHANCED_PRIMITIVE(eprim)  => eprim.GetOutputPorts()
-            case COMPOSITE(spec)            => spec.GetOutputPorts()
-            case BLACKBOX(spec)             => spec.GetOutputPorts()
-            case DELAY(w)                   => [Port(w)]
+            case VALUE(_) =>
+                [Port(1)]
+            case SIGNAL(spec) =>
+                spec.GetOutputPorts()
+            case REGISTER(signal) =>
+                [Port(signal.GetWidth())]
+            case OPEN_WAVEFORM(signals) =>
+                [Port(signals[0].GetWidth())]
+            case CLOSED_WAVEFORM(signals) =>
+                [Port(signals[0].GetWidth())]
+            case INFINITE_WAVEFORM(signals) =>
+                [Port(signals[0].GetWidth())]
+            case BUNDLER(ms, ns) =>
+                map({ i : Int64 => Port(i)}, ns)
+            case JOIN(w) =>
+                [Port(w)]
+            case PRIMITIVE(prim) =>
+                prim.GetOutputPorts()
+            case ENHANCED_PRIMITIVE(eprim) =>
+                eprim.GetOutputPorts()
+            case COMPOSITE(spec) =>
+                spec.GetOutputPorts()
+            case BLACKBOX(spec) =>
+                spec.GetOutputPorts()
+            case DELAY(w) => [Port(w)]
         }
     }
     public func GetName() : String {
         match(this) {
-            case VALUE(v)                   => "${v}"
-            case SIGNAL(spec)               => spec.GetName()
-            case REGISTER(signal)           => "${signal.GetName()} ::"
-            case OPEN_WAVEFORM(signals)     => "${GetWaveformString(signals)} ::"
-            case CLOSED_WAVEFORM(signals)   => GetWaveformString(signals)
-            case INFINITE_WAVEFORM(signals) => "(${GetWaveformString(signals)})${omega}"
-            case BUNDLER(ms, ns)            => if (ms.size < ns.size) { "\u{25C1}" } else { "\u{25B7}" }
-            case JOIN(w)                    => "\u{2207}_${w}"
-            case PRIMITIVE(prim)            => prim.GetName()
-            case ENHANCED_PRIMITIVE(eprim)  => eprim.GetName()
-            case COMPOSITE(spec)            => spec.GetName()
-            case BLACKBOX(spec)             => spec.GetName()
-            case DELAY(w)                   => "delay_${w}"
+            case VALUE(v) =>
+                "${v}"
+            case SIGNAL(spec) =>
+                spec.GetName()
+            case REGISTER(signal) =>
+                "${signal.GetName()} ::"
+            case OPEN_WAVEFORM(signals) =>
+                "${GetWaveformString(signals)} ::"
+            case CLOSED_WAVEFORM(signals) =>
+                GetWaveformString(signals)
+            case INFINITE_WAVEFORM(signals) =>
+                "(${GetWaveformString(signals)})${omega}"
+            case BUNDLER(ms, ns) =>
+                if (ms.size < ns.size) { bundleExpand } else { bundleCombine }
+            case JOIN(w) =>
+                "\u{2207}_${w}"
+            case PRIMITIVE(prim) =>
+                prim.GetName()
+            case ENHANCED_PRIMITIVE(eprim) =>
+                eprim.GetName()
+            case COMPOSITE(spec) =>
+                spec.GetName()
+            case BLACKBOX(spec) =>
+                spec.GetName()
+            case DELAY(w) =>
+                "delay_${w}"
         }
     }
     public func toString() : String {
@@ -150,13 +205,20 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
     public operator func !=(rhs : Label<V, G>) : Bool {
         !(this == rhs)
     }
-    public func IsValue() : Bool {
+    /**
+     * @return if this a value or a signal label
+     */
+    public func IsSignal() : Bool {
         match(this) {
             case VALUE(_) => true
             case SIGNAL(_) => true
             case _ => false
         }
     }
+    /**
+     * @param v a value symbol
+     * @return Whether thie value or signal label only contains this symbol
+     */
     public func IsAllValue(v : V) : Bool {
         match(this) {
             case VALUE(w) => v == w
@@ -170,20 +232,33 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             case _ => false
         }
     }
+    /**
+     * @return the value of this label: throws exception if not a value
+     */
     public func GetValue() : V {
         match(this) {
             case VALUE(v) => v
             case _ => throw IncompatibleVariantException(this, "VALUE")
         }
     }
+    /**
+     * @return the signal of this label: throws exception if not value or signal
+     */
     public func GetSignal() : Signal<V> {
         match(this) {
             case VALUE(v) => Signal(v)
             case SIGNAL(spec) => spec
             case REGISTER(signal) => signal
-            case _ => throw IncompatibleVariantException(this, "VALUE/SIGNAL/REGISTER")
+            case _ =>
+                throw IncompatibleVariantException(
+                    this, "VALUE/SIGNAL/REGISTER"
+                )
         }
     }
+    /**
+     * @return the value array of this label:
+     *           throws exception if not a value or signal
+     */
     public func GetValueArray() : Array<V> {
         match(this) {
             case VALUE(v) => [v]
@@ -191,48 +266,74 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             case _ => throw IncompatibleVariantException(this, "VALUE/SIGNAL")
         }
     }
+    /**
+     * @return if this label is a primitive
+     */
     public func IsPrimitive() : Bool {
         match(this) {
             case PRIMITIVE(_) => true
             case _ => false
         }
     }
+    /**
+    * @return the primitive symbol of this label:
+        throws exception if not a primitive
+     */
     public func GetPrimitive() : G {
         match(this) {
             case PRIMITIVE(prim) => prim
             case _ => throw IncompatibleVariantException(this, "PRIMITIVE")
         }
     }
+    /**
+     * @return if this label is a delay
+     */
     public func IsDelay() : Bool {
         match(this) {
             case DELAY(_) => true
             case _ => false
         }
     }
+    /**
+     * @return if this label is a join
+     */
     public func IsJoin() : Bool {
         match(this) {
             case JOIN(_) => true
             case _ => false
         }
     }
+    /**
+     * @return if this label is a composite
+     */
     public func IsComposite() : Bool {
         match(this) {
             case COMPOSITE(_) => true
             case _ => false
         }
     }
+    /**
+     * @return if this label is a bundler
+     */
     public func IsBundler() : Bool {
         match(this) {
             case BUNDLER(_, _) => true
             case _ => false
         }
     }
+    /**
+     * @return the bundler spec of this label:
+     *   throws exception if not a bundler
+     */
     public func GetBundlerSpec() : (Array<Int64>, Array<Int64>) {
         match(this) {
             case BUNDLER(ms, ns) => (ms, ns)
             case _ => throw IncompatibleVariantException(this, "BUNDLER")
         }
     }
+    /**
+     * @return if this label is a waveform of any type
+     */
     public func IsWaveform() : Bool {
         match(this) {
             case OPEN_WAVEFORM(_) => true
@@ -241,6 +342,10 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             case _ => false
         }
     }
+    /**
+     * @return the waveform of this label:
+     *  throws exception if not a waveform
+     */
     public func GetWaveform() : Array<Signal<V>> {
         match(this) {
             case OPEN_WAVEFORM(signals) => signals
@@ -249,12 +354,20 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             case _ => throw IncompatibleVariantException(this, "WAVEFORM")
         }
     }
+    /**
+     * @return if this is a register label
+     */
     public func IsRegister() : Bool {
         match(this) {
             case REGISTER(_) => true
             case _ => false
         }
     }
+    /**
+     * @return if this label is expandable, i.e. its contents are interesting
+     *          enough to look into. This is currently set so that values are
+     *          not expanded as they clutter up the graph
+     */
     public func IsExpandable() : Bool {
         match(this) {
             case COMPOSITE(_)          => true
@@ -262,12 +375,18 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
             case _                     => false
         }
     }
+    /**
+     * @return if this is an enhanced label
+     */
     public func IsEnhanced() : Bool {
         match(this) {
             case ENHANCED_PRIMITIVE(_) => true
             case _ => false
         }
     }
+    /**
+     * @return if this is a blackbox label
+     */
     public func IsBlackBox() : Bool {
         match(this) {
             case BLACKBOX(_) => true
@@ -285,7 +404,9 @@ extend Label<V, G> <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G
  * @return The corresponding label for these values
  */
 public func GetSignalLabel<V, G>(v : V, w : Int64) : Label<V, G>
-    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     if(w == 1) {
         VALUE(v)
@@ -298,12 +419,13 @@ public func GetSignalLabel<V, G>(v : V, w : Int64) : Label<V, G>
  * Given an array of values, get the corresponding label. If the list has one
  * element, this will be a VALUE label; otherwise it will be a SIGNAL.
  *
- *
  * @param values
  * @return The corresponding label for these values
  */
 public func GetSignalLabel<V, G>(values : Array<V>) : Label<V, G>
-    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     if(values.size == 1) {
         VALUE(values[0])

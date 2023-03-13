@@ -3,14 +3,20 @@
  *
  * Definition of enhancements for primitives
  *
+ * @author George Kaye
+ * @since 0.3
  */
-
 package syntax
-
+/**
+ * An enhancement is a primitive adapted for higher width wires or more inputs
+ */
 public enum Enhancement {
-    | RIPPLE(Int64)         // RIPPLE(k) applies a gate m * m -> m to (k+1) wires of width m
-    | BITWISE_MAP(Int64)    // BITWISE_MAP(w) applies a gate m -> n to m wires of width w
-    | BITWISE_RIPPLE(Int64) // BITWISE_RIPPLE(k) applies a gate m * m -> m to m wires of width k+1
+    // RIPPLE(k) applies a gate m * m -> m to (k+1) wires of width m
+    | RIPPLE(Int64)
+    // BITWISE_MAP(w) applies a gate m -> n to m wires of width w
+    | BITWISE_MAP(Int64)
+    // BITWISE_RIPPLE(k) applies a gate m * m -> m to m wires of width k+1
+    | BITWISE_RIPPLE(Int64)
 }
 extend Enhancement <: Equatable<Enhancement> {
     public operator func ==(rhs : Enhancement) {
@@ -33,9 +39,16 @@ extend Enhancement <: Equatable<Enhancement> {
         !(this == rhs)
     }
 }
-
-public func CheckRippleSuitability<V, G>(primitive : G) : Unit
-    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+/**
+ * Assert that a primitive can be rippled, i.e. it has two inputs, one output,
+ * and these ports are all the same width. Throws exception if can't ripple.
+ *
+ * @param primitive
+ */
+public func AssertSuitableToRipple<V, G>(primitive : G) : Unit
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let inputs = primitive.GetInputPorts()
     let outputs = primitive.GetOutputPorts()
@@ -48,16 +61,61 @@ public func CheckRippleSuitability<V, G>(primitive : G) : Unit
         throw CannotRipplePrimitiveException(primitive)
     }
 }
-
-public func CheckBitwiseMapSuitability<V, G>(primitive : G) : Unit
-    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+/**
+ * Exception for when AssertSuitableToRipple fails
+ */
+class CannotRipplePrimitiveException<V, G> <: Exception
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertPortsSameWidth(primitive.GetInputPorts())
-    AssertPortsSameWidth(primitive.GetOutputPorts())
+    public init(primitive : G) {
+        ErrorMsg(
+            "Cannot ripple over primitive ${primitive} as its type is" +
+            "${primitive.GetInputPorts()} -> ${primitive.GetOutputPorts()}" +
+            "wheras rippling requires type [m, m] -> [m]"
+        )
+    }
 }
-
-public struct EnhancedPrimitive<V, G> <: HasName & Specifiable<V> & Equatable<EnhancedPrimitive<V, G>>
-    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+/**
+ * Assert that a primitive can be bitwise mapped, i.e. all of its inputs are the
+ * same width and all of its outputs are the same width. Throws exception if
+ * can't bitwise map.
+ *
+ * @param primitive
+ */
+public func AssertSuitableToBitwiseMap<V, G>(primitive : G) : Unit
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    AssertAllSameWidth(primitive.GetInputPorts())
+    AssertAllSameWidth(primitive.GetOutputPorts())
+}
+/**
+ * Exception for when AssertSuitableToBitwiseMap fails
+ */
+class CannotBitwiseMapPrimitiveException<V, G> <: Exception
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    public init(primitive : G) {
+        ErrorMsg(
+            "Cannot bitwise map over primitive ${primitive} as its type is" +
+            "${primitive.GetInputPorts()} -> ${primitive.GetOutputPorts()}" +
+            "wheras rippling requires type [m, ..., m] -> [n, ..., n]"
+        )
+    }
+}
+/**
+ * Struct for a primitive and an enhancement
+ */
+public struct EnhancedPrimitive<V, G>
+    <: HasName & Specifiable<V> & Equatable<EnhancedPrimitive<V, G>>
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public EnhancedPrimitive(
         public let primitive : G,
@@ -65,9 +123,9 @@ public struct EnhancedPrimitive<V, G> <: HasName & Specifiable<V> & Equatable<En
     ){
         // Validate the enhancement
         match(this.enhancement) {
-            case BITWISE_MAP(w) => CheckBitwiseMapSuitability(this.primitive)
-            case RIPPLE(k) => CheckRippleSuitability(this.primitive)
-            case BITWISE_RIPPLE(k) => CheckRippleSuitability(this.primitive)
+            case BITWISE_MAP(w) => AssertSuitableToBitwiseMap(this.primitive)
+            case RIPPLE(k) => AssertSuitableToRipple(this.primitive)
+            case BITWISE_RIPPLE(k) => AssertSuitableToRipple(this.primitive)
         }
     }
     public func GetArity() : Int64 {
@@ -87,9 +145,12 @@ public struct EnhancedPrimitive<V, G> <: HasName & Specifiable<V> & Equatable<En
     public func GetName() : String {
         let primitiveString = this.primitive.GetName()
         let enhancementString = match(this.enhancement) {
-            case BITWISE_MAP(w)    => "${primitive.GetArity()}_${w}"
-            case RIPPLE(k)         => "${k+1}_${primitive.GetInputPort(0).GetWidth()}"
-            case BITWISE_RIPPLE(k) => "${1}_${k+1}"
+            case BITWISE_MAP(w)    =>
+                "${primitive.GetArity()}_${w}"
+            case RIPPLE(k)         =>
+                "${k+1}_${primitive.GetInputPort(0).GetWidth()}"
+            case BITWISE_RIPPLE(k) =>
+                "${1}_${k+1}"
         }
         "${primitiveString}${enhancementString}"
     }
@@ -99,10 +160,11 @@ public struct EnhancedPrimitive<V, G> <: HasName & Specifiable<V> & Equatable<En
             i : Int64 =>
                 let portWidth = match(this.enhancement) {
                     case BITWISE_MAP(w)    => w
-                    case RIPPLE(k)         => this.primitive.GetInputPort(0).GetWidth()
+                    case RIPPLE(k)         =>
+                        this.primitive.GetInputPort(0).GetWidth()
                     case BITWISE_RIPPLE(k) => k+1
                 }
-                Port(portWidth, "")
+                Port(portWidth)
         })
     }
     public func GetOutputPorts() : Array<Port> {
@@ -111,10 +173,12 @@ public struct EnhancedPrimitive<V, G> <: HasName & Specifiable<V> & Equatable<En
             i : Int64 =>
                 let portWidth = match(this.enhancement) {
                     case BITWISE_MAP(w)    => w
-                    case RIPPLE(k)         => this.primitive.GetInputPort(0).GetWidth()
-                    case BITWISE_RIPPLE(k) => this.primitive.GetInputPort(0).GetWidth()
+                    case RIPPLE(k)         =>
+                        this.primitive.GetInputPort(0).GetWidth()
+                    case BITWISE_RIPPLE(k) =>
+                        this.primitive.GetInputPort(0).GetWidth()
                 }
-                Port(portWidth, "")
+                Port(portWidth)
         })
     }
     public operator func ==(rhs : EnhancedPrimitive<V, G>) : Bool {

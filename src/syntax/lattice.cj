@@ -144,7 +144,7 @@ func ComputeOrderIntersectionOp<V>(
     outerMap
 }
 /**
- * Compute the bottom element of a partially ordered set: Vhe element that
+ * Compute the bottom element of a partially ordered set: the element that
  * is lower than all the others
  *
  * @param elements
@@ -157,7 +157,7 @@ func ComputeBottom<V>(elements : HashSet<V>) : V
     fold_left<V>({ acc, cur => min(acc, cur) }, elements)
 }
 /**
- * Compute the top element of a partially ordered set: Vhe element that
+ * Compute the top element of a partially ordered set: the element that
  * is greater than all the others
  *
  * @param elements
@@ -196,8 +196,8 @@ func ComputeMeet<V>(elements : HashSet<V>) : HashMap<V, HashMap<V, V>>
 /**
  * Struct for finite lattices, an partially ordered set such that each two
  * elements have:
- * - A least upper bound ('join'): Vhe lowest c such that a <= c and b <= c
- * - A greatest lower bound ('meet'): Vhe highest c such that c <= a and c <= b
+ * - A least upper bound ('join'): the lowest c such that a <= c and b <= c
+ * - A greatest lower bound ('meet'): the highest c such that c <= a and c <= b
  *
  * Given a partially ordered set with enough structure, the join and meet can be
  * computed: this is attempted when defining a FiniteLattice and an exception
@@ -207,7 +207,6 @@ func ComputeMeet<V>(elements : HashSet<V>) : HashMap<V, HashMap<V, V>>
  * bot and top such that bot <= a and a <= top for any a.
  *
  * See also https://en.wikipedia.org/wiki/Lattice_order
- *
  */
 public struct FiniteLattice<V>
     where V <: LessOrEqual<V> & Equatable<V> & Hashable & ToString
@@ -228,6 +227,12 @@ public struct FiniteLattice<V>
         this.bot = ComputeBottom(elements)
         this.top = ComputeTop(elements)
         this.longestChain = ComputeLongestChain(elements, bot, top)
+    }
+    /**
+     * @return The set of elements in this lattice
+     */
+    public func GetElements() : HashSet<V> {
+        this.elements
     }
     /**
      * Enumerate the powers of elements in this lattice of width i
@@ -379,16 +384,13 @@ public struct FiniteLattice<V>
         )
     }
     /**
-     * Get the longest chain in the lattice structure
-     * induced on powers of V
+     * Get the longest chain in the lattice structure induced on powers of V.
+     * This means the length of the longest sequence bot <= ... <= top.
      *
      * @param i The size of the tuples in the induced lattice
      * @return The length of the longest chain
      */
     public func GetLongestChain(i : Int64) : Int64 {
         this.longestChain * i
-    }
-    public func GetElements() : HashSet<V> {
-        this.elements
     }
 }
