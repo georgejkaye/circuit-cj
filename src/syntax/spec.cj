@@ -9,9 +9,6 @@
  */
 
 package syntax
-
-import settings.*
-
 /**
  * Convert a given decimal ASCII code to a string
  * @param n The decimal number

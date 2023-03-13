@@ -8,7 +8,6 @@
  */
 package graphs
 import debug.*
-import settings.*
 import utils.*
 from std import fs.*
 let tableStyle = [
@@ -16,10 +15,10 @@ let tableStyle = [
     ("cellborder", "1"),
     ("cellspacing", "0")
 ]
-func GetGraphOpts(){
+func GetGraphOpts(debug : Bool){
     [
         ("rankdir", "LR"),
-        ("bgcolor", if(IsDebugDot()) { "gray" } else { "white" })
+        ("bgcolor", if(debug) { "gray" } else { "white" })
     ]
 }
 let edgeNodeOpts = [
@@ -116,15 +115,11 @@ public enum IndentInstruction {
  * Record for storing a line of dot code along with a relevant
  * indentation instruction
  */
-public class DotLine <: ToString {
+public struct DotLine {
     public DotLine(
         let str : String,
         let instruction : IndentInstruction
     ){}
-    public func toString() : String {
-       "(${str}, ${instruction})"
-    }
-
 }
 /**
  * Create a string of the form "key1=val1 key2=val2 ... keyn=valn" for a given
@@ -366,9 +361,8 @@ public func ConvertStringIndentListToString(
  * @param content The list of dotlines to append to
  */
 func DrawEdgeNode<V, G>(
-    e : Edge<V, G>,
-    elementContent : ArrayList<DotLine>,
-    connectionContent : ArrayList<DotLine>
+    e : Edge<V, G>,elementContent : ArrayList<DotLine>,
+    connectionContent : ArrayList<DotLine>, debug : Bool
 ) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
@@ -423,7 +417,8 @@ func DrawEdgeNode<V, G>(
         e.GetTargets(),
         e.GetOutputPorts(),
         elementContent,
-        connectionContent
+        connectionContent,
+        debug
     )
 }
 /**
@@ -449,7 +444,8 @@ func DrawBoxNode<V, G, T1, U1, T2, U2>(
     rightVertices : Array<T2>,
     rightPorts : Array<U2>,
     elementContent : ArrayList<DotLine>,
-    connectionContent : ArrayList<DotLine>
+    connectionContent : ArrayList<DotLine>,
+    debug : Bool
 ) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
@@ -476,7 +472,7 @@ func DrawBoxNode<V, G, T1, U1, T2, U2>(
                 case None => ()
                 case Some(s) => MakeElem("td", [], elementContent, true,
                     {elementContent, inline =>
-                        let text = if(IsDebugDot()){
+                        let text = if(debug){
                             "${id}: ${s}"
                         } else {
                             s
@@ -539,11 +535,9 @@ func DrawSubgraphInterfaceConnections<V, G>(
  * @param connectionContent The list of connection dotlines
  */
 func DrawEdge<V, G>(
-    e : Edge<V, G>,
-    depth : Int64,
-    omittedEdges : HashSet<Int64>,
-    elementContent : ArrayList<DotLine>,
-    connectionContent : ArrayList<DotLine>
+    e : Edge<V, G>, depth : Int64, omittedEdges : HashSet<Int64>,
+    elementContent : ArrayList<DotLine>, connectionContent : ArrayList<DotLine>,
+    debug : Bool
 ) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
@@ -552,11 +546,13 @@ func DrawEdge<V, G>(
     let label = e.GetLabel()
     if (depth != 0 && label.IsExpandable()) {
         match (e.GetSubgraph()) {
-            case None => DrawEdgeNode(e, elementContent, connectionContent)
+            case None => DrawEdgeNode(
+                e, elementContent, connectionContent, debug
+            )
             case Some(g) =>
                 omittedEdges.put(e.GetId())
                 DrawInterfacedHypergraph(
-                    g, e, depth - 1, omittedEdges, elementContent
+                    g, e, depth - 1, omittedEdges, elementContent, debug
                 )
                 DrawSubgraphInterfaceConnections(
                     g, e.GetSources(), SOURCE, connectionContent
@@ -566,7 +562,7 @@ func DrawEdge<V, G>(
                 )
         }
     } else {
-        DrawEdgeNode(e, elementContent, connectionContent)
+        DrawEdgeNode(e, elementContent, connectionContent, debug)
     }
 }
 /**
@@ -576,14 +572,13 @@ func DrawEdge<V, G>(
  * @param vertexMap A map sending vertices to vertices that have subsumed it
  */
 func DrawVertex<V, G>(
-    v : Vertex<V, G>,
-    content : ArrayList<DotLine>
+    v : Vertex<V, G>, content : ArrayList<DotLine>, debug : Bool
 ) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    let text = if(IsDebugDot()){
+    let text = if(debug){
         "${v.GetId()}"
     } else {
         ""
@@ -672,7 +667,8 @@ func DrawInterface<V, G>(
     vertices : Array<InterfaceVertex<V, G>>,
     isInputs : Bool,
     elementContent : ArrayList<DotLine>,
-    connectionContent : ArrayList<DotLine>
+    connectionContent : ArrayList<DotLine>,
+    debug : Bool
 ) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
@@ -683,11 +679,11 @@ func DrawInterface<V, G>(
     let (leftVertices, rightVertices) = if(isInputs) {
         (Array<InterfaceVertex<V, G>>(), vertices)
     } else {
-        (childVertices, Array<InterfaceVertex<V, G>>())
+        (vertices, Array<InterfaceVertex<V, G>>())
     }
     DrawBoxNode(
         interfaceName, interfaceStyle, leftVertices, leftVertices, None<String>,
-        rightVertices, rightVertices, elementContent, connectionContent
+        rightVertices, rightVertices, elementContent, connectionContent, debug
     )
 }
 /**
@@ -700,9 +696,8 @@ func DrawInterface<V, G>(
  * @param elementContent the list of element dotlines
  */
 func DrawOpeningContent<V, G>(
-    label : String,
-    parent : Option<Edge<V, G>>,
-    elementContent : ArrayList<DotLine>
+    label : String, parent : Option<Edge<V, G>>,
+    elementContent : ArrayList<DotLine>, debug : Bool
 ) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
@@ -722,7 +717,7 @@ func DrawOpeningContent<V, G>(
         }
     let openingLine = DotLine(openingText, Indent)
     elementContent.append(openingLine)
-    let graphOptions = "graph${GetOptions(GetGraphOpts())}"
+    let graphOptions = "graph${GetOptions(GetGraphOpts(debug))}"
     elementContent.append(DotLine(graphOptions, Preserve))
     // Label the (sub)graph with its name
     let labelText = "label=\"${fullLabel}\""
@@ -751,7 +746,8 @@ func DrawClosingContent(
 func DrawInterfaces<V, G>(
     f : InterfacedHypergraph<V, G>,
     elementContent : ArrayList<DotLine>,
-    connectionContent : ArrayList<DotLine>
+    connectionContent : ArrayList<DotLine>,
+    debug : Bool
 ) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
@@ -764,7 +760,7 @@ func DrawInterfaces<V, G>(
             { elementContent, connectionContent =>
                 DrawInterface(
                     "${f.GetId()}", f.GetInputs(), true,
-                    elementContent, connectionContent
+                    elementContent, connectionContent, debug
                 )
         })
     }
@@ -775,7 +771,7 @@ func DrawInterfaces<V, G>(
             { elementContent, connectionContent =>
                 DrawInterface(
                     "${f.GetId()}", f.GetOutputs(), false,
-                    elementContent, connectionContent
+                    elementContent, connectionContent, debug
                 )
         })
     }
@@ -799,7 +795,8 @@ func DrawInterfacedHypergraph<V, G>(
     parent : Option<Edge<V, G>>,
     depth : Int64,
     omittedEdges : HashSet<Int64>,
-    elementContent : ArrayList<DotLine>
+    elementContent : ArrayList<DotLine>,
+    debug : Bool
 ) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
@@ -808,15 +805,16 @@ func DrawInterfacedHypergraph<V, G>(
     let id = f.GetId()
     let label = f.GetLabel()
 
-    DrawOpeningContent(f.GetLabel().toString(), parent, elementContent)
+    DrawOpeningContent(f.GetLabel().toString(), parent, elementContent, debug)
     // The connections of this graph are kept within this graph
     let connectionContent = ArrayList<DotLine>()
     // Draw the content of the graph
     DrawHypergraph(
-        f.GetGraph(), depth, omittedEdges, elementContent, connectionContent
+        f.GetGraph(), depth, omittedEdges,
+        elementContent, connectionContent, debug
     )
     // Draw the interfaces of this graph
-    DrawInterfaces(f, elementContent, connectionContent)
+    DrawInterfaces(f, elementContent, connectionContent, debug)
     // All the connections can now be written
     elementContent.appendAll(connectionContent)
     // Wrap everything up
@@ -836,7 +834,8 @@ public func DrawHypergraph<V, G>(
     depth : Int64,
     omittedEdges : HashSet<Int64>,
     elementContent : ArrayList<DotLine>,
-    connectionContent : ArrayList<DotLine>
+    connectionContent : ArrayList<DotLine>,
+    debug : Bool
 ) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
@@ -845,12 +844,14 @@ public func DrawHypergraph<V, G>(
     let vertexOptionsString = DrawOptions("node", vertexNodeOpts)
     elementContent.append(vertexOptionsString)
     for(v in f.GetVertices()){
-        DrawVertex(v, elementContent)
+        DrawVertex(v, elementContent, debug)
     }
     let edgeOptionsString = DrawOptions("node", edgeNodeOpts)
     elementContent.append(edgeOptionsString)
     for (e in f.GetEdges()){
-        DrawEdge(e, depth, omittedEdges, elementContent, connectionContent)
+        DrawEdge(
+            e, depth, omittedEdges, elementContent, connectionContent, debug
+        )
     }
 }
 /**
@@ -861,7 +862,7 @@ public func DrawHypergraph<V, G>(
  * @param depth The maximum depth of subgraphs to expand
  */
 public func GenerateDotGraph<V, G>(
-    f : InterfacedHypergraph<V, G>, depth : Int64
+    f : InterfacedHypergraph<V, G>, depth : Int64, debug : Bool
 ) : String
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
@@ -869,21 +870,15 @@ public func GenerateDotGraph<V, G>(
 {
     let elementContent = ArrayList<DotLine>()
     DrawInterfacedHypergraph(
-        f,
-        None<Edge<V, G>>,
-        depth,
-        HashSet<Int64>(),
-        elementContent
+        f, None<Edge<V, G>>, depth, HashSet<Int64>(), elementContent, debug
     )
     // Generate the final string
     ConvertStringIndentListToString(elementContent)
 }
 func WriteDotFile(
-    filename : String,
-    dotLines : ArrayList<DotLine>
+    filename : String, dotLines : ArrayList<DotLine>
 ) : Unit {
-    let fullFilename = GetDotFile(filename)
-    let fs = File(fullFilename, CreateOrTruncate(false))
+    let fs = File(filename, CreateOrTruncate(false))
     let dotString = ConvertStringIndentListToString(dotLines)
     Info("Writing dot file ${filename}")
     fs.write(dotString.toUtf8Array())
@@ -903,28 +898,35 @@ public interface Drawable<V, G>
      * @param f The interfaced hypergraph to draw
      * @param depth The maximum depth of subgraphs to draw
      * @param file The file name to write to
+     * @param debug Whether to print debug info on the graph
      */
-    func WriteDotToFile(depth : Int64, file : String) : Unit
+    func WriteDotToFile(
+        depth : Int64, file : String, debug!: Bool
+    ) : Unit
 }
 extend InterfacedHypergraph<V, G> <: Drawable<V, G> {
     public func WriteDotToFile(
         depth : Int64,
-        file : String
+        file : String,
+        debug!: Bool = false
     ) : Unit {
         let dotLines = ArrayList<DotLine>()
-        DrawInterfacedHypergraph(this, None, depth, HashSet(), dotLines)
+        DrawInterfacedHypergraph(this, None, depth, HashSet(), dotLines, debug)
         WriteDotFile(file, dotLines)
     }
 }
 extend Hypergraph<V, G> <: Drawable<V, G> {
     public func WriteDotToFile(
         depth : Int64,
-        file : String
+        file : String,
+        debug!: Bool = false
     ) : Unit {
         let dotLines = ArrayList<DotLine>()
         let connectionContent = ArrayList<DotLine>()
-        DrawOpeningContent(this.GetName(), None<Edge<V, G>>, dotLines)
-        DrawHypergraph(this, depth, HashSet(), dotLines, connectionContent)
+        DrawOpeningContent(this.GetName(), None<Edge<V, G>>, dotLines, debug)
+        DrawHypergraph(
+            this, depth, HashSet(), dotLines, connectionContent, debug
+        )
         dotLines.appendAll(connectionContent)
         DrawClosingContent(dotLines)
         WriteDotFile(file, dotLines)
