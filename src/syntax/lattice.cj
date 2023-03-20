@@ -133,7 +133,7 @@ func ComputeOrderIntersectionOp<V>(
                     lhsElements.removeIf({ t : V => !rhsElements.contains(t) })
                     // If there are no common elements, then there is no
                     // intersection: this poset is not a lattice
-                    AssertCollectionHasLengthAtLeast<V>(lhsElements, 1)
+                    AssertMinimumLength<V>(lhsElements, 1)
                     // Find the 'best' candidate (i.e. greatest/lowest)
                     fold_left<V>(rankFn, lhsElements)
                 }
@@ -153,7 +153,7 @@ func ComputeOrderIntersectionOp<V>(
 func ComputeBottom<V>(elements : HashSet<V>) : V
     where V <: LessOrEqual<V> & Hashable & Equatable<V> & ToString
 {
-    AssertCollectionHasLengthAtLeast(elements, 1)
+    AssertMinimumLength(elements, 1)
     fold_left<V>({ acc, cur => min(acc, cur) }, elements)
 }
 /**
@@ -166,7 +166,7 @@ func ComputeBottom<V>(elements : HashSet<V>) : V
 func ComputeTop<V>(elements : HashSet<V>) : V
     where V <: LessOrEqual<V> & Hashable & Equatable<V> & ToString
 {
-    AssertCollectionHasLengthAtLeast(elements, 1)
+    AssertMinimumLength(elements, 1)
     fold_left<V>({ acc, cur => max(acc, cur) }, elements)
 }
 /**
@@ -334,7 +334,7 @@ public struct FiniteLattice<V>
      * @return The pointwise join of lhs and rhs
      */
     public func Join(lhs: Array<V>, rhs: Array<V>) : Array<V> {
-        AssertArraysSameLength<V, V>(lhs, rhs)
+        AssertSameLength<V, V>(lhs, rhs)
         map2<V, V, V>({ lhs, rhs => this.Join(lhs, rhs) }, lhs, rhs)
     }
     /**
@@ -345,7 +345,7 @@ public struct FiniteLattice<V>
      * @return The pointwise meet of lhs and rhs
      */
     public func Meet(lhs: Array<V>, rhs: Array<V>) : Array<V> {
-        AssertArraysSameLength<V, V>(lhs, rhs)
+        AssertSameLength<V, V>(lhs, rhs)
         map2<V, V, V>({ lhs, rhs => this.Meet(lhs, rhs) }, lhs, rhs)
     }
     /**
@@ -366,7 +366,7 @@ public struct FiniteLattice<V>
      * @return lhs <= rhs
      */
     public func LTE(lhs: Array<V>, rhs: Array<V>) : Bool {
-        AssertArraysSameLength(lhs, rhs)
+        AssertSameLength(lhs, rhs)
         fold_left2({ acc, lhs, rhs => acc && lhs <= rhs }, true, lhs, rhs)
     }
     /**
@@ -378,7 +378,7 @@ public struct FiniteLattice<V>
      * @return lhs <= rhs
      */
     public func LTE(lhs: Array<Array<V>>, rhs : Array<Array<V>>) : Bool {
-        AssertArraysSameLength(lhs, rhs)
+        AssertSameLength(lhs, rhs)
         fold_left2(
             { acc, lhs, rhs => acc && this.LTE(lhs, rhs)}, true, lhs, rhs
         )

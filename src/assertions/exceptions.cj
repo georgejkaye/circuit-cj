@@ -1,137 +1,169 @@
 /**
  * assertions/exceptions.cj
  *
+ * General exceptions
+ *
  * @author George Kaye
  * @since 0.2
  */
-
 package assertions
-
+import debug.*
 import utils.*
-
-/**
- * Print an error message, prepending it with [ERROR].
- *
- * @param msg The message to print
- */
-public func ErrorMsg(msg : String) : Unit {
-    println("[ERROR] ${msg}")
-}
-
 /**
  * Exception for when associated parameters of two objects are not equal.
  *
- * @param T The type of the first object, has ToString
- * @param U The type of the second object, has ToString
- * @param V The type of the parameter, has ToString
+ * @param <T> The type of the first object
+ * @param <U> The type of the second object
+ * @param <V> The type of the parameter
  */
-class IncompatibleParameterException3<T,U,V> <: Exception where T <: ToString,
-                                                                U <: ToString,
-                                                                V <: ToString
+class IncompatibleParameterException3<T, U, V> <: Exception
+    where T <: ToString, U <: ToString, V <: ToString
 {
     public init(
-        paramType : ParamType,
-        current : T,
-        currentParam : V,
-        target : U,
-        targetParam : V
+        paramType : ParamType, current : T, currentParam : V,
+        target : U, targetParam : V
     ) {
-        ErrorMsg("When checking that ${current} has the same ${paramType} as ${target}, found that ${current} has ${currentParam} while ${target} has ${targetParam}")
-    }
-    public init(
-        paramType : ParamType,
-        current: Array<T>,
-        currentParams : Array<V>,
-        target: Array<U>,
-        targetParams : Array<V>
-    ) {
-        ErrorMsg("When checking that ${current} has the same ${paramType} as ${target}, found that ${current} has ${currentParams} while ${target} has ${targetParams}")
-    }
-}
-class IncompatibleParameterException2<T, V> <: Exception where T <: ToString, V <: ToString {
-    public init(
-        paramType : ParamType,
-        current : T,
-        currentParam : V,
-        targetParam : V
-    ){
-        ErrorMsg("When checking that ${current} has ${paramType} of value ${targetParam}, found that it has ${currentParam}")
-    }
-    public init(
-        paramType : ParamType,
-        current: Array<T>,
-        currentParams : Array<V>,
-        target: V
-    ){
-        ErrorMsg("When checking that each element of ${current} has ${paramType} of value ${target}, found that ${current} has values ${currentParams}")
-    }
-    public init(
-        current: T,
-        target: V
-    ){
-        ErrorMsg("When checking that ${current} is ${target}, found that it is not")
-    }
-}
-class IncompatibleParameterException<T> <: Exception where T <: ToString {
-    public init(
-        paramType : ParamType,
-        current : Option<T>
-    ){
-        ErrorMsg("When checking that ${current} is not None, found that it was None")
-    }
-}
-
-/**
- * Exception for when an array is unexpectedly empty
- */
-class EmptyException <: Exception {
-    public init(contents : ParamType) {
         ErrorMsg(
-            "Encountered an empty array of ${contents} when a non-empty one was expected"
+            "When checking that ${current} has the same ${paramType} as " +
+            "${target}, found that ${current} has ${currentParam} while " +
+            "${target} has ${targetParam}"
+        )
+    }
+    public init(
+        paramType : ParamType, current: Array<T>, currentParams : Array<V>,
+        target: Array<U>, targetParams : Array<V>
+    ) {
+        ErrorMsg(
+            "When checking that ${current} has the same ${paramType} as " +
+            "${target}, found that ${current} has ${currentParams} while " +
+            "${target} has ${targetParams}"
         )
     }
 }
+/**
+ * Exception for when associated parameters of two objects are not equal.
+ *
+ * @param <T> The type of the object
+ * @param <V> The type of the parameter
+ */
+class IncompatibleParameterException2<T, V> <: Exception
+    where T <: ToString, V <: ToString
+{
+    public init(
+        paramType : ParamType, current : T, currentParam : V, targetParam : V
+    ){
+        ErrorMsg(
+            "When checking that ${current} has ${paramType} of value " +
+            "${targetParam}, found that it has ${currentParam}"
+        )
+    }
+    public init(
+        paramType : ParamType, current: Collection<T>,
+        currentParams : Collection<V>, target: V
+    ){
+        ErrorMsg(
+            "When checking that each element of " +
+            "${collectionToString(current)} has ${paramType} of value " +
+            "${target}, found that ${collectionToString(current)} has values " +
+            "${collectionToString(currentParams)}"
+        )
+    }
+    public init(current: T, target: V){
+        ErrorMsg(
+            "When checking that ${current} is ${target}, found that it is not"
+        )
+    }
+}
+/**
+ * Exception for when an object is not None.
+ *
+ * @param <T> The type of the object in an Option
+ */
+class IncompatibleParameterException<T> <: Exception where T <: ToString {
+    public init(paramType : ParamType, current : Option<T>){
+        ErrorMsg(
+            "When checking that ${current} is not None, found that it was None"
+        )
+    }
+}
+/**
+ * Exception for when an array is unexpectedly empty.
+ */
+class EmptyException <: Exception {
+    public init() {
+        ErrorMsg(
+            "Encountered an empty array but a non-empty one was expected"
+        )
+    }
+}
+/**
+ * Exception for when an array is unexpectedly non-empty.
+ */
 class NonEmptyException <: Exception {
     public init(contents : ParamType) {
         ErrorMsg(
-            "Encountered a non-empty array of ${contents} when an empty one was expected"
+            "Encountered a non-empty array of ${contents} when an empty one " +
+            "was expected"
         )
     }
 }
-
 /**
- * Class for when an array should either be exactly a given length
- * or at least a given length
+ * Exception for when an array should either be exactly a given length
+ * or at least a given length.
  *
- * @param T the type of the array, has ToString
+ * @param <T> The type of the collection
  */
 class IncompatibleLengthException<T> <: Exception where T <: ToString {
     public init(xs : Collection<T>, n : Int64, exact : Bool) {
         let exactText = if (exact) { "" } else { " at least"}
         let contents = collectionToString(xs, { x => "${x}"})
         ErrorMsg(
-            "Expected an array of ${exactText}length ${n} but ${contents} is of length ${xs.size}"
+            "Expected an array of ${exactText}length ${n} but ${contents} is " +
+            "of length ${xs.size}"
         )
     }
 }
-
-class InsufficientParameterException2<T, U> <: Exception where T <: ToString, U <: ToString {
+/**
+ * Exception for when an object has an insufficiently high parameter.
+ *
+ * @param <T> The type of the object
+ * @param <U> The type of the parameter
+ */
+class InsufficientParameterException2<T, U> <: Exception
+    where T <: ToString, U <: ToString
+{
     public init(paramType : ParamType, t : T, currentParam : U, u : U) {
-        ErrorMsg("Expected ${t} to have ${paramType} of value at least ${u} but it only has ${currentParam}")
+        ErrorMsg("Expected ${t} to have ${paramType} of value at least ${u} " +
+        "but it only has ${currentParam}")
     }
 }
-
+/**
+ * Exception for when a parameter is insufficiently high.
+ *
+ * @param <T> The type of the parameter
+ */
 class InsufficientParameterException <: Exception {
     public init(i : Int64, t : Int64) {
         ErrorMsg("Expected ${i} to be greater than or equal to ${t}")
     }
 }
-
+/**
+ * Exception for when an enum is of an unexpected variant.
+ *
+ * @param <T> The type of the parameter
+ */
 public class IncompatibleVariantException<T> <: Exception where T <: ToString {
     public init(current : T, desired : String) {
-        ErrorMsg("Expected ${current} to be of variant ${desired} but it is not")
+        ErrorMsg(
+            "Expected ${current} to be of variant ${desired} but it is not"
+        )
     }
 }
+/**
+ * Exception for when an element is not in a collection.
+ *
+ * @param <T> The type of elements in the collection
+ */
 class ElementNotInCollectionException<T> <: Exception where T <: ToString {
     public init(wanted : T, collection : Collection<T>) {
         ErrorMsg("Expected ${wanted} to be in collection but it isn't")

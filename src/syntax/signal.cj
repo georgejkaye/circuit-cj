@@ -19,7 +19,7 @@ public struct Signal<V>
     public Signal(
         public let values : Array<V>
     ){
-        AssertNonEmpty(values, Values)
+        AssertNonEmpty(values)
     }
     /**
      * Create a signal with one value multiple times in parallel.
