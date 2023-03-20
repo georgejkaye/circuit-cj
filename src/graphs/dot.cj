@@ -10,30 +10,31 @@ package graphs
 import debug.*
 import utils.*
 from std import fs.*
-let tableStyle = [
-    ("border", "0"),
-    ("cellborder", "1"),
-    ("cellspacing", "0")
-]
-func GetGraphOpts(debug : Bool){
+/**
+ * Get the options for the entire graph. If debug is enabled then the graph
+ * will have a grey background so the debug info can show up.
+ *
+ * @param debug
+ * @return The options for the entire graph
+ */
+func GetGraphOpts(debug : Bool) : Array<(String, String)> {
     [
         ("rankdir", "LR"),
         ("bgcolor", if(debug) { "gray" } else { "white" })
     ]
 }
+/**
+ * Style options for edge nodes
+ */
 let edgeNodeOpts = [
     ("shape", "plaintext"),
     ("fillcolor", "white"),
     ("fixedsize", "false"),
     ("fontcolor", "black")
 ]
-let interfaceVertexOpts = [
-    ("shape", "circle"),
-    ("style", "filled"),
-    ("height", "0.05"),
-    ("fixedsize", "true"),
-    ("label", "")
-]
+/**
+ * Style options for vertex nodes
+ */
 let vertexNodeOpts = [
     ("shape", "circle"),
     ("style", "filled"),
@@ -42,68 +43,134 @@ let vertexNodeOpts = [
     ("fixedsize", "true"),
     ("fontcolor", "white")
 ]
+/**
+ * Height of a source or target port box on an edge
+ */
 let portHeight = 5
+/**
+ * Width of a source or target port box on an edge
+ */
 let portWidth = 5
+/**
+ * Get a background colour option.
+ *
+ * @param colour
+ * @return The option ("bgcolor", colour)
+ */
 func bgColour(colour : String) : (String, String) {
     ("bgcolor", colour)
 }
+/**
+ * The style for interface boxes
+ */
 let interfaceStyle = [
     bgColour("gray")
 ]
-let compressorStyle = [
+/**
+ * The style for bundle boxes
+ */
+let bundleStyle = [
     bgColour("red")
 ]
+/**
+ * The style for primitive boxes
+ */
 let primitiveStyle = [
     bgColour("cyan")
 ]
+/**
+ * The style for composite boxes containing only combinational components
+ */
 let combinationalCompositeStyle = [
     bgColour("darkturquoise")
 ]
+/**
+ * The style for composite boxes containing sequential components
+ */
 let sequentialCompositeStyle = [
     bgColour("chartreuse4")
 ]
-let structuralStyle = [
+/**
+ * The style for join boxes
+ */
+let joinStyle = [
     bgColour("violet"),
     ("width", "10")
 ]
+/**
+ * The style for delay boxes
+ */
 let delayStyle = [
     bgColour("yellow")
 ]
+/**
+ * The style for value or signal boxes representing entirely disconnected values
+ */
 let bottomStyle = [
     bgColour("aquamarine")
 ]
+/**
+ * The style for value boxes
+ */
 let valueStyle = [
     bgColour("darkolivegreen1")
 ]
+/**
+ * The style for signal boxes
+ */
 let signalStyle = [
     bgColour("green")
 ]
+/**
+ * The style for register boxes
+ */
 let registerStyle = [
     bgColour("yellowgreen")
 ]
+/**
+ * The style for open waveform boxes
+ */
 let openWaveformStyle = [
     bgColour("forestgreen")
 ]
+/**
+ * The style for closed waveform boxes
+ */
 let closedWaveformStyle = [
     bgColour("mediumseagreen")
 ]
+/**
+ * The style for infinite waveform boxes
+ */
 let infiniteWaveformStyle = [
     bgColour("lightseagreen")
 ]
+/**
+ * The style for blackboxes
+ */
 let blackboxStyle = [
     bgColour("white")
 ]
+/**
+ * The options for subgraphs that should be drawn as right as possible
+ */
 let maxSubgraphOpts = [
     ("rank", "max")
 ]
+/**
+ * The options for subgraphs that should be drawn as left as possible
+ */
 let minSubgraphOpts = [
     ("rank", "min")
 ]
+/**
+ * The options for feedback tentacles
+ */
 let feedbackStyle = [
     ("color", "red")
 ]
 /**
- * Enum to give indentation hints for the generated dot code.
+ * Enum to give indentation instructions for the generated dot code.
  */
 public enum IndentInstruction {
     | Preserve      // Keep the current indentation
@@ -124,6 +191,7 @@ public struct DotLine {
 /**
  * Create a string of the form "key1=val1 key2=val2 ... keyn=valn" for a given
  * array of key-value pairs, for use as options in an HTML element
+ *
  * @param options The array of options
  * @return The html options string
  */
@@ -227,9 +295,12 @@ func MakePorts<T>(
     prefix : String,
     elementContent : ArrayList<DotLine>
 ) : Unit where T <: Socket {
+    // The ports are contained in a cell in the single row box node
     MakeElem("td", [], elementContent, false, {elementContent, inline =>
+        // The ports are a vertical table of table cells
         MakeElem("table", [], elementContent, false, {elementContent, inline =>
             for (i in 0..ports.size) {
+                // Make a row for each port
                 MakeElem("tr", [], elementContent, true,
                     {elementContent, inline =>
                         let portStyle =  [
@@ -237,6 +308,7 @@ func MakePorts<T>(
                             ("width", "${portWidth}"),
                             ("port", "${prefix}${i}")
                         ]
+                        // Make a single cell in each row for each port
                         MakeElem("td", portStyle, elementContent, false,
                             {elementContent, inline =>
                                 let port = ports[i]
@@ -261,6 +333,7 @@ func MakePorts<T>(
 }
 /**
  * Append dotlines for a subgraph to the list of element lines so far.
+ *
  * @param opt The array of subgraph options
  * @param subelementContent The dotlines that belong to the subgraph
  * @param elementContent The element dotlines so far
@@ -280,7 +353,8 @@ func DrawSubgraph(
 /** Width of a tab */
 let tab = "    "
 /**
-* Indent a string by a given number of tabs
+* Indent a string by a given number of tabs.
+*
 * @param n The number of tabs to indent by
 * @param str The string to indent
 * @return The indented string
@@ -295,6 +369,7 @@ func indentString(n : Int64, str : String) : String {
 /**
 * Convert a list of dotlines to a string with appropriate newlines
 * and indentation.
+*
 * @param list The arraylist of dotlines
 * @return The corresponding dot code
 */
@@ -390,9 +465,9 @@ func DrawEdgeNode<V, G>(
         case INFINITE_WAVEFORM(_) =>
             infiniteWaveformStyle
         case BUNDLER(_,_) =>
-            compressorStyle
+            bundleStyle
         case JOIN(_) =>
-            structuralStyle
+            joinStyle
         case PRIMITIVE(_) =>
             primitiveStyle
         case ENHANCED_PRIMITIVE(eprim) =>
@@ -409,16 +484,9 @@ func DrawEdgeNode<V, G>(
             delayStyle
     }
     DrawBoxNode(
-        "e${e.GetId()}",
-        style,
-        e.GetSources(),
-        e.GetInputPorts(),
-        e.GetLabel().GetName(),
-        e.GetTargets(),
-        e.GetOutputPorts(),
-        elementContent,
-        connectionContent,
-        debug
+        "e${e.GetId()}", style, e.GetSources(), e.GetInputPorts(),
+        e.GetLabel().GetName(), e.GetTargets(), e.GetOutputPorts(),
+        elementContent, connectionContent, debug
     )
 }
 /**
@@ -436,24 +504,16 @@ func DrawEdgeNode<V, G>(
  * @param connectionContent The connection content list
  */
 func DrawBoxNode<V, G, T1, U1, T2, U2>(
-    id : String,
-    style : Array<(String, String)>,
-    leftVertices : Array<T1>,
-    leftPorts : Array<U1>,
-    label : Option<String>,
-    rightVertices : Array<T2>,
-    rightPorts : Array<U2>,
-    elementContent : ArrayList<DotLine>,
-    connectionContent : ArrayList<DotLine>,
-    debug : Bool
+    id : String, style : Array<(String, String)>, leftVertices : Array<T1>,
+    leftPorts : Array<U1>, label : Option<String>, rightVertices : Array<T2>,
+    rightPorts : Array<U2>, elementContent : ArrayList<DotLine>,
+    connectionContent : ArrayList<DotLine>, debug : Bool
 ) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>,
-        T1 <: HasTentacle<V, G>,
-        U1 <: Socket,
-        T2 <: HasTentacle<V, G>,
-        U2 <: Socket
+        T1 <: ContainsVertex<V, G>, T2 <: ContainsVertex<V, G>,
+        U1 <: Socket, U2 <: Socket
 {
     // Add the edge identifier
     let declaration = DotLine("${id} [label=<", Indent)
@@ -465,7 +525,9 @@ func DrawBoxNode<V, G, T1, U1, T2, U2>(
             // Draw left ports, if there are any
             if(leftVertices.size > 0) {
                 MakePorts(leftPorts, "w", elementContent)
-                DrawConnections(id, leftVertices, true, SOURCE, connectionContent)
+                // DrawConnections(
+                //     id, leftVertices, true, SOURCE, connectionContent
+                // )
             }
             // Draw the label, if there is one
             match(label) {
@@ -484,9 +546,9 @@ func DrawBoxNode<V, G, T1, U1, T2, U2>(
             // Draw right ports, if there are any
             if(rightVertices.size > 0) {
                 MakePorts(rightPorts, "e", elementContent)
-                DrawConnections(
-                    id, rightVertices, false, TARGET, connectionContent
-                )
+                // DrawConnections(
+                //     id, rightVertices, false, TARGET, connectionContent
+                // )
             }
         })
     })
@@ -504,8 +566,9 @@ func DrawBoxNode<V, G, T1, U1, T2, U2>(
  * @param connectionContent The list of connection content
  */
 func DrawSubgraphInterfaceConnections<V, G>(
+    e : Edge<V, G>,
     g : InterfacedHypergraph<V, G>,
-    parentVertices : Array<Tentacle<V, G>>,
+    parentVertices : Array<Vertex<V, G>>,
     vertexType : VertexType,
     connectionContent : ArrayList<DotLine>
 ) : Unit
@@ -520,8 +583,9 @@ func DrawSubgraphInterfaceConnections<V, G>(
             case TARGET => ("outputs", "w", false)
         }
         let eText = "\"${g.GetId()}_${interfaceText}\":${portPrefix}${i}"
+        let feedback = v.GetGraph().IsFeedbackTentacle(e, i)
         DrawConnection(
-            v.GetVertex(), eText, vertexFirst, connectionContent, v.feedback
+            v, eText, vertexFirst, connectionContent, feedback
         )
     }
 }
@@ -555,10 +619,10 @@ func DrawEdge<V, G>(
                     g, e, depth - 1, omittedEdges, elementContent, debug
                 )
                 DrawSubgraphInterfaceConnections(
-                    g, e.GetSources(), SOURCE, connectionContent
+                    e, g, e.GetSources(), SOURCE, connectionContent
                 )
                 DrawSubgraphInterfaceConnections(
-                    g, e.GetTargets(), TARGET, connectionContent
+                    e, g, e.GetTargets(), TARGET, connectionContent
                 )
         }
     } else {
@@ -595,11 +659,8 @@ func DrawVertex<V, G>(
 * @return The connection string
 */
 func DrawConnection<V, G, T>(
-    vertex : T,
-    eText : String,
-    vertexFirst : Bool,
-    connectionContent : ArrayList<DotLine>,
-    feedback : Bool
+    vertex : T, eText : String, vertexFirst : Bool,
+    connectionContent : ArrayList<DotLine>, feedback : Bool
 ) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
@@ -618,39 +679,6 @@ func DrawConnection<V, G, T>(
         connectionString
     }
     connectionContent.append(DotLine(fullConnectionString, Preserve))
-}
-/**
- * Given an array of tentacle-like objects which should be connected to a
- * particular box-like node, draw the tentacles in question.
- *
- * @param boxId the id of the box-like node to connect to
- * @param tentacles The array of tentacle-like objects to draw
- * @param isLeft Whether the tentacle-like object originates from the left
- * @param connectionConent The list of connection dot lines
- */
-func DrawConnections<V, G, T>(
-    boxId : String,
-    tentacles : Array<T>,
-    isLeft : Bool,
-    vertexType : VertexType,
-    connectionContent : ArrayList<DotLine>
-) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>,
-        T <: HasTentacle<V, G>
-{
-    let portPrefix = match(vertexType) {
-        case SOURCE => "w"
-        case TARGET => "e"
-    }
-    for(i in 0..tentacles.size) {
-        let v = tentacles[i]
-        let eText = "${boxId}:${portPrefix}${i}"
-        DrawConnection(
-            v.GetVertex(), eText, isLeft, connectionContent, v.IsFeedback()
-        )
-    }
 }
 /**
  * Draw an interface for a graph: a grey box with ports labelled by a width
@@ -685,6 +713,12 @@ func DrawInterface<V, G>(
         interfaceName, interfaceStyle, leftVertices, leftVertices, None<String>,
         rightVertices, rightVertices, elementContent, connectionContent, debug
     )
+    for(i in 0..vertices.size) {
+        let v = vertices[i]
+        let port = if(isInputs) { "e" } else { "w" }
+        let eText = "${interfaceName}:${port}${i}"
+        DrawConnection(v, eText, !isInputs, connectionContent, false)
+    }
 }
 /**
  * Get the dot lines for beginning a graph. If this graph has a parent,
@@ -844,7 +878,24 @@ public func DrawHypergraph<V, G>(
     let vertexOptionsString = DrawOptions("node", vertexNodeOpts)
     elementContent.append(vertexOptionsString)
     for(v in f.GetVertices()){
+        println("Drawing vertex ${v}")
         DrawVertex(v, elementContent, debug)
+        // Draw the connections to targets
+        match(v.GetInEdge()) {
+            case Some(ec) =>
+                let eText = "e${ec.GetEdge().GetId()}:e${ec.GetIndex()}"
+                DrawConnection(v, eText, false, connectionContent, false)
+            case None => ()
+        }
+        // Draw the connections to sources
+        for(ec in v.GetOutEdges()) {
+            println("Out edge ${ec}")
+            let eText = "e${ec.GetEdge().GetId()}:w${ec.GetIndex()}"
+            DrawConnection(
+                v, eText, true, connectionContent,
+                f.IsFeedbackTentacle(ec.GetEdge(), ec.GetIndex())
+            )
+        }
     }
     let edgeOptionsString = DrawOptions("node", edgeNodeOpts)
     elementContent.append(edgeOptionsString)
@@ -878,9 +929,9 @@ public func GenerateDotGraph<V, G>(
 func WriteDotFile(
     filename : String, dotLines : ArrayList<DotLine>
 ) : Unit {
-    let fs = File(filename, CreateOrTruncate(false))
+    let fs = File("${filename}.dot", CreateOrTruncate(false))
     let dotString = ConvertStringIndentListToString(dotLines)
-    Info("Writing dot file ${filename}")
+    Info("Writing dot file ${filename}.dot")
     fs.write(dotString.toUtf8Array())
     fs.close()
 }

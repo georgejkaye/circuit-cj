@@ -1,58 +1,75 @@
 /**
  * graphs/assertions.cj
  *
+ * Assertions specific to graphs.
+ *
  * @author George Kaye
  * @since 0.2
  */
-
 package graphs
-
 import assertions.*
-
-func AssertAtMostOneInEdge<T, U, V, G>(t : T, u : U) : Option<EdgeConnection<V, G>>
+/**
+ * Given two vertex-like objects, assert that between them they have at most
+ * one in edge.
+ *
+ * @param t
+ * @param u
+ * @return None if there is no in edge, and the single in edge if there is one
+ */
+func AssertAtMostOneInEdge<V, G, T, U>(
+    t : T, u : U
+) : Option<EdgeConnection<V, G>>
     where
-        T <: ContainsVertex<V, G>,
-        U <: ContainsVertex<V, G>,
         V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        G <: PrimitiveSymbol<V> & Equatable<G>,
+        T <: ContainsVertex<V, G>, U <: ContainsVertex<V, G>
 {
     let v = t.GetVertex()
     let w = u.GetVertex()
     match(v.GetInEdge()) {
         case None    => w.GetInEdge()
         case Some(ev) =>
-            AssertHasParameter<Vertex<V, G>, Option<EdgeConnection<V, G>>>(
-                w,
-                None,
-                { w : Vertex<V, G> => w.GetInEdge() },
-                InEdge
+            AssertHasParameter(
+                w, None, { w : Vertex<V, G> => w.GetInEdge() }, InEdge
             )
             Some(ev)
     }
 }
-func AssertAtMostOneInEdge<T, V, G>(ts : Array<T>) : Option<EdgeConnection<V, G>>
+/**
+ * Given an array of vertex-like objects, assert that between them they have at
+ * most one in edge.
+ *
+ * @param ts The array of vertex-like objects
+ * @return None if there is no in edge, and the single in edge if there is one
+ */
+func AssertAtMostOneInEdge<V, G, T>(
+    ts : Array<T>
+) : Option<EdgeConnection<V, G>>
     where
-        T <: ContainsVertex<V, G>,
         V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        G <: PrimitiveSymbol<V> & Equatable<G>,
+        T <: ContainsVertex<V, G>
 {
     var inEdge = None<EdgeConnection<V, G>>
     for (t in ts) {
         let v = t.GetVertex()
         match(inEdge) {
             case Some(ec) =>
-                AssertHasParameter<Vertex<V, G>, Option<EdgeConnection<V, G>>>(
-                v,
-                None,
-                { w : Vertex<V, G> => w.GetInEdge() },
-                InEdge
-            )
+                AssertHasParameter(
+                    v, None, { w : Vertex<V, G> => w.GetInEdge() }, InEdge
+                )
             case None =>
                 inEdge = v.GetInEdge()
         }
     }
     inEdge
 }
+/**
+ * Assert a given vertex-like object has no in edge
+ *
+ * @param <T> The type that contains a vertex
+ * @param v
+ */
 public func AssertHasNoInEdge<V, G, T>(v : T) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V>,
@@ -61,6 +78,12 @@ public func AssertHasNoInEdge<V, G, T>(v : T) : Unit
 {
     AssertIsNone(v.GetVertex().GetInEdge(), InEdge)
 }
+/**
+ * Assert a given vertex-like object has no out edges
+ *
+ * @param <T> The type that contains a vertex
+ * @param v
+ */
 public func AssertHasNoOutEdges<V, G, T>(v : T) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V>,
@@ -69,19 +92,30 @@ public func AssertHasNoOutEdges<V, G, T>(v : T) : Unit
 {
     AssertEmpty(v.GetVertex().GetOutEdges(), OutEdges)
 }
+/**
+ * Given an array of vertices, assert that they do not have any in edges
+ *
+ * @param <T> The type that contains a vertex
+ * @param targets
+ */
 func AssertTargetsUnassigned<V, G, T>(targets : Array<T>) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>,
         T <: ContainsVertex<V, G> & ToString
 {
-    AssertArrayElementsHaveParameter<T, Option<EdgeConnection<V, G>>>(
-        targets,
-        None<EdgeConnection<V, G>>,
-        { t => t.GetVertex().GetInEdge() },
-        InEdge
+    AssertElementsHaveParameter<T, Option<EdgeConnection<V, G>>>(
+        targets, None<EdgeConnection<V, G>>,
+        { t => t.GetVertex().GetInEdge() }, InEdge
     )
 }
+/**
+ * Given two interfaced hypergraphs, assert that the output ports of the first
+ * match the input ports of the second.
+ *
+ * @param f
+ * @param g
+ */
 func AssertCompatibleInputOutput<V, G>(
     f : InterfacedHypergraph<V, G>,
     g : InterfacedHypergraph<V, G>
@@ -90,64 +124,47 @@ func AssertCompatibleInputOutput<V, G>(
         V <: ValueSymbol<V> & Equatable<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertArrayElementsHaveParameters<Port, Port, Port>(
-        g.GetInputPorts(),
-        f.GetOutputPorts(),
-        { p : Port => p },
-        { p : Port => p },
-        Width
+    AssertElementsHaveParameters<Port, Port, Port>(
+        g.GetInputPorts(), f.GetOutputPorts(),
+        { p : Port => p }, { p : Port => p }, Width
     )
 }
-func AssertGraphHasMinimumInputs<V, G>(f : InterfacedHypergraph<V, G>, i : Int64) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
-{
-    AssertArrayHasMinimumLength(f.GetInputPorts(), i)
-}
-func AssertGraphHasMinimumOutputs<V, G>(f : InterfacedHypergraph<V, G>, i : Int64) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
-{
-    AssertArrayHasMinimumLength(f.GetOutputPorts(), i)
-}
-public func AssertOwnedBy<V, G>(v : Vertex<V, G>, f : Hypergraph<V, G>) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
-{
-    if(v.GetGraph() != f) {
-        throw BadOwnershipException(v, f, true)
-    }
-}
-public func AssertAllOwnedBy<V, G, T>(
-    vs : Array<T>, f : Hypergraph<V, G>
+/**
+ * Given an interfaced hypergraph, assert that it has at least a certain
+ * number of input ports.
+ *
+ * @param f
+ */
+func AssertGraphHasMinimumInputs<V, G>(
+    f : InterfacedHypergraph<V, G>, i : Int64
 ) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>,
-        T <: ContainsVertex<V, G> & ToString
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertArrayElementsHaveParameter<T, Hypergraph<V, G>>(
-        vs,
-        f,
-        { t : T => t.GetVertex().GetGraph() },
-        Owner
-    )
+    AssertMinimumLength(f.GetInputPorts(), i)
 }
-public func AssertAllOwnedBySame<V, G, T>(vs : Array<T>) : Hypergraph<V, G>
+/**
+ * Given an interfaced hypergraph, assert that it has at least a certain
+ * number of output ports.
+ *
+ * @param f
+ */
+func AssertGraphHasMinimumOutputs<V, G>(
+    f : InterfacedHypergraph<V, G>, i : Int64
+) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>,
-        T <: ContainsVertex<V, G> & ToString
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertArrayAllSameParameter<T, Hypergraph<V, G>>(
-        vs,
-        { t : T => t.GetVertex().GetGraph() },
-        Owner
-    )
+    AssertMinimumLength(f.GetOutputPorts(), i)
 }
+/**
+ * Given an edge, assert that it is not owned by a particular hypergraph.
+ *
+ * @param e The edge
+ * @param f The hypergraph
+ */
 public func AssertNotOwnedBy<V, G>(e : Edge<V, G>, f : Hypergraph<V, G>) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V>,
@@ -157,11 +174,20 @@ public func AssertNotOwnedBy<V, G>(e : Edge<V, G>, f : Hypergraph<V, G>) : Unit
         throw BadOwnershipException(e, f, false)
     }
 }
+/**
+ * Exception for ownership issues
+ */
 class BadOwnershipException<V, G> <: Exception
     where
         V <: ValueSymbol<V> & Equatable<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
+    /**
+     * Create a BadOwnershipException for an edge
+     *
+     * @param e The edge
+     * @param f The hypergraph
+     */
     public init(e : Edge<V, G>, f : Hypergraph<V, G>, isOwned : Bool) {
         let isOwnedString = if(isOwned) {
             "is"
@@ -170,6 +196,12 @@ class BadOwnershipException<V, G> <: Exception
         }
         ErrorMsg("Required that ${e} ${isOwnedString} owned by ${f} but it is")
     }
+    /**
+     * Create a BadOwnershipException for a vertex
+     *
+     * @param v The vertex
+     * @param f The hypergraph
+     */
     public init(v : Vertex<V, G>, f : Hypergraph<V, G>, isOwned : Bool) {
         let isOwnedString = if(isOwned) {
             "is"

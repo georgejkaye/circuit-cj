@@ -4,9 +4,11 @@
  * @author George Kaye
  * @since 0.2
  */
-
 package graphs
-
+/**
+ * The two ways a vertex can be viewed.
+ * (A given vertex may be a source and a target simultaneously)
+ */
 public enum VertexType {
     | SOURCE
     | TARGET
@@ -24,7 +26,8 @@ extend VertexType <: ToString {
  * is a source or target of, and which index it is.
  */
 public struct EdgeConnection<V, G>
-    <: ToString & Equatable<EdgeConnection<V, G>> & Hashable & GraphElement<V, G>
+    <: ToString & Equatable<EdgeConnection<V, G>> &
+        Hashable & GraphElement<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -99,6 +102,10 @@ public struct EdgeConnection<V, G>
         this.GetEdge().GetGraph()
     }
 }
+/**
+ * The two interfaces a vertex can be part of.
+ * A vertex can be in both the inputs an outputs simulataneously.
+ */
 public enum InterfaceType {
     | INPUT
     | OUTPUT
@@ -123,8 +130,15 @@ extend InterfaceType <: ToString & Hashable & Equatable<InterfaceType> {
         !(this == rhs)
     }
 }
-public struct InterfaceElement<V, G> <: Hashable & ToString & Equatable<InterfaceElement<V, G>>
-    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+/**
+ * An interface element specifies a particular port on one of the interfaces
+ * on a graph.
+ */
+public struct InterfaceElement<V, G>
+    <: Hashable & ToString & Equatable<InterfaceElement<V, G>>
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let id : Int64 = GetNextId()
     public InterfaceElement(
@@ -139,7 +153,9 @@ public struct InterfaceElement<V, G> <: Hashable & ToString & Equatable<Interfac
         "${this.graph.GetName()} ${this.interfaceType}::${this.index}"
     }
     public operator func ==(rhs : InterfaceElement<V, G>) : Bool {
-        this.graph == rhs.graph && this.index == rhs.index && this.interfaceType == rhs.interfaceType
+        this.graph == rhs.graph &&
+            this.index == rhs.index &&
+            this.interfaceType == rhs.interfaceType
     }
     public operator func !=(rhs : InterfaceElement<V, G>) : Bool {
         !(this == rhs)
@@ -159,8 +175,7 @@ public enum TentacleType<V, G>
  * arbitrary number of edges, which represents forking wires.
  */
 public class Vertex<V, G>
-    <: Identifiable & Equatable<Vertex<V, G>> & Hashable
-        & ToString & HasWidth & Socket & GraphElement<V, G>
+    <: Identifiable<Vertex<V, G>> & ToString & HasWidth & Socket & GraphElement<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -168,11 +183,11 @@ public class Vertex<V, G>
     let width : Int64
     let id : Int64 = GetNextId()
     var inEdge : Option<EdgeConnection<V, G>> = None
-    var outEdges : HashSet<EdgeConnection<V, G>> = HashSet<EdgeConnection<V, G>>()
+    var outEdges : HashSet<EdgeConnection<V, G>> = HashSet()
     var feedback : Int64 = 0
     var owner : Hypergraph<V, G>
-    let interfacedInputs : HashSet<InterfaceElement<V, G>> = HashSet<InterfaceElement<V, G>>()
-    let interfacedOutputs : HashSet<InterfaceElement<V, G>> = HashSet<InterfaceElement<V, G>>()
+    let interfacedInputs : HashSet<InterfaceElement<V, G>> = HashSet()
+    let interfacedOutputs : HashSet<InterfaceElement<V, G>> = HashSet()
     public init(width: Int64, owner : Option<Hypergraph<V, G>>){
         this.width = width
         this.owner = match(owner) {
@@ -199,7 +214,9 @@ public class Vertex<V, G>
     public func GetOutTentacles(f : InterfacedHypergraph<V, G>) {
         this.outEdges.size + f.GetOutputPositions(this).size
     }
-    public func SetInEdge(e : Edge<V, G>, i : Int64) : Unit {
+    public func SetInEdge(
+        e : Edge<V, G>, i : Int64, feedback!: Bool = false
+    ) : Unit {
         SetInEdge(EdgeConnection(e, i, TARGET))
     }
     public func SetInEdge(ec : EdgeConnection<V, G>) : Unit {
@@ -237,8 +254,10 @@ public class Vertex<V, G>
     }
     func PostAlterInEdge() : Unit {
         match(this.inEdge) {
-            case None => this.owner.AddVertexToLeftmostTraversalElements(this)
-            case Some(ec) => this.owner.RemoveVertexFromLeftmostTraversalElements(this)
+            case None =>
+                this.owner.AddVertexToLeftmostTraversalElements(this)
+            case Some(ec) =>
+                this.owner.RemoveVertexFromLeftmostTraversalElements(this)
         }
     }
     func PostAlterOutEdges() : Unit {
@@ -262,14 +281,22 @@ public class Vertex<V, G>
         this.PostAlterOutEdges()
     }
     public func RemoveOutEdge(e : Edge<V, G>) : Unit {
-        this.outEdges.removeIf({ec : EdgeConnection<V, G> => ec.GetEdge() == e})
+        this.outEdges.removeIf(
+            { ec : EdgeConnection<V, G> => ec.GetEdge() == e}
+        )
         this.PostAlterOutEdges()
     }
     public func RemoveOutEdge(e : Edge<V, G>, i : Int64) : Unit {
-        this.outEdges.removeIf({ec : EdgeConnection<V, G> => ec.GetEdge() == e && ec.GetIndex() == i})
+        this.outEdges.removeIf(
+            { ec : EdgeConnection<V, G> =>
+                ec.GetEdge() == e && ec.GetIndex() == i}
+            )
         this.PostAlterOutEdges()
     }
-    public func AddOutEdge(e : Edge<V, G>, i : Int64) : Unit {
+    public func AddOutEdge(
+        e : Edge<V, G>, i : Int64
+    ) : Unit {
+        println("Adding edge ${e}:${i} with feedback ${feedback}")
         outEdges.put(EdgeConnection(e, i, SOURCE))
         this.PostAlterOutEdges()
     }
@@ -329,8 +356,12 @@ public class Vertex<V, G>
     public func RemoveAsInput(f : InterfacedHypergraph<V, G>) : Unit {
         this.interfacedInputs.removeIf({ ie => ie.graph == f})
     }
-    public func RemoveAsInput(f : InterfacedHypergraph<V, G>, i : Int64) : Unit {
-        this.interfacedInputs.removeIf({ ie => ie.graph == f && ie.index == i })
+    public func RemoveAsInput(
+        f : InterfacedHypergraph<V, G>, i : Int64
+    ) : Unit {
+        this.interfacedInputs.removeIf(
+            { ie => ie.graph == f && ie.index == i }
+        )
     }
     public func RemoveAsInput() : Unit {
         this.interfacedInputs.clear()
@@ -344,8 +375,12 @@ public class Vertex<V, G>
     public func RemoveAsOutput(f : InterfacedHypergraph<V, G>) : Unit {
         this.interfacedOutputs.removeIf({ ie => ie.graph == f})
     }
-    public func RemoveAsOutput(f : InterfacedHypergraph<V, G>, i : Int64) : Unit {
-        this.interfacedOutputs.removeIf({ ie => ie.graph == f && ie.index == i })
+    public func RemoveAsOutput(
+        f : InterfacedHypergraph<V, G>, i : Int64
+    ) : Unit {
+        this.interfacedOutputs.removeIf(
+            { ie => ie.graph == f && ie.index == i }
+        )
     }
     public func RemoveAsOutput() : Unit {
         this.interfacedOutputs.clear()
@@ -397,7 +432,11 @@ public class Vertex<V, G>
         }
         // Remove the old vertex from the graph now it has been detached
         owner.RemoveVertex(t)
-
+        if(instant) {
+            for(ec in this.GetOutEdges()) {
+                this.GetGraph().AddFeedbackConnection(ec)
+            }
+        }
     }
     public func SplitVertex() : (Vertex<V, G>, Vertex<V, G>) {
         let leftVertex = this
@@ -407,7 +446,7 @@ public class Vertex<V, G>
             ec.GetEdge().SetSource(
                 ec.GetIndex(),
                 rightVertex,
-                ec.GetEdge().GetSource(ec.GetIndex()).feedback
+                ec.GetGraph().IsFeedbackConnection(ec)
             )
         }
         for(ie in HashSet(leftVertex.GetInterfacedOutputs())) {
@@ -418,12 +457,15 @@ public class Vertex<V, G>
     }
 }
 
-public interface ContainsVertex<V, G>
+public interface ContainsVertex<V, G> <: GraphElement<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     func GetVertex() : Vertex<V, G>
+    func GetGraph() : Hypergraph<V, G> {
+        this.GetVertex().GetGraph()
+    }
 }
 extend Vertex<V, G> <: ContainsVertex<V, G> {
     public func GetVertex() : Vertex<V, G> {

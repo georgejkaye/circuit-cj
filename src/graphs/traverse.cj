@@ -66,14 +66,16 @@ func GetDefaultNextVertices<V, G>(
     direction : TraversalDirection,
     condition : (Edge<V, G>, Vertex<V, G>) -> Bool
 ) : (Edge<V, G>, TraversalData<V, G>) -> (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)
-    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
 {
     { e : Edge<V, G>, data : TraversalData<V, G> =>
         let nextElements = HashSet<TraversalElement<V, G>>()
-        func AddValidNextElements(potential : Array<Tentacle<V, G>>) : Unit {
-            for(t in potential) {
-                let element = VERTEX(t.vertex)
-                if(condition(e, t.vertex)){
+        func AddValidNextElements(potential : Array<Vertex<V, G>>) : Unit {
+            for(v in potential) {
+                let element = VERTEX(v)
+                if(condition(e, v)){
                     nextElements.put(element)
                 }
             }

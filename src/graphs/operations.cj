@@ -55,6 +55,7 @@ public func MergeVertices<T, U, V, G>(
     for(ie in HashSet(w.GetInterfacedOutputs())) {
         UpdateInterfaces(ie)
     }
+
     // Make sure the old vertex isn't part of a hypergraph any more
     // w.GetGraph().RemoveVertex(w)
     (v, w)
@@ -65,7 +66,7 @@ public func MergeVertices<T, V, G>(vs : Array<T>) : Vertex<V, G>
         V <: ValueSymbol<V> & Equatable<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertAtMostOneInEdge<T, V, G>(vs)
+    AssertAtMostOneInEdge(vs)
     let retainedVertex = vs[0].GetVertex()
     for(i in 1..vs.size) {
         let discardedVertex = vs[i].GetVertex()

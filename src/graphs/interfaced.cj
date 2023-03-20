@@ -9,16 +9,21 @@
 
 package graphs
 
-public class InterfaceVertex<V, G>
-    <: Socket & HasTentacle<V, G>
+public class InterfaceVertex<V, G> <: Socket & ContainsVertex<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public InterfaceVertex(
-        public let vertex : Vertex<V, G>,
-        public let name : Option<String>
+        let vertex : Vertex<V, G>,
+        let name!: Option<String> = None
     ){}
+    public init(
+        vertex : Vertex<V, G>,
+        name : String
+    ){
+        this(vertex, name: Some(name))
+    }
     public func GetWidth() : Int64 {
         this.vertex.GetWidth()
     }
@@ -67,7 +72,7 @@ func AddToInterfaceMap<V, G>(v : Vertex<V, G>, i : Int64, interfaceMap : HashMap
     and outputs. Interfaced hypergraphs are *immutable*.
  */
 public class InterfacedHypergraph<V, G>
-    <: Hashable & Identifiable & ToString & Specifiable<V> & Equatable<InterfacedHypergraph<V, G>> & HasName
+    <: Hashable & Identifiable<InterfacedHypergraph<V, G>> & ToString & Specifiable<V> & HasName
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -336,7 +341,9 @@ public class InterfacedHypergraph<V, G>
         newVertex : Vertex<V, G>
     ) : Unit {
         let oldVertex = interfaceArray[i]
-        interfaceArray[i] = InterfaceVertex(newVertex, oldVertex.name)
+        interfaceArray[i] = InterfaceVertex(
+            newVertex, name: oldVertex.GetName()
+        )
         match(interfaceMap.get(oldVertex.vertex)) {
             case None => ()
             case Some(ps) => ps.remove(i)
@@ -432,7 +439,9 @@ public class InterfacedHypergraph<V, G>
     public func ReplaceOutputVertices(newOutputs : ArrayList<Vertex<V, G>>) : Unit {
         for(i in 0..this.outputs.size) {
             let currentOutput = this.outputs[i]
-            this.outputs.set(i, InterfaceVertex(newOutputs[i], currentOutput.name))
+            this.outputs.set(
+                i, InterfaceVertex(newOutputs[i], name: currentOutput.name)
+            )
         }
     }
     public func IsWellFormed() : Bool {
@@ -481,7 +490,7 @@ public class InterfacedHypergraph<V, G>
             map({ iv : InterfaceVertex<V, G> =>
                 let v = vertexMap[iv.GetVertex()]
                 let name = v.GetName()
-                InterfaceVertex(v, name)
+                InterfaceVertex(v, name: name)
             }, ws)
         }
         let newInputs = translateVertices(this.inputs)
@@ -562,9 +571,9 @@ public class InterfacedHypergraph<V, G>
         )
         let mergedVertices = Array<Vertex<V, G>>(slicedVertices.size){
             i : Int64 =>
-                let primaryVertex = newEdge.GetSourceVertex(i)
+                let primaryVertex = newEdge.GetSource(i)
                 primaryVertex.MergeVertex(
-                    newEdge.GetTargetVertex(i),
+                    newEdge.GetTarget(i),
                     true
                 )
                 primaryVertex

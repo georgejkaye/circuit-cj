@@ -40,6 +40,28 @@ extend WellformednessIssue<V, G> <: ToString {
         }
     }
 }
+public enum TentacleOrigin<V, G>
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    | FROM_EDGE(EdgeConnection<V, G>)
+    | FROM_VERTEX(Vertex<V, G>)
+}
+extend TentacleOrigin<V, G> <: HasWidth & ToString {
+    public func GetWidth() : Int64 {
+        match(this) {
+            case FROM_EDGE(ec) => ec.GetWidth()
+            case FROM_VERTEX(v) => v.GetWidth()
+        }
+    }
+    public func toString() : String {
+        match(this) {
+            case FROM_EDGE(ec) => ec.toString()
+            case FROM_VERTEX(v) => v.toString()
+        }
+    }
+}
 public struct SequentialData<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
@@ -63,7 +85,7 @@ func GetVerticesFromEdges<V, G>(es : HashSet<Edge<V, G>>) : HashSet<Vertex<V, G>
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let vertices = HashSet<Vertex<V, G>>()
-    func PutVertices(ts : Array<Tentacle<V, G>>) : Unit {
+    func PutVertices(ts : Array<Vertex<V, G>>) : Unit {
         for(t in ts) {
             vertices.put(t.GetVertex())
         }
@@ -78,7 +100,7 @@ func GetVerticesFromEdges<V, G>(es : HashSet<Edge<V, G>>) : HashSet<Vertex<V, G>
  * A hypergraph contains a set of (hyper)edges and vertices.
  * These hypergraphs are not interfaced.
  */
-public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<V, G>> & Hashable
+public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString & Hashable
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -162,13 +184,6 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
                         }
                     case None => this.sequentialData.combinationalEdges.put(e)
                 }
-        }
-        // We keep track of any tentacle that has been marked as a feedback loop
-        for(i in 0..e.GetArity()) {
-            let t = e.GetSource(i)
-            if(t.feedback) {
-                this.sequentialData.feedbackConnections.put(EdgeConnection(e, i, SOURCE))
-            }
         }
     }
     public func GetLeftmostTraversalElements() : HashSet<TraversalElement<V, G>> {
@@ -262,6 +277,11 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
     public func GetSequentialData() : SequentialData<V, G> {
         this.sequentialData
     }
+    public func IsFeedbackTentacle(e : Edge<V, G>, i : Int64) : Bool {
+        this.sequentialData.feedbackConnections.contains(
+            EdgeConnection(e, i, SOURCE)
+        )
+    }
     public func AddEdgeAndVertices(e : Edge<V, G>) : Unit {
         this.IncludeHypergraph(e.GetGraph())
     }
@@ -315,9 +335,6 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         this.vertices.remove(v)
         this.RemoveVertexFromHypergraphData(v)
     }
-    public func RemoveFeedbackConnection(ec : EdgeConnection<V, G>) : Unit {
-        this.sequentialData.feedbackConnections.remove(ec)
-    }
     /**
      * Remove an edge from the hypergraph.
      * Does not remove its sources and targets, but does remove the edge from
@@ -349,7 +366,7 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         let issues = ArrayList<WellformednessIssue<V, G>>()
         func EdgeVertexCheck(
             e : Edge<V, G>,
-            array : Array<Tentacle<V, G>>,
+            array : Array<Vertex<V, G>>,
             notPresent : (Edge<V, G>, Int64, Vertex<V, G>) -> WellformednessIssue<V, G>
         ){
             for (i in 0..array.size) {
@@ -395,10 +412,10 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
             { acc : String , e : Edge<V, G> =>
                 func EdgeVertexString (
                     name : String,
-                    array: Array<Tentacle<V, G>>
+                    array: Array<Vertex<V, G>>
                 ){
                     foldi_left(
-                        { acc : String , i : Int64, cur : Tentacle<V, G> =>
+                        { acc : String , i : Int64, cur : Vertex<V, G> =>
                             let portText = "${cur}"
                             let newAcc = if (acc == "") {
                                 ""
@@ -455,11 +472,10 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
             vertexMap.put(vertex, newVertex)
         }
         for (edge in this.edges) {
-            func CloneTentacles(vs : Array<Tentacle<V, G>>) : Array<Tentacle<V, G>> {
-                map(
-                    { t => Tentacle(unsafeGet(vertexMap, t.GetVertex()), t.feedback, t.delay) },
-                    vs
-                )
+            func CloneTentacles(
+                vs : Array<Vertex<V, G>>
+            ) : Array<Vertex<V, G>> {
+                map({ t => unsafeGet(vertexMap, t.GetVertex()) }, vs)
             }
             let newSources = CloneTentacles(edge.GetSources())
             let newTargets = CloneTentacles(edge.GetTargets())
@@ -467,7 +483,29 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
             newEdges.put(newEdge)
             edgeMap.put(edge, newEdge)
         }
+        for(ec in this.sequentialData.feedbackConnections) {
+            let newEdge = unsafeGet(edgeMap, ec.GetEdge())
+            newHypergraph.AddFeedbackConnection(newEdge, ec.GetIndex())
+        }
+        println("The feedback connections are ${newHypergraph.GetSequentialData().feedbackConnections}")
         (newHypergraph, vertexMap, edgeMap)
+    }
+    public func AddFeedbackConnection(e : Edge<V, G>, i : Int64) : Unit {
+        this.sequentialData.feedbackConnections.put(
+            EdgeConnection(e, i, SOURCE)
+        )
+        println("Feedback connections of ${this} are now ${sequentialData.feedbackConnections}")
+    }
+    public func AddFeedbackConnection(ec : EdgeConnection<V, G>) : Unit {
+        this.sequentialData.feedbackConnections.put(ec)
+    }
+    public func IsFeedbackConnection(ec : EdgeConnection<V, G>) : Bool {
+        this.sequentialData.feedbackConnections.contains(ec)
+    }
+    public func IsFeedbackConnection(e : Edge<V, G>, i : Int64) : Bool {
+        this.sequentialData.feedbackConnections.contains(
+            EdgeConnection(e, i, SOURCE)
+        )
     }
     public func RemoveSubgraphElements(f : InterfacedHypergraph<V, G>) : Unit {
         for(v in f.GetVertices()){
@@ -556,8 +594,8 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
         let newSubgraph = Hypergraph<V, G>(subgraphVertices, subgraphEdges)
         let interfacedSubgraph = InterfacedHypergraph(
             newSubgraph,
-            map({ v => InterfaceVertex(v, "") }, childInputs),
-            map({ v => InterfaceVertex(v, "") }, childOutputs),
+            map({ v => InterfaceVertex(v) }, childInputs),
+            map({ v => InterfaceVertex(v) }, childOutputs),
             label
         )
         let newEdge = this.AddNewEdge(
@@ -579,8 +617,8 @@ public class Hypergraph<V, G> <: Identifiable & ToString & Equatable<Hypergraph<
             COMPOSITE(
                 Specification(
                     name,
-                    map({ to => Port(to.GetWidth(), "") }, inputs),
-                    map({ to => Port(to.GetWidth(), "") }, outputs)
+                    map({ to => Port(to.GetWidth()) }, inputs),
+                    map({ to => Port(to.GetWidth()) }, outputs)
                 )
             )
         )
