@@ -88,6 +88,24 @@ public func collectionToString<T>(
     "${openingBracket}${str}${closingBracket}"
 }
 /**
+ * Get a bespokely printed string of a collection.
+ *
+ * @param collection
+ * @param printFn The function that generates a string for an element
+ * @param openingBracket
+ * @param closingBracket
+ * @param delimiter
+ */
+public func collectionToString<T>(
+    collection : Collection<T>, openingBracket!: String = "{",
+    closingBracket!: String = "}", delimiter!: String = ", "
+) : String where T <: ToString {
+    collectionToString(
+        collection, { t => "${t}" }, openingBracket: openingBracket,
+        closingBracket: closingBracket, delimiter: delimiter
+    )
+}
+/**
  * Get a bespokely printed string of an array.
  *
  * @param array
