@@ -1,13 +1,30 @@
 /**
  * components/fundamental.cj
  *
- * Functions for creating values and primitives, the fundamental
- * components of circuits
+ * Functions for creating primitives, the fundamental components of circuits
  *
  * @author George Kaye
  * @since 0.3
  */
 package components
+import debug.*
+import assertions.*
+/**
+ * Exception for things not implemented yet.
+ */
+class TodoException <: Exception {
+    public init(msg : String){
+        TodoMessage(msg)
+    }
+}
+/**
+ * Throw a TodoException with a certain message.
+ *
+ * @param msg
+ */
+public func Todo(msg : String) : Unit {
+    throw TodoException(msg)
+}
 /**
  * Use a primitive gate
  *
@@ -22,7 +39,7 @@ func UseOperation<V, G>(
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertNumberOfWires(inputs, label.GetInputPorts().size)
+    AssertEqual(inputs.size, label.GetInputPorts().size)
     UseEdgeWithNewOutputs(label, inputs, None, None)
 }
 /**
@@ -38,7 +55,7 @@ public func UseGate<V, G>(
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertAllWiresWidth(inputs, 1)
+    AssertAllHaveWidth(inputs, 1)
     UseOperation(PRIMITIVE(prim), inputs)
 }
 /**
@@ -117,6 +134,6 @@ public func UseBlackbox<V, G>(
         ),
         inputs,
         None<InterfacedHypergraph<V, G>>,
-        inputs[0].GetVertex().GetGraph()
+        inputs[0].GetGraph()
     )
 }

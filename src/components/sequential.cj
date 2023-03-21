@@ -147,7 +147,7 @@ public func UseDelay<V, G>(
             Label<V,G>.DELAY(width),
             [inputWire],
             None<InterfacedHypergraph<V, G>>,
-            input.GetVertex().GetGraph()
+            input.GetGraph()
         )[0]
     }
     inputWire
@@ -189,7 +189,7 @@ func PerformFeedback<V, G>(
 {
     AssertHasNoInEdge(incoming)
     let width = outgoing.GetWidth()
-    AssertWiresSameWidth(outgoing, incoming)
+    AssertAllSameWidth(outgoing, incoming)
     MergeWires(outgoing, incoming, instant)
 }
 /**
@@ -208,7 +208,8 @@ public func Feedback<V, G>(outgoing : Wire<V, G>, incoming : Wire<V, G>) : Unit
 }
 /**
  * Create a feedback loop guarded by a delay: join a wire to a wire that is
- * not connected to anything on the left, and insert a delay of one tick on the loop
+ * not connected to anything on the left, and insert a delay of one tick on the
+ * loop
  *
  * @param outgoing The wire to bend back
  * @param incoming The wire to feed back into, must not have an incoming edge
@@ -224,9 +225,9 @@ public func DelayGuardedFeedback<V, G>(
     PerformFeedback(delay, incoming, false)
 }
 /**
- * Create a feedback loop guarded by a simple register: join a wire to a wire that is
- * not connected to anything on the left, and insert a register with a given initial signal
- * on the loop
+ * Create a feedback loop guarded by a simple register: join a wire to a wire
+ * that is not connected to anything on the left, and insert a register with a
+ * given initial signal on the loop
  *
  * @param input The input to the register
  * @param incoming The wire to feed back to
@@ -343,8 +344,8 @@ public func MakeOpenWaveform<V, G>(
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertSignalArrayNonEmpty(signals)
-    let width = AssertSignalsAllSameWidth(signals)
+    AssertNonEmpty(signals)
+    let width = AssertAllSameWidth(signals)
     let input = UseWire<V, G>(width)
     var currentWire = input
     for(i in 0..signals.size) {
@@ -372,8 +373,8 @@ public func MakeClosedWaveform<V, G>(
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertSignalArrayNonEmpty(signals)
-    let width = AssertSignalsAllSameWidth(signals)
+    AssertNonEmpty(signals)
+    let width = AssertAllSameWidth(signals)
     let waveformCircuit = Hypergraph<V, G>()
     let bottomWire = UseSignal<V, G>(V.GetDisconnected(), width)
     let waveformWire = UseOpenWaveform(signals, bottomWire)
@@ -395,8 +396,8 @@ public func MakeInfiniteWaveform<V, G>(
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertSignalArrayNonEmpty(signals)
-    let width = AssertSignalsAllSameWidth(signals)
+    AssertNonEmpty(signals)
+    let width = AssertAllSameWidth(signals)
     let inputWire = UseWire<V, G>(width)
     let waveformWire = UseOpenWaveform(signals, inputWire)
     PerformFeedback(waveformWire, inputWire, false)

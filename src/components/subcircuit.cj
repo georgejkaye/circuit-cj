@@ -1,14 +1,12 @@
 /**
- * components/arithmetic.cj
+ * components/subcircuit.cj
  *
  * Functions for creating subcircuits
  *
  * @author George Kaye
  * @since 0.2
  */
-
 package components
-
 import utils.*
 /**
  * Make a subcircuit with some (optionally named) input and
@@ -45,11 +43,11 @@ public func MakeSubcircuit<V, G>(
     let (newF, vertexMap, _) = owner.Clone()
     let newInputs = map({ iw : InterfaceWire<V, G> =>
         let newVertex = vertexMap.get(iw.GetVertex()).getOrThrow()
-        InterfaceVertex(newVertex, iw.GetName())
+        InterfaceVertex(newVertex, name: iw.GetName())
     }, inputs)
     let newOutputs = map({ iw : InterfaceWire<V, G> =>
         let newVertex = vertexMap.get(iw.GetVertex()).getOrThrow()
-        InterfaceVertex(newVertex, iw.GetName())
+        InterfaceVertex(newVertex, name: iw.GetName())
     }, outputs)
     InterfacedHypergraph(
         newF,
@@ -86,10 +84,10 @@ public func MakeSubcircuit<V, G>(
             Specification(
                 name,
                 map({ iw : InterfaceWire<V, G> =>
-                    Port(iw.GetVertex().GetWidth(), name: iw.GetName())
+                    Port(iw.GetWidth(), name: iw.GetName())
                 }, inputs),
                 map({ iw : InterfaceWire<V, G> =>
-                    Port(iw.GetVertex().GetWidth(), name: iw.GetName())
+                    Port(iw.GetWidth(), name: iw.GetName())
                 }, outputs)
             )
         )
@@ -157,7 +155,7 @@ public func UseSubcircuit<V, G>(
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertWiresHaveWidths(inputs, childCircuit.GetInputPorts())
+    AssertArraysSameWidths(inputs, childCircuit.GetInputPorts())
     let potentialOwner = MergeHypergraphs(inputs)
     let actualOwner = match(potentialOwner) {
         case None    => Hypergraph<V, G>()
@@ -184,7 +182,7 @@ public func UseSubcircuit<V, G>(
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertCircuitInputs(childCircuit, 0)
+    AssertHasArity(childCircuit, 0)
     UseSubcircuit(childCircuit, Array<Wire<V, G>>())
 }
 /**
@@ -202,7 +200,7 @@ public func UseSubcircuit_1<V, G>(
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertCircuitOutputs(childCircuit, 1)
+    AssertHasCoarity(childCircuit, 1)
     UseSubcircuit(childCircuit, inputs)[0]
 }
 /**
@@ -218,7 +216,7 @@ public func UseSubcircuit_1<V, G>(
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertCircuitInputs(childCircuit, 0)
+    AssertHasArity(childCircuit, 0)
     UseSubcircuit_1(childCircuit, Array<Wire<V, G>>())
 }
 /**
@@ -236,7 +234,7 @@ public func UseSubcircuit_2<V, G>(
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertCircuitOutputs(childCircuit, 2)
+    AssertHasCoarity(childCircuit, 2)
     let outputs = UseSubcircuit(childCircuit, inputs)
     (outputs[0], outputs[1])
 }
@@ -253,7 +251,7 @@ public func UseSubcircuit_2<V, G>(
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertCircuitInputs(childCircuit, 0)
+    AssertHasArity(childCircuit, 0)
     UseSubcircuit_2(childCircuit, Array<Wire<V, G>>())
 }
 /**
@@ -271,7 +269,7 @@ public func UseSubcircuit_3<V, G>(
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertCircuitOutputs(childCircuit, 3)
+    AssertHasCoarity(childCircuit, 3)
     let outputs = UseSubcircuit(childCircuit, inputs)
     (outputs[0], outputs[1], outputs[2])
 }
@@ -288,7 +286,7 @@ public func UseSubcircuit_3<V, G>(
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertCircuitInputs(childCircuit, 0)
+    AssertHasArity(childCircuit, 0)
     UseSubcircuit_3(childCircuit, Array<Wire<V, G>>())
 }
 /**
@@ -305,8 +303,8 @@ public func UseBitwiseMapGate<V, G>(
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertWiresSameWidth(ws)
-    AssertNumberOfWires(ws, prim.GetArity())
+    AssertAllSameWidth(ws)
+    AssertHasLength(ws, prim.GetArity())
     if(ws[0].GetWidth() == 1) {
         UseGate(prim, ws)
     } else {
@@ -319,7 +317,6 @@ public func UseBitwiseMapGate<V, G>(
         )
     }
 }
-
 /**
 * Connect some inputs to a rippled primitive
 *
@@ -335,8 +332,8 @@ public func UseRippleGate<V, G>(
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     AssertNonEmpty(ws)
-    AssertMinNumberOfWires(ws, prim.GetArity())
-    let width = AssertWiresSameWidth(ws)
+    AssertMinimumLength(ws, prim.GetArity())
+    let width = AssertAllSameWidth(ws)
     UseSubcircuit(
         MakeRippleGate(
             prim,
@@ -360,7 +357,7 @@ public func UseBitwiseRippleGate<V, G>(
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    let width = AssertWiresSameWidth(ws)
+    let width = AssertAllSameWidth(ws)
     UseSubcircuit(
         MakeBitwiseRippleGate(
             prim,

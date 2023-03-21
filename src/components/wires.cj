@@ -8,17 +8,15 @@
  * @author George Kaye
  * @since 0.2
  */
-
 package components
-
 from std import collection.HashSet
 import syntax.*
-
+import graphs.*
 /**
  * A wire has an id and a mutable vertex
  */
 public class Wire<V, G>
-    <: Identifiable & ToString & ContainsVertex<V, G> &
+    <: Identifiable<Wire<V, G>> & ToString & ContainsVertex<V, G> &
         HasWidth & GraphElement<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
@@ -46,7 +44,7 @@ public class Wire<V, G>
         this.vertex
     }
     public func GetGraph() : Hypergraph<V, G> {
-        this.GetVertex().GetGraph()
+        this.GetGraph()
     }
 }
 public interface ContainsWire<V, G> <: HasWidth & ContainsVertex<V, G>
@@ -98,7 +96,7 @@ public func UseWires<V, G>(widths : Array<Int64>) : Array<Wire<V, G>>
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertNonEmpty(widths, Width)
+    AssertNonEmpty(widths)
     map({ i : Int64 => UseWire(i) }, widths)
 }
 /**
@@ -125,97 +123,6 @@ extend Signature<V, G> <: WireUser<V, G>
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {}
-/**
- * An interface wire is a wire with an optional name. These are
- * used to specify the names of interface ports on a subcircuit
- */
-public class InterfaceWire<V, G>
-    <: ContainsWire<V, G> & ToString & ContainsVertex<V, G> &
-        Socket & GraphElement<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
-{
-    public InterfaceWire(
-        let wire : Wire<V, G>,
-        let name: Option<String>
-    ){}
-    public init(
-        w : Wire<V, G>,
-        name : String
-    ){
-        this(w, Some(name))
-    }
-    public init(
-        w : Wire<V, G>
-    ){
-        this(w, None<String>)
-    }
-    public func GetWire() : Wire<V, G> {
-        this.wire
-    }
-    public func GetVertex() : Vertex<V, G> {
-        this.wire.GetVertex()
-    }
-    public func toString() : String {
-        "${this.wire} (${name})"
-    }
-    public func GetWidth() : Int64 {
-        this.wire.GetWidth()
-    }
-    public func GetName() : Option<String> {
-        this.name
-    }
-    public operator func ==(rhs : Socket) {
-        this.wire.GetWidth() == rhs.GetWidth() && this.name == rhs.GetName()
-    }
-    public operator func !=(rhs : Socket) {
-        !(this == rhs)
-    }
-    public func GetGraph() : Hypergraph<V, G> {
-        this.GetVertex().GetGraph()
-    }
-}
-/**
- * Create an array of named wires, given an array of wires and an array of names
- * @param wires The array of wires
- * @param names The array of names
- * @return The array of interface wires
- */
-public func NameWires<V, G>(
-    wires : Array<Wire<V, G>>,
-    names : Array<String>
-) : Array<InterfaceWire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
-{
-    AssertArraysSameLength(wires, names)
-    map2(
-        { w : Wire<V, G>, name : String => InterfaceWire(w, name) },
-        wires, names
-    )
-}
-/**
- * Create an array of named wires, given an array of wires and a function from
- * indices to names.
- * @param wires The array of wires
- * @param f The function from wire indices to names
- * @return The array of interface wires
- */
-public func NameWires<V, G>(
-    wires : Array<Wire<V, G>>,
-    f : (Int64) -> String
-) : Array<InterfaceWire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
-{
-    Array<InterfaceWire<V, G>>(
-        wires.size,
-        { i : Int64 => InterfaceWire(wires[i], f(i)) }
-    )
-}
 /**
  * Make an edge and get the wires corresponding to its targets
  * @param label The label to give this edge
@@ -299,12 +206,12 @@ public func Split<V, G, T>(w : T, vs : Array<Int64>) : Array<Wire<V, G>>
         G <: PrimitiveSymbol<V> & Equatable<G>,
         T <: ContainsWire<V, G> & ToString
 {
-    AssertWireWidth<V, G, T>(w, Sum(vs))
+    AssertHasWidth(w, Sum(vs))
     UseEdgeWithNewOutputs<V, G, T>(
         BUNDLER([w.GetWidth()], vs),
         [w],
         None<InterfacedHypergraph<V, G>>,
-        w.GetVertex().GetGraph()
+        w.GetGraph()
     )
 }
 /**
@@ -354,7 +261,7 @@ public func Combine<V, G, T>(ws : Array<T>) : Wire<V, G>
         G <: PrimitiveSymbol<V> & Equatable<G>,
         T <: ContainsWire<V, G> & ToString
 {
-    AssertArrayHasMinimumLength(ws, 1)
+    AssertMinimumLength(ws, 1)
     if(ws.size == 1) {
         ws[0].GetWire()
     } else {
@@ -363,7 +270,7 @@ public func Combine<V, G, T>(ws : Array<T>) : Wire<V, G>
             BUNDLER(widths, [Sum(ws, { t => t.GetWidth() })]),
             ws,
             None,
-            ws[0].GetVertex().GetGraph()
+            ws[0].GetGraph()
         )[0]
     }
 }
@@ -393,7 +300,7 @@ public func GetBit<V, G>(w : Wire<V, G>, i : Int64) : Wire<V, G>
         V <: ValueSymbol<V> & Equatable<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    AssertWireHasWidthAtLeast<V, G, Wire<V, G>>(w, i)
+    AssertHasWidthAtLeast(w, i)
     let width = w.GetWidth()
     if (i == 0) {
         let ws = Split(w, [1, width - 1])
@@ -492,4 +399,95 @@ public func Replicate<V, G>(a : Wire<V, G>, w : Int64) : Wire<V, G>
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     Combine(Array<Wire<V, G>>(w, { i : Int64 => a }))
+}
+/**
+ * An interface wire is a wire with an optional name. These are
+ * used to specify the names of interface ports on a subcircuit
+ */
+public class InterfaceWire<V, G>
+    <: ContainsWire<V, G> & ToString & ContainsVertex<V, G> &
+        Socket & GraphElement<V, G>
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    public InterfaceWire(
+        let wire : Wire<V, G>,
+        let name: Option<String>
+    ){}
+    public init(
+        w : Wire<V, G>,
+        name : String
+    ){
+        this(w, Some(name))
+    }
+    public init(
+        w : Wire<V, G>
+    ){
+        this(w, None<String>)
+    }
+    public func GetWire() : Wire<V, G> {
+        this.wire
+    }
+    public func GetVertex() : Vertex<V, G> {
+        this.wire.GetVertex()
+    }
+    public func toString() : String {
+        "${this.wire} (${name})"
+    }
+    public func GetWidth() : Int64 {
+        this.wire.GetWidth()
+    }
+    public func GetName() : Option<String> {
+        this.name
+    }
+    public operator func ==(rhs : Socket) {
+        this.wire.GetWidth() == rhs.GetWidth() && this.name == rhs.GetName()
+    }
+    public operator func !=(rhs : Socket) {
+        !(this == rhs)
+    }
+    public func GetGraph() : Hypergraph<V, G> {
+        this.GetGraph()
+    }
+}
+/**
+ * Create an array of named wires, given an array of wires and an array of names
+ * @param wires The array of wires
+ * @param names The array of names
+ * @return The array of interface wires
+ */
+public func NameWires<V, G>(
+    wires : Array<Wire<V, G>>,
+    names : Array<String>
+) : Array<InterfaceWire<V, G>>
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    AssertSameLength(wires, names)
+    map2(
+        { w : Wire<V, G>, name : String => InterfaceWire(w, name) },
+        wires, names
+    )
+}
+/**
+ * Create an array of named wires, given an array of wires and a function from
+ * indices to names.
+ * @param wires The array of wires
+ * @param f The function from wire indices to names
+ * @return The array of interface wires
+ */
+public func NameWires<V, G>(
+    wires : Array<Wire<V, G>>,
+    f : (Int64) -> String
+) : Array<InterfaceWire<V, G>>
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    Array<InterfaceWire<V, G>>(
+        wires.size,
+        { i : Int64 => InterfaceWire(wires[i], f(i)) }
+    )
 }
