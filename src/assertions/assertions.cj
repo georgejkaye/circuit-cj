@@ -67,6 +67,22 @@ public func AssertAtLeast(i : Int64, t : Int64) : Unit {
     }
 }
 /**
+ * Assert a number is greater than or equal to zero.
+ *
+ * @param x
+ */
+public func AssertNonNegative(x : Int64) : Unit {
+    AssertAtLeast(x, 0)
+}
+/**
+ * Assert a number is greater than zero.
+ *
+ * @param x
+ */
+public func AssertStrictlyPositive(x : Int64) : Unit {
+    AssertAtLeast(x, 1)
+}
+/**
  * Assert that an option is None.
  *
  * @param opt
@@ -202,24 +218,6 @@ public func AssertMinimumLength<T>(
     }
 }
 /**
- * Assert an object has a given parameter.
- *
- * @param candidate The object to check
- * @param target The desired parameter
- * @param f Function to translate the target into an element of the target type
- * @param paramType
- */
-public func AssertObjectHasParameter<T, U>(
-    candidate : T, target : U, fn : (T) -> U, paramType: ParamType
-) : Unit where T <: ToString, U <: ToString & Equatable<U> {
-    let currentParam = fn(candidate)
-    if (currentParam != target) {
-        throw IncompatibleParameterException2<T,U>(
-            paramType, candidate, target, currentParam
-        )
-    }
-}
-/**
  * Assert all elements of a collection have the same parameter.
  *
  * @param xs The collection
@@ -256,24 +254,28 @@ public func AssertAllSameParameter<T, U>(
 public func AssertElementsHaveParameters<T, U, V>(
     xs : Array<T>, desiredParams : Array<U>,
     fnt : (T) -> V, fnu : (U) -> V, paramType : ParamType
-) : Unit
+) : Array<V>
     where
         T <: ToString, U <: ToString,
         V <: ToString & Equatable<V>
 {
-    AssertSameLength<T,U>(xs, desiredParams)
-    for(i in 0..xs.size) {
-        let current = xs[i]
-        let desired = desiredParams[i]
-        let currentParam = fnt(current)
-        let desiredParam = fnu(desired)
-        if (desiredParam != currentParam) {
-            throw IncompatibleParameterException3<T, U, V>(
-                paramType, xs, map(fnt, xs),
-                desiredParams, map(fnu, desiredParams)
-            )
+    let size = AssertSameLength<T,U>(xs, desiredParams)
+    Array<V>(size, {
+        i : Int64 =>
+            let current = xs[i]
+            let desired = desiredParams[i]
+            let currentParam = fnt(current)
+            let desiredParam = fnu(desired)
+            if (desiredParam != currentParam) {
+                throw IncompatibleParameterException3<T, U, V>(
+                    paramType, xs, map(fnt, xs),
+                    desiredParams, map(fnu, desiredParams)
+                )
+            } else {
+                currentParam
+            }
         }
-    }
+    )
 }
 /**
  * Assert that each element in a collection has a parameter.
