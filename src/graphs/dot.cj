@@ -294,7 +294,7 @@ func MakePorts<T>(
     ports : Array<T>,
     prefix : String,
     elementContent : ArrayList<DotLine>
-) : Unit where T <: Socket {
+) : Unit where T <: HasPort {
     // The ports are contained in a cell in the single row box node
     MakeElem("td", [], elementContent, false, {elementContent, inline =>
         // The ports are a vertical table of table cells
@@ -513,7 +513,7 @@ func DrawBoxNode<V, G, T1, U1, T2, U2>(
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>,
         T1 <: ContainsVertex<V, G>, T2 <: ContainsVertex<V, G>,
-        U1 <: Socket, U2 <: Socket
+        U1 <: HasPort, U2 <: HasPort
 {
     // Add the edge identifier
     let declaration = DotLine("${id} [label=<", Indent)
@@ -525,9 +525,6 @@ func DrawBoxNode<V, G, T1, U1, T2, U2>(
             // Draw left ports, if there are any
             if(leftVertices.size > 0) {
                 MakePorts(leftPorts, "w", elementContent)
-                // DrawConnections(
-                //     id, leftVertices, true, SOURCE, connectionContent
-                // )
             }
             // Draw the label, if there is one
             match(label) {
@@ -546,9 +543,6 @@ func DrawBoxNode<V, G, T1, U1, T2, U2>(
             // Draw right ports, if there are any
             if(rightVertices.size > 0) {
                 MakePorts(rightPorts, "e", elementContent)
-                // DrawConnections(
-                //     id, rightVertices, false, TARGET, connectionContent
-                // )
             }
         })
     })
@@ -651,13 +645,14 @@ func DrawVertex<V, G>(
     content.append(DrawOptions("v${v.GetId()}", vertexOptions))
 }
 /**
-* Get the connection text for a connection between a vertex and an edge
-* @param vText The name of the vertex
-* @param eText The name of the edge
-* @param vertexFirst Whether the connection is from vertex to edge (i.e.
+ * Get the connection text for a connection between a vertex and an edge
+ *
+ * @param vText The name of the vertex
+ * @param eText The name of the edge
+ * @param vertexFirst Whether the connection is from vertex to edge (i.e.
                         target) or vice versa (i.e. source)
-* @return The connection string
-*/
+ * @return The connection string
+ */
 func DrawConnection<V, G, T>(
     vertex : T, eText : String, vertexFirst : Bool,
     connectionContent : ArrayList<DotLine>, feedback : Bool
@@ -884,17 +879,20 @@ public func DrawHypergraph<V, G>(
         match(v.GetInEdge()) {
             case Some(ec) =>
                 let eText = "e${ec.GetEdge().GetId()}:e${ec.GetIndex()}"
-                DrawConnection(v, eText, false, connectionContent, false)
+                if(depth == 0 || !ec.GetEdge().HasSubgraph()) {
+                    DrawConnection(v, eText, false, connectionContent, false)
+                }
             case None => ()
         }
         // Draw the connections to sources
         for(ec in v.GetOutEdges()) {
             println("Out edge ${ec}")
             let eText = "e${ec.GetEdge().GetId()}:w${ec.GetIndex()}"
-            DrawConnection(
-                v, eText, true, connectionContent,
-                f.IsFeedbackTentacle(ec.GetEdge(), ec.GetIndex())
-            )
+            if(depth == 0 || !ec.GetEdge().HasSubgraph()) {
+                let isFeedback =
+                    f.IsFeedbackTentacle(ec.GetEdge(), ec.GetIndex())
+                DrawConnection(v, eText, true, connectionContent, isFeedback)
+            }
         }
     }
     let edgeOptionsString = DrawOptions("node", edgeNodeOpts)
