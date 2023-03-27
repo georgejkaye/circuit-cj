@@ -13,7 +13,7 @@ import assertions.*
  * A signal is an array of values.
  */
 public struct Signal<V>
-    <: ToString & HasName & Specifiable<V> & HasWidth & Equatable<Signal<V>>
+    <: ToString & HasName & Specifiable & HasWidth & Equatable<Signal<V>>
     where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
 {
     public Signal(

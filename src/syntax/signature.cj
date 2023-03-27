@@ -17,7 +17,7 @@ public interface ValueSymbol<V> <: Hashable & HasName & ToString {
 }
 
 public interface PrimitiveSymbol<V>
-    <: Specifiable<V> & HasName & ToString & Hashable
+    <: Specifiable & HasName & ToString & Hashable
     where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> {
     func GetEnhancedName(n: Int64, w: Int64): String
 }

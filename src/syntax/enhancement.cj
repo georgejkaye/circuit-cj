@@ -112,7 +112,7 @@ class CannotBitwiseMapPrimitiveException<V, G> <: Exception
  * Struct for a primitive and an enhancement
  */
 public struct EnhancedPrimitive<V, G>
-    <: HasName & Specifiable<V> & Equatable<EnhancedPrimitive<V, G>>
+    <: HasName & Specifiable & Equatable<EnhancedPrimitive<V, G>>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>

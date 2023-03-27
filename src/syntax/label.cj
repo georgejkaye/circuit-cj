@@ -52,7 +52,7 @@ let omega = "\u{03C9}"
 let bundleExpand = "\u{25C1}"
 let bundleCombine = "\u{25B7}"
 extend Label<V, G>
-    <: HasName & Specifiable<V> & ToString & Equatable<Label<V, G>>
+    <: HasName & Specifiable & ToString & Equatable<Label<V, G>>
 {
     public func GetInputPorts() : Array<Port> {
         match(this) {

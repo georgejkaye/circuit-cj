@@ -33,7 +33,7 @@ public func numToUppercaseLetter(n : Int64) : String {
  * input/output ports
  */
 public class Specification<V>
-     <: Specifiable<V> & HasName & Equatable<Specification<V>>
+     <: Specifiable & HasName & Equatable<Specification<V>>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
 {

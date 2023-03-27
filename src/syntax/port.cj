@@ -14,6 +14,32 @@ public interface HasWidth {
     func GetWidth() : Int64
 }
 /**
+ * Assert something has a width of exactly some value.
+ *
+ * @param t
+ * @param i The desired width
+ */
+public func AssertHasWidth<T>(t : T, i : Int64) : Unit
+    where T <: HasWidth & ToString
+{
+    AssertHasParameter(
+        t, i, { t => t.GetWidth() }, Width
+    )
+}
+/**
+ * Assert something has a width of greater than some value.
+ *
+ * @param t
+ * @param i The desired width
+ */
+public func AssertHasWidthAtLeast<T>(t : T, i : Int64) : Unit
+    where T <: HasWidth & ToString
+{
+    AssertHasAtLeastParameter(
+        t, i, { t => t.GetWidth() }, Width
+    )
+}
+/**
  * Given two things with widths, assert that they have the same width.
  * Returns the width if so, throws an exception if not
  *
@@ -32,15 +58,72 @@ public func AssertTwoSameWidth<T, U>(t : T, u : U) : Int64
  * Given an array of things with widths, assert that they are all the same
  * width. Returns the width if they are, throws an exception if they are not.
  *
- * @param vs The array of signals
- * @return The width of the signals, if they are all the same
+ * @param xs
+ * @return The width of the objects if they are all the same
  */
-public func AssertAllSameWidth<T>(array : Array<T>) : Int64
+public func AssertAllSameWidth<T>(xs : Array<T>) : Int64
     where T <: HasWidth & ToString
 {
     AssertAllSameParameter<T, Int64>(
-        array, { t : T => t.GetWidth() }, Width
+        xs, { t : T => t.GetWidth() }, Width
     )
+}
+/**
+ * Given an array of things with widths, assert that they all have a given
+ * width.
+ *
+ * @param xs
+ * @param i The desired width
+ */
+public func AssertAllHaveWidth<T>(xs : Array<T>, i : Int64) : Unit
+    where T <: HasWidth & ToString
+{
+    AssertAllSameParameter<T, Int64>(
+        xs, { t : T => t.GetWidth() }, Width
+    )
+}
+/**
+ * Given two arrays of things with widths, assert that they pointwise have the
+ * same widths. Returns the array of widths if they do, throws an exception if
+ * they do not.
+ *
+ * @param xs
+ * @param ys
+ * @return The array of widths, if they match up
+ */
+public func AssertArraysSameWidths<T, U>(
+    xs : Array<T>, ys : Array<U>
+) : Array<Int64>
+    where T <: HasWidth & ToString, U <: HasWidth & ToString
+{
+    AssertElementsHaveParameters<T, U, Int64>(
+        xs, ys, { t => t.GetWidth() }, { u => u.GetWidth() }, Width
+    )
+}
+/**
+ * Given an array of arrays of things with widths, assert that the each subarray
+ * has the same width, and each array has the same width pointwise. Returns
+ * the length of the subarrays if successful.
+ *
+ * @param xs
+ * @param ys
+ * @return The length of the subarrays, if successful
+ */
+public func AssertArrayArraysSameWidths<T>(xss : Array<Array<T>>) : Int64
+    where T <: HasWidth & ToString
+{
+    let parentSize = xss.size
+    if(parentSize > 0) {
+        let childSize = AssertAllSameLength(xss)
+        for(i in 0..childSize){
+            AssertAllSameWidth(
+                Array(parentSize){ j : Int64 => xss[j][i] }
+            )
+        }
+        parentSize
+    } else {
+        0
+    }
 }
 /**
  * Given an array of objects with width, get a string of their width array.
@@ -73,13 +156,17 @@ public interface HasOptionalName {
     }
 }
 /**
- * A socket is something with a width, optional name, and string identifier
+ * A HasPort is something with a width, optional name, and string identifier
  */
-public interface Socket <: HasWidth & HasOptionalName & ToString {}
+public interface HasPort <: HasWidth & HasOptionalName & ToString {
+    func ToPort() : Port {
+        Port(this.GetWidth(), name: this.GetName())
+    }
+}
 /**
  * A port has a width and an optional name
  */
-public class Port <: ToString & Equatable<Port> & Socket {
+public class Port <: Equatable<Port> & HasPort {
     public Port(
         public let width : Int64,
         public let name!: Option<String> = None
@@ -111,13 +198,12 @@ public class Port <: ToString & Equatable<Port> & Socket {
     }
 }
 /**
- * Interface for things that can be specified by their input and output ports
+ * Interface for things that can be specified by their input and output ports.
  */
-public interface Specifiable<V>
-    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
+public interface Specifiable
 {
     /**
-     * Get all the input ports
+     * @return the array of input ports
      */
     func GetInputPorts() : Array<Port>
     /**
@@ -134,7 +220,7 @@ public interface Specifiable<V>
         this.GetInputPorts().size
     }
     /**
-     * Get all the output ports
+     * @return the array of output ports
      */
     func GetOutputPorts() : Array<Port>
     /**
@@ -150,4 +236,30 @@ public interface Specifiable<V>
     func GetCoarity() : Int64 {
         this.GetOutputPorts().size
     }
+}
+/**
+ * Assert something specifiable has a given arity.
+ *
+ * @param t
+ * @param n The desired arity
+ */
+public func AssertHasArity<T>(t : T, n : Int64) : Unit
+    where T <: Specifiable & ToString
+{
+    AssertHasParameter(
+        t, n, { t => t.GetArity() }, Inputs
+    )
+}
+/**
+ * Assert something specifiable has a given coarity.
+ *
+ * @param t
+ * @param n The desired coarity
+ */
+public func AssertHasCoarity<T>(t : T, n : Int64) : Unit
+    where T <: Specifiable & ToString
+{
+    AssertHasParameter(
+        t, n, { t => t.GetCoarity() }, Outputs
+    )
 }
