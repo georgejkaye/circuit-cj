@@ -7,11 +7,7 @@
  * @author George Kaye
  * @since 0.1
  */
-
 package examples.gate
-
-import utils.*
-
 /**
  * A sorting comparator black box component
  *
@@ -39,7 +35,7 @@ func SortingComparator(width : Int64, w1 : Wire_, w2 : Wire_) : (Wire_, Wire_) {
  */
 public func SortingNetwork(width : Int64, inputs : Int64) : Circuit_ {
     if(inputs == 0){
-        throw NotImplemented("Sorting network cannot have 0 inputs")
+        throw IllegalArgumentException("Sorting network cannot have 0 inputs")
     }
     let inputWires = sig.UseWires(width, inputs)
     let outputWires =
@@ -48,7 +44,9 @@ public func SortingNetwork(width : Int64, inputs : Int64) : Circuit_ {
             inputWires
         } else {
             // Otherwise we recursively sort the first inputs-1 wires
-            let smallerWires = Array<Wire_>(inputWires.size - 1){i : Int64 => inputWires[i]}
+            let smallerWires = Array<Wire_>(inputWires.size - 1){
+                i : Int64 => inputWires[i]
+            }
             let smallerNetwork = UseSubcircuit(
                 SortingNetwork(width, inputs - 1),
                 smallerWires

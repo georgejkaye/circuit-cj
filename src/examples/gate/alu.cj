@@ -2,31 +2,30 @@
  * examples/alu.cj
  *
  * A simple ALU with AND, OR and ADD/SUB.
- * Follows a tutorial http://www.csc.villanova.edu/~mdamian/Past/csc2400fa13/assign/ALU.html
+ * Follows a tutorial
+ * http://www.csc.villanova.edu/~mdamian/Past/csc2400fa13/assign/ALU.html
  *
  * @author George Kaye
  * @version 1.0
  * @since 2022-06-21
  */
-
 package examples.gate
-
-import components.*
-import signatures.gate.*
-
 /**
  * Create a full adder
  * @return A full adder subcircuit
  */
 func FullAdder() {
+    // Input wires
     let inputA = sig.UseWire(1)
     let inputB = sig.UseWire(1)
     let inputC = sig.UseWire(1)
+    // Combinational logic
     let inputXor = XorGate(inputA, inputB)
     let inputAnd = AndGate(inputA, inputB)
     let carryXor = XorGate(inputC, inputXor)
     let carryAnd = AndGate(inputC, inputXor)
     let carryOr = OrGate(inputAnd, carryAnd)
+    // Final subcircuit
     MakeSubcircuit([
             InterfaceWire(inputA, "A"),
             InterfaceWire(inputB, "B"),
@@ -44,19 +43,20 @@ func FullAdder() {
  * @return A multibit full adder subcircuit
  */
 func MultibitFullAdder(width : Int64) {
+    // Input wires
     let a = sig.UseWire(width)
     let b = sig.UseWire(width)
     let c = sig.UseWire(1)
+    // A full adder is a bitwise ripple with the carry as the initial value
     let (sum, carry) = BitwiseRippleMap(
         { acc : Wire_, cur : Array<Wire_> =>
             UseSubcircuit_2(
                 FullAdder(),
                 [cur[0], cur[1], acc]
             )
-        },
-        c,
-        [a, b]
+        }, c, [a, b]
     )
+    // Final subcircuit
     MakeSubcircuit([
             InterfaceWire(a, "A"),
             InterfaceWire(b, "B"),
@@ -86,16 +86,8 @@ public func AddSub(width : Int64) {
     let finalBitSum = Msb(sum)
     let not = NotGate(finalBitSum)
     let overflow = Or(
-        And([
-            not,
-            finalBitB,
-            finalBitA
-        ]),
-        And([
-            finalBitSum,
-            NotGate(finalBitB),
-            NotGate(finalBitA)
-        ])
+        And([not, finalBitB, finalBitA]),
+        And([finalBitSum, NotGate(finalBitB), NotGate(finalBitA)])
     )
     MakeSubcircuit([
             InterfaceWire(a, "A"),
@@ -116,21 +108,24 @@ public func AddSub(width : Int64) {
  * @return The ALU subcircuit
  */
 public func ALU(w : Int64){
+    // Declare the four input wires
     let a = sig.UseWire(w)
     let b = sig.UseWire(w)
     let c0 = sig.UseWire(1)
     let c1 = sig.UseWire(1)
+    // Connect the inputs to the three computation blocks
     let and = And(a, b)
     let or = Or(a, b)
     let (sum, overflow, carry) = UseSubcircuit_3(AddSub(w), [a, b, c0])
+    // Use the multiplexers to decide which computation to return
     let mux1 = Mux2(c1, and, or)
     let mux2 = Mux2(c1, mux1, sum)
-
+    // Compute the outputs appropriately
     let result = mux2
     let notzero = Or(result)
     let zero = Not(notzero)
     let negative = Msb(result)
-
+    // Put everything together
     MakeSubcircuit([
             InterfaceWire(a, "A"),
             InterfaceWire(b, "B"),

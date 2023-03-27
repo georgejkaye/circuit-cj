@@ -4,33 +4,43 @@
  * http://www.simplecpudesign.com/simple_cpu_v1/
  *
  * @author George Kaye
- * @since 2022-06-21
+ * @since 0.2
  */
-
 package examples.gate
-
-import syntax.*
-import graphs.*
-
+/**
+ * Create an ALU with the following modes:
+ *
+ *  S4 S3 S2 S1 S0  Z
+ *  0  0  0  0  0   ADD (A+B)
+ *  0  0  0  0  1   BITWISE AND (A&B)
+ *  0  0  0  1  0   INPUT A
+ *  0  0  0  1  1   INPUT B
+ *  0  1  1  0  0   SUBTRACT (A-B)
+ *  1  0  1  0  0   INCREMENT (A+1)
+ *  1  0  0  0  0   INPUT A
+ *  0  0  1  0  0   ADD (A+B)+1
+ *  0  1  0  0  0   SUBTRACT (A-B)-1
+ *
+ * @return The ALU subcircuit
+ */
 func ALU() {
+    // Input wires
     let a = sig.UseWire(8)
+    let b = sig.UseWire(8)
     let s0 = sig.UseWire(1)
     let s1 = sig.UseWire(1)
     let s2 = sig.UseWire(1)
     let s3 = sig.UseWire(1)
     let s4 = sig.UseWire(1)
-    let b = sig.UseWire(8)
-
+    // Combinational logic
     let not1 = Not(s4)
     let rep1 = Replicate(not1, 8)
     let inv1 = Xor(b, Replicate(s3, 8))
     let and1 = And(rep1, inv1)
-
     let (sum, carry) = UseRippleAdder(a, and1, s2)
     let and2 = And(a, b)
-
     let mux = Mux4(s1, s0, sum, and2, a, b)
-
+    // Final subcircuit
     MakeSubcircuit(
         [
             InterfaceWire(a, "A"),
@@ -48,20 +58,31 @@ func ALU() {
         "alu"
     )
 }
-
+/**
+ * @param d
+ * @param ce
+ * @param c
+ * @param clk
+ * @return FDCE register blackbox
+ */
 func FDCE(d: Wire_, ce: Wire_, c: Wire_, clr: Wire_) {
     UseBlackbox(
         "FDCE",
         [
-            Port(1, name: "D"),
-            Port(1, name: "CE"),
-            Port(1, name: "C"),
-            Port(1, name: "CLR")
+            Port(1, name: "D"), Port(1, name: "CE"),
+            Port(1, name: "C"), Port(1, name: "CLR")
         ],
         [Port(1, name: "Q")],
         [d, ce, c, clr]
     )[0]
 }
+/**
+ * @param pre
+ * @param d
+ * @param ce
+ * @param c
+ * @return FDPE register blackbox
+ */
 func FDPE(pre: Wire_, d: Wire_, ce: Wire_, c: Wire_) {
     UseBlackbox(
         "FDPE",
@@ -75,6 +96,12 @@ func FDPE(pre: Wire_, d: Wire_, ce: Wire_, c: Wire_) {
         [pre, d, ce, c]
     )[0]
 }
+/**
+ * @param d
+ * @param c
+ * @param clr
+ * @return FDC register blackbox
+ */
 func FDC(d: Wire_, c: Wire_, clr: Wire_) {
     UseBlackbox(
         "FDC",
@@ -87,6 +114,11 @@ func FDC(d: Wire_, c: Wire_, clr: Wire_) {
         [d, c, clr]
     )[0]
 }
+/**
+ * @param d
+ * @param c
+ * @return FD register blackbox
+ */
 func FD(d: Wire_, c: Wire_) {
     UseBlackbox(
         "FD",
@@ -98,6 +130,13 @@ func FD(d: Wire_, c: Wire_) {
         [d, c]
     )[0]
 }
+/**
+ * @param cpu_do
+ * @param addr
+ * @param ram_we
+ * @param clk
+ * @return RAM blackbox
+ */
 func RAM(cpu_do: Wire_, addr: Wire_, ram_we: Wire_, clk: Wire_) {
     UseBlackbox(
         "ram",
@@ -111,7 +150,11 @@ func RAM(cpu_do: Wire_, addr: Wire_, ram_we: Wire_, clk: Wire_) {
         [cpu_do, addr, ram_we, clk]
     )[0]
 }
-
+/**
+ * @param w The width of the input wire
+ * @return a subcircuit containing an appropriate number of FDCE registers
+ *           in parallel
+ */
 public func Register(w: Int64): Circuit_ {
     if (w != 1 && w % 2 == 1){
         Todo("Off bit registers not implemented")
@@ -140,19 +183,26 @@ public func Register(w: Int64): Circuit_ {
         "register_${w}"
     )
 }
-
+/**
+ * Create a sequence generator, a circuit that determines which stage of the
+ * fetch-decode-execute-increment cycle we are in.
+ *
+ * @return The sequence generator subcircuit
+ */
 func SequenceGenerator() {
+    // Inputs
     let clr = sig.UseWire(1)
     let clk = sig.UseWire(1)
     let ce = sig.UseWire(1)
     let fb = sig.UseWire(1)
-
+    // registers
     let reg1 = FDPE(clr, fb, ce, clk)
     let reg2 = FDCE(reg1, ce, clk, clr)
     let reg3 = FDCE(reg2, ce, clk, clr)
     let reg4 = FDCE(reg3, ce, clk, clr)
-
+    // Feedback after the last register
     Feedback(reg4, fb)
+    // Final subcircuit
     MakeSubcircuit(
         [
             InterfaceWire(clk, "CLK"),
@@ -168,11 +218,29 @@ func SequenceGenerator() {
         "sequence_generator"
     )
 }
-
+/**
+ * Create an instruction decoder subcircuit with the following instruction set.
+ *
+ * Load ACC kk : 0000 XXXX KKKKKKKK
+ * Add ACC kk : 0100 XXXX KKKKKKKK
+ * And ACC kk : 0001 XXXX KKKKKKKK
+ * Sub ACC kk : 0110 XXXX KKKKKKKK
+ * Input ACC pp : 1010 XXXX PPPPPPPP
+ * Output ACC pp : 1110 XXXX PPPPPPPP
+ * Jump U aa : 1000 XXXX AAAAAAAA
+ * Jump Z aa : 1001 00XX AAAAAAAA
+ * Jump C aa : 1001 10XX AAAAAAAA
+ * Jump NZ aa : 1001 01XX AAAAAAAA
+ * Jump NC aa : 1001 11XX AAAAAAAA
+ *
+ * @return The instruction decoder subcircuit
+ */
 func InstructionDecoder() {
+    // Input wire
     let a = sig.UseWire(8)
+    // Split the wire into eight bits for separate processing
     let bits = Split(a)
-
+    // Determing the instruction from the bits
     let input = And([bits[7], Not(bits[6]), bits[5], Not(bits[4])])
     let output = And([bits[7], bits[6], bits[5], Not(bits[4])])
     let load = And([Not(bits[7]), Not(bits[6]), Not(bits[5]), Not(bits[4])])
@@ -185,6 +253,7 @@ func InstructionDecoder() {
     let jumpnz = And([jump_condition, Not(bits[3]), bits[2]])
     let jumpc = And([jump_condition, bits[3], Not(bits[2])])
     let jumpnc = And([jump_condition, bits[3], bits[2]])
+    // Final subcircuit
     MakeSubcircuit(
         [InterfaceWire(a, "A")],
         [
@@ -203,7 +272,15 @@ func InstructionDecoder() {
         "instruction_decoder"
     )
 }
-
+/**
+ * Use the instruction decoder as part of the larger decoder.
+ *
+ * @param ir
+ * @param decode
+ * @param execute
+ * @return
+     (add, load, output, input, jumpz, jump, jumpnz, jumpc, jumpnc, sub, bitand)
+ */
 func Decoder_InstructionDecoder(ir: Wire_, decode: Wire_, execute: Wire_) {
     let instruction_decoder = UseSubcircuit(InstructionDecoder(), [ir])
     let phase = Or(decode, execute)
@@ -220,34 +297,57 @@ func Decoder_InstructionDecoder(ir: Wire_, decode: Wire_, execute: Wire_) {
     let bitand = And(instruction_decoder[10], phase)
     (add, load, output, input, jumpz, jump, jumpnz, jumpc, jumpnc, sub, bitand)
 }
-
-func Decoder_SequenceGenerator(clk: Wire_, ce: Wire_, clr: Wire_, carry: Wire_, zero: Wire_, add: Wire_, sub: Wire_,
-    bitand: Wire_) {
+/**
+ * Use the sequence generator as part of the larger decoder.
+ *
+ * @param clk
+ * @param ce
+ * @param clr
+ * @param carry
+ * @param zero
+ * @param add
+ * @param sub
+ * @return (fetch, decode, execute, increment, carry_reg, zero_reg)
+ */
+func Decoder_SequenceGenerator(
+    clk: Wire_, ce: Wire_, clr: Wire_, carry: Wire_, zero: Wire_, add: Wire_,
+    sub: Wire_, bitand: Wire_
+) {
+    // Use the sequence generator
     let sequence = UseSubcircuit(SequenceGenerator(), [clk, ce, clr])
+    // Wires for each stage in the cycle
     let fetch = sequence[0]
     let decode = sequence[1]
     let execute = sequence[2]
     let increment = sequence[3]
-
     let en_st = Or([add, sub, bitand])
-
-    let reg = UseSubcircuit_1(Register(2), [Combine(carry, zero), clk, en_st, clr])
+    let reg = UseSubcircuit_1(
+        Register(2), [Combine(carry, zero), clk, en_st, clr]
+    )
     let (carry_reg, zero_reg) = Split(reg, 1)
+    // Output wires
     (fetch, decode, execute, increment, carry_reg, zero_reg)
 }
-
+/**
+ * Compute the jump logic.
+ *
+ * @param clk
+ * @param clr
+ * @param increment
+ * @param execute
+ * @param jumpz
+ * @param zero_reg
+ * @param jumpnz
+ * @param jumpc
+ * @param carry_reg
+ * @param jumpnc
+ * @param jump
+ * @return en_pc
+ */
 func Decoder_Jump(
-    clk: Wire_,
-    clr: Wire_,
-    increment: Wire_,
-    execute: Wire_,
-    jumpz: Wire_,
-    zero_reg: Wire_,
-    jumpnz: Wire_,
-    jumpc: Wire_,
-    carry_reg: Wire_,
-    jumpnc: Wire_,
-    jump: Wire_
+    clk: Wire_, clr: Wire_, increment: Wire_, execute: Wire_, jumpz: Wire_,
+    zero_reg: Wire_, jumpnz: Wire_, jumpc: Wire_, carry_reg: Wire_,
+    jumpnc: Wire_, jump: Wire_
 ) {
     let is_jump = Or(
         [
@@ -267,7 +367,11 @@ func Decoder_Jump(
     )
     en_pc
 }
-
+/**
+ * Create the full decoder circuit.
+ *
+ * @return The decoder circuit
+ */
 func Decoder() {
     // Inputs
     let ir = sig.UseWire(8)
@@ -276,22 +380,26 @@ func Decoder() {
     let clr = sig.UseWire(1)
     let carry = sig.UseWire(1)
     let zero = sig.UseWire(1)
-
-    // Declare inputs for Feedback
+    // Declare inputs for feedback
     let decodeFb = sig.UseWire(1)
     let executeFb = sig.UseWire(1)
-
-    let (add, load, output, input, jumpz, jump, jumpnz, jumpc, jumpnc, sub, bitand) = Decoder_InstructionDecoder(ir,
-        decodeFb, executeFb)
-
-    let (fetch, decode, execute, increment, carry_reg, zero_reg) = Decoder_SequenceGenerator(clk, ce, clr, carry, zero,
-        add, sub, bitand)
-
+    // Use the instruction decoder
+    let (add, load, output, input, jumpz, jump, jumpnz, jumpc, jumpnc, sub, bitand) =
+        Decoder_InstructionDecoder(ir, decodeFb, executeFb)
+    // Use the sequence generator
+    let (fetch, decode, execute, increment, carry_reg, zero_reg) =
+        Decoder_SequenceGenerator(clk, ce, clr, carry, zero, add, sub, bitand)
+    // Perform feedbacks
     Feedback(decode, decodeFb)
     Feedback(execute, executeFb)
-
-    let en_pc = Decoder_Jump(clk, clr, increment, execute, jumpz, zero_reg, jumpnz, jumpc, carry_reg, jumpnc, jump)
+    // Use the jump logic
+    let en_pc = Decoder_Jump(
+        clk, clr, increment, execute, jumpz, zero_reg, jumpnz, jumpc, carry_reg,
+        jumpnc, jump
+    )
+    // Use the RAM
     let ram = Buf(And(execute, output))
+    // Compute the output wires
     let is_jump = Or([jump, jumpz, jumpnz, jumpc, jumpnc])
     let alu_s0 = Buf(Or([bitand, input, load, is_jump]))
     let alu_s1 = Buf(Or([load, input, output, is_jump]))
@@ -303,7 +411,6 @@ func Decoder() {
     let muxc = Buf(Or([input, output]))
     let en_in = Buf(fetch)
     let en_da = Buf(And(execute, Or([load, add, sub, bitand, input])))
-
     MakeSubcircuit(
         [
             InterfaceWire(ir, "IR"),
@@ -330,28 +437,33 @@ func Decoder() {
         "decoder"
     )
 }
-
+/**
+ * Create a simple CPU that operates on eight bit wires.
+ *
+ * @return CPU circuit
+ */
 public func SimpleCPU() {
+    // Initialise the three input wires
     let nclr = sig.UseWire(1)
     let clk = sig.UseWire(1)
     let vcc = sig.UseWire(1)
+    // The clear signal is a function of the inputs
     let clr = FD(Not(nclr), clk)
-
     // Instruction register
     let instruction = sig.UseWire(16)
     let en_in = sig.UseWire(1)
     let ir = UseSubcircuit_1(Register(16), [instruction, clk, en_in, clr])
     let (ir_muxi, ir_decoder) = Split(ir, 8)
-
     // Program counter
     let en_pc = sig.UseWire(1)
     let counter_d = sig.UseWire(8)
     let pc = UseSubcircuit_1(Register(8), [counter_d, clk, en_pc, clr])
-
     // Decoder
     let carry = sig.UseWire(1)
     let zero = sig.UseWire(1)
-    let decoder = UseSubcircuit(Decoder(), [ir_decoder, carry, zero, clk, Buf(vcc), clr])
+    let decoder = UseSubcircuit(
+        Decoder(), [ir_decoder, carry, zero, clk, Buf(vcc), clr]
+    )
     let muxa = decoder[0]
     let muxb = decoder[1]
     let muxc = decoder[2]
@@ -364,43 +476,30 @@ public func SimpleCPU() {
     let alu_s2 = decoder[9]
     let alu_s3 = decoder[10]
     let alu_s4 = decoder[11]
-
     // Mux_I
     let muxi = Mux2(muxa, ir_muxi, pc)
-
     // Mux_D
     let (instruction_muxd, _) = Split(instruction, 8)
     let acc_fb = sig.UseWire(8)
     let muxd = Mux2(muxb, instruction_muxd, acc_fb)
-
     // Mux_A
     let addr = Mux2(muxc, pc, ir_muxi)
-
     // ALU
-    let (alu_z, alu_cout) = UseSubcircuit_2(ALU(), [muxi, muxd, alu_s0, alu_s1, alu_s2, alu_s3, alu_s4])
+    let (alu_z, alu_cout) = UseSubcircuit_2(
+        ALU(), [muxi, muxd, alu_s0, alu_s1, alu_s2, alu_s3, alu_s4]
+    )
     Feedback(alu_cout, carry)
     Feedback(Nor(alu_z), zero)
     Feedback(alu_z, counter_d)
-
     // Accumulator
     let acc = UseSubcircuit_1(Register(8), [alu_z, clk, en_da, clr])
     Feedback(acc, acc_fb)
-
     // RAM
     let cpu_do = Combine(acc, sig.UseConstantZero(width: 8))
     let cpu_di = RAM(cpu_do, addr, ram_we, Not(clk))
     Feedback(cpu_di, instruction)
-
     // Serial out
-    let serial_out = Not(
-        FDCE(
-            Lsb(cpu_do),
-            And(addr),
-            clk,
-            clr
-        )
-    )
-
+    let serial_out = Not(FDCE(Lsb(cpu_do), And(addr), clk, clr))
     // Make the subcircuit
     MakeSubcircuit(
         [

@@ -7,9 +7,10 @@
  * @author George Kaye
  * @since 0.1
  */
-
 package examples.gate
-
+/**
+ * @return half adder circuit
+ */
 public func HalfAdder(){
     // First we declare our inputs so we have handles on them
     let a = sig.UseWire(1)

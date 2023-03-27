@@ -7,7 +7,6 @@
  * @author George Kaye
  * @since 0.1
  */
-
 package examples.gate
 
 /**
