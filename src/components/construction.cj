@@ -111,24 +111,24 @@ public func BitwiseSplit<V, G>(
 }
 /**
  * Given an array of arrays of wires, combine them to create an array of wires,
- * so that inputs[i] = [inputss[0][i], inputss[1][i], ...].
+ * so that outputs[i] = [inputs[0][i], inputs[1][i], ...].
  *
- * @param inputss The array of arrays of wires to combine
+ * @param inputs The array of arrays of wires to combine
  * @return The array of combined wires
  */
 public func BitwiseCombine<V, G>(
-    inputss : Array<Array<Wire<V, G>>>
+    inputs : Array<Array<Wire<V, G>>>
 ) : Array<Wire<V, G>>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    let size = AssertArrayArraysSameWidths(inputss)
-    Array<Wire<V, G>>(size){
-        i : Int64 => Combine(Array<Wire<V, G>>(inputss.size){
-            j : Int64 => inputss[j][i]
+    let size = AssertAllSameLength(inputs)
+    Array<Wire<V, G>>(size, {
+        i : Int64 => Combine(Array<Wire<V, G>>(inputs.size){
+            j : Int64 => inputs[j][i]
         })
-    }
+    })
 }
 /**
  * Perform a bitwise map.
@@ -642,7 +642,7 @@ public func BitwiseRippleMap<V, G>(
     inputs : Array<Wire<V, G>>,
     direction!: Direction = TOP_TO_BOTTOM,
     start!: Int64 = 0,
-    end!: Int64 = inputs.size
+    end!: Int64 = inputs[0].GetWidth()
 ) : (Wire<V, G>, Wire<V, G>)
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
