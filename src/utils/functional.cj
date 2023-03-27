@@ -170,3 +170,23 @@ public func map2<T, U, V>(
 ) : Array<V> {
     Array<V>(xs.size, { i : Int64 => f(xs[i], ys[i]) })
 }
+/**
+ * Get an array containing the first elements of an array of pairs.
+ *
+ * @param xs The array of pairs
+ * @return the array of first elements
+ *
+ */
+public func fsts<T, U>(xs : Array<(T, U)>) : Array<T> {
+    map({ pair : (T, U) => pair[0] }, xs)
+}
+/**
+ * Get an array containing the second elements of an array of pairs.
+ *
+ * @param xs The array of pairs
+ * @return the array of second elements
+ *
+ */
+public func snds<T, U>(xs : Array<(T, U)>) : Array<U> {
+    map({ pair : (T, U) => pair[1] }, xs)
+}
