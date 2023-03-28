@@ -18,7 +18,7 @@ import syntax.*
  * @param outputs The output array to check
  */
 func CheckSpecCompatibility<V, G>(
-    spec : Specifiable<V>,
+    spec : Specifiable,
     inputs: Array<Vertex<V, G>>,
     outputs: Array<Vertex<V, G>>
 ) : Unit
@@ -48,7 +48,7 @@ func CheckSpecCompatibility<V, G>(
  * an optional subgraph representing the internal construction.
  */
 public class Edge<V, G>
-    <: Specifiable<V> & Identifiable<Edge<V, G>> &
+    <: Specifiable & Identifiable<Edge<V, G>> &
         ToString & GraphElement<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
@@ -132,6 +132,12 @@ public class Edge<V, G>
     public func GetSubgraph() : Option<InterfacedHypergraph<V, G>> {
         this.subgraph
     }
+    public func HasSubgraph() : Bool {
+        match(this.subgraph) {
+            case None => false
+            case Some(_) => true
+        }
+    }
     func ForEachVertex(
         array : Array<Vertex<V, G>>,
         f : (Vertex<V, G>, Int64) -> Unit
@@ -169,6 +175,14 @@ public class Edge<V, G>
             }
         }
     }
+    /**
+     * Generic function for setting a vertex as the ith source or target.
+     *
+     * @param i
+     * @param newVertex
+     * @param array The array of sources or targets
+     * @param vertexFn The function to apply to the old and new vertex
+     */
     func SetVertex(
         i : Int64,
         newVertex : Vertex<V, G>,
@@ -180,9 +194,13 @@ public class Edge<V, G>
             vertexFn(oldVertex, newVertex)
             this.owner.AddVertex(newVertex)
     }
-    public func SetSource(
-        i : Int64, newVertex : Vertex<V, G>, feedback: Bool
-    ) : Unit {
+    /**
+     * Set the ith source vertex.
+     *
+     * @param i
+     * @param newVertex
+     */
+    public func SetSource(i : Int64, newVertex : Vertex<V, G>) : Unit {
         if(this.GetSource(i) != newVertex) {
             SetVertex(
                 i, newVertex, this.sources,
@@ -193,6 +211,12 @@ public class Edge<V, G>
             )
         }
     }
+    /**
+     * Set the ith target vertex.
+     *
+     * @param i
+     * @param newVertex
+     */
     public func SetTarget(i : Int64, newVertex : Vertex<V, G>) : Unit {
         if(this.GetTarget(i) != newVertex) {
             SetVertex(
@@ -245,7 +269,7 @@ public class Edge<V, G>
                     v.GetVertex().RemoveAsOutput(f)
                 }
                 // Add the elements of the subgraph to the parent graph
-                this.GetGraph().IncludeHypergraph(f.GetGraph())
+                this.GetGraph().MergeHypergraphs(f.GetGraph())
                 /**
                  * Merge the interface vertices of a child graph with the
                  * sources or targets of a parent edge
@@ -295,13 +319,28 @@ public class Edge<V, G>
                 }
                 let newSources = GetNewVertices(this.GetSources())
                 let newTargets = GetNewVertices(this.GetTargets())
-                this.owner.IncludeHypergraph(f.GetGraph())
+                this.owner.MergeHypergraphs(f.GetGraph())
                 (newSources, newTargets)
         }
     }
+    /**
+     * Get the edge that can be accessed from traversing across one vertex from
+     * the ith source of this edge. Throws a NoneException if there is no such
+     * edge.
+     *
+     * @param i
+     * @return The edge connection accessible from the targets
+     */
     public func NextEdgeLeft(i : Int64) : EdgeConnection<V, G> {
         this.GetSource(i).GetInEdge().getOrThrow()
     }
+    /**
+     * Get the edges that can be accessed from traversing across one vertex from
+     * the ith target of this edge.
+     *
+     * @param i
+     * @return The set of edge connections accessible from the targets
+     */
     public func NextEdgesRight(i : Int64) : HashSet<EdgeConnection<V, G>> {
         this.GetTarget(i).GetOutEdges()
     }
@@ -331,19 +370,14 @@ public class Edge<V, G>
      * as this one, with new sources and targets
      *
      * @param owner The owner of the cloned edge
+     * @return The new edge
      */
     public func Clone(
         owner : Hypergraph<V, G>
     ) : Edge<V, G> {
         this.Clone(
-            map(
-                { t => owner.AddNewVertex(t.GetWidth()) },
-                this.GetSources()
-            ),
-            map(
-                { t => owner.AddNewVertex(t.GetWidth()) },
-                this.GetTargets()
-            ),
+            map({ t => owner.AddNewVertex(t.GetWidth()) }, this.GetSources()),
+            map({ t => owner.AddNewVertex(t.GetWidth()) }, this.GetTargets()),
             owner
         )
     }

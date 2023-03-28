@@ -2,38 +2,14 @@
 
 Files specifying hypergraphs and friends, used to model circuits.
 
-## [`assertions.cj`](assertions.cj)
+## Files
 
-Contains assertions specific to graphs.
-
-## [`dot.cj`](dot.cj)
-
-Contains functions for generating dot graphs representing hypergraphs.
-
-## [`edge.cj`](edge.cj)
-
-Contains the definition of the `Edge` class.
-A (hyper)`Edge` represents a circuit component, and can have arbitrarily many (but fixed) `Vertex` objects as sources and targets.
-
-## [`hypergraph.cj`](hypergraph.cj)
-
-Contains the definition of the `Hypergraph` class.
-A `Hypergraph` is a model of a circuit: it is constructed from `Vertex` and `Edge` objects.
-
-## [`identifiable.cj`](identifiable.cj)
-
-Contains interfaces for elements with unique ids.
-
-## [`interfaced.cj`](interfaced.cj)
-
-Contains the definition of the `InterfacedHypergraph` class.
-An `InterfacedHypergraph` is a `Hypergraph` with some specified input and output vertices.
-
-## [`operations.cj`](operations.cj)
-
-Contains functions for composition operations on `InterfacedHypergraph` objects.
-
-## [`vertex.cj`](vertex.cj)
-
-Contains the definition of the `Vertex` class.
-A `Vertex` represents a wire in circuits.
+* [`assertions.cj`](assertions.cj) Assertions specifically for graphs
+* [`dot.cj`](dot.cj) Dot drawing and writing functions
+* [`edge.cj`](edge.cj) Definition of `Edge`
+* [`hypergraph.cj`](hypergraph.cj) Definition of `Hypergraph`
+* [`interfaced.cj`](interfaced.cj) Definition of `InterfaceVertex` and
+                                            `InterfacedHypergraph`
+* [`operations.cj`](operations.cj) Operations on (interfaced) hypergraphs
+* [`traverse.cj`](traverse.cj)
+* [`vertex.cj`](vertex.cj) Definition of `Vertex` and `EdgeConnection`

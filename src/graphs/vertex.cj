@@ -50,9 +50,9 @@ public struct EdgeConnection<V, G>
     public operator func !=(right : EdgeConnection<V, G>) : Bool {
         !(this == right)
     }
-    // HACK: This won't be unique if you have something with more than
-    // 100000 sources or targets
     public func hashCode() : Int64 {
+        // This won't be unique if we have something with more than 100000
+        // sources or targets, but that's fairly unlikely
         let code = edge.GetId() * 100000 + index
         match(vertexType) {
             case SOURCE => code
@@ -72,6 +72,15 @@ public struct EdgeConnection<V, G>
     public func GetIndex() : Int64 {
         this.index
     }
+    public func GetVertexType() : VertexType {
+        this.vertexType
+    }
+    public func GetGraph() : Hypergraph<V, G> {
+        this.GetEdge().GetGraph()
+    }
+    /**
+     * @return the vertex that this edge connection sprouts from.
+     */
     public func GetVertex() : Vertex<V, G> {
         let fn = { e : Edge<V, G>, i : Int64 => match(this.vertexType) {
             case SOURCE => e.GetSource(i)
@@ -79,9 +88,13 @@ public struct EdgeConnection<V, G>
         }}
         fn(this.GetEdge(), this.GetIndex()).GetVertex()
     }
-    public func GetVertexType() : VertexType {
-        this.vertexType
-    }
+    /**
+     * Slice this tentacle: that is to say, create a new vertex which only has
+     * this edge connection associated with it, and remove this edge connection
+     * from the original vertex.
+     *
+     * @return (left vertex, right vertex)
+     */
     public func SliceTentacle() : (Vertex<V, G>, Vertex<V, G>) {
         let existingVertex = this.GetVertex()
         let owner = this.GetEdge().GetGraph()
@@ -90,16 +103,13 @@ public struct EdgeConnection<V, G>
         let index = this.GetIndex()
         let (leftVertex, rightVertex) = match(this.GetVertexType()) {
             case SOURCE =>
-                edge.SetSource(index, slicedVertex, false)
+                edge.SetSource(index, slicedVertex)
                 (existingVertex, slicedVertex)
             case TARGET =>
                 edge.SetTarget(index, slicedVertex)
                 (slicedVertex, existingVertex)
         }
         (leftVertex, rightVertex)
-    }
-    public func GetGraph() : Hypergraph<V, G> {
-        this.GetEdge().GetGraph()
     }
 }
 /**
@@ -175,7 +185,8 @@ public enum TentacleType<V, G>
  * arbitrary number of edges, which represents forking wires.
  */
 public class Vertex<V, G>
-    <: Identifiable<Vertex<V, G>> & ToString & HasWidth & Socket & GraphElement<V, G>
+    <: Identifiable<Vertex<V, G>> & ToString & HasWidth &
+            HasPort & GraphElement<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -184,7 +195,6 @@ public class Vertex<V, G>
     let id : Int64 = GetNextId()
     var inEdge : Option<EdgeConnection<V, G>> = None
     var outEdges : HashSet<EdgeConnection<V, G>> = HashSet()
-    var feedback : Int64 = 0
     var owner : Hypergraph<V, G>
     let interfacedInputs : HashSet<InterfaceElement<V, G>> = HashSet()
     let interfacedOutputs : HashSet<InterfaceElement<V, G>> = HashSet()
@@ -196,8 +206,23 @@ public class Vertex<V, G>
         }
         this.owner.AddVertex(this)
     }
-    public func Clone() : Vertex<V, G> {
-        Vertex(this.width, this.owner)
+    public func hashCode() : Int64 {
+        this.id
+    }
+    public func toString() : String {
+        "v${this.GetId()}"
+    }
+    public func toLongString() : String {
+        "v${this.GetId()}, in ${this.GetInEdge()}, out ${this.GetOutEdges()}"
+    }
+    public operator func ==(right: Vertex<V, G>) : Bool {
+        this.GetId() == right.GetId()
+    }
+    public operator func !=(right : Vertex<V, G>) : Bool {
+        this.GetId() != right.GetId()
+    }
+    public func GetName() : Option<String> {
+        None
     }
     public func GetId() : Int64 {
         this.id
@@ -229,14 +254,26 @@ public class Vertex<V, G>
             case Some(e) => SetInEdge(e)
         }
     }
-    public func SetOutEdges(ecs : HashSet<EdgeConnection<V, G>>) : Unit {
-        this.outEdges = ecs
+    public func AddAllOutEdges(es : HashSet<EdgeConnection<V, G>>) {
+        for(ec in es) {
+            this.AddOutEdge(ec.GetEdge(), ec.GetIndex())
+        }
         this.PostAlterOutEdges()
     }
     public func RemoveInEdge(es : HashSet<Edge<V, G>>) : Unit {
         for (e in es) {
             RemoveInEdge(e)
         }
+    }
+    public func SetOutEdges(ecs : HashSet<EdgeConnection<V, G>>) : Unit {
+        this.outEdges = ecs
+        this.PostAlterOutEdges()
+    }
+    public func AddOutEdge(
+        e : Edge<V, G>, i : Int64
+    ) : Unit {
+        outEdges.put(EdgeConnection(e, i, SOURCE))
+        this.PostAlterOutEdges()
     }
     public func RemoveInEdge() : Unit {
         this.inEdge = None
@@ -293,37 +330,6 @@ public class Vertex<V, G>
             )
         this.PostAlterOutEdges()
     }
-    public func AddOutEdge(
-        e : Edge<V, G>, i : Int64
-    ) : Unit {
-        println("Adding edge ${e}:${i} with feedback ${feedback}")
-        outEdges.put(EdgeConnection(e, i, SOURCE))
-        this.PostAlterOutEdges()
-    }
-    public func AddAllOutEdges(es : HashSet<EdgeConnection<V, G>>) {
-        for(ec in es) {
-            this.AddOutEdge(ec.GetEdge(), ec.GetIndex())
-        }
-        this.PostAlterOutEdges()
-    }
-    func IncrementFeedback() : Unit {
-        this.feedback++
-    }
-    func DecrementFeedback() : Unit {
-        this.feedback--
-    }
-    public func toString() : String {
-        "v${this.GetId()}"
-    }
-    public func toLongString() : String {
-        "v${this.GetId()}, in ${this.GetInEdge()}, out ${this.GetOutEdges()}"
-    }
-    public operator func ==(right: Vertex<V, G>) : Bool {
-        this.GetId() == right.GetId()
-    }
-    public operator func !=(right : Vertex<V, G>) : Bool {
-        this.GetId() != right.GetId()
-    }
     public func GetGraph() : Hypergraph<V, G> {
         this.owner
     }
@@ -340,12 +346,6 @@ public class Vertex<V, G>
             }
             oldOwner.RemoveVertex(this)
         }
-    }
-    public func hashCode() : Int64 {
-        this.id
-    }
-    public func GetName() : Option<String> {
-        None
     }
     public func GetInterfacedInputs() : HashSet<InterfaceElement<V, G>> {
         this.interfacedInputs
@@ -385,6 +385,9 @@ public class Vertex<V, G>
     public func RemoveAsOutput() : Unit {
         this.interfacedOutputs.clear()
     }
+    public func Clone() : Vertex<V, G> {
+        Vertex(this.width, this.owner)
+    }
     /**
      * Merge a vertex v that belongs to the parent graph into this one. Updates
      * the corresponding edges appropriately; v will be orphaned after this
@@ -397,7 +400,7 @@ public class Vertex<V, G>
         // Get the actual vertex object
         let v = t.GetVertex()
         // We can only merge in a vertex owned by the same graph
-        let owner = MergeHypergraphs(this.GetGraph(), t)
+        this.GetGraph().MergeHypergraphs(t)
         // We cannot allow the merged vertex to have multiple in edge
         AssertAtMostOneInEdge(this, v)
         // Any edge connected to the merging vertex must be updated
@@ -406,7 +409,7 @@ public class Vertex<V, G>
             case Some(ec) => ec.GetEdge().SetTarget(ec.GetIndex(), this)
         }
         for(ec in Array(v.GetOutEdges())) {
-            ec.GetEdge().SetSource(ec.GetIndex(), this, instant)
+            ec.GetEdge().SetSource(ec.GetIndex(), this)
         }
         /**
          * Update an interface containing the merging vertex v and replace it
@@ -431,32 +434,37 @@ public class Vertex<V, G>
             UpdateInterfaces(ie)
         }
         // Remove the old vertex from the graph now it has been detached
-        owner.RemoveVertex(t)
+        this.GetGraph().RemoveVertex(t)
         if(instant) {
             for(ec in this.GetOutEdges()) {
                 this.GetGraph().AddFeedbackConnection(ec)
             }
         }
     }
+    /**
+     * Split this vertex in two, so the left vertex has the in-edge of this
+     * vertex and the right vertex has the out-edges.
+     *
+     * @return (left vertex, right vertex)
+     */
     public func SplitVertex() : (Vertex<V, G>, Vertex<V, G>) {
-        let leftVertex = this
-        let rightVertex = this.GetGraph().AddNewVertex(leftVertex.GetWidth())
-        let outEdges = HashSet<EdgeConnection<V, G>>(leftVertex.GetOutEdges())
-        for(ec in HashSet(leftVertex.GetOutEdges())) {
-            ec.GetEdge().SetSource(
-                ec.GetIndex(),
-                rightVertex,
-                ec.GetGraph().IsFeedbackConnection(ec)
-            )
+        let leftVertex = this.GetGraph().AddNewVertex(this.GetWidth())
+        let rightVertex = this
+        let inEdge = this.GetInEdge()
+        match(inEdge) {
+            case None => ()
+            case Some(ec) => ec.GetEdge().SetTarget(ec.GetIndex(), leftVertex)
         }
-        for(ie in HashSet(leftVertex.GetInterfacedOutputs())) {
-            ie.graph.ReplaceOutput(ie.index, rightVertex)
-            leftVertex.RemoveAsOutput(ie.graph, ie.index)
+        for(ie in HashSet(rightVertex.GetInterfacedInputs())) {
+            ie.graph.ReplaceInput(ie.index, leftVertex)
+            rightVertex.RemoveAsInput(ie.graph, ie.index)
         }
         (leftVertex, rightVertex)
     }
 }
-
+/**
+ * Interface for structures that have vertex-like properties
+ */
 public interface ContainsVertex<V, G> <: GraphElement<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,

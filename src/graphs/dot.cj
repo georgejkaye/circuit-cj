@@ -874,21 +874,30 @@ public func DrawHypergraph<V, G>(
     elementContent.append(vertexOptionsString)
     for(v in f.GetVertices()){
         DrawVertex(v, elementContent, debug)
+        func ShouldDrawConnection(ec : EdgeConnection<V, G>) : Bool {
+            depth == 0 || !ec.GetEdge().HasSubgraph() ||
+                !ec.GetEdge().GetLabel().IsExpandable()
+        }
+        func GetEdgeText(ec : EdgeConnection<V, G>) : String {
+            let portText = match(ec.GetVertexType()) {
+                case SOURCE => "w"
+                case TARGET => "e"
+            }
+            "e${ec.GetEdge().GetId()}:${portText}${ec.GetIndex()}"
+        }
         // Draw the connections to targets
         match(v.GetInEdge()) {
             case Some(ec) =>
-                let eText = "e${ec.GetEdge().GetId()}:e${ec.GetIndex()}"
-                if(depth == 0 || !ec.GetEdge().HasSubgraph() ||
-                            !ec.GetEdge().GetLabel().IsExpandable()
-                ) {
+                if(ShouldDrawConnection(ec)) {
+                    let eText = GetEdgeText(ec)
                     DrawConnection(v, eText, false, connectionContent, false)
                 }
             case None => ()
         }
         // Draw the connections to sources
         for(ec in v.GetOutEdges()) {
-            let eText = "e${ec.GetEdge().GetId()}:w${ec.GetIndex()}"
-            if(depth == 0 || !ec.GetEdge().HasSubgraph()) {
+            if(ShouldDrawConnection(ec)) {
+                let eText = GetEdgeText(ec)
                 let isFeedback =
                     f.IsFeedbackTentacle(ec.GetEdge(), ec.GetIndex())
                 DrawConnection(v, eText, true, connectionContent, isFeedback)

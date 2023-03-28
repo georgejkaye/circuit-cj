@@ -6,10 +6,11 @@
  * @author George Kaye
  * @since 0.2
  */
-
 package graphs
-
-public class InterfaceVertex<V, G> <: Socket & ContainsVertex<V, G>
+/**
+ * An interface vertex is a pair of a vertex and an optional name.
+ */
+public class InterfaceVertex<V, G> <: HasPort & ContainsVertex<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -24,19 +25,10 @@ public class InterfaceVertex<V, G> <: Socket & ContainsVertex<V, G>
     ){
         this(vertex, name: Some(name))
     }
-    public func GetWidth() : Int64 {
-        this.vertex.GetWidth()
-    }
-    public func GetName() : Option<String> {
-        this.name
-    }
-    public func GetVertex() : Vertex<V, G> {
-        this.vertex
-    }
-    public operator func ==(rhs : Socket) : Bool {
+    public operator func ==(rhs : HasPort) : Bool {
         this.GetWidth() == rhs.GetWidth() && this.GetName() == rhs.GetName()
     }
-    public operator func !=(rhs : Socket) : Bool {
+    public operator func !=(rhs : HasPort) : Bool {
         !(this == rhs)
     }
     public func toString() : String {
@@ -46,33 +38,23 @@ public class InterfaceVertex<V, G> <: Socket & ContainsVertex<V, G>
         }
         "${vertex}${nameString}"
     }
-    public func ToPort() : Port {
-        Port(vertex.GetWidth(), name: name)
+    public func GetWidth() : Int64 {
+        this.vertex.GetWidth()
     }
-    public func IsFeedback() : Bool {
-        false
+    public func GetName() : Option<String> {
+        this.name
     }
-    public func IsDelay() : Bool {
-        false
-    }
-}
-func AddToInterfaceMap<V, G>(v : Vertex<V, G>, i : Int64, interfaceMap : HashMap<Vertex<V, G>, HashSet<Int64>>) : Unit
-    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>, G <: PrimitiveSymbol<V> & Equatable<G>
-{
-    match(interfaceMap.get(v)) {
-        case None =>
-            let vs = HashSet<Int64>()
-            vs.put(i)
-            interfaceMap.put(v, vs)
-        case Some(vs) => vs.put(i)
+    public func GetVertex() : Vertex<V, G> {
+        this.vertex
     }
 }
 /**
-    A hypergraph with an interface. Represents a complete circuit with inputs
-    and outputs. Interfaced hypergraphs are *immutable*.
+ * A hypergraph with an interface. Represents a complete circuit with inputs
+ * and outputs.
  */
 public class InterfacedHypergraph<V, G>
-    <: Hashable & Identifiable<InterfacedHypergraph<V, G>> & ToString & Specifiable<V> & HasName
+    <: Identifiable<InterfacedHypergraph<V, G>> & ToString &
+            Specifiable & HasName
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -87,15 +69,17 @@ public class InterfacedHypergraph<V, G>
     // Label for the interfaced hypergraph, to be displayed on its edge
     let label : Label<V, G>
     // Input vertices, vertices with no in edge, edges with no sources
-    let leftmostTraversalElements : HashSet<TraversalElement<V, G>> = HashSet<TraversalElement<V, G>>()
+    let leftmostTraversalElements : HashSet<TraversalElement<V, G>> =
+        HashSet<TraversalElement<V, G>>()
     // Output vertices, vertices with no out edges, edges with no targets
-    let rightmostTraversalElements : HashSet<TraversalElement<V, G>> = HashSet<TraversalElement<V, G>>()
+    let rightmostTraversalElements : HashSet<TraversalElement<V, G>> =
+        HashSet<TraversalElement<V, G>>()
     // Associates vertices with their positions in the inputs
-    let inputMap : HashMap<Vertex<V, G>, HashSet<Int64>> = HashMap<Vertex<V, G>, HashSet<Int64>>()
+    let inputMap : HashMap<Vertex<V, G>, HashSet<Int64>> =
+        HashMap<Vertex<V, G>, HashSet<Int64>>()
     // Associates vertices with their positions in the outputs
-    let outputMap : HashMap<Vertex<V, G>, HashSet<Int64>> = HashMap<Vertex<V, G>, HashSet<Int64>>()
-    // The 'heads' of the circuit: the waveforms that have been computed by rewriting
-    let headWaveforms : Array<Option<Edge<V, G>>>
+    let outputMap : HashMap<Vertex<V, G>, HashSet<Int64>> =
+        HashMap<Vertex<V, G>, HashSet<Int64>>()
     /**
      * Create an interfaced hypergraph with a given label
      *
@@ -113,12 +97,13 @@ public class InterfacedHypergraph<V, G>
         this.f = f
         this.inputs = inputs
         this.outputs = outputs
-        this.headWaveforms = Array<Option<Edge<V, G>>>(outputs.size){
-            i : Int64 => None
-        }
         this.label = label
-        this.leftmostTraversalElements.putAll(f.GetLeftmostTraversalElements())
-        this.rightmostTraversalElements.putAll(f.GetRightmostTraversalElements())
+        this.leftmostTraversalElements.putAll(
+            f.GetLeftmostTraversalElements()
+        )
+        this.rightmostTraversalElements.putAll(
+            f.GetRightmostTraversalElements()
+        )
         for(i in 0..inputs.size){
             let v = inputs[i].GetVertex()
             this.leftmostTraversalElements.put(VERTEX(v))
@@ -140,16 +125,6 @@ public class InterfacedHypergraph<V, G>
                 case Some(vs) => vs.put(i)
             }
             v.SetAsOutput(this, i)
-            match(v.GetInEdge()){
-                case None => ()
-                case Some(ec) =>
-                    let e = ec.GetEdge()
-                    match(e.GetLabel()) {
-                        case OPEN_WAVEFORM(signals) => this.headWaveforms[i] = Some(e)
-                        case _ => ()
-                    }
-
-            }
         }
         f.AddInterfacedOwner(this)
     }
@@ -169,23 +144,43 @@ public class InterfacedHypergraph<V, G>
         name : String
     ){
         this(
-            f,
-            inputs,
-            outputs,
+            f, inputs, outputs,
             COMPOSITE(
                 Specification<V>(
-                    name,
-                    map({ iv : InterfaceVertex<V, G> => Port(iv.GetWidth(), name: iv.GetName() )}, inputs),
-                    map({ iv : InterfaceVertex<V, G> => Port(iv.GetWidth(), name: iv.GetName() )}, outputs)
+                    name, map(
+                        { iv : InterfaceVertex<V, G> =>
+                            Port(iv.GetWidth(), name: iv.GetName() )
+                        }, inputs
+                    ), map(
+                        { iv : InterfaceVertex<V, G> =>
+                            Port(iv.GetWidth(), name: iv.GetName() )
+                        }, outputs
+                    )
                 )
             )
         )
     }
-    public func hashCode() : Int64 {
-        this.uniqueId
+    public operator func ==(right: InterfacedHypergraph<V, G>) : Bool {
+        this.GetId() == right.GetId()
+    }
+    public operator func !=(right : InterfacedHypergraph<V, G>) : Bool {
+        this.GetId() != right.GetId()
+    }
+    public func toString() : String {
+        let string = f.toString()
+        let inputString = PrintWidthArray(this.GetInputs())
+        let outputString = PrintWidthArray(this.GetOutputs())
+        "${string} (${inputString} -> ${outputString})"
+    }
+    public func toLongString() : String {
+        let string = f.toLongString()
+        "${string}\ninputs ${this.inputs}\noutputs ${this.outputs}"
     }
     public func GetId() : Int64 {
         this.uniqueId
+    }
+    public func GetLabel() : Label<V, G> {
+        this.label
     }
     public func GetGraph() : Hypergraph<V, G> {
         this.f
@@ -202,57 +197,61 @@ public class InterfacedHypergraph<V, G>
     public func GetOutputs() : Array<InterfaceVertex<V, G>> {
         this.outputs
     }
+    public func GetDelayEdges() : HashSet<Edge<V, G>> {
+        this.f.GetDelayEdges()
+    }
+    public func GetValueEdges() : HashSet<Edge<V, G>> {
+        this.f.GetValueEdges()
+    }
+    public func GetFeedbackConnections() : HashSet<EdgeConnection<V, G>> {
+        this.f.GetFeedbackConnections()
+    }
+    public func GetSequentialEdges() : HashSet<Edge<V, G>> {
+        this.f.GetSequentialEdges()
+    }
+    /**
+     * Add a vertex to a given set of traversal elements.
+     *
+     * @param traversalElements
+     * @param v
+     */
     func AddVertexToTraversalElements(
         traversalElements : HashSet<TraversalElement<V, G>>,
         v : Vertex<V, G>
     ) : Unit {
         traversalElements.put(VERTEX(v))
     }
+    /**
+     * Add a vertex to a set of traversal elements based on a given
+     * traversal direction.
+     *
+     * @param direction
+     * @param v
+     */
     public func AddVertexToTraversalElements(
         direction : TraversalDirection,
         v : Vertex<V, G>
     ) : Unit {
-        AddVertexToTraversalElements(
-            GetTraversalElements(direction),
-            v
-        )
+        AddVertexToTraversalElements(GetTraversalElements(direction), v)
     }
-    func RemoveVertexFromTraversalElements(
-        traversalElements : HashSet<TraversalElement<V, G>>,
-        v : Vertex<V, G>
-    ) : Unit {
-        traversalElements.remove(VERTEX(v))
-    }
-    public func RemoveVertexFromTraversalElements(
-        direction : TraversalDirection,
-        v : Vertex<V, G>
-    ) : Unit {
-        RemoveVertexFromTraversalElements(
-            GetTraversalElements(direction),
-            v
-        )
-    }
-    func RemoveEdgeFromTraversalElements(
-        traversalElements : HashSet<TraversalElement<V, G>>,
-        e : Edge<V, G>
-    ) : Unit {
-        traversalElements.remove(EDGE(e))
-    }
-    public func RemoveEdgeFromTraversalElements(
-        direction : TraversalDirection,
-        e : Edge<V, G>
-    ) : Unit {
-        RemoveEdgeFromTraversalElements(
-            GetTraversalElements(direction),
-            e
-        )
-    }
+    /**
+     * Add an edge to a given set of traversal elements.
+     *
+     * @param traversalElements
+     * @param e
+     */
     func AddEdgeToTraversalElements(
         traversalElements : HashSet<TraversalElement<V, G>>,
         e : Edge<V, G>
     ) : Unit {
         traversalElements.put(EDGE(e))
     }
+    /**
+     * Add an edge to a set of traversal elements given a traversal direction.
+     *
+     * @param direction
+     * @param e
+     */
     public func AddEdgeToTraversalElements(
         direction : TraversalDirection,
         e : Edge<V, G>
@@ -268,13 +267,73 @@ public class InterfacedHypergraph<V, G>
                 this.GetRightmostTraversalElements().put(elem)
         }
     }
+    /**
+     * Remove a vertex from a given set of traversal elements.
+     *
+     * @param traversalElements
+     * @param v
+     */
+    func RemoveVertexFromTraversalElements(
+        traversalElements : HashSet<TraversalElement<V, G>>,
+        v : Vertex<V, G>
+    ) : Unit {
+        traversalElements.remove(VERTEX(v))
+    }
+    /**
+     * Remove a vertex from a set of traversal elements based on a given
+     * traversal direction.
+     *
+     * @param direction
+     * @param v
+     */
+    public func RemoveVertexFromTraversalElements(
+        direction : TraversalDirection,
+        v : Vertex<V, G>
+    ) : Unit {
+        RemoveVertexFromTraversalElements(GetTraversalElements(direction), v)
+    }
+    /**
+     * Remove an edge from a given set of traversal elements.
+     *
+     * @param traversalElements
+     * @param e
+     */
+    func RemoveEdgeFromTraversalElements(
+        traversalElements : HashSet<TraversalElement<V, G>>,
+        e : Edge<V, G>
+    ) : Unit {
+        traversalElements.remove(EDGE(e))
+    }
+    /**
+     * Remove an edge from a set of traversal elements based on a given
+     * traversal direction.
+     *
+     * @param direction
+     * @param e
+     */
+    public func RemoveEdgeFromTraversalElements(
+        direction : TraversalDirection,
+        e : Edge<V, G>
+    ) : Unit {
+        RemoveEdgeFromTraversalElements(GetTraversalElements(direction), e)
+    }
     public func GetLeftmostTraversalElements() : HashSet<TraversalElement<V, G>> {
         this.leftmostTraversalElements
     }
     public func GetRightmostTraversalElements() : HashSet<TraversalElement<V, G>> {
         this.rightmostTraversalElements
     }
-    public func GetTraversalElements(direction : TraversalDirection) : HashSet<TraversalElement<V, G>> {
+    /**
+     * Get the starting traversal elements for a given traversal direction: i.e.
+     * left to right -> leftmost, right to left -> rightmost, both directions
+     * -> leftmost and rightmost.
+     *
+     * @param direction
+     * @return The appropriate set of traversal elements
+     */
+    public func GetTraversalElements(
+        direction : TraversalDirection
+    ) : HashSet<TraversalElement<V, G>> {
         let traversalElements = HashSet<TraversalElement<V, G>>()
         match(direction) {
             case LEFT_TO_RIGHT =>
@@ -287,26 +346,36 @@ public class InterfacedHypergraph<V, G>
         }
         traversalElements
     }
-    public func GetSequentialData() : SequentialData<V, G> {
-        this.f.GetSequentialData()
-    }
-    public func HasNonDelayGuardedFeedback() : Bool {
-        this.GetSequentialData().feedbackConnections.size != 0
-    }
+    /**
+     * @param i
+     * @return The ith input interface vertex
+     */
     public func GetInput(i : Int64) : InterfaceVertex<V, G> {
         AssertGraphHasMinimumInputs(this, i)
         this.inputs[i]
     }
+    /**
+     * @param i
+     * @return The ith output interface vertex
+     */
     public func GetOutput(i : Int64) : InterfaceVertex<V, G> {
         AssertGraphHasMinimumOutputs(this, i)
         this.outputs[i]
     }
+    /**
+     * @param v
+     * @return The indices of v in the inputs
+     */
     public func GetInputPositions(v : Vertex<V, G>) : HashSet<Int64> {
         match(this.inputMap.get(v)){
             case None => HashSet<Int64>()
             case Some(ps) => ps
         }
     }
+    /**
+     * @param v
+     * @return The indices of v in the outputs
+     */
     public func GetOutputPositions(v : Vertex<V, G>) : HashSet<Int64> {
         match(this.outputMap.get(v)){
             case None => HashSet<Int64>()
@@ -329,7 +398,7 @@ public class InterfacedHypergraph<V, G>
      * Perform operations associated with changing a vertex in an interface
      *
      * @param interfaceArray The interface being changed
-     * @param interfaceMap The map from vertices to their positions in the interface
+     * @param interfaceMap The map from vertices to their interface positions
      * @param i The index of the vertex in the interface
      * @param newVertex The new vertex
      */
@@ -364,11 +433,8 @@ public class InterfacedHypergraph<V, G>
     public func ReplaceInput(i : Int64, newInput : Vertex<V, G>) : Unit {
         this.GetInput(i).vertex.RemoveAsInput(this, i)
         UpdateInterface(
-            this.inputs,
-            this.inputMap,
-            this.leftmostTraversalElements,
-            i,
-            newInput
+            this.inputs, this.inputMap, this.leftmostTraversalElements,
+            i, newInput
         )
         newInput.SetAsInput(this, i)
         f.AddVertex(newInput)
@@ -382,25 +448,18 @@ public class InterfacedHypergraph<V, G>
     public func ReplaceOutput(i : Int64, newOutput : Vertex<V, G>) : Unit {
         this.GetOutput(i).vertex.RemoveAsOutput(this, i)
         UpdateInterface(
-            this.outputs,
-            this.outputMap,
-            this.rightmostTraversalElements,
-            i,
-            newOutput
+            this.outputs, this.outputMap, this.rightmostTraversalElements,
+            i, newOutput
         )
         newOutput.SetAsOutput(this, i)
         f.AddVertex(newOutput)
-        match(newOutput.GetInEdge()) {
-            case None => this.headWaveforms[i] = None
-            case Some(ec) =>
-                let edge = ec.GetEdge()
-                match(edge.GetLabel()) {
-                    case OPEN_WAVEFORM(signals) => this.headWaveforms[i] = Some(edge)
-                    case _ => this.headWaveforms[i] = None
-                }
-        }
     }
-    public func ReplaceOutputs(vs : ArrayList<Vertex<V, G>>) {
+    /**
+     * Replace all of the output vertices with new vertices.
+     *
+     * @param vs The array of vertices to replace the current outputs
+     */
+    public func ReplaceOutputs(vs : Array<Vertex<V, G>>) : Unit {
         for(i in 0..vs.size) {
             ReplaceOutput(i, vs[i])
         }
@@ -417,32 +476,11 @@ public class InterfacedHypergraph<V, G>
     public func AddVertex(v : Vertex<V, G>) : Unit {
         this.f.AddVertex(v)
     }
-    public func AddEdgeAndVertices(e : Edge<V, G>) : Unit {
-        this.f.AddEdgeAndVertices(e)
-    }
     public func RemoveEdge(e : Edge<V, G>) : Unit {
         this.f.RemoveEdge(e)
     }
     public func RemoveVertex(v : Vertex<V, G>) : Unit {
         this.f.RemoveVertex(v)
-    }
-    public func toString() : String {
-        let string = f.toString()
-        let inputString = PrintWidthArray(this.GetInputs())
-        let outputString = PrintWidthArray(this.GetOutputs())
-        "${string} (${inputString} -> ${outputString})"
-    }
-    public func toLongString() : String {
-        let string = f.toLongString()
-        "${string}\ninputs ${this.inputs}\noutputs ${this.outputs}"
-    }
-    public func ReplaceOutputVertices(newOutputs : ArrayList<Vertex<V, G>>) : Unit {
-        for(i in 0..this.outputs.size) {
-            let currentOutput = this.outputs[i]
-            this.outputs.set(
-                i, InterfaceVertex(newOutputs[i], name: currentOutput.name)
-            )
-        }
     }
     public func IsWellFormed() : Bool {
         let issues = this.WellFormednessCheck()
@@ -450,10 +488,10 @@ public class InterfacedHypergraph<V, G>
     }
     public func WellFormednessCheck() : ArrayList<WellformednessIssue<V, G>> {
         let issues = f.WellFormednessCheck()
-
         func InterfaceCheck(
             array : Array<InterfaceVertex<V, G>>,
-            notPresent : (Int64, InterfaceVertex<V, G>) -> WellformednessIssue<V, G>
+            notPresent : (Int64, InterfaceVertex<V, G>) ->
+                                WellformednessIssue<V, G>
         ) : Unit {
             for (i in 0..array.size) {
                 let v = array[i]
@@ -464,15 +502,18 @@ public class InterfacedHypergraph<V, G>
         }
         InterfaceCheck(this.inputs, { i, v => InputNotInGraph(i, v) })
         InterfaceCheck(this.outputs, { i, v => OutputNotInGraph(i, v) })
-
         issues
     }
-    public operator func ==(right: InterfacedHypergraph<V, G>) : Bool {
-        this.GetId() == right.GetId()
-    }
-    public operator func !=(right : InterfacedHypergraph<V, G>) : Bool {
-        this.GetId() != right.GetId()
-    }
+    /**
+     * Clone the underlying contents of this interfaced hypergraph.
+     *
+     * @return A tuple containing:
+     *            1) The new hypergraph
+     *            2) The new input vertices
+     *            3) The new output vertices
+     *            4) The map from old vertices to new vertices
+     *            5) The map from old edges to new edges
+     */
     public func CloneGraph()
         : (Hypergraph<V, G>,
             Array<InterfaceVertex<V, G>>,
@@ -486,51 +527,37 @@ public class InterfacedHypergraph<V, G>
         * vertices in a cloned hypergraph
         * @param ws The array of vertices
         */
-        func translateVertices(ws : Array<InterfaceVertex<V, G>>) : Array<InterfaceVertex<V, G>> {
+        func TranslateVertices(
+            ws : Array<InterfaceVertex<V, G>>
+        ) : Array<InterfaceVertex<V, G>> {
             map({ iv : InterfaceVertex<V, G> =>
                 let v = vertexMap[iv.GetVertex()]
                 let name = v.GetName()
                 InterfaceVertex(v, name: name)
             }, ws)
         }
-        let newInputs = translateVertices(this.inputs)
-        let newOutputs = translateVertices(this.outputs)
+        let newInputs = TranslateVertices(this.inputs)
+        let newOutputs = TranslateVertices(this.outputs)
         (newF, newInputs, newOutputs, vertexMap, edgeMap)
     }
+    /**
+     * Clone this interfaced hypergraph
+     *
+     * @return The new interfaced hypergraph
+     */
     public func Clone() : InterfacedHypergraph<V, G> {
-        let (newGraph, newInputs, newOutputs, vertexMap, edgeMap) = this.CloneGraph()
+        let (newGraph, newInputs, newOutputs, vertexMap, edgeMap) =
+            this.CloneGraph()
         InterfacedHypergraph(newGraph, newInputs, newOutputs, this.GetName())
     }
-    public func GetLabel() : Label<V, G> {
-        this.label
-    }
-    public func GetShortestHead() : Int64 {
-        fold_left(
-            { acc : Int64, cur : InterfaceVertex<V, G> =>
-                match(cur.GetVertex().GetInEdge()){
-                    case None => 0
-                    case Some(ec) =>
-                        let edge = ec.GetEdge()
-                        match(edge.GetLabel()) {
-                            case OPEN_WAVEFORM(signals) => signals.size
-                            case _ => 0
-                        }
-                }
-            },
-            Int64.Max,
-            this.GetOutputs()
-        )
-    }
-    public func GetHeadWaveform(i : Int64) : Option<Edge<V, G>> {
-        this.headWaveforms[i]
-    }
-    public func CollapseSubgraph(
-        inputs : Array<TentacleOrigin<V, G>>,
-        outputs : Array<TentacleOrigin<V, G>>,
-        name : String
-    ) : (InterfacedHypergraph<V, G>, Edge<V, G>) {
-        this.GetGraph().CollapseSubgraph(inputs, outputs, name)
-    }
+    /**
+     * Given arrays of inputs and outputs, collapse a subgraph of this graph
+     * into its own edge with a given label
+     *
+     * @param inputs
+     * @param outputs
+     * @param label
+     */
     public func CollapseSubgraph(
         inputs : Array<TentacleOrigin<V, G>>,
         outputs : Array<TentacleOrigin<V, G>>,
@@ -538,10 +565,39 @@ public class InterfacedHypergraph<V, G>
     ) : (InterfacedHypergraph<V, G>, Edge<V, G>) {
         this.GetGraph().CollapseSubgraph(inputs, outputs, label)
     }
+    /**
+     * Given arrays of inputs and outputs, collapse a subgraph of this graph
+     * into its own edge, labelled with a COMPOSITE label.
+     *
+     * @param inputs
+     * @param outputs
+     * @param name The name of the COMPOSITE label
+     */
+    public func CollapseSubgraph(
+        inputs : Array<TentacleOrigin<V, G>>,
+        outputs : Array<TentacleOrigin<V, G>>,
+        name : String
+    ) : (InterfacedHypergraph<V, G>, Edge<V, G>) {
+        this.GetGraph().CollapseSubgraph(inputs, outputs, name)
+    }
+    /**
+     * Given some edge connections, collapse a subgraph with inputs these
+     * edge connections and the inputs of the graph, and outputs these edge
+     * connections adn the outputs of the graph.
+     *
+     * @param connections
+     * @param label
+     * @return A tuple containing:
+     *           1) The array of vertices isolated from the subgraph
+     *           2) The newly collapsed edge
+     *           3) The collapsed subgraph
+     */
     public func IsolateTentacles(
         connections : Array<EdgeConnection<V, G>>,
         label : String
     ) : (Array<Vertex<V, G>>, Edge<V, G>, InterfacedHypergraph<V, G>) {
+        // Slice the relevant connections first so that the collapsing of
+        // the subgraph does not interfere with their identities
         let slicedVertices = map(
             { ec : EdgeConnection<V, G> => ec.SliceTentacle() },
             connections
@@ -553,7 +609,9 @@ public class InterfacedHypergraph<V, G>
                 if(i < connections.size) {
                     FROM_VERTEX(slicedVertices[i][1])
                 } else {
-                    FROM_VERTEX(this.GetInput(i - connections.size).GetVertex())
+                    FROM_VERTEX(
+                        this.GetInput(i - connections.size).GetVertex()
+                    )
                 }
         }
         let subgraphOutputs = Array<TentacleOrigin<V, G>>(subgraphCoarity){
@@ -561,21 +619,20 @@ public class InterfacedHypergraph<V, G>
                 if(i < connections.size) {
                     FROM_VERTEX(slicedVertices[i][0])
                 } else {
-                    FROM_VERTEX(this.GetOutput(i - connections.size).GetVertex())
+                    FROM_VERTEX(
+                        this.GetOutput(i - connections.size).GetVertex()
+                    )
                 }
         }
         let (newGraph, newEdge) = this.CollapseSubgraph(
-            subgraphInputs,
-            subgraphOutputs,
-            label
+            subgraphInputs, subgraphOutputs, label
         )
+        // Now that the subgraph has been collapsed, we can merge the
+        // vertices back together
         let mergedVertices = Array<Vertex<V, G>>(slicedVertices.size){
             i : Int64 =>
                 let primaryVertex = newEdge.GetSource(i)
-                primaryVertex.MergeVertex(
-                    newEdge.GetTarget(i),
-                    true
-                )
+                primaryVertex.MergeVertex(newEdge.GetTarget(i), true)
                 primaryVertex
 
         }
