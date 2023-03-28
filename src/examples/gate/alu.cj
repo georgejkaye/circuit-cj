@@ -20,11 +20,11 @@ func FullAdder() {
     let inputB = sig.UseWire(1)
     let inputC = sig.UseWire(1)
     // Combinational logic
-    let inputXor = XorGate(inputA, inputB)
-    let inputAnd = AndGate(inputA, inputB)
-    let carryXor = XorGate(inputC, inputXor)
-    let carryAnd = AndGate(inputC, inputXor)
-    let carryOr = OrGate(inputAnd, carryAnd)
+    let inputXor = UseXor(inputA, inputB)
+    let inputAnd = UseAnd(inputA, inputB)
+    let carryXor = UseXor(inputC, inputXor)
+    let carryAnd = UseAnd(inputC, inputXor)
+    let carryOr = UseOr(inputAnd, carryAnd)
     // Final subcircuit
     MakeSubcircuit([
             InterfaceWire(inputA, "A"),
@@ -51,19 +51,16 @@ func MultibitFullAdder(width : Int64) {
     let (sum, carry) = BitwiseRippleMap(
         { acc : Wire_, cur : Array<Wire_> =>
             UseSubcircuit_2(
-                FullAdder(),
+                MakeFullAdder(),
                 [cur[0], cur[1], acc]
             )
         }, c, [a, b]
     )
     // Final subcircuit
     MakeSubcircuit([
-            InterfaceWire(a, "A"),
-            InterfaceWire(b, "B"),
-            InterfaceWire(c, "C")
+            InterfaceWire(a, "A"), InterfaceWire(b, "B"), InterfaceWire(c, "C")
         ], [
-            InterfaceWire(sum, "S"),
-            InterfaceWire(carry, "C")
+            InterfaceWire(sum, "S"), InterfaceWire(carry, "C")
         ],
         "+_${a.GetWidth()}"
     )
@@ -79,26 +76,23 @@ public func AddSub(width : Int64) {
     let b = sig.UseWire(width)
     let c = sig.UseWire(1)
     // To allow subtraction
-    let xorGates = Xor(b, Replicate(c, width))
+    let xorGates = UseXor(b, Replicate(c, width))
     let (sum, carry) = UseSubcircuit_2(MultibitFullAdder(width), [a, b, c])
     let finalBitA = Msb(a)
     let finalBitB = Msb(xorGates)
     let finalBitSum = Msb(sum)
-    let not = NotGate(finalBitSum)
-    let overflow = Or(
-        And([not, finalBitB, finalBitA]),
-        And([finalBitSum, NotGate(finalBitB), NotGate(finalBitA)])
+    let not = UseNot(finalBitSum)
+    let overflow = UseOr(
+        UseAnd([not, finalBitB, finalBitA]),
+        UseAnd([finalBitSum, UseNot(finalBitB), UseNot(finalBitA)])
     )
     MakeSubcircuit([
-            InterfaceWire(a, "A"),
-            InterfaceWire(b, "B"),
-            InterfaceWire(c, "C")
-        ], [
-            InterfaceWire(sum, "Sum"),
-            InterfaceWire(overflow, "Overflow"),
-            InterfaceWire(carry, "Carry")
-        ],
-        "ADD/SUB"
+        InterfaceWire(a, "A"), InterfaceWire(b, "B"), InterfaceWire(c, "C")
+    ], [
+        InterfaceWire(sum, "Sum"), InterfaceWire(overflow, "Overflow"),
+        InterfaceWire(carry, "Carry")
+    ],
+    "ADD/SUB"
     )
 }
 /**
@@ -114,28 +108,24 @@ public func ALU(w : Int64){
     let c0 = sig.UseWire(1)
     let c1 = sig.UseWire(1)
     // Connect the inputs to the three computation blocks
-    let and = And(a, b)
-    let or = Or(a, b)
+    let and = UseAnd(a, b)
+    let or = UseOr(a, b)
     let (sum, overflow, carry) = UseSubcircuit_3(AddSub(w), [a, b, c0])
     // Use the multiplexers to decide which computation to return
     let mux1 = Mux2(c1, and, or)
     let mux2 = Mux2(c1, mux1, sum)
     // Compute the outputs appropriately
     let result = mux2
-    let notzero = Or(result)
-    let zero = Not(notzero)
+    let notzero = UseOr(result)
+    let zero = UseNot(notzero)
     let negative = Msb(result)
     // Put everything together
     MakeSubcircuit([
-            InterfaceWire(a, "A"),
-            InterfaceWire(b, "B"),
-            InterfaceWire(c0, "C0"),
-            InterfaceWire(c1, "C1")
+            InterfaceWire(a, "A"), InterfaceWire(b, "B"),
+            InterfaceWire(c0, "C0"), InterfaceWire(c1, "C1")
         ], [
-            InterfaceWire(result, "Result"),
-            InterfaceWire(zero, "Zero"),
-            InterfaceWire(negative, "Neg"),
-            InterfaceWire(overflow, "Overflow"),
+            InterfaceWire(result, "Result"), InterfaceWire(zero, "Zero"),
+            InterfaceWire(negative, "Neg"), InterfaceWire(overflow, "Overflow"),
             InterfaceWire(carry, "Carry")
         ],
         "ALU"

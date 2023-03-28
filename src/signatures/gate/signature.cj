@@ -1,29 +1,24 @@
 /**
- * signature/gate/values.cj
+ * signature/gate/signature.cj
  *
- * The values for gate level circuits
+ * The 'belnap signature' for gate level circuits
  */
 package signatures.gate
-
 from std import collection.ArrayList, collection.HashSet
-
+from std import math.log2, math.ceil
+import assertions.*
 /**
  * Enum of Belnap values (four valued logic)
  */
 public enum GateLevelValue {
-    | NONE
-    | TRUE
-    | FALSE
-    | BOTH
+    | NONE | TRUE | FALSE | BOTH
 }
 /**
  * Instantiate Belnap values as a type of value symbols
  */
 extend GateLevelValue
-    <: ValueSymbol<GateLevelValue> &
-        LessOrEqual<GateLevelValue> &
-        Equatable<GateLevelValue> &
-        Decimal<GateLevelValue>
+    <: ValueSymbol<GateLevelValue> & LessOrEqual<GateLevelValue> &
+        Equatable<GateLevelValue> & Decimal<GateLevelValue>
 {
     public static func GetDisconnected() : GateLevelValue {
         NONE
@@ -86,32 +81,26 @@ extend GateLevelValue
             case _ => false
         }
     }
-    public static func DecToSignal(x : Int64, w : Int64, signed : Bool) : Signal<GateLevelValue> {
-        if(signed) {
-            GateLevelValue.SignedDecToSignal(x, w)
-        } else {
-            GateLevelValue.UnsignedDecToSignal(x, w)
-        }
-    }
     /**
-    * Convert a decimal number to a list of truth values
-    * The list is ordered with the lsb first
-    * e.g. 10 => [0, 1, 0, 1, 0, ...]
-    * If signed, the negative numbers are represented in twos complement
-    * @param w      The width of the resulting list
-    * @param x      The decimal number to convert
-    */
+     * Convert a decimal number to a list of truth values
+     * The list is ordered with the lsb first
+     * e.g. 10 => [0, 1, 0, 1, 0, ...]
+     *
+     * @param w The width of the resulting list
+     * @param x The decimal number to convert
+     */
     public static func UnsignedDecToSignal(
         x : Int64, w : Int64
     ) : Signal<GateLevelValue> {
         AssertNonNegative(x)
-        let required = log2Ceil(x+1)
-        AssertEnoughBits(w, required)
+        let required = Int64(ceil(log2(Float64(x+1))))
+        AssertAtLeast(w, required)
         // Set up the list
         let bin = Array<GateLevelValue>(w, {x : Int64 => FALSE})
         var num = x
-        // Divide by two w times, setting the remainder to the ith bit of the list
-        // If we run out of w before we run out of list, the msbs will be ignored
+        // Divide by two w times, setting the remainder to the ith bit of the
+        // list. If we run out of w before we run out of list, the msbs will be
+        // ignored
         for(i in 0..w){
             let rem = if(num % 2 == 1){ TRUE } else { FALSE }
             bin.set(i, rem)
@@ -120,10 +109,11 @@ extend GateLevelValue
         return Signal(bin)
     }
     /**
-    * 'Add one' to an array of booleans, i.e. flip the lowest bit and
-    * propagate the changes throughout the list
-    * @param x The array of booleans
-    */
+     * 'Add one' to an array of booleans, i.e. flip the lowest bit and
+     * propagate the changes throughout the list
+     *
+     * @param x The array of booleans
+     */
     static func AddOne(x : Array<GateLevelValue>) : Unit {
         for (i in 0..(x.size - 1)) {
             if (x[i].IsTrue()) {
@@ -135,21 +125,24 @@ extend GateLevelValue
         }
     }
     /**
-    * Invert an array of bools, i.e. flip each bit
-    * @param x The array of booleans
-    */
+     * Invert an array of bools, i.e. flip each bit
+     *
+     * @param x The array of booleans
+     */
     static func Invert(x : Array<GateLevelValue>) : Unit {
         for (i in 0..(x.size)){
             x[i] = x[i].Negate()
         }
     }
     /**
-    * Convert a decimal number to a bitstring of a fixed length,
-    * interpreted as an array of booleans
-    * @param x The number to convert
-    * @param w The width of the bitstring
-    * @return The corresponding bitstring
-    */
+     * Convert a decimal number to a list of truth values in two's complement
+     * The list is ordered with the lsb first
+     * e.g. 10 => [0, 1, 0, 1, 0, ...]
+     *
+     * @param x The number to convert
+     * @param w The width of the bitstring
+     * @return The corresponding bitstring
+     */
     public static func SignedDecToSignal(
         x : Int64, w : Int64
     ) : Signal<GateLevelValue> {
@@ -157,6 +150,24 @@ extend GateLevelValue
         Invert(bin)
         AddOne(bin)
         Signal(bin)
+    }
+    /**
+     * Convert a decimal number to a list of truth values
+     * The list is ordered with the lsb first
+     * e.g. 10 => [0, 1, 0, 1, 0, ...]
+     * If signed, the number is represented in two's complement.
+     *
+     * @param x The number to convert
+     * @param w The width of the bitstring
+     * @param signed
+     * @return The corresponding bitstring
+     */
+    public static func DecToSignal(x : Int64, w : Int64, signed : Bool) : Signal<GateLevelValue> {
+        if(signed) {
+            GateLevelValue.SignedDecToSignal(x, w)
+        } else {
+            GateLevelValue.UnsignedDecToSignal(x, w)
+        }
     }
 }
 /**
@@ -170,7 +181,8 @@ public enum GateLevelPrimitive {
  */
 type BelnapWire = Wire<GateLevelValue, GateLevelPrimitive>
 type BelnapCircuit = Hypergraph<GateLevelValue, GateLevelPrimitive>
-type BelnapInterfacedCircuit = InterfacedHypergraph<GateLevelValue, GateLevelPrimitive>
+type BelnapInterfacedCircuit =
+    InterfacedHypergraph<GateLevelValue, GateLevelPrimitive>
 /**
  * Instantiate GateLevelPrimitive as a type of gate symbols
  */
@@ -252,6 +264,7 @@ let gateLevelLatticeStructure = FiniteLattice(
 )
 /**
  * Get the logical NOT of a values
+ *
  * @param v The argument
  * @return The logical AND of the argument
  */
@@ -265,6 +278,7 @@ func not(v: GateLevelValue) {
 }
 /**
  * Get the logical AND of two values
+ *
  * @param lhs The lhs argument
  * @param rhs The rhs argument
  * @return The logical AND of the two arguments
@@ -287,6 +301,7 @@ func and(lhs: GateLevelValue, rhs: GateLevelValue) {
 }
 /**
  * Get the logical OR of two values
+ *
  * @param lhs The lhs argument
  * @param rhs The rhs argumnet
  * @return The logical OR of the two arguments
@@ -309,6 +324,7 @@ func or(lhs: GateLevelValue, rhs: GateLevelValue) {
 }
 /**
  * Get the logical XOR of two values
+ *
  * @param lhs The lhs argument
  * @param rhs The rhs argumnet
  * @return The logical OR of the two arguments
@@ -318,8 +334,9 @@ func xor(lhs: GateLevelValue, rhs: GateLevelValue) {
 }
 /**
  * Given a Belnap gate, interpret it as an appropriate function on Belnap values
+ *
  * @param g The Belnap gate
- * @return The function from an array of Belnap values to an array of Belnap values
+ * @return The function representing the interpretation of the gate
  */
 func gateLevelInterpretation(g: GateLevelPrimitive) :
     (Array<Array<GateLevelValue>>) -> Array<Array<GateLevelValue>>
@@ -341,6 +358,7 @@ func gateLevelInterpretation(g: GateLevelPrimitive) :
 }
 /**
  * Convert an array of Belnap values to the corresponding number, if appropriate
+ *
  * @param values The array of Belnap values
  * @param signed Whether to interpret this as a signed value
  * @return An option containing the number represented, if appropriate

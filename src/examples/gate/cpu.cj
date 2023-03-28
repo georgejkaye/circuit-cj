@@ -33,12 +33,12 @@ func ALU() {
     let s3 = sig.UseWire(1)
     let s4 = sig.UseWire(1)
     // Combinational logic
-    let not1 = Not(s4)
+    let not1 = UseNot(s4)
     let rep1 = Replicate(not1, 8)
-    let inv1 = Xor(b, Replicate(s3, 8))
-    let and1 = And(rep1, inv1)
+    let inv1 = UseXor(b, Replicate(s3, 8))
+    let and1 = UseAnd(rep1, inv1)
     let (sum, carry) = UseRippleAdder(a, and1, s2)
-    let and2 = And(a, b)
+    let and2 = UseAnd(a, b)
     let mux = Mux4(s1, s0, sum, and2, a, b)
     // Final subcircuit
     MakeSubcircuit(
@@ -241,18 +241,18 @@ func InstructionDecoder() {
     // Split the wire into eight bits for separate processing
     let bits = Split(a)
     // Determing the instruction from the bits
-    let input = And([bits[7], Not(bits[6]), bits[5], Not(bits[4])])
-    let output = And([bits[7], bits[6], bits[5], Not(bits[4])])
-    let load = And([Not(bits[7]), Not(bits[6]), Not(bits[5]), Not(bits[4])])
-    let add = And([Not(bits[7]), bits[6], Not(bits[5]), Not(bits[4])])
-    let jump = And([bits[7], Not(bits[6]), Not(bits[5]), Not(bits[4])])
-    let jump_condition = And([bits[7], Not(bits[6]), Not(bits[5]), bits[4]])
-    let sub = And([Not(bits[7]), bits[6], bits[5], Not(bits[4])])
-    let bitand = And([Not(bits[7]), Not(bits[6]), Not(bits[5]), bits[4]])
-    let jumpz = And([jump_condition, Not(bits[3]), Not(bits[2])])
-    let jumpnz = And([jump_condition, Not(bits[3]), bits[2]])
-    let jumpc = And([jump_condition, bits[3], Not(bits[2])])
-    let jumpnc = And([jump_condition, bits[3], bits[2]])
+    let input = UseAnd([bits[7], UseNot(bits[6]), bits[5], UseNot(bits[4])])
+    let output = UseAnd([bits[7], bits[6], bits[5], UseNot(bits[4])])
+    let load = UseAnd([UseNot(bits[7]), UseNot(bits[6]), UseNot(bits[5]), UseNot(bits[4])])
+    let add = UseAnd([UseNot(bits[7]), bits[6], UseNot(bits[5]), UseNot(bits[4])])
+    let jump = UseAnd([bits[7], UseNot(bits[6]), UseNot(bits[5]), UseNot(bits[4])])
+    let jump_condition = UseAnd([bits[7], UseNot(bits[6]), UseNot(bits[5]), bits[4]])
+    let sub = UseAnd([UseNot(bits[7]), bits[6], bits[5], UseNot(bits[4])])
+    let bitand = UseAnd([UseNot(bits[7]), UseNot(bits[6]), UseNot(bits[5]), bits[4]])
+    let jumpz = UseAnd([jump_condition, UseNot(bits[3]), UseNot(bits[2])])
+    let jumpnz = UseAnd([jump_condition, UseNot(bits[3]), bits[2]])
+    let jumpc = UseAnd([jump_condition, bits[3], UseNot(bits[2])])
+    let jumpnc = UseAnd([jump_condition, bits[3], bits[2]])
     // Final subcircuit
     MakeSubcircuit(
         [InterfaceWire(a, "A")],
@@ -283,18 +283,18 @@ func InstructionDecoder() {
  */
 func Decoder_InstructionDecoder(ir: Wire_, decode: Wire_, execute: Wire_) {
     let instruction_decoder = UseSubcircuit(InstructionDecoder(), [ir])
-    let phase = Or(decode, execute)
-    let add = And(instruction_decoder[0], phase)
-    let load = And(instruction_decoder[1], phase)
-    let output = And(instruction_decoder[2], phase)
-    let input = And(instruction_decoder[3], phase)
-    let jumpz = And(instruction_decoder[4], phase)
-    let jump = And(instruction_decoder[5], phase)
-    let jumpnz = And(instruction_decoder[6], phase)
-    let jumpc = And(instruction_decoder[7], phase)
-    let jumpnc = And(instruction_decoder[8], phase)
-    let sub = And(instruction_decoder[9], phase)
-    let bitand = And(instruction_decoder[10], phase)
+    let phase = UseOr(decode, execute)
+    let add = UseAnd(instruction_decoder[0], phase)
+    let load = UseAnd(instruction_decoder[1], phase)
+    let output = UseAnd(instruction_decoder[2], phase)
+    let input = UseAnd(instruction_decoder[3], phase)
+    let jumpz = UseAnd(instruction_decoder[4], phase)
+    let jump = UseAnd(instruction_decoder[5], phase)
+    let jumpnz = UseAnd(instruction_decoder[6], phase)
+    let jumpc = UseAnd(instruction_decoder[7], phase)
+    let jumpnc = UseAnd(instruction_decoder[8], phase)
+    let sub = UseAnd(instruction_decoder[9], phase)
+    let bitand = UseAnd(instruction_decoder[10], phase)
     (add, load, output, input, jumpz, jump, jumpnz, jumpc, jumpnc, sub, bitand)
 }
 /**
@@ -320,7 +320,7 @@ func Decoder_SequenceGenerator(
     let decode = sequence[1]
     let execute = sequence[2]
     let increment = sequence[3]
-    let en_st = Or([add, sub, bitand])
+    let en_st = UseOr([add, sub, bitand])
     let reg = UseSubcircuit_1(
         Register(2), [Combine(carry, zero), clk, en_st, clr]
     )
@@ -349,21 +349,16 @@ func Decoder_Jump(
     zero_reg: Wire_, jumpnz: Wire_, jumpc: Wire_, carry_reg: Wire_,
     jumpnc: Wire_, jump: Wire_
 ) {
-    let is_jump = Or(
+    let is_jump = UseOr(
         [
-            And(jumpz, zero_reg),
-            And(jumpnz, Not(zero_reg)),
-            And(jumpc, carry_reg),
-            And(jumpnc, Not(zero_reg)),
+            UseAnd(jumpz, zero_reg), UseAnd(jumpnz, UseNot(zero_reg)),
+            UseAnd(jumpc, carry_reg), UseAnd(jumpnc, UseNot(zero_reg)),
             jump
         ]
     )
-    let jump_not_taken = FDC(Not(is_jump), clk, clr)
-    let en_pc = Buf(
-        Or(
-            And(increment, jump_not_taken),
-            And(execute, is_jump)
-        )
+    let jump_not_taken = FDC(UseNot(is_jump), clk, clr)
+    let en_pc = UseBuf(
+        UseOr(UseAnd(increment, jump_not_taken), UseAnd(execute, is_jump))
     )
     en_pc
 }
@@ -398,41 +393,32 @@ func Decoder() {
         jumpnc, jump
     )
     // Use the RAM
-    let ram = Buf(And(execute, output))
+    let ram = UseBuf(UseAnd(execute, output))
     // Compute the output wires
-    let is_jump = Or([jump, jumpz, jumpnz, jumpc, jumpnc])
-    let alu_s0 = Buf(Or([bitand, input, load, is_jump]))
-    let alu_s1 = Buf(Or([load, input, output, is_jump]))
-    let alu_s2 = Buf(Or(increment, sub))
-    let alu_s3 = Buf(sub)
-    let alu_s4 = Buf(increment)
-    let muxa = Buf(increment)
-    let muxb = Buf(Or([load, add, bitand, sub]))
-    let muxc = Buf(Or([input, output]))
-    let en_in = Buf(fetch)
-    let en_da = Buf(And(execute, Or([load, add, sub, bitand, input])))
+    let is_jump = UseOr([jump, jumpz, jumpnz, jumpc, jumpnc])
+    let alu_s0 = UseBuf(UseOr([bitand, input, load, is_jump]))
+    let alu_s1 = UseBuf(UseOr([load, input, output, is_jump]))
+    let alu_s2 = UseBuf(UseOr(increment, sub))
+    let alu_s3 = UseBuf(sub)
+    let alu_s4 = UseBuf(increment)
+    let muxa = UseBuf(increment)
+    let muxb = UseBuf(UseOr([load, add, bitand, sub]))
+    let muxc = UseBuf(UseOr([input, output]))
+    let en_in = UseBuf(fetch)
+    let en_da = UseBuf(UseAnd(execute, UseOr([load, add, sub, bitand, input])))
     MakeSubcircuit(
         [
-            InterfaceWire(ir, "IR"),
-            InterfaceWire(carry, "Carry"),
-            InterfaceWire(zero, "Zero"),
-            InterfaceWire(clk, "CLK"),
-            InterfaceWire(ce, "CE"),
-            InterfaceWire(clr, "CLR")
+            InterfaceWire(ir, "IR"), InterfaceWire(carry, "Carry"),
+            InterfaceWire(zero, "Zero"), InterfaceWire(clk, "CLK"),
+            InterfaceWire(ce, "CE"), InterfaceWire(clr, "CLR")
         ],
         [
-            InterfaceWire(muxa, "MUXA"),
-            InterfaceWire(muxb, "MUXB"),
-            InterfaceWire(muxc, "MUXC"),
-            InterfaceWire(en_da, "EN_DA"),
-            InterfaceWire(en_pc, "EN_PC"),
-            InterfaceWire(en_in, "EN_IN"),
-            InterfaceWire(ram, "RAM"),
-            InterfaceWire(alu_s0, "ALU_S0"),
-            InterfaceWire(alu_s1, "ALU_S1"),
-            InterfaceWire(alu_s2, "ALU_S2"),
-            InterfaceWire(alu_s3, "ALU_S3"),
-            InterfaceWire(alu_s4, "ALU_S4")
+            InterfaceWire(muxa, "MUXA"), InterfaceWire(muxb, "MUXB"),
+            InterfaceWire(muxc, "MUXC"), InterfaceWire(en_da, "EN_DA"),
+            InterfaceWire(en_pc, "EN_PC"), InterfaceWire(en_in, "EN_IN"),
+            InterfaceWire(ram, "RAM"), InterfaceWire(alu_s0, "ALU_S0"),
+            InterfaceWire(alu_s1, "ALU_S1"), InterfaceWire(alu_s2, "ALU_S2"),
+            InterfaceWire(alu_s3, "ALU_S3"), InterfaceWire(alu_s4, "ALU_S4")
         ],
         "decoder"
     )
@@ -448,7 +434,7 @@ public func SimpleCPU() {
     let clk = sig.UseWire(1)
     let vcc = sig.UseWire(1)
     // The clear signal is a function of the inputs
-    let clr = FD(Not(nclr), clk)
+    let clr = FD(UseNot(nclr), clk)
     // Instruction register
     let instruction = sig.UseWire(16)
     let en_in = sig.UseWire(1)
@@ -462,7 +448,7 @@ public func SimpleCPU() {
     let carry = sig.UseWire(1)
     let zero = sig.UseWire(1)
     let decoder = UseSubcircuit(
-        Decoder(), [ir_decoder, carry, zero, clk, Buf(vcc), clr]
+        Decoder(), [ir_decoder, carry, zero, clk, UseBuf(vcc), clr]
     )
     let muxa = decoder[0]
     let muxb = decoder[1]
@@ -489,17 +475,17 @@ public func SimpleCPU() {
         ALU(), [muxi, muxd, alu_s0, alu_s1, alu_s2, alu_s3, alu_s4]
     )
     Feedback(alu_cout, carry)
-    Feedback(Nor(alu_z), zero)
+    Feedback(UseNor(alu_z), zero)
     Feedback(alu_z, counter_d)
     // Accumulator
     let acc = UseSubcircuit_1(Register(8), [alu_z, clk, en_da, clr])
     Feedback(acc, acc_fb)
     // RAM
     let cpu_do = Combine(acc, sig.UseConstantZero(width: 8))
-    let cpu_di = RAM(cpu_do, addr, ram_we, Not(clk))
+    let cpu_di = RAM(cpu_do, addr, ram_we, UseNot(clk))
     Feedback(cpu_di, instruction)
     // Serial out
-    let serial_out = Not(FDCE(Lsb(cpu_do), And(addr), clk, clr))
+    let serial_out = UseNot(FDCE(Lsb(cpu_do), UseAnd(addr), clk, clr))
     // Make the subcircuit
     MakeSubcircuit(
         [

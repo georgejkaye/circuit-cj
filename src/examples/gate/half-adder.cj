@@ -16,15 +16,13 @@ public func HalfAdder(){
     let a = sig.UseWire(1)
     let b = sig.UseWire(1)
     // Now we feed the inputs to the two gates
-    let carry = AndGate(a, b)
-    let sum = XorGate(a, b)
+    let carry = UseAnd(a, b)
+    let sum = UseXor(a, b)
     // We need to return both the carry and the sum
     MakeSubcircuit([
-            InterfaceWire(a, "A"),
-            InterfaceWire(b, "B")
+            InterfaceWire(a, "A"), InterfaceWire(b, "B")
         ], [
-            InterfaceWire(sum, "S"),
-            InterfaceWire(carry, "C")
+            InterfaceWire(sum, "S"), InterfaceWire(carry, "C")
         ],
         "half adder"
     )
