@@ -44,7 +44,7 @@ public class Wire<V, G>
         this.vertex
     }
     public func GetGraph() : Hypergraph<V, G> {
-        this.GetGraph()
+        this.vertex.GetGraph()
     }
 }
 public interface ContainsWire<V, G> <: HasWidth & ContainsVertex<V, G>
@@ -406,7 +406,7 @@ public func Replicate<V, G>(a : Wire<V, G>, w : Int64) : Wire<V, G>
  */
 public class InterfaceWire<V, G>
     <: ContainsWire<V, G> & ToString & ContainsVertex<V, G> &
-        Socket & GraphElement<V, G>
+        HasPort & GraphElement<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -441,14 +441,14 @@ public class InterfaceWire<V, G>
     public func GetName() : Option<String> {
         this.name
     }
-    public operator func ==(rhs : Socket) {
+    public operator func ==(rhs : HasPort) {
         this.wire.GetWidth() == rhs.GetWidth() && this.name == rhs.GetName()
     }
-    public operator func !=(rhs : Socket) {
+    public operator func !=(rhs : HasPort) {
         !(this == rhs)
     }
     public func GetGraph() : Hypergraph<V, G> {
-        this.GetGraph()
+        this.wire.GetGraph()
     }
 }
 /**
