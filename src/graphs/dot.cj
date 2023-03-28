@@ -873,20 +873,20 @@ public func DrawHypergraph<V, G>(
     let vertexOptionsString = DrawOptions("node", vertexNodeOpts)
     elementContent.append(vertexOptionsString)
     for(v in f.GetVertices()){
-        println("Drawing vertex ${v}")
         DrawVertex(v, elementContent, debug)
         // Draw the connections to targets
         match(v.GetInEdge()) {
             case Some(ec) =>
                 let eText = "e${ec.GetEdge().GetId()}:e${ec.GetIndex()}"
-                if(depth == 0 || !ec.GetEdge().HasSubgraph()) {
+                if(depth == 0 || !ec.GetEdge().HasSubgraph() ||
+                            !ec.GetEdge().GetLabel().IsExpandable()
+                ) {
                     DrawConnection(v, eText, false, connectionContent, false)
                 }
             case None => ()
         }
         // Draw the connections to sources
         for(ec in v.GetOutEdges()) {
-            println("Out edge ${ec}")
             let eText = "e${ec.GetEdge().GetId()}:w${ec.GetIndex()}"
             if(depth == 0 || !ec.GetEdge().HasSubgraph()) {
                 let isFeedback =
