@@ -1,32 +1,21 @@
 /**
  * rewrite/rule.cj
  *
- * Contains the definition of a rewrite rule
+ * Contains the definition of rewrite rules
  *
  * @author George Kaye
  * @since 0.3
  */
-
 package rewrite
-
 from std import collection.ArrayList
-
 import components.*
 import utils.*
-
 /**
  * Entry point to a rewrite rule: the category of label that triggers
  * a rewrite attempt
  */
 public enum EntryPoint {
-    | VALUE
-    | PRIMITIVE
-    | NJOIN
-    | ENHANCED
-    | SUBGRAPH
-    | ANY
-    | BUNDLE
-    | BLACKBOX
+    | VALUE | PRIMITIVE | NJOIN | ENHANCED | SUBGRAPH | ANY | BUNDLE | BLACKBOX
 }
 /**
  * A rewrite rule consists of a name, an 'entry point' which is the class of
@@ -63,7 +52,7 @@ public struct RewriteRule<V, G>
         let label = e.GetLabel()
         match(this.entryPoint) {
             case ANY => true
-            case VALUE => label.IsValue()
+            case VALUE => label.IsSignal()
             case PRIMITIVE => label.IsPrimitive()
             case NJOIN => label.IsJoin()
             case ENHANCED => label.IsEnhanced()
@@ -99,6 +88,52 @@ public struct RewriteRule<V, G>
         this.rewrite(e, f)
     }
 }
+/**
+ * Perform actions associated with removing an edge during a rewrite: removes
+ * the edge from the graph and puts it in a set of removed elements.
+ *
+ * @param e The edge
+ * @param f The graph
+ * @param removedElements
+ */
+func RemoveEdge<V, G>(
+    e : Edge<V, G>, f : InterfacedHypergraph<V, G>,
+    removedElements : HashSet<TraversalElement<V, G>>
+) : Unit
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    f.RemoveEdge(e)
+    removedElements.put(EDGE(e))
+}
+/**
+ * Perform actions associated with removing an vertex during a rewrite: removes
+ * the vertex from the graph and puts it in a set of removed elements.
+ *
+ * @param v The vertex
+ * @param f The graph
+ * @param removedElements
+ */
+func RemoveVertex<V, G>(
+    v : Vertex<V, G>, f : InterfacedHypergraph<V, G>,
+    removedElements : HashSet<TraversalElement<V, G>>
+) : Unit
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    f.RemoveVertex(v)
+    removedElements.put(VERTEX(v))
+}
+/**
+ * Check if the targets of an edge have the same number of outedges, so we
+ * can apply a fork-like rule.
+ *
+ * @param e
+ * @param f The interfaced owner
+ * @return Whether the fork condition is satisfied
+ */
 func ForkCondition<V, G>(
     e : Edge<V, G>,
     f : InterfacedHypergraph<V, G>
@@ -108,13 +143,13 @@ func ForkCondition<V, G>(
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     if(e.GetCoarity() > 0){
-        let firstTarget = e.GetTargetVertex(0)
+        let firstTarget = e.GetTarget(0)
         let outboundTentacles = firstTarget.GetOutTentacles(f)
         if(outboundTentacles < 2) {
             return false
         }
         for(i in 1..e.GetCoarity()) {
-            let currentTarget = e.GetTargetVertex(i)
+            let currentTarget = e.GetTarget(i)
             if(outboundTentacles != currentTarget.GetOutTentacles(f)) {
                 return false
             }
@@ -151,17 +186,12 @@ func PropagateAcrossFork<V, G>(
         let targetDestinations = outTentacles[i]
         // Make the targets for this edge
         let newTargets = map({
-            t : Tentacle<V, G> =>
-                let v = f.GetGraph().AddNewVertex(t.GetWidth())
-                Tentacle(v, false, false)
+            v : Vertex<V, G> => f.GetGraph().AddNewVertex(v.GetWidth())
         }, e.GetTargets())
         // Make the edge copy: it forks the original sources rather than targets
         let edgeCopy = Edge(
-            e.GetLabel(),
-            e.GetSources(),
-            newTargets,
-            e.GetSubgraph(),
-            e.GetGraph()
+            e.GetLabel(), e.GetSources(),newTargets,
+            e.GetSubgraph(), e.GetGraph()
         )
         nextElements.put(EDGE(edgeCopy))
         // Send tentacles to each target vertex
@@ -173,9 +203,7 @@ func PropagateAcrossFork<V, G>(
                 case Some(tt) =>
                     match(tt) {
                         case EDGE_TENTACLE(ec) =>
-                            ec.GetEdge().SetSource(
-                                ec.GetIndex(), targetVertex, false
-                            )
+                            ec.GetEdge().SetSource(ec.GetIndex(), targetVertex)
                         case INTERFACE_TENTACLE(f, i) =>
                             f.ReplaceOutput(i, targetVertex)
                     }
@@ -204,7 +232,7 @@ func GetOutgoingTentacles<V, G>(
 {
     let tentacleTargets = ArrayList<TentacleType<V, G>>()
     // Values always have precisely one target
-    let target = e.GetTargetVertex(0)
+    let target = e.GetTarget(0)
     for(ec in target.GetOutEdges()) {
         tentacleTargets.append(EDGE_TENTACLE(ec))
     }
@@ -258,17 +286,16 @@ func ApplyPreconditions<V, G>(e : Edge<V, G>) : Bool
     // Check that none of the values are forked
     // If they are, we need to fork them first!
     for (v in sources) {
-        if(v.vertex.GetOutEdges().size != 1){
+        if(v.GetOutEdges().size != 1){
             return false
         }
     }
     // Check arguments are all values
-    for(t in sources) {
-        let v = t.GetVertex()
+    for(v in sources) {
         match(v.GetInEdge()){
             case None => return false
             case Some(ec) =>
-                if(!ec.GetEdge().GetLabel().IsValue()) {
+                if(!ec.GetEdge().GetLabel().IsSignal()) {
                     return false
                 }
         }
@@ -282,18 +309,20 @@ func ApplyPreconditions<V, G>(e : Edge<V, G>) : Bool
  * @param e The edge
  * @return An array of the argument edges and an array of the argument values
  */
-func GetArgs<V, G>(e : Edge<V, G>) : (Array<Option<Edge<V, G>>>, Array<Option<Array<V>>>)
+func GetArgs<V, G>(
+    e : Edge<V, G>
+) : (Array<Option<Edge<V, G>>>, Array<Option<Array<V>>>)
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let argumentEdges = map({
-            t : Tentacle<V, G> =>
-                match(t.vertex.GetInEdge()) {
+            v : Vertex<V, G> =>
+                match(v.GetInEdge()) {
                     case None => None<Edge<V, G>>
                     case Some(ec) =>
                         let edge = ec.GetEdge()
-                        if(edge.GetLabel().IsValue()) {
+                        if(edge.GetLabel().IsSignal()) {
                             Some(edge)
                         } else {
                             None<Edge<V, G>>
@@ -311,6 +340,15 @@ func GetArgs<V, G>(e : Edge<V, G>) : (Array<Option<Edge<V, G>>>, Array<Option<Ar
     )
     (argumentEdges, argumentValues)
 }
+/**
+ * Given an array of value symbols, create a value edge if the array has length
+ * 1 or a signal edge edge with appropriate subgraph otherwise.
+ *
+ * @param vs
+ * @param targets The targets the new edge will have
+ * @param owner
+ * @return the new edge
+ */
 func MakeValueOrSignal<V, G>(
     vs : Array<V>,
     targets : Array<Vertex<V, G>>,
@@ -355,17 +393,13 @@ func MakeValueOrSignal<V, G>(
     // Each argument edge must be discarded
     for(arg in args) {
         let actualArg = arg.getOrThrow()
-        f.RemoveEdge(actualArg)
-        removedEdges.put(EDGE(actualArg))
+        RemoveEdge(actualArg, f, removedEdges)
     }
     // Remove the gate edge
-    f.RemoveEdge(e)
-    removedEdges.put(EDGE(e))
+    RemoveEdge(e, f, removedEdges)
     // Each source of the gate edge must be discarded
-    for(t in e.GetSources()) {
-        let v = t.GetVertex()
-        f.RemoveVertex(v)
-        removedEdges.put(VERTEX(v))
+    for(v in e.GetSources()) {
+        RemoveVertex(v, f, removedEdges)
     }
     // Create a new value or signal edge for each of the output values
     for(i in 0..results.size) {
@@ -376,13 +410,10 @@ func MakeValueOrSignal<V, G>(
         // size 1 (it is a raw value)
         let signalGraph = MakeSignal<V, G>(Signal(result))
         // Create the edge using the remaining target of the original edge
-        let target = e.GetTargetVertex(i)
+        let target = e.GetTarget(i)
         let newEdge = Edge(
-            signalLabel,
-            Array<Vertex<V, G>>(),
-            [target],
-            Some(signalGraph),
-            Some(f.GetGraph())
+            signalLabel, Array<Vertex<V, G>>(), [target],
+            Some(signalGraph), Some(f.GetGraph())
         )
         nextEdges.put(EDGE(newEdge))
     }
@@ -445,8 +476,7 @@ func GetStubRule<V, G>() : RewriteRule<V, G>
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
                 // Check to see if each target has no outgoing tentacles
                 let targets = e.GetTargets()
-                for(t in targets) {
-                    let v = t.GetVertex()
+                for(v in targets) {
                     if(
                         v.GetOutEdges().size != 0 ||
                         f.GetOutputPositions(v).size != 0
@@ -458,8 +488,7 @@ func GetStubRule<V, G>() : RewriteRule<V, G>
                 // they may also need to be discarded now
                 let nextElements = HashSet<TraversalElement<V, G>>()
                 let removedElements = HashSet<TraversalElement<V, G>>()
-                for(t in e.GetSources()){
-                    let v = t.GetVertex()
+                for(v in e.GetSources()){
                     v.RemoveOutEdge(e)
                     match(v.GetInEdge()){
                         case Some(ec) =>
@@ -468,19 +497,15 @@ func GetStubRule<V, G>() : RewriteRule<V, G>
                             // If this vertex has no in edges and is also not
                             // in the interface, we can remove it altogether
                             if(v.GetInterfacedInputs().size == 0){
-                                f.RemoveVertex(v)
-                                removedElements.put(VERTEX(v))
+                                RemoveVertex(v, f, removedElements)
                             }
                     }
                 }
                 // Now remove the edge
-                f.RemoveEdge(e)
-                removedElements.put(EDGE(e))
+                RemoveEdge(e, f, removedElements)
                 // The targets can also be removed
-                for(t in e.GetTargets()) {
-                    let v = t.GetVertex()
-                    f.RemoveVertex(v)
-                    removedElements.put(VERTEX(v))
+                for(v in e.GetTargets()) {
+                    RemoveVertex(v, f, removedElements)
                 }
                 (nextElements, removedElements)
         }
@@ -542,29 +567,10 @@ func ArgumentIsAllValue<V, G>(v : V, e : Edge<V, G>, i : Int64) : Bool
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    match(e.GetSourceVertex(i).GetInEdge()){
+    match(e.GetSource(i).GetInEdge()){
         case None => false
         case Some(e) => e.GetEdge().GetLabel().IsAllValue(v)
     }
-}
-func OneArgumentIsValues<V, G>(
-    values : Array<V>, e : Edge<V, G>
-) : Option<Int64>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
-{
-    let (argumentEdges, argumentValues) = GetArgs(e)
-    for(i in 0..argumentValues.size) {
-        match(argumentValues[i]) {
-            case None => ()
-            case Some(vs) =>
-                if(vs == values) {
-                    return Some(i)
-                }
-        }
-    }
-    None
 }
 /**
  * Check if all the arguments to an edge are signals in which all the elements
@@ -615,21 +621,17 @@ func PerformPassthroughRewrite<V, G>(
     // Compute the index of the gate that will become the passthrough identity
     let otherIndex = if (i == 0) { 1 } else { 0 }
     // Track the source and target we will merge to get the identity
-    let source = e.GetSourceVertex(otherIndex)
-    let target = e.GetTargetVertex(i)
+    let source = e.GetSource(otherIndex)
+    let target = e.GetTarget(i)
     let nextElements = HashSet<TraversalElement<V, G>>()
     let removedElements = HashSet<TraversalElement<V, G>>()
     // Remove the gate edge
-    f.RemoveEdge(e)
-    removedElements.put(EDGE(e))
+    RemoveEdge(e, f, removedElements)
     // Remove the argument edge
-    f.RemoveEdge(arg)
-    removedElements.put(EDGE(arg))
+    RemoveEdge(arg, f, removedElements)
     // Remove each target from this edge, as it is becoming an identity
-    for(t in arg.GetTargets()) {
-        let v = t.GetVertex()
-        f.RemoveVertex(v)
-        removedElements.put(VERTEX(v))
+    for(v in arg.GetTargets()) {
+        RemoveVertex(v, f, removedElements)
     }
     // Merge the dangling source and target
     source.MergeVertex(target, false)
@@ -727,7 +729,7 @@ func ExpandSubgraphRewrite<V, G>(
         }
     }
     // Also add the values contained within the subgraph
-    for(edge in subgraph.GetSequentialData().valueEdges){
+    for(edge in subgraph.GetValueEdges()){
         nextElements.put(EDGE(edge))
     }
     // The edge has already been removed by the burst subgraph operation
@@ -804,11 +806,9 @@ func GetValueBundleRule<V, G>(signature : Signature<V, G>)
                     let removedElements = HashSet<TraversalElement<V, G>>()
                     let values = ArrayList<V>()
                     // Remove the bundle edge
-                    f.RemoveEdge(e)
-                    removedElements.put(EDGE(e))
+                    RemoveEdge(e, f, removedElements)
                     // Get all the individual values in an array
-                    for(t in e.GetSources()){
-                        let v = t.GetVertex()
+                    for(v in e.GetSources()){
                         // Precondition enforces there must be an in edge
                         let valueEdge = v.GetInEdge().getOrThrow().GetEdge()
                         match(valueEdge.GetLabel()) {
@@ -819,23 +819,17 @@ func GetValueBundleRule<V, G>(signature : Signature<V, G>)
                             case _ => ()
                         }
                         // Remove the old value edges and their vertices
-                        f.RemoveEdge(valueEdge)
-                        removedElements.put(EDGE(valueEdge))
-                        f.RemoveVertex(t.GetVertex())
-                        removedElements.put(VERTEX(v))
+                        RemoveEdge(valueEdge, f, removedElements)
+                        RemoveVertex(v, f, removedElements)
                     }
                     // Create a new signal edge for each output of the bundle
-                    for(t in e.GetTargets()) {
-                        let v = t.GetVertex()
+                    for(v in e.GetTargets()) {
                         let width = v.GetWidth()
                         let newEdge = if(width == 1) {
                             let value = values.remove(0)
                             Edge(
-                                Label.VALUE(value),
-                                Array<Vertex<V, G>>(),
-                                [v],
-                                None,
-                                f.GetGraph()
+                                Label.VALUE(value), Array<Vertex<V, G>>(),
+                                [v], None, f.GetGraph()
                             )
                         } else {
                             // Pop an appropriate number of values off the
@@ -847,11 +841,8 @@ func GetValueBundleRule<V, G>(signature : Signature<V, G>)
                             // Make the signal subgraph
                             let signalGraph = MakeSignal<V, G>(signal)
                             Edge(
-                                SIGNAL(signal),
-                                Array<Vertex<V, G>>(),
-                                [v],
-                                signalGraph,
-                                f.GetGraph()
+                                SIGNAL(signal), Array<Vertex<V, G>>(),
+                                [v], signalGraph, f.GetGraph()
                             )
                         }
                         newElements.put(EDGE(newEdge))
@@ -925,29 +916,30 @@ func GetCopyBlackboxRule<V, G>(blackBoxTracker : HashMap<Edge<V, G>, Int64>)
                 let discardedEdges = HashSet<TraversalElement<V, G>>()
                 // Create a copy of the blackbox for each target
                 for(i in 0..targets) {
-                    let newTargets = Array<Tentacle<V, G>>(targets){
+                    let newTargets = Array<Vertex<V, G>>(targets){
                         j : Int64 =>
                             // Outputs below the current index will be stubbed
                             // so need a new vertex
-                            let vertex = if(j < i){
-                                f.GetGraph().AddNewVertex(e.GetTarget(j).GetWidth())
+                            if(j < i){
+                                f.GetGraph().AddNewVertex(
+                                    e.GetTarget(j).GetWidth()
+                                )
                             // The current index will be retained to preserve
                             // the connections
                             } else if (j == i) {
-                                e.GetTargetVertex(j)
+                                e.GetTarget(j)
                             // Outputs above the current index will be stubbed
                             // so need a new vertex
                             } else {
-                                f.GetGraph().AddNewVertex(e.GetTarget(j + 1).GetWidth())
+                                f.GetGraph().AddNewVertex(
+                                    e.GetTarget(j + 1).GetWidth()
+                                )
                             }
-                            Tentacle(vertex, false, false)
                     }
                     // Create the new blackbox with the specified targets,
                     // forking the original sources
                     let newEdge = e.Clone(
-                        e.GetSources(),
-                        newTargets,
-                        f.GetGraph()
+                        e.GetSources(), newTargets, f.GetGraph()
                     )
                     nextEdges.put(EDGE(newEdge))
                     // Make a note of the 'active' target of this blackbox
@@ -1007,6 +999,46 @@ func GetForkBlackboxRule<V, G>(blackBoxTracker : HashMap<Edge<V, G>, Int64>)
             }
         )
 }
+/**
+ * Check whether a given source of an edge connects to a signal edge with given
+ * values that is not shared between multiple edges.
+ *
+ * @param e The edge
+ * @param i The source index
+ * @param desired The desired values in the signal
+ * @return Some(signal edge, vertex) if conditions met, None otherwise
+ */
+func ArgumentIsUnsharedTrigger<V, G>(
+    e : Edge<V, G>, i : Int64, desired : Array<V>
+) : Option<(Edge<V, G>, Vertex<V, G>)>
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    let vertex = e.GetSource(i)
+    if(vertex.GetOutEdges().size == 1) {
+        match(vertex.GetInEdge()) {
+            case None => None
+            case Some(ec) =>
+                let edge = ec.GetEdge()
+                let label = edge.GetLabel()
+                if(!label.IsSignal() || label.GetValueArray() != desired) {
+                    None
+                } else {
+                    Some((edge, vertex))
+                }
+        }
+    } else {
+        None
+    }
+}
+/**
+ * Get an annihiliation rule, where a particular input to a gate forces its
+ * output to be a particular signal regardless of the other inputs.
+ *
+ * @param ann The annihilator to make a rule for
+ * @return The annihilation rewrite rule
+ */
 func GetAnnihiliationRule<V, G>(
     ann : Annihilator<V, G>
 ) : RewriteRule<V, G>
@@ -1018,59 +1050,54 @@ func GetAnnihiliationRule<V, G>(
         "annihilate-${ann.gate.GetName()}-${ann.index}-${ann.input}",
         PRIMITIVE,
         { e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
+            // Check this is the right gate
             if(e.GetLabel().GetPrimitive() != ann.gate){
                 None
             } else {
-                let index = ann.index
-                match(e.GetSourceVertex(index).GetInEdge()) {
+                // Check the value at the annihiliation index
+                match(ArgumentIsUnsharedTrigger(e, ann.index, ann.input)) {
                     case None => None
-                    case Some(ec) =>
-                        let annihilatingEdge = ec.GetEdge()
-                        let label = annihilatingEdge.GetLabel()
-                        if(!label.IsValue() || label.GetValueArray() != ann.input) {
-                            None
-                        } else {
-                            let nextElements = HashSet<TraversalElement<V, G>>()
-                            let removedElements = HashSet<TraversalElement<V, G>>()
-                            f.RemoveEdge(annihilatingEdge)
-                            removedElements.put(EDGE(annihilatingEdge))
-                            f.RemoveEdge(e)
-                            removedElements.put(EDGE(e))
-                            for(i in 0..e.GetArity()) {
-                                let v = e.GetSourceVertex(i)
-                                v.RemoveOutEdge(e)
-                                if(i != index) {
-                                    nextElements.put(VERTEX(v))
-                                } else {
-                                    f.RemoveVertex(v)
-                                    removedElements.put(VERTEX(v))
-                                }
+                    case Some((signalEdge, vertex)) =>
+                        let nextElements = HashSet<TraversalElement<V, G>>()
+                        let removedElements = HashSet<TraversalElement<V, G>>()
+                        // Remove the annihilating edge
+                        RemoveEdge(signalEdge, f, removedElements)
+                        // Remove the gate edge
+                        RemoveEdge(e, f, removedElements)
+                        // Remove the connections from the other inputs
+                        for(i in 0..e.GetArity()) {
+                            let v = e.GetSource(i)
+                            v.RemoveOutEdge(e)
+                            if(i != ann.index) {
+                                nextElements.put(VERTEX(v))
+                            } else {
+                                RemoveVertex(v, f, removedElements)
                             }
-                            let targets = map({
-                                t : Tentacle<V, G> =>
-                                    let v = t.GetVertex()
-                                    v
-                            }, e.GetTargets())
-                            for(i in 0..ann.output.size) {
-                                let signal = ann.output[i]
-                                let resultEdge = MakeValueOrSignal(
-                                    signal,
-                                    [targets[i]],
-                                    f.GetGraph()
-                                )
-                                nextElements.put(EDGE(resultEdge))
-                            }
-                            Some((nextElements, removedElements))
                         }
-
+                        // Create the annihilated outputs
+                        let targets = e.GetTargets()
+                        for(i in 0..ann.output.size) {
+                            let signal = ann.output[i]
+                            let resultEdge = MakeValueOrSignal(
+                                signal, [targets[i]], f.GetGraph()
+                            )
+                            nextElements.put(EDGE(resultEdge))
+                        }
+                        Some((nextElements, removedElements))
                 }
-
             }
         }
     )
 }
-func GetIdentityRule<V, G>(
-    ide : Identity<V, G>
+/**
+ * Get an identitfier rule, where a particular input to a gate forces the gate
+ * to act as the identity regardless of the value of the other inputs.
+ *
+ * @param ann The identifier to make a rule for
+ * @return The identifier rewrite rule
+ */
+func GetIdentifierRule<V, G>(
+    ide : Identifier<V, G>
 ) : RewriteRule<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
@@ -1080,59 +1107,52 @@ func GetIdentityRule<V, G>(
         "identity-${ide.gate.GetName()}-${ide.index}-${ide.input}",
         PRIMITIVE,
         { e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
+            // Check this is the right gate
             if(e.GetLabel().GetPrimitive() != ide.gate){
                 None
             } else {
                 let index = ide.index
-                let triggerVertex = e.GetSourceVertex(index)
-                match(triggerVertex.GetInEdge()) {
+                match(ArgumentIsUnsharedTrigger(e, index, ide.input)) {
                     case None => None
-                    case Some(ec) =>
-                        let triggerEdge = ec.GetEdge()
-                        let label = triggerEdge.GetLabel()
-                        if(!label.IsValue() || label.GetValueArray() != ide.input) {
-                            None
-                        } else {
-                            let nextElements = HashSet<TraversalElement<V, G>>()
-                            let removedElements = HashSet<TraversalElement<V, G>>()
-                            // Remove the gate edge
-                            f.RemoveEdge(e)
-                            removedElements.put(EDGE(e))
-                            // Remove the trigger edge and vertex
-                            f.RemoveEdge(triggerEdge)
-                            removedElements.put(EDGE(triggerEdge))
-                            f.RemoveVertex(triggerVertex)
-                            removedElements.put(VERTEX(triggerVertex))
-                            // Put the other vertices as the next elements,
-                            // as they will become the identity
-                            for(i in 0..e.GetCoarity()) {
-                                let v = e.GetSourceVertex(i)
-                                if(i != index) {
-                                    nextElements.put(VERTEX(v))
-                                }
+                    case Some((signalEdge, vertex)) =>
+                        let nextElements =
+                            HashSet<TraversalElement<V, G>>()
+                        let removedElements =
+                            HashSet<TraversalElement<V, G>>()
+                        // Remove the gate edge
+                        RemoveEdge(e, f, removedElements)
+                        // Remove the trigger edge and vertex
+                        RemoveEdge(signalEdge, f, removedElements)
+                        RemoveVertex(vertex, f, removedElements)
+                        // Put the other vertices as the next elements,
+                        // as they will become the identity
+                        for(i in 0..e.GetCoarity()) {
+                            let v = e.GetSource(i)
+                            if(i != index) {
+                                nextElements.put(VERTEX(v))
                             }
-
-                            for(i in 0..e.GetCoarity()) {
-                                let actualIndex = if(i < index) {
-                                    i
-                                } else {
-                                    i + 1
-                                }
-                                let source = e.GetSourceVertex(actualIndex)
-                                if(i != index) {
-                                    nextElements.put(VERTEX(source))
-                                }
-                                let target = e.GetTargetVertex(i)
-                                source.MergeVertex(target, false)
-                                nextElements.put(VERTEX(source))
-                                removedElements.put(VERTEX(target))
-                            }
-                            Some((nextElements, removedElements))
                         }
+                        for(i in 0..e.GetCoarity()) {
+                            let actualIndex = if(i < index) {
+                                i
+                            } else {
+                                i + 1
+                            }
+                            let source = e.GetSource(actualIndex)
+                            if(i != index) {
+                                nextElements.put(VERTEX(source))
+                            }
+                            let target = e.GetTarget(i)
+                            source.MergeVertex(target, false)
+                            nextElements.put(VERTEX(source))
+                            // The target vertex has already been removed from
+                            // the graph by the call to MergeVertex so we just
+                            // need to add it to our hash map
+                            removedElements.put(VERTEX(target))
+                        }
+                        Some((nextElements, removedElements))
                 }
-
             }
-
         }
     )
 }
