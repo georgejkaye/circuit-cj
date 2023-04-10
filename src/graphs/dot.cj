@@ -572,12 +572,14 @@ func DrawSubgraphInterfaceConnections<V, G>(
 {
     for(i in 0..parentVertices.size) {
         let v = parentVertices[i]
-        let (interfaceText, portPrefix, vertexFirst) = match(vertexType) {
-            case SOURCE => ("inputs", "e", true)
-            case TARGET => ("outputs", "w", false)
-        }
+        let (interfaceText, portPrefix, vertexFirst, feedback) =
+            match(vertexType) {
+                case SOURCE =>
+                    ("inputs", "e", true, v.GetGraph().IsFeedback(e, i))
+                case TARGET =>
+                    ("outputs", "w", false, false)
+            }
         let eText = "\"${g.GetId()}_${interfaceText}\":${portPrefix}${i}"
-        let feedback = v.GetGraph().IsFeedbackTentacle(e, i)
         DrawConnection(
             v, eText, vertexFirst, connectionContent, feedback
         )
@@ -899,7 +901,7 @@ public func DrawHypergraph<V, G>(
             if(ShouldDrawConnection(ec)) {
                 let eText = GetEdgeText(ec)
                 let isFeedback =
-                    f.IsFeedbackTentacle(ec.GetEdge(), ec.GetIndex())
+                    f.IsFeedback(ec.GetEdge(), ec.GetIndex())
                 DrawConnection(v, eText, true, connectionContent, isFeedback)
             }
         }
