@@ -104,17 +104,21 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
     // Edges with combinational subgraphs
     let combinationalEdges : HashSet<Edge<V, G>> = HashSet<Edge<V, G>>()
     // Connections designated as instant feedback
-    let feedbackConnections : HashSet<EdgeConnection<V, G>> =
-        HashSet<EdgeConnection<V, G>>()
+    let feedbackConnections : HashSet<EdgeConnection<V, G>>
     // The interfaced hypergraphs that depend on this hypergraph
     let interfacedOwners : HashSet<InterfacedHypergraph<V, G>> =
         HashSet<InterfacedHypergraph<V, G>>()
     public init (
         vertices : HashSet<Vertex<V, G>>,
-        edges : HashSet<Edge<V, G>>
+        edges : HashSet<Edge<V, G>>,
+        feedbacks!: Option<HashSet<EdgeConnection<V, G>>> = None
     ) {
         this.vertices = vertices
         this.edges = edges
+        this.feedbackConnections = match(feedbacks) {
+            case None => HashSet<EdgeConnection<V, G>>()
+            case Some(ecs) => ecs
+        }
         for(e in edges) {
             e.SetOwner(this)
             this.AddEdgeToHypergraphData(e)
@@ -425,7 +429,7 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
             this.feedbackConnections.size == 0 &&
             this.sequentialEdges.size == 0
     }
-    public func IsFeedbackTentacle(e : Edge<V, G>, i : Int64) : Bool {
+    public func IsFeedback(e : Edge<V, G>, i : Int64) : Bool {
         this.feedbackConnections.contains(
             EdgeConnection(e, i, SOURCE)
         )
@@ -519,6 +523,16 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
             EdgeConnection(e, i, SOURCE)
         )
     }
+    public func RemoveFeedbackConnection(
+        e : Edge<V, G>, i : Int64
+    ) : Unit {
+        this.feedbackConnections.remove(EdgeConnection(e, i, SOURCE))
+    }
+    public func RemoveFeedbackConnections(
+        ecs : HashSet<EdgeConnection<V, G>>
+    ) : Unit {
+        this.feedbackConnections.removeAll(ecs)
+    }
     public func RemoveSubgraphElements(f : InterfacedHypergraph<V, G>) : Unit {
         for(v in f.GetVertices()){
             this.RemoveVertex(v)
@@ -589,8 +603,16 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
         let parentOutputs = snds(slicedOutputs)
         let subgraphVertices = HashSet<Vertex<V, G>>()
         let subgraphEdges = HashSet<Edge<V, G>>()
+        let subgraphFeedbacks = HashSet<EdgeConnection<V, G>>()
         let actionAtVertex = { v : Vertex<V, G> => subgraphVertices.put(v); () }
-        let actionAtEdge = { e : Edge<V, G> => subgraphEdges.put(e); () }
+        let actionAtEdge = { e : Edge<V, G> =>
+            subgraphEdges.put(e)
+            for(i in 0..e.GetArity()) {
+                if(this.IsFeedback(e, i)) {
+                    subgraphFeedbacks.put(EdgeConnection(e, i, SOURCE))
+                }
+            }
+        }
         func TraverseGraphFromEnd(starting : Array<Vertex<V, G>>) : Unit {
             let startingSet = HashSet<TraversalElement<V, G>>()
             for(v in starting) {
@@ -603,12 +625,12 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
         }
         TraverseGraphFromEnd(childInputs)
         TraverseGraphFromEnd(childOutputs)
-        let newSubgraph = Hypergraph<V, G>(subgraphVertices, subgraphEdges)
+        let newSubgraph = Hypergraph<V, G>(
+            subgraphVertices, subgraphEdges, feedbacks: subgraphFeedbacks
+        )
         let interfacedSubgraph = InterfacedHypergraph(
-            newSubgraph,
-            map({ v => InterfaceVertex(v) }, childInputs),
-            map({ v => InterfaceVertex(v) }, childOutputs),
-            label
+            newSubgraph, map({ v => InterfaceVertex(v) }, childInputs),
+            map({ v => InterfaceVertex(v) }, childOutputs), label
         )
         let newEdge = this.AddNewEdge(
             label, parentInputs, parentOutputs, Some(interfacedSubgraph)
