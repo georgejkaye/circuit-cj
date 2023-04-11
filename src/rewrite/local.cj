@@ -9,8 +9,6 @@
 
 package rewrite
 
-import utils.map
-
 from std import collection.HashMap
 from std import collection.HashSet
 
@@ -21,7 +19,7 @@ func AttemptRewriteRule<V, G>(
     e : Edge<V, G>,
     rule : RewriteRule<V, G>,
     f : InterfacedHypergraph<V, G>
-) : Option<(HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)>
+) : Option<HashSet<TraversalElement<V, G>>>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -31,20 +29,22 @@ func AttemptRewriteRule<V, G>(
             // Debug("Did not rewrite ${e} with ${rule.name}")
             None
         case Some(result) =>
-            // Debug("Rewrote ${e} with ${rule.name}")
-            // f.WriteDotToFile(2, "rewrite-${y}-${e.GetId()}-${rule.GetName()}")
+            Debug("Rewrote ${e} with ${rule.name}")
+            f.WriteDotToFile(
+                0, "dot/rewrite-${y}-${e.GetId()}-${rule.GetName()}",
+                debug: true
+            )
             y++
             Some(result)
     }
 }
-
 func CheckAppropriateRules<V, G>(
     edge : Edge<V, G>,
     f : InterfacedHypergraph<V, G>,
     signature : Signature<V, G>,
     copyBlackBoxes!: Bool = false,
     allInstantaneous!: Bool = false
-) : Option<(HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)>
+) : Option<HashSet<TraversalElement<V, G>>>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -78,7 +78,7 @@ func CheckAppropriateRules<V, G>(
                     AddRule(GetAnnihiliationRule(ann))
                 }
                 for(ide in signature.GetIdentities()) {
-                    AddRule(GetIdentityRule(ide))
+                    AddRule(GetIdentifierRule(ide))
                 }
             }
         case ENHANCED_PRIMITIVE(_) =>
@@ -100,7 +100,6 @@ func CheckAppropriateRules<V, G>(
     }
     return None
 }
-
 public func RewriteCombinational<V, G>(
     signature : Signature<V, G>,
     f : InterfacedHypergraph<V, G>,
@@ -122,14 +121,13 @@ public func RewriteCombinational<V, G>(
                 case Some(result) => result
                 case None =>
                     let nextElements = HashSet<TraversalElement<V, G>>()
-                    let removedElements = HashSet<TraversalElement<V, G>>()
                     for(t in e.GetTargets()) {
                         let te = VERTEX(t.GetVertex())
                         if(!ending.contains(te)) {
                             nextElements.put(te)
                         }
                     }
-                    (nextElements, removedElements)
+                    nextElements
                 }
     }
     let actionAtVertex = {
@@ -141,18 +139,15 @@ public func RewriteCombinational<V, G>(
                 nextElements.put(te)
             }
         }
-        (nextElements, HashSet<TraversalElement<V, G>>())
+        nextElements
     }
     let startingElements = HashSet<TraversalElement<V, G>>()
     for(e in starting) {
         startingElements.put(e)
     }
     Traverse<V, G>(
-        startingElements,
-        0,
-        actionAtVertex,
-        actionAtEdge,
-        revisit: true
+        startingElements, actionAtVertex: actionAtVertex,
+        actionAtEdge: actionAtEdge, revisit: true
     )
 }
 public func RewriteCombinational<V, G>(
@@ -166,10 +161,7 @@ public func RewriteCombinational<V, G>(
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     RewriteCombinational(
-        signature,
-        f,
-        starting,
-        f.GetRightmostTraversalElements(),
+        signature, f, starting, f.GetRightmostTraversalElements(),
         copyBlackBoxes: copyBlackBoxes
     )
 }
@@ -183,10 +175,7 @@ public func RewriteCombinational<V, G>(
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     RewriteCombinational(
-        signature,
-        f,
-        f.GetLeftmostTraversalElements(),
-        f.GetRightmostTraversalElements(),
-        copyBlackBoxes: copyBlackBoxes
+        signature, f, f.GetLeftmostTraversalElements(),
+        f.GetRightmostTraversalElements(), copyBlackBoxes: copyBlackBoxes
     )
 }
