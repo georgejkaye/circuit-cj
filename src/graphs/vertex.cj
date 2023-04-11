@@ -324,10 +324,7 @@ public class Vertex<V, G>
         this.PostAlterOutEdges()
     }
     public func RemoveOutEdge(e : Edge<V, G>, i : Int64) : Unit {
-        this.outEdges.removeIf(
-            { ec : EdgeConnection<V, G> =>
-                ec.GetEdge() == e && ec.GetIndex() == i}
-            )
+        this.outEdges.remove(EdgeConnection(e, i, SOURCE))
         this.PostAlterOutEdges()
     }
     public func GetGraph() : Hypergraph<V, G> {
@@ -396,11 +393,9 @@ public class Vertex<V, G>
      *
      * @param w The vertex to be merged into this one
     */
-    public func MergeVertex(t : Vertex<V, G>, instant : Bool) : Unit {
-        // Get the actual vertex object
-        let v = t.GetVertex()
+    public func MergeVertex(v : Vertex<V, G>, instant : Bool) : Unit {
         // We can only merge in a vertex owned by the same graph
-        this.GetGraph().MergeHypergraphs(t)
+        this.GetGraph().MergeHypergraphs(v)
         // We cannot allow the merged vertex to have multiple in edge
         AssertAtMostOneInEdge(this, v)
         // Any edge connected to the merging vertex must be updated
@@ -434,7 +429,7 @@ public class Vertex<V, G>
             UpdateInterfaces(ie)
         }
         // Remove the old vertex from the graph now it has been detached
-        this.GetGraph().RemoveVertex(t)
+        this.GetGraph().RemoveVertex(v)
         if(instant) {
             for(ec in this.GetOutEdges()) {
                 this.GetGraph().AddFeedback(ec)

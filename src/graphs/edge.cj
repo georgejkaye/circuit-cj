@@ -189,7 +189,7 @@ public class Edge<V, G>
         array : Array<Vertex<V, G>>,
         vertexFn : (Vertex<V, G>, Vertex<V, G>) -> Unit
     ) : Unit {
-            let oldVertex = array[i].GetVertex()
+            let oldVertex = array[i]
             array[i] = newVertex
             vertexFn(oldVertex, newVertex)
             this.owner.AddVertex(newVertex)
