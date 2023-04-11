@@ -632,9 +632,13 @@ public class InterfacedHypergraph<V, G>
         let mergedVertices = Array<Vertex<V, G>>(slicedVertices.size){
             i : Int64 =>
                 let primaryVertex = newEdge.GetSource(i)
-                primaryVertex.MergeVertex(newEdge.GetTarget(i), true)
+                primaryVertex.MergeVertex(newEdge.GetTarget(i), false)
                 primaryVertex
-
+        }
+        for(i in 0..connections.size) {
+            let ec = connections[i]
+            newGraph.GetGraph().RemoveFeedback(ec)
+            this.GetGraph().AddFeedback(newEdge, i)
         }
         (mergedVertices, newEdge, newGraph)
     }

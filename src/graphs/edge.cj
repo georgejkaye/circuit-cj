@@ -291,7 +291,7 @@ public class Edge<V, G>
                                 case None => originalChildVertex
                             }
                         let feedback =
-                            this.GetGraph().IsFeedbackTentacle(this, i)
+                            this.GetGraph().IsFeedback(this, i)
                         parentVertex.MergeVertex(actualChildVertex, feedback)
                         mergeMap.put(actualChildVertex, parentVertex)
                     }

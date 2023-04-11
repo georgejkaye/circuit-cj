@@ -316,7 +316,7 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
     ) : Edge<V, G> {
         Edge(label, sources, targets, subgraph, this)
     }
-        func AddEdgeToTraversalElements(
+    func AddEdgeToTraversalElements(
         traversalElements : HashSet<TraversalElement<V, G>>,
         direction : TraversalDirection,
         e : Edge<V, G>
@@ -429,11 +429,6 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
             this.feedbackConnections.size == 0 &&
             this.sequentialEdges.size == 0
     }
-    public func IsFeedback(e : Edge<V, G>, i : Int64) : Bool {
-        this.feedbackConnections.contains(
-            EdgeConnection(e, i, SOURCE)
-        )
-    }
     public func AddInterfacedOwner(f : InterfacedHypergraph<V, G>) : Unit {
         this.interfacedOwners.put(f)
     }
@@ -505,30 +500,33 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
         }
         for(ec in this.feedbackConnections) {
             let newEdge = unsafeGet(edgeMap, ec.GetEdge())
-            newHypergraph.AddFeedbackConnection(newEdge, ec.GetIndex())
+            newHypergraph.AddFeedback(newEdge, ec.GetIndex())
         }
         (newHypergraph, vertexMap, edgeMap)
     }
-    public func AddFeedbackConnection(e : Edge<V, G>, i : Int64) : Unit {
+    public func AddFeedback(e : Edge<V, G>, i : Int64) : Unit {
         this.feedbackConnections.put(EdgeConnection(e, i, SOURCE))
     }
-    public func AddFeedbackConnection(ec : EdgeConnection<V, G>) : Unit {
+    public func AddFeedback(ec : EdgeConnection<V, G>) : Unit {
         this.feedbackConnections.put(ec)
     }
-    public func IsFeedbackConnection(ec : EdgeConnection<V, G>) : Bool {
+    public func IsFeedback(ec : EdgeConnection<V, G>) : Bool {
         this.feedbackConnections.contains(ec)
     }
-    public func IsFeedbackConnection(e : Edge<V, G>, i : Int64) : Bool {
+    public func IsFeedback(e : Edge<V, G>, i : Int64) : Bool {
         this.feedbackConnections.contains(
             EdgeConnection(e, i, SOURCE)
         )
     }
-    public func RemoveFeedbackConnection(
+    public func RemoveFeedback(
         e : Edge<V, G>, i : Int64
     ) : Unit {
-        this.feedbackConnections.remove(EdgeConnection(e, i, SOURCE))
+        this.RemoveFeedback(EdgeConnection(e, i, SOURCE))
     }
-    public func RemoveFeedbackConnections(
+    public func RemoveFeedback(ec : EdgeConnection<V, G>) : Unit {
+        this.feedbackConnections.remove(ec)
+    }
+    public func RemoveFeedback(
         ecs : HashSet<EdgeConnection<V, G>>
     ) : Unit {
         this.feedbackConnections.removeAll(ecs)

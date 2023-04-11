@@ -437,7 +437,7 @@ public class Vertex<V, G>
         this.GetGraph().RemoveVertex(t)
         if(instant) {
             for(ec in this.GetOutEdges()) {
-                this.GetGraph().AddFeedbackConnection(ec)
+                this.GetGraph().AddFeedback(ec)
             }
         }
     }
