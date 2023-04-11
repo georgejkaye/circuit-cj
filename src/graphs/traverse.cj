@@ -28,7 +28,8 @@ public enum TraversalElement<V, G>
     | VERTEX(Vertex<V, G>)
 }
 extend TraversalElement<V, G>
-    <: Hashable & Equatable<TraversalElement<V, G>> & ToString
+    <: Hashable & Equatable<TraversalElement<V, G>> &
+            ToString & GraphElement<V, G>
 {
     public func hashCode() : Int64 {
         match(this) {
@@ -48,6 +49,12 @@ extend TraversalElement<V, G>
             case VERTEX(v) => "Vertex ${v}"
         }
     }
+    public func GetGraph() : Hypergraph<V, G> {
+        match(this) {
+            case EDGE(e) => e.GetGraph()
+            case VERTEX(v) => v.GetGraph()
+        }
+    }
 }
 /**
  * Data to keep track of while traversing a graph
@@ -58,19 +65,17 @@ public struct TraversalData<V, G>
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     public TraversalData(
-        public let frontier : ArrayList<TraversalElement<V, G>>,
+        public let frontier : HashSet<TraversalElement<V, G>>,
         // Elements that have been visited, and therefore not to visit again
         public let visitedElements : HashSet<TraversalElement<V, G>>,
         // The action to perform at each vertex, returning the elements to add
         // to the frontier  and the elements to remove from the frontier
         let actionAtVertex : (Vertex<V, G>, TraversalData<V, G>)
-                                 -> (HashSet<TraversalElement<V, G>>,
-                                        HashSet<TraversalElement<V, G>>),
+                                 -> HashSet<TraversalElement<V, G>>,
         // The action to perform at each edge, returning the elements to add to
-        // the frontier and the elements to remove from the frontier
+        // the frontier
         let actionAtEdge : (Edge<V, G>, TraversalData<V, G>)
-                                -> (HashSet<TraversalElement<V, G>>,
-                                        HashSet<TraversalElement<V, G>>)
+                                -> HashSet<TraversalElement<V, G>>
     ){}
 }
 /**
@@ -85,8 +90,7 @@ public struct TraversalData<V, G>
 func GetDefaultNextVertices<V, G>(
     direction : TraversalDirection,
     condition : (Edge<V, G>, Vertex<V, G>) -> Bool
-) : (Edge<V, G>, TraversalData<V, G>) ->
-        (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)
+) : (Edge<V, G>, TraversalData<V, G>) -> HashSet<TraversalElement<V, G>>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -110,7 +114,7 @@ func GetDefaultNextVertices<V, G>(
                 AddValidNextElements(e.GetSources())
                 AddValidNextElements(e.GetTargets())
         }
-        (nextElements, HashSet<TraversalElement<V, G>>())
+        nextElements
     }
 }
 /**
@@ -125,8 +129,7 @@ func GetDefaultNextVertices<V, G>(
 func GetDefaultNextEdges<V, G>(
     direction : TraversalDirection,
     condition : (Vertex<V, G>, Edge<V, G>) -> Bool
-) : (Vertex<V, G>, TraversalData<V, G>) ->
-        (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>)
+) : (Vertex<V, G>, TraversalData<V, G>) -> HashSet<TraversalElement<V, G>>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -159,7 +162,7 @@ func GetDefaultNextEdges<V, G>(
                 AddOutEdgesIfNotVisited(v)
                 AddInEdgeIfNotVisited(v)
         }
-        (nextElements, HashSet<TraversalElement<V, G>>())
+        nextElements
     }
 }
 /**
@@ -176,40 +179,42 @@ func GetDefaultNextEdges<V, G>(
  */
 public func Traverse<V, G>(
     elements : HashSet<TraversalElement<V, G>>,
-    actionAtVertex : (Vertex<V, G>, TraversalData<V, G>)
-        -> (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>),
-    actionAtEdge : (Edge<V, G>, TraversalData<V, G>)
-        -> (HashSet<TraversalElement<V, G>>, HashSet<TraversalElement<V, G>>),
+    actionAtVertex!:
+        (Vertex<V, G>, TraversalData<V, G>) -> HashSet<TraversalElement<V, G>>,
+    actionAtEdge!:
+        (Edge<V, G>, TraversalData<V, G>) -> HashSet<TraversalElement<V, G>>,
     revisit!: Bool = false
 ) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    let frontier = ArrayList<TraversalElement<V, G>>()
-    frontier.appendAll(elements)
+    let graph = AssertAllOwnedBySame<V, G, TraversalElement<V, G>>(elements)
+    let frontier = HashSet<TraversalElement<V, G>>(elements)
     let traversalData = TraversalData(
         frontier, HashSet<TraversalElement<V, G>>(),
         actionAtVertex, actionAtEdge
     )
     while(traversalData.frontier.size != 0) {
-        let currentElement = frontier.remove(0)
-        Debug("Visiting ${currentElement}")
-        traversalData.visitedElements.put(currentElement)
-        let (elementsToAdd, elementsToRemove) = match(currentElement) {
-            case EDGE(e) => actionAtEdge(e, traversalData)
-            case VERTEX(v) => actionAtVertex(v, traversalData)
-        }
-        for(elem in elementsToAdd) {
-            if(!elementsToRemove.contains(elem) &&
-                (revisit || !traversalData.visitedElements.contains(elem))
-            ) {
-                traversalData.frontier.append(elem)
+        let currentElement = frontier.iterator().next().getOrThrow()
+        frontier.remove(currentElement)
+        // Check that this element is actually still in the graph
+        // This might not be the case if an action removes elements
+        if(currentElement.GetGraph() == graph){
+            Debug("Visiting ${currentElement}")
+            traversalData.visitedElements.put(currentElement)
+            let elementsToAdd = match(currentElement) {
+                case EDGE(e) => actionAtEdge(e, traversalData)
+                case VERTEX(v) => actionAtVertex(v, traversalData)
             }
+            Debug("The next elements are ${elementsToAdd}")
+            for(elem in elementsToAdd) {
+                if((revisit || !traversalData.visitedElements.contains(elem))) {
+                    traversalData.frontier.put(elem)
+                }
+            }
+            Debug("The frontier is ${frontier.size} long and is now ${frontier}")
         }
-        traversalData.frontier.removeIf(
-            { elem => elementsToRemove.contains(elem) }
-        )
     }
 }
 /**
@@ -226,14 +231,14 @@ public func Traverse<V, G>(
 public func Traverse<V, G>(
     elements : HashSet<TraversalElement<V, G>>,
     traversalDirection : TraversalDirection,
-    actionAtVertex! : (Vertex<V, G>, TraversalData<V, G>) -> Unit =
-                                                            { v, td => () },
-    actionAtEdge! : (Edge<V, G>, TraversalData<V, G>) -> Unit =
-                                                            { e, td => () },
-    nextEdgeCondition! : (Vertex<V, G>, Edge<V, G>) -> Bool =
-                                                            { v, e => true },
-    nextVertexCondition! : (Edge<V, G>, Vertex<V, G>) -> Bool =
-                                                            { e, v => true }
+    actionAtVertex! :
+        (Vertex<V, G>, TraversalData<V, G>) -> Unit = { v, td => () },
+    actionAtEdge! :
+        (Edge<V, G>, TraversalData<V, G>) -> Unit = { e, td => () },
+    nextEdgeCondition! :
+        (Vertex<V, G>, Edge<V, G>) -> Bool = { v, e => true },
+    nextVertexCondition! :
+        (Edge<V, G>, Vertex<V, G>) -> Bool = { e, v => true }
 ) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
@@ -253,7 +258,10 @@ public func Traverse<V, G>(
             actionAtEdge(e, data)
             defaultNextVertices(e, data)
         }
-    Traverse(elements, completeActionAtVertex, completeActionAtEdge)
+    Traverse(
+        elements, actionAtVertex: completeActionAtVertex,
+        actionAtEdge: completeActionAtEdge
+    )
 }
 /**
  * Given a function, create a function that additionally takes a traversal data
