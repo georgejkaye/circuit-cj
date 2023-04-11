@@ -64,7 +64,7 @@ public func AssertTwoSameWidth<T, U>(t : T, u : U) : Int64
 public func AssertAllSameWidth<T>(xs : Array<T>) : Int64
     where T <: HasWidth & ToString
 {
-    AssertAllSameParameter<T, Int64>(
+    AssertCollectionHasSameParameter<T, Int64>(
         xs, { t : T => t.GetWidth() }, Width
     )
 }
@@ -78,7 +78,7 @@ public func AssertAllSameWidth<T>(xs : Array<T>) : Int64
 public func AssertAllHaveWidth<T>(xs : Array<T>, i : Int64) : Unit
     where T <: HasWidth & ToString
 {
-    AssertAllSameParameter<T, Int64>(
+    AssertCollectionHasSameParameter<T, Int64>(
         xs, { t : T => t.GetWidth() }, Width
     )
 }

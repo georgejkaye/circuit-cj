@@ -159,6 +159,16 @@ func AssertGraphHasMinimumOutputs<V, G>(
 {
     AssertMinimumLength(f.GetOutputPorts(), i)
 }
+public func AssertAllOwnedBySame<V, G, T>(
+    elems : Collection<T>
+) : Hypergraph<V, G>
+    where
+        V <: ValueSymbol<V> & Equatable<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>,
+        T <: GraphElement<V, G> & ToString
+{
+    AssertCollectionHasSameParameter(elems, { t : T => t.GetGraph() }, Owner)
+}
 /**
  * Given an edge, assert that it is not owned by a particular hypergraph.
  *

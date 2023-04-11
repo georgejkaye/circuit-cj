@@ -223,8 +223,9 @@ public func AssertMinimumLength<T>(
  * @param xs The collection
  * @param fn The function to translate each element into a parameter
  * @param paramType
+ * @return The parameter the elements all share, if such a parameter exists
  */
-public func AssertAllSameParameter<T, U>(
+public func AssertCollectionHasSameParameter<T, U>(
     xs : Collection<T>, fn : (T) -> U, paramType : ParamType
 ) : U where T <: ToString, U <: ToString & Equatable<U> {
     AssertNonEmpty(xs)
