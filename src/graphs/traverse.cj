@@ -200,7 +200,7 @@ public func Traverse<V, G>(
         frontier.remove(currentElement)
         // Check that this element is actually still in the graph
         // This might not be the case if an action removes elements
-        if(currentElement.GetGraph() == graph){
+        if(graph.ContainsElement(currentElement)){
             Debug("Visiting ${currentElement}")
             traversalData.visitedElements.put(currentElement)
             let elementsToAdd = match(currentElement) {

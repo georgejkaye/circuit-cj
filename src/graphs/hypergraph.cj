@@ -192,6 +192,9 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
     public func GetVertices() : HashSet<Vertex<V, G>> {
         this.vertices
     }
+    public func ContainsVertex(v : Vertex<V, G>) : Bool {
+        this.vertices.contains(v)
+    }
     public func AddVertex(v : Vertex<V, G>) : Unit {
         v.SetOwner(this)
         this.vertices.put(v)
@@ -282,6 +285,15 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
     }
     public func GetEdges() : HashSet<Edge<V, G>> {
         this.edges
+    }
+    public func ContainsEdge(e : Edge<V, G>) : Bool {
+        this.edges.contains(e)
+    }
+    public func ContainsElement(elem : TraversalElement<V, G>) : Bool {
+        match(elem) {
+            case EDGE(e) => this.ContainsEdge(e)
+            case VERTEX(v) => this.ContainsVertex(v)
+        }
     }
     public func AddEdge(e : Edge<V, G>) : Unit {
         this.edges.put(e)
