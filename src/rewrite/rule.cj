@@ -538,14 +538,19 @@ func GetJoinRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
  * @param i The index of the source to check the argument of
  * @return Whether the specific argument is all this value
  */
-func ArgumentIsAllValue<V, G>(v : V, e : Edge<V, G>, i : Int64) : Bool
+func ArgumentIsAllUnsharedValue<V, G>(v : V, e : Edge<V, G>, i : Int64) : Bool
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    match(e.GetSource(i).GetInEdge()){
-        case None => false
-        case Some(e) => e.GetEdge().GetLabel().IsAllValue(v)
+    let sourceVertex = e.GetSource(i)
+    if(sourceVertex.GetOutEdges().size > 1) {
+        false
+    } else {
+        match(sourceVertex.GetInEdge()){
+            case None => false
+            case Some(e) => e.GetEdge().GetLabel().IsAllValue(v)
+        }
     }
 }
 /**
@@ -556,7 +561,7 @@ func ArgumentIsAllValue<V, G>(v : V, e : Edge<V, G>, i : Int64) : Bool
  * @param e The edge
  * @return Whether all arguments are this value
  */
-func ArgumentsAreAllValue<V, G>(v : V, e : Edge<V, G>) : Bool
+func ArgumentsAreAllUnsharedValue<V, G>(v : V, e : Edge<V, G>) : Bool
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -565,7 +570,7 @@ func ArgumentsAreAllValue<V, G>(v : V, e : Edge<V, G>) : Bool
     // return true which is not desired
     if(e.GetArity() > 0) {
         for(i in 0..e.GetArity()) {
-            if(!ArgumentIsAllValue(v, e, i)) {
+            if(!ArgumentIsAllUnsharedValue(v, e, i)) {
                 return false
             }
         }
@@ -638,7 +643,7 @@ func GetJoinUnitRule<V, G>(
         NJOIN,
         {
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
-                if(!ArgumentIsAllValue(signature.GetBottom(), e, i)){
+                if(!ArgumentIsAllUnsharedValue(signature.GetBottom(), e, i)){
                     None
                 } else {
                     Some(PerformPassthroughRewrite(e, i, f))
@@ -836,7 +841,7 @@ func GetBottomRule<V, G>(signature : Signature<V, G>)
         "bottom",
         ANY,
         { e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
-            if(!ArgumentsAreAllValue(signature.GetBottom(), e)){
+            if(!ArgumentsAreAllUnsharedValue(signature.GetBottom(), e)){
                 None
             } else {
                 let (argumentEdges, argumentValues) = GetArgs(e)

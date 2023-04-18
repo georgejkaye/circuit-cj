@@ -29,7 +29,7 @@ public class Evaluator<V, G> <: Drawable<V, G>
     // The vertices at which to insert the next output, when it is computed
     let nextOutputVertices : Array<Vertex<V, G>>
     // The edges representing the join of the current state and the feedback
-    let stateConnections : Array<EdgeConnection<V, G>>
+    let stateJoinEdges : Array<TraversalElement<V, G>>
     public init(
         signature : Signature<V, G>,
         f : InterfacedHypergraph<V, G>
@@ -58,9 +58,8 @@ public class Evaluator<V, G> <: Drawable<V, G>
         this.nextOutputVertices = map({
             iv => iv.GetVertex()
         }, this.graph.GetOutputs())
-        this.stateConnections = Array<EdgeConnection<V, G>>(this.stateWires){
-            i : Int64 =>
-                EdgeConnection(coreEdge.NextEdgeLeft(i).GetEdge(), 0, SOURCE)
+        this.stateJoinEdges = Array<TraversalElement<V, G>>(this.stateWires){
+            i : Int64 => EDGE(coreEdge.NextEdgeLeft(i).GetEdge())
         }
         this.graph.WriteDotToFile(1, "dot/after-prep", debug: true)
     }
@@ -80,13 +79,18 @@ public class Evaluator<V, G> <: Drawable<V, G>
      */
     public func PerformCycle(signals : Array<Signal<V>>) : Unit {
         AssertHasLength(signals, this.graph.GetArity())
+        let rewriteStartingElements = HashSet<TraversalElement<V, G>>()
+        let rewriteEndingElements = HashSet<TraversalElement<V, G>>()
         // Split the state vertices so we can insert the next state
         let splitJoinVertices = Array<(Vertex<V, G>, Vertex<V, G>)>(
             this.stateWires,
             { i : Int64 =>
-                let joinSourceLeft =
-                    this.coreEdge.NextEdgeLeft(i).GetEdge().GetSource(0)
-                joinSourceLeft.SplitVertex()
+                let joinEdge = this.coreEdge.NextEdgeLeft(i).GetEdge()
+                let joinSourceLeft = joinEdge.GetSource(0)
+                let (left, right) = joinSourceLeft.SplitVertex()
+                rewriteStartingElements.put(VERTEX(left))
+                rewriteEndingElements.put(EDGE(joinEdge))
+                (left, right)
             }
         )
         // Get the input vertices to the copied core: the left hand split state
@@ -109,6 +113,7 @@ public class Evaluator<V, G> <: Drawable<V, G>
                         signalLabel, Array<Vertex<V, G>>(), [signalVertex],
                         signalSubgraph, this.graph.GetGraph()
                     )
+                    rewriteStartingElements.put(VERTEX(signalVertex))
                     signalVertex
                 }
             }
@@ -147,26 +152,17 @@ public class Evaluator<V, G> <: Drawable<V, G>
                         JOIN(outputWidth), [outputTarget, delayTarget],
                         [rightVertex], None, this.graph.GetGraph()
                     )
-                    joinEdge.GetSource(0)
+                    rewriteEndingElements.put(VERTEX(rightVertex))
+                    outputTarget
                 }
         }
         // Clone the new core using the inputs and outputs
         let coreCopyEdge = this.coreEdge.Clone(
             coreCopyInputs, coreCopyOutputs, this.graph.GetGraph()
         )
-        // Get the starting edges for the combinational rewrite pass:
-        // the leftmost values of the new core
-        let rewriteStartingElements = HashSet<TraversalElement<V, G>>()
-        let actionAtEdge =
-            { e : Edge<V, G> =>
-                if(e.GetLabel().IsSignal()){
-                    rewriteStartingElements.put(EDGE(e))
-                    ()
-                }
-            }
-        Traverse<V, G>(
-            EDGE(coreCopyEdge), RIGHT_TO_LEFT, actionAtEdge: actionAtEdge
-        )
+        this.graph.WriteDotToFile(1, "dot/before-comb-${currentCycle}", debug: true)
+        println("The starting elements are ${rewriteStartingElements}")
+        println("The ending elements are ${rewriteEndingElements}")
         // Rewrite the copy of the combinational core. We want to
         // force blackboxes as much as possible to the right so that each
         // element of the state is isolated. Moreover, since the core is
@@ -174,8 +170,7 @@ public class Evaluator<V, G> <: Drawable<V, G>
         // instantaneous rules
         RewriteCombinational(
             this.sig, this.graph, rewriteStartingElements,
-            HashSet(this.stateConnections), copyBlackBoxes: true,
-            allInstantaneous: true
+            rewriteEndingElements, copyBlackBoxes: true, allInstantaneous: true
         )
         this.currentCycle++
     }

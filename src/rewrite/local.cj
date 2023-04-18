@@ -15,10 +15,8 @@ from std import collection.HashSet
 var y = 0
 
 func AttemptRewriteRule<V, G>(
-    signature : Signature<V, G>,
-    e : Edge<V, G>,
-    rule : RewriteRule<V, G>,
-    f : InterfacedHypergraph<V, G>
+    signature : Signature<V, G>, e : Edge<V, G>,
+    rule : RewriteRule<V, G>, f : InterfacedHypergraph<V, G>
 ) : Option<HashSet<TraversalElement<V, G>>>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
@@ -39,10 +37,8 @@ func AttemptRewriteRule<V, G>(
     }
 }
 func CheckAppropriateRules<V, G>(
-    edge : Edge<V, G>,
-    f : InterfacedHypergraph<V, G>,
-    signature : Signature<V, G>,
-    copyBlackBoxes!: Bool = false,
+    edge : Edge<V, G>, f : InterfacedHypergraph<V, G>,
+    signature : Signature<V, G>, copyBlackBoxes!: Bool = false,
     allInstantaneous!: Bool = false
 ) : Option<HashSet<TraversalElement<V, G>>>
     where
@@ -104,7 +100,7 @@ public func RewriteCombinational<V, G>(
     signature : Signature<V, G>,
     f : InterfacedHypergraph<V, G>,
     starting : HashSet<TraversalElement<V, G>>,
-    ending : HashSet<EdgeConnection<V, G>>,
+    ending : HashSet<TraversalElement<V, G>>,
     copyBlackBoxes!: Bool = false,
     allInstantaneous!: Bool = false
 ) : Unit
@@ -125,11 +121,8 @@ public func RewriteCombinational<V, G>(
                     let nextElements = HashSet<TraversalElement<V, G>>()
                     for(v in e.GetTargets()) {
                         let te = VERTEX(v)
-                        if(!data.visitedElements.contains(te)) {
-                            println("${v} is a next element")
+                        if(!ending.contains(te)) {
                             nextElements.put(te)
-                        } else {
-                            println("${v} was a possible next element but has been visited")
                         }
                     }
                     nextElements
@@ -139,8 +132,9 @@ public func RewriteCombinational<V, G>(
         v : Vertex<V, G>, data : TraversalData<V, G> =>
         let nextElements = HashSet<TraversalElement<V, G>>()
         for(ec in v.GetOutEdges()) {
-            if(!ending.contains(ec)){
-                nextElements.put(EDGE(ec.GetEdge()))
+            let te = EDGE(ec.GetEdge())
+            if(!ending.contains(te)){
+                nextElements.put(te)
             }
         }
         nextElements
@@ -165,7 +159,7 @@ public func RewriteCombinational<V, G>(
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     RewriteCombinational(
-        signature, f, starting, HashSet<EdgeConnection<V, G>>(),
+        signature, f, starting, HashSet<TraversalElement<V, G>>(),
         copyBlackBoxes: copyBlackBoxes
     )
 }
@@ -180,6 +174,6 @@ public func RewriteCombinational<V, G>(
 {
     RewriteCombinational(
         signature, f, f.GetLeftmostTraversalElements(),
-        HashSet<EdgeConnection<V, G>>(), copyBlackBoxes: copyBlackBoxes
+        HashSet<TraversalElement<V, G>>(), copyBlackBoxes: copyBlackBoxes
     )
 }
