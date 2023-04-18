@@ -104,7 +104,7 @@ public func RewriteCombinational<V, G>(
     signature : Signature<V, G>,
     f : InterfacedHypergraph<V, G>,
     starting : HashSet<TraversalElement<V, G>>,
-    ending : HashSet<TraversalElement<V, G>>,
+    ending : HashSet<EdgeConnection<V, G>>,
     copyBlackBoxes!: Bool = false,
     allInstantaneous!: Bool = false
 ) : Unit
@@ -118,13 +118,18 @@ public func RewriteCombinational<V, G>(
                 e, f, signature,
                 copyBlackBoxes: copyBlackBoxes, allInstantaneous: true
             )) {
-                case Some(result) => result
+                case Some(result) =>
+                    println("The next elements are ${result}")
+                    result
                 case None =>
                     let nextElements = HashSet<TraversalElement<V, G>>()
-                    for(t in e.GetTargets()) {
-                        let te = VERTEX(t.GetVertex())
-                        if(!ending.contains(te)) {
+                    for(v in e.GetTargets()) {
+                        let te = VERTEX(v)
+                        if(!data.visitedElements.contains(te)) {
+                            println("${v} is a next element")
                             nextElements.put(te)
+                        } else {
+                            println("${v} was a possible next element but has been visited")
                         }
                     }
                     nextElements
@@ -134,9 +139,8 @@ public func RewriteCombinational<V, G>(
         v : Vertex<V, G>, data : TraversalData<V, G> =>
         let nextElements = HashSet<TraversalElement<V, G>>()
         for(ec in v.GetOutEdges()) {
-            let te = EDGE(ec.GetEdge())
-            if(!ending.contains(te)){
-                nextElements.put(te)
+            if(!ending.contains(ec)){
+                nextElements.put(EDGE(ec.GetEdge()))
             }
         }
         nextElements
@@ -161,7 +165,7 @@ public func RewriteCombinational<V, G>(
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     RewriteCombinational(
-        signature, f, starting, f.GetRightmostTraversalElements(),
+        signature, f, starting, HashSet<EdgeConnection<V, G>>(),
         copyBlackBoxes: copyBlackBoxes
     )
 }
@@ -176,6 +180,6 @@ public func RewriteCombinational<V, G>(
 {
     RewriteCombinational(
         signature, f, f.GetLeftmostTraversalElements(),
-        f.GetRightmostTraversalElements(), copyBlackBoxes: copyBlackBoxes
+        HashSet<EdgeConnection<V, G>>(), copyBlackBoxes: copyBlackBoxes
     )
 }

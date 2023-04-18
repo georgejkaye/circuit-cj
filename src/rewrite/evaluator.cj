@@ -29,7 +29,7 @@ public class Evaluator<V, G> <: Drawable<V, G>
     // The vertices at which to insert the next output, when it is computed
     let nextOutputVertices : Array<Vertex<V, G>>
     // The edges representing the join of the current state and the feedback
-    let stateJoinEdges : Array<TraversalElement<V, G>>
+    let stateConnections : Array<EdgeConnection<V, G>>
     public init(
         signature : Signature<V, G>,
         f : InterfacedHypergraph<V, G>
@@ -58,8 +58,9 @@ public class Evaluator<V, G> <: Drawable<V, G>
         this.nextOutputVertices = map({
             iv => iv.GetVertex()
         }, this.graph.GetOutputs())
-        this.stateJoinEdges = Array<TraversalElement<V, G>>(this.stateWires){
-            i : Int64 => EDGE(coreEdge.NextEdgeLeft(i).GetEdge())
+        this.stateConnections = Array<EdgeConnection<V, G>>(this.stateWires){
+            i : Int64 =>
+                EdgeConnection(coreEdge.NextEdgeLeft(i).GetEdge(), 0, SOURCE)
         }
         this.graph.WriteDotToFile(1, "dot/after-prep", debug: true)
     }
@@ -119,7 +120,8 @@ public class Evaluator<V, G> <: Drawable<V, G>
                 if(i < this.stateWires) {
                     splitJoinVertices[i][1]
                 } else {
-                    let outputVertex = nextOutputVertices[i - this.stateWires]
+                    let outputIndex = i - this.stateWires
+                    let outputVertex = nextOutputVertices[outputIndex]
                     // We are going to insert the register containing the
                     // output subcircuit in between the previous register
                     // and the main graph
@@ -133,8 +135,11 @@ public class Evaluator<V, G> <: Drawable<V, G>
                         DELAY(outputWidth), [leftVertex], [delayTarget],
                         None, this.graph.GetGraph()
                     )
-                    // The ith target from the output subgraph is the first
-                    // source of this register's join edge
+                    // The source of the output delay will be the output vertex
+                    // in the next cycle
+                    nextOutputVertices[outputIndex] = leftVertex
+                    // The output of the core copy we are constructing will be
+                    // joined with the delay we just made
                     let outputTarget = Vertex<V, G>(
                         outputWidth, Some(this.graph.GetGraph())
                     )
@@ -169,7 +174,7 @@ public class Evaluator<V, G> <: Drawable<V, G>
         // instantaneous rules
         RewriteCombinational(
             this.sig, this.graph, rewriteStartingElements,
-            HashSet(this.stateJoinEdges), copyBlackBoxes: true,
+            HashSet(this.stateConnections), copyBlackBoxes: true,
             allInstantaneous: true
         )
         this.currentCycle++
@@ -235,34 +240,17 @@ func MakeRegisterJoin<V, G>(
     let (leftVertex, rightVertex) = target.SplitVertex()
     let bot = sig.UseSignal(sig.GetBottom(), width)
     let (valueTarget, delayTarget, delayEdge, signal) = if(isDelay) {
-        (
-            bot.GetVertex(),
-            leftVertex,
-            e,
-            Signal(sig.GetBottom(), width)
-        )
+        (bot.GetVertex(), leftVertex, e, Signal(sig.GetBottom(), width))
     } else {
         let newVertex = f.GetGraph().AddNewVertex(width)
         let delayEdge = Edge(
-            DELAY(width),
-            [bot.GetVertex()],
-            [newVertex],
-            None,
-            f.GetGraph()
+            DELAY(width), [bot.GetVertex()],[newVertex], None, f.GetGraph()
         )
-        (
-            leftVertex,
-            newVertex,
-            delayEdge,
-            e.GetLabel().GetSignal()
-        )
+        (leftVertex, newVertex, delayEdge, e.GetLabel().GetSignal())
     }
     let joinEdge = Edge(
-        Label<V, G>.JOIN(width),
-        [valueTarget, delayTarget],
-        [rightVertex],
-        None<InterfacedHypergraph<V, G>>,
-        f.GetGraph()
+        Label<V, G>.JOIN(width), [valueTarget, delayTarget],
+        [rightVertex], None<InterfacedHypergraph<V, G>>, f.GetGraph()
     )
     (joinEdge, delayEdge, signal, valueTarget)
 }
