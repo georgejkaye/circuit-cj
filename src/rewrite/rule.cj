@@ -286,7 +286,10 @@ func ApplyPreconditions<V, G>(e : Edge<V, G>) : Bool
  * of a given edge and the values stored within these edges.
  *
  * @param e The edge
- * @return An array of the argument edges and an array of the argument values
+ * @return An array of options of the argument edges and an array of options of
+ *          the argument values: elements will be None if there is no signal as
+ *          an argument or if there is a argument shared between edges (it must
+ *          be forked first).
  */
 func GetArgs<V, G>(
     e : Edge<V, G>
@@ -297,15 +300,19 @@ func GetArgs<V, G>(
 {
     let argumentEdges = map({
             v : Vertex<V, G> =>
-                match(v.GetInEdge()) {
-                    case None => None<Edge<V, G>>
-                    case Some(ec) =>
-                        let edge = ec.GetEdge()
-                        if(edge.GetLabel().IsSignal()) {
-                            Some(edge)
-                        } else {
-                            None<Edge<V, G>>
-                        }
+                if(v.GetOutEdges().size == 1) {
+                    match(v.GetInEdge()) {
+                        case None => None<Edge<V, G>>
+                        case Some(ec) =>
+                            let edge = ec.GetEdge()
+                            if(edge.GetLabel().IsSignal()) {
+                                Some(edge)
+                            } else {
+                                None<Edge<V, G>>
+                            }
+                    }
+                } else {
+                    None<Edge<V, G>>
                 }
         }, e.GetSources()
     )
@@ -313,7 +320,7 @@ func GetArgs<V, G>(
             arg : Option<Edge<V, G>> =>
                 match(arg) {
                     case None => None<Array<V>>
-                    case Some(e) => e.GetLabel().GetValueArray()
+                    case Some(e) => Some(e.GetLabel().GetValueArray())
                 }
         }, argumentEdges
     )
@@ -357,11 +364,8 @@ func MakeValueOrSignal<V, G>(
  * @return A pair of hash sets (next elements, removed elements)
  */
  func ReplaceGateWithOutputs<V, G>(
-    signature : Signature<V, G>,
-    f : InterfacedHypergraph<V, G>,
-    e : Edge<V, G>,
-    args : Array<Option<Edge<V, G>>>,
-    results : Array<Array<V>>
+    signature : Signature<V, G>, f : InterfacedHypergraph<V, G>,
+    e : Edge<V, G>, args : Array<Option<Edge<V, G>>>, results : Array<Array<V>>
 ) : HashSet<TraversalElement<V, G>>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
@@ -404,7 +408,7 @@ func MakeValueOrSignal<V, G>(
  * @param signature
  * @return The apply rewrite rule
  */
-func GetApplyRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
+func GetPrimitiveRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -414,26 +418,13 @@ func GetApplyRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
         PRIMITIVE,
         {
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
-                if(!ApplyPreconditions(e)){
-                    None
-                } else {
-                    // This edge is guaranteed to be a primitive
-                    // by the rewrite precondition
-                    let prim = e.GetLabel().GetPrimitive()
-                    // Get the corresponding function from the signature
-                    let function = signature.GetGate(prim)
-                    // Get the arguments to the gate
-                    let (argumentEdges, argumentValues) = GetArgs(e)
-                    let actualArgumentValues = map(
-                        { vs : Option<Array<V>> => vs.getOrThrow() },
-                        argumentValues
-                    )
-                    // Compute the outputs of the gate and replace accordingly
-                    let result = function(actualArgumentValues)
-                    ReplaceGateWithOutputs(
-                        signature, f, e, argumentEdges, result
-                    )
-                }
+                let prim = e.GetLabel().GetPrimitive()
+                let function = signature.GetGate(prim)
+                GetApplyRule(
+                    signature, {
+                        vss : Array<Array<V>> => function(vss)
+                    }, e, f
+                )
         }
     )
 }
@@ -489,6 +480,29 @@ func GetStubRule<V, G>() : RewriteRule<V, G>
         }
     )
 }
+func GetApplyRule<V, G>(
+        signature : Signature<V, G>,
+        applyFn : (Array<Array<V>>) -> Array<Array<V>>,
+        e : Edge<V, G>, f : InterfacedHypergraph<V, G>
+) : Option<HashSet<TraversalElement<V, G>>>
+    where
+        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
+        G <: PrimitiveSymbol<V> & Equatable<G>
+{
+    let (argumentEdges, argumentSignals) = GetArgs(e)
+    try {
+        let concreteSignals = map<Option<Array<V>>, Array<V>>(
+            { v : Option<Array<V>> => v.getOrThrow() }, argumentSignals
+        )
+        let resultSignals = applyFn(concreteSignals)
+        let nextEdges = ReplaceGateWithOutputs(
+            signature, f, e, argumentEdges, resultSignals
+        )
+        Some(nextEdges)
+    } catch (e : NoneValueException) {
+        None
+    }
+}
 /**
  * Get the rewrite rule for joining two values or signals together, using the
  * join operation in the signature lattice.
@@ -506,28 +520,12 @@ func GetJoinRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
         NJOIN,
         {
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
-                // The join is just a special kind of gate, so we follow
-                // the same procedure
-                let (argumentEdges, argumentValues) = GetArgs(e)
-                try {
-                    // We know a join always has two arguments so we can
-                    // access them explicitly
-                    let result = signature.Join(
-                        argumentValues[0].getOrThrow(),
-                        argumentValues[1].getOrThrow()
-                    )
-                    Some(
-                        ReplaceGateWithOutputs(
-                            signature, f, e,
-                            [argumentEdges[0], argumentEdges[1]],
-                            [result]
-                        )
-                    )
-                // If not everything is an argument, an exception will be
-                // thrown when we try to read the contents of a None
-                } catch(e : NoneValueException) {
-                    return None
-                }
+                GetApplyRule(
+                    signature, {
+                        vss : Array<Array<V>> =>
+                            [signature.Join(vss[0], vss[1])]
+                    }, e, f
+                )
         }
     )
 }

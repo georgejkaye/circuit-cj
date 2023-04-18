@@ -72,7 +72,7 @@ func CheckAppropriateRules<V, G>(
         case JOIN(_) =>
             AddRule(GetJoinRule(signature))
         case PRIMITIVE(_) =>
-            AddRule(GetApplyRule(signature))
+            AddRule(GetPrimitiveRule(signature))
             if(allInstantaneous) {
                 for(ann in signature.GetAnnihilators()) {
                     AddRule(GetAnnihiliationRule(ann))
