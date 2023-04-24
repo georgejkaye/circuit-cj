@@ -99,6 +99,8 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
     let delayEdges : HashSet<Edge<V, G>> = HashSet<Edge<V, G>>()
     // Edges representing signals or values
     let valueEdges : HashSet<Edge<V, G>> = HashSet<Edge<V, G>>()
+    // Edges represented disconnected values (these are combinational)
+    let disconnectedEdges : HashSet<Edge<V, G>> = HashSet<Edge<V, G>>()
     // Edges with sequential subgraphs
     let sequentialEdges : HashSet<Edge<V, G>> = HashSet<Edge<V, G>>()
     // Edges with combinational subgraphs
@@ -355,8 +357,18 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
         // sequential components
         match(e.GetLabel()){
             case DELAY(_) => this.delayEdges.put(e)
-            case VALUE(_) => this.valueEdges.put(e)
-            case SIGNAL(_) => this.valueEdges.put(e)
+            case VALUE(v) =>
+                if(v == V.GetDisconnected()) {
+                    this.disconnectedEdges.put(e)
+                } else {
+                    this.valueEdges.put(e)
+                }
+            case SIGNAL(s) =>
+                if(s.IsAll(V.GetDisconnected())) {
+                    this.disconnectedEdges.put(e)
+                } else {
+                    this.valueEdges.put(e)
+                }
             case _ =>
                 match(e.GetSubgraph()){
                     case Some(g) =>
@@ -422,6 +434,9 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
     }
     public func GetValueEdges() : HashSet<Edge<V, G>> {
         this.valueEdges
+    }
+    public func GetDisconnectedEdges() : HashSet<Edge<V, G>> {
+        this.disconnectedEdges
     }
     public func GetFeedbackConnections() : HashSet<EdgeConnection<V, G>> {
         this.feedbackConnections
