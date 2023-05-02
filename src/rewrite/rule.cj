@@ -147,9 +147,10 @@ func ForkCondition<V, G>(
  *
  * @param e The edge to propagate
  * @param outTentacles An array of arrays where outTentacles[i][j] defines the
-             (single) outgoing tentacle of the jth target vertex of the ith copy
-* @return The hash set of next elements and removed elements
-*/
+ *                          (single) outgoing tentacle of the jth target vertex
+ *                          of the ith copy
+ * @return The hash set of next elements
+ */
 func PropagateAcrossFork<V, G>(
     e : Edge<V, G>,
     f : InterfacedHypergraph<V, G>,
@@ -414,16 +415,14 @@ func GetPrimitiveRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     RewriteRule<V, G>(
-        "apply",
+        "primitive",
         PRIMITIVE,
         {
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
                 let prim = e.GetLabel().GetPrimitive()
                 let function = signature.GetGate(prim)
                 GetApplyRule(
-                    signature, {
-                        vss : Array<Array<V>> => function(vss)
-                    }, e, f
+                    signature, { vss : Array<Array<V>> => function(vss)}, e, f
                 )
         }
     )
@@ -444,8 +443,7 @@ func GetStubRule<V, G>() : RewriteRule<V, G>
         {
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
                 // Check to see if each target has no outgoing tentacles
-                let targets = e.GetTargets()
-                for(v in targets) {
+                for(v in e.GetTargets()) {
                     if(
                         v.GetOutEdges().size != 0 ||
                         f.GetOutputPositions(v).size != 0
@@ -456,16 +454,16 @@ func GetStubRule<V, G>() : RewriteRule<V, G>
                 // The next elements are the edges to the left of this one, as
                 // they may also need to be discarded now
                 let nextElements = HashSet<TraversalElement<V, G>>()
-                let removedElements = HashSet<TraversalElement<V, G>>()
                 for(v in e.GetSources()){
-                    v.RemoveOutEdge(e)
                     match(v.GetInEdge()){
                         case Some(ec) =>
                             nextElements.put(EDGE(ec.GetEdge()))
                         case None =>
                             // If this vertex has no in edges and is also not
                             // in the interface, we can remove it altogether
-                            if(v.GetInterfacedInputs().size == 0){
+                            if(v.GetInterfacedInputs().size == 0 &&
+                                v.GetOutEdges().size == 0
+                            ){
                                 RemoveVertex(v, f)
                             }
                     }
@@ -602,7 +600,6 @@ func PerformPassthroughRewrite<V, G>(
     // Track the source and target we will merge to get the identity
     let source = e.GetSource(otherIndex)
     let target = e.GetTarget(i)
-    let nextElements = HashSet<TraversalElement<V, G>>()
     // Remove the gate edge
     RemoveEdge(e, f)
     // Remove the argument edge
@@ -613,12 +610,8 @@ func PerformPassthroughRewrite<V, G>(
     }
     // Merge the dangling source and target
     source.MergeVertex(target, false)
-    // If the identity has another edge to the left, add it to the queue
-    match(source.GetInEdge()) {
-        case None => ()
-        case Some(ec) => nextElements.put(EDGE(ec.GetEdge()))
-    }
-    nextElements
+    // We don't need to add anything to the frontier because
+    HashSet<TraversalElement<V, G>>()
 }
 /**
  * Get the rewrite rule for unitality of the join, i.e. if a join has all
@@ -699,10 +692,13 @@ func ExpandSubgraphRewrite<V, G>(
     let subgraph = e.GetSubgraph().getOrThrow()
     let (newSources, newTargets) = e.BurstSubgraph()
     // Add the merged sources as the next elements to traverse
-    for(t in newSources) {
-        match(t.GetVertex().GetInEdge()){
+    for(v in newSources) {
+        // Expanding the subgraph could create forks, so we retraverse
+        // the edges before the source vertices in case there is rewrite
+        // potential there
+        match(v.GetInEdge()){
             case Some(ec) => nextElements.put(EDGE(ec.GetEdge()))
-            case None => ()
+            case None => nextElements.put(VERTEX(v))
         }
     }
     // Also add the values contained within the subgraph
@@ -743,7 +739,7 @@ func GetEnhancedRule<V, G>(signature : Signature<V, G>)
  * @param signature
  * @return The composite rewrite rule
  */
-func GetCompositeRule<V, G>(signature : Signature<V, G>, all : Bool)
+func GetCompositeRule<V, G>(signature : Signature<V, G>)
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
@@ -1041,6 +1037,7 @@ func GetAnnihiliationRule<V, G>(
                             let v = e.GetSource(i)
                             v.RemoveOutEdge(e)
                             if(i != ann.index) {
+                                // We need to stub the other edges
                                 match(v.GetInEdge()) {
                                     case None => ()
                                     case Some(ec) =>
@@ -1119,7 +1116,7 @@ func GetIdentifierRule<V, G>(
                             source.MergeVertex(target, false)
                             nextElements.put(VERTEX(source))
                         }
-                        Some(nextElements)
+                        Some(HashSet<TraversalElement<V, G>>())
                 }
             }
         }

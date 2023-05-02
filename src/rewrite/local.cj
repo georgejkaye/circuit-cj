@@ -78,9 +78,9 @@ func CheckAppropriateRules<V, G>(
                 }
             }
         case ENHANCED_PRIMITIVE(_) =>
-            AddRule(GetCompositeRule(signature, true))
+            AddRule(GetCompositeRule(signature))
         case COMPOSITE(_) =>
-            AddRule(GetCompositeRule(signature, true))
+            AddRule(GetCompositeRule(signature))
         case BLACKBOX(_) =>
             if(copyBlackBoxes) {
                 AddRule(GetCopyBlackboxRule(blackBoxTracker))
@@ -89,30 +89,50 @@ func CheckAppropriateRules<V, G>(
         case _ => ()
     }
     for(rule in validRules) {
-        match(AttemptRewriteRule(signature, edge, rule, f)){
+        match(AttemptRewriteRule(signature, edge, rule, f, debug: debug)){
             case None => ()
             case Some(result) => return Some(result)
         }
     }
     return None
 }
+
+// TODO
+//
+//  Rethink the rewrite strategy, it often involves lots of redundant
+//  traversals so it takes ages
+//
+
 public func RewriteCombinational<V, G>(
     signature : Signature<V, G>,
     f : InterfacedHypergraph<V, G>,
     starting : HashSet<TraversalElement<V, G>>,
     ending : HashSet<TraversalElement<V, G>>,
     copyBlackBoxes!: Bool = false,
-    allInstantaneous!: Bool = false
+    allInstantaneous!: Bool = false,
+    debug!: Bool = false
 ) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
+    if(debug) {
+        f.WriteDotToFile(0, "dot/before-comb", debug: true)
+        println("The starting elements are ${starting}")
+    }
     let actionAtEdge = {
         e : Edge<V, G>, data : TraversalData<V, G> =>
+            // Only rewrite or proceed from this edge if its sources have
+            // all been traversed
+            for(v in e.GetSources()) {
+                if (!data.visitedElements.contains(VERTEX(v))) {
+                    println("Skipping evaluation because ${v} has not been traversed")
+                    return HashSet<TraversalElement<V, G>>()
+                }
+            }
             match(CheckAppropriateRules(
-                e, f, signature,
-                copyBlackBoxes: copyBlackBoxes, allInstantaneous: true
+                e, f, signature, copyBlackBoxes: copyBlackBoxes,
+                allInstantaneous: true, debug: debug
             )) {
                 case Some(result) =>
                     println("The next elements are ${result}")
@@ -139,20 +159,17 @@ public func RewriteCombinational<V, G>(
         }
         nextElements
     }
-    let startingElements = HashSet<TraversalElement<V, G>>()
-    for(e in starting) {
-        startingElements.put(e)
-    }
     Traverse<V, G>(
-        startingElements, actionAtVertex: actionAtVertex,
-        actionAtEdge: actionAtEdge, revisit: true
+        starting, actionAtVertex: actionAtVertex,
+        actionAtEdge: actionAtEdge, revisit: true,
     )
 }
 public func RewriteCombinational<V, G>(
     signature : Signature<V, G>,
     f : InterfacedHypergraph<V, G>,
     starting : HashSet<TraversalElement<V, G>>,
-    copyBlackBoxes!: Bool
+    copyBlackBoxes!: Bool,
+    debug!: Bool = false
 ) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
@@ -160,13 +177,14 @@ public func RewriteCombinational<V, G>(
 {
     RewriteCombinational(
         signature, f, starting, HashSet<TraversalElement<V, G>>(),
-        copyBlackBoxes: copyBlackBoxes
+        copyBlackBoxes: copyBlackBoxes, debug: debug
     )
 }
 public func RewriteCombinational<V, G>(
     signature : Signature<V, G>,
     f : InterfacedHypergraph<V, G>,
-    copyBlackBoxes!: Bool
+    copyBlackBoxes!: Bool,
+    debug!: Bool = false
 ) : Unit
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
@@ -174,6 +192,7 @@ public func RewriteCombinational<V, G>(
 {
     RewriteCombinational(
         signature, f, f.GetLeftmostTraversalElements(),
-        HashSet<TraversalElement<V, G>>(), copyBlackBoxes: copyBlackBoxes
+        HashSet<TraversalElement<V, G>>(), copyBlackBoxes: copyBlackBoxes,
+        debug: debug
     )
 }
