@@ -929,6 +929,7 @@ public func GenerateDotGraph<V, G>(
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     let elementContent = ArrayList<DotLine>()
+    Debug("Drawing hypergraph for ${f.GetName()}")
     DrawInterfacedHypergraph(
         f, None<Edge<V, G>>, depth, HashSet<Int64>(), elementContent, debug
     )
