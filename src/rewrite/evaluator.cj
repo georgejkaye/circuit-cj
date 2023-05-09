@@ -21,6 +21,7 @@ public class Evaluator<V, G> <: Drawable<V, G>
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
     var currentCycle = 0
+    let debug : Bool
     let sig : Signature<V, G>
     let graph : InterfacedHypergraph<V, G>
     let coreGraph : InterfacedHypergraph<V, G>
@@ -31,20 +32,19 @@ public class Evaluator<V, G> <: Drawable<V, G>
     // The edges representing the join of the current state and the feedback
     let stateJoinEdges : Array<TraversalElement<V, G>>
     public init(
-        signature : Signature<V, G>,
-        f : InterfacedHypergraph<V, G>
+        signature : Signature<V, G>, f : InterfacedHypergraph<V, G>,
+        debug!: Bool = false
     ){
+        this.debug = debug
         this.sig = signature
         // Clone the graph so that the original is not affected
         this.graph = f.Clone()
         // Sequential components need to be isolated from the combinational ones
         BurstSequentialGraphs(this.graph)
-        this.graph.WriteDotToFile(1, "dot/after-bursting", debug: true)
         // Put all state into registers, and bundle combinational logic into
         // one block
         let (coreGraph, coreEdge, stateWires) =
             ConvertToMealyForm(signature, this.graph)
-        this.graph.WriteDotToFile(1, "dot/after-mealy", debug: true)
         this.coreEdge = coreEdge
         this.coreGraph = coreGraph
         this.stateWires = stateWires
@@ -52,16 +52,17 @@ public class Evaluator<V, G> <: Drawable<V, G>
         if(this.coreGraph.GetFeedbackConnections().size != 0){
             EliminateInstantFeedback(sig, this.coreGraph)
             // Simplify the resulting graph
-            RewriteCombinational(sig, this.coreGraph, copyBlackBoxes: false)
+            RewriteCombinational(
+                sig, this.coreGraph, copyBlackBoxes: false,
+                allInstantaneous: false, debug: debug
+            )
         }
-        this.graph.WriteDotToFile(1, "dot/after-instant", debug: true)
         this.nextOutputVertices = map({
             iv => iv.GetVertex()
         }, this.graph.GetOutputs())
         this.stateJoinEdges = Array<TraversalElement<V, G>>(this.stateWires){
             i : Int64 => EDGE(coreEdge.NextEdgeLeft(i).GetEdge())
         }
-        this.graph.WriteDotToFile(1, "dot/after-prep", debug: true)
     }
     public func GetGraph() : InterfacedHypergraph<V, G> {
         this.graph
@@ -161,8 +162,6 @@ public class Evaluator<V, G> <: Drawable<V, G>
             coreCopyInputs, coreCopyOutputs, this.graph.GetGraph()
         )
         this.graph.WriteDotToFile(1, "dot/before-comb-${currentCycle}", debug: true)
-        println("The starting elements are ${rewriteStartingElements}")
-        println("The ending elements are ${rewriteEndingElements}")
         // Rewrite the copy of the combinational core. We want to
         // force blackboxes as much as possible to the right so that each
         // element of the state is isolated. Moreover, since the core is
@@ -170,7 +169,8 @@ public class Evaluator<V, G> <: Drawable<V, G>
         // instantaneous rules
         RewriteCombinational(
             this.sig, this.graph, rewriteStartingElements,
-            rewriteEndingElements, copyBlackBoxes: true, allInstantaneous: true
+            rewriteEndingElements, copyBlackBoxes: true, allInstantaneous: true,
+            debug: debug
         )
         this.currentCycle++
     }
