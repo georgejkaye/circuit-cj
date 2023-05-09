@@ -234,15 +234,14 @@ public func DelayGuardedFeedback<V, G>(
  * @param initial The initial signal of the register
  */
 public func RegisterGuardedFeedback<V, G>(
-    initial : Signal<V>,
-    outgoing : Wire<V, G>,
-    incoming: Wire<V, G>
-) : Unit
+    initial : Signal<V>, outgoing : Wire<V, G>, incoming: Wire<V, G>
+) : Wire<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>{
     let register = UseSimpleRegister(initial, outgoing)
     PerformFeedback(register, incoming, false)
+    register
 }
 /**
  * Use a waveform
@@ -252,17 +251,13 @@ public func RegisterGuardedFeedback<V, G>(
  * @return The output wire of the waveform
  */
 public func UseOpenWaveform<V, G>(
-    signals : Array<Signal<V>>,
-    input : Wire<V, G>
+    signals : Array<Signal<V>>, input : Wire<V, G>
 ) : Wire<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
 {
-    UseSubcircuit_1(
-        MakeOpenWaveform(signals),
-        [input]
-    )
+    UseSubcircuit_1(MakeOpenWaveform(signals), [input])
 }
 /**
  * Use a waveform

@@ -47,8 +47,8 @@ func RunningSumLoop(first: Wire_, a : Wire_, b0 : Wire_) : (Wire_, Wire_) {
     let prev_sum = sig.UseWire(a.GetWidth())
     let sum = RunningSum(first, prev_sum, a, b0)
     let (lsb, msbs) = LsbAndMsbs(sum)
-    let sum_reg = UseSimpleRegister(0, a.GetWidth(), false, msbs)
-    Feedback(sum_reg, prev_sum)
+    let sum_reg =
+        RegisterGuardedFeedback(0, a.GetWidth(), false, msbs, prev_sum)
     (sum_reg, lsb)
 }
 /**
@@ -62,8 +62,8 @@ func ComputedBits(bit : Wire_, width : Int64) : Wire_ {
     let prev = sig.UseWire(width)
     let msbs = Msbs(prev)
     let combined = Combine([bit, msbs])
-    let combined_reg = UseSimpleRegister(0, combined.GetWidth(), false, combined)
-    Feedback(combined_reg, prev)
+    let combined_reg =
+        RegisterGuardedFeedback(0, combined.GetWidth(), false, combined, prev)
     combined_reg
 }
 /**

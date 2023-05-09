@@ -304,12 +304,9 @@ public func UseSimpleRegister<V, G>(
  * @param incoming The wire to connect the feedback to
  */
 public func RegisterGuardedFeedback<V, G>(
-    initial : Int64,
-    width : Int64,
-    signed : Bool,
-    input : Wire<V, G>,
-    incoming : Wire<V, G>
-) : Unit
+    initial : Int64, width : Int64, signed : Bool,
+    input : Wire<V, G>, incoming : Wire<V, G>
+) : Wire<V, G>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> & Decimal<V>,
         G <: PrimitiveSymbol<V> & Equatable<G>
