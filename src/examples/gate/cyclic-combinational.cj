@@ -22,7 +22,7 @@ public func CyclicCombinational(delays!: Bool) {
     // Wire from feedback
     let feedback = sig.UseWire(1)
     // Top half of the circuit
-    let muxa = Mux2(c, x, feedback)
+    let muxa = Mux2(sel: c, a: x, b: feedback)
     let muxaWire = if(delays) {
         UseDelay(muxa)
     } else {
@@ -30,7 +30,7 @@ public func CyclicCombinational(delays!: Bool) {
     }
     let f = UseBlackbox("F", [Port(1, "A")], [Port(1, "Z")], [muxaWire])[0]
     // Bottom half of the circuit
-    let muxb = Mux2(c, f, x)
+    let muxb = Mux2(sel: c, a: f, b: x)
     let muxbWire = if(delays) {
         UseDelay(muxb)
     } else {
@@ -39,7 +39,7 @@ public func CyclicCombinational(delays!: Bool) {
     let g = UseBlackbox("G", [Port(1, "A")], [Port(1, "Z")], [muxbWire])[0]
     Feedback(g, feedback)
     // Final multiplexer
-    let muxc = Mux2(c, g, f)
+    let muxc = Mux2(sel: c, a: g, b: f)
     let muxcWire = if(delays) {
         UseDelay(muxc)
     } else {

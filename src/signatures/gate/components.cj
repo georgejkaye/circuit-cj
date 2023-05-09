@@ -350,16 +350,16 @@ public func Mux2_1_W(width : Int64) : BelnapInterfacedCircuit {
 /**
  * Apply a 2-multiplexer. The width is determined from the input wires.
  *
- * @param s0 Input SEL0 (1)
+ * @param sel Input SEL0 (1)
  * @param a Input A (w)
  * @param b Input B (w)
  * @return Output Z (w)
  */
-public func Mux2(s0: BelnapWire, a: BelnapWire, b: BelnapWire) : BelnapWire {
+public func Mux2(sel!: BelnapWire, a!: BelnapWire, b!: BelnapWire) : BelnapWire {
     let width = AssertAllSameWidth(a, b)
     UseSubcircuit_1(
         Mux2_1_W(width),
-        [s0, a, b]
+        [sel, a, b]
     )
 }
 /**

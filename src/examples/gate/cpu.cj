@@ -463,13 +463,13 @@ public func SimpleCPU() {
     let alu_s3 = decoder[10]
     let alu_s4 = decoder[11]
     // Mux_I
-    let muxi = Mux2(muxa, ir_muxi, pc)
+    let muxi = Mux2(sel: muxa, a: ir_muxi, b: pc)
     // Mux_D
     let (instruction_muxd, _) = Split(instruction, 8)
     let acc_fb = sig.UseWire(8)
-    let muxd = Mux2(muxb, instruction_muxd, acc_fb)
+    let muxd = Mux2(sel: muxb, a: instruction_muxd, b: acc_fb)
     // Mux_A
-    let addr = Mux2(muxc, pc, ir_muxi)
+    let addr = Mux2(sel: muxc, a: pc, b: ir_muxi)
     // ALU
     let (alu_z, alu_cout) = UseSubcircuit_2(
         ALU(), [muxi, muxd, alu_s0, alu_s1, alu_s2, alu_s3, alu_s4]

@@ -112,8 +112,8 @@ public func ALU(w : Int64){
     let or = UseOr(a, b)
     let (sum, overflow, carry) = UseSubcircuit_3(AddSub(w), [a, b, c0])
     // Use the multiplexers to decide which computation to return
-    let mux1 = Mux2(c1, and, or)
-    let mux2 = Mux2(c1, mux1, sum)
+    let mux1 = Mux2(sel: c1, a: and, b: or)
+    let mux2 = Mux2(sel: c1, a: mux1, b: sum)
     // Compute the outputs appropriately
     let result = mux2
     let notzero = UseOr(result)
