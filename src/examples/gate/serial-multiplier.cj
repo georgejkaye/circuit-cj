@@ -17,7 +17,7 @@ package examples.gate
  * @return the partial product for this bit
  */
 func PartialProduct(a : Wire_, b0: Wire_) : Wire_ {
-    Mux2(sel: b0, a: a, b: sig.UseConstantZero(width: a.GetWidth()))
+    Mux2(sel: b0, a: sig.UseConstantZero(width: a.GetWidth()),  b: a, )
 }
 /**
  * Compute a running sum.
@@ -47,8 +47,9 @@ func RunningSumLoop(first: Wire_, a : Wire_, b0 : Wire_) : (Wire_, Wire_) {
     let prev_sum = sig.UseWire(a.GetWidth())
     let sum = RunningSum(first, prev_sum, a, b0)
     let (lsb, msbs) = LsbAndMsbs(sum)
-    DelayGuardedFeedback(msbs, prev_sum)
-    (msbs, lsb)
+    let sum_reg = UseSimpleRegister(0, a.GetWidth(), false, msbs)
+    Feedback(sum_reg, prev_sum)
+    (sum_reg, lsb)
 }
 /**
  * Store the computed bits in a register.
@@ -61,8 +62,9 @@ func ComputedBits(bit : Wire_, width : Int64) : Wire_ {
     let prev = sig.UseWire(width)
     let msbs = Msbs(prev)
     let combined = Combine([bit, msbs])
-    DelayGuardedFeedback(combined, prev)
-    combined
+    let combined_reg = UseSimpleRegister(0, combined.GetWidth(), false, combined)
+    Feedback(combined_reg, prev)
+    combined_reg
 }
 /**
  * Create a serial multiplier circuit.
@@ -70,7 +72,7 @@ func ComputedBits(bit : Wire_, width : Int64) : Wire_ {
  * @param width
  * @return The circuit
  */
-public func SerialMultiplierBit(width : Int64) {
+public func SerialMultiplier(width : Int64) {
     let first = sig.UseWire(1)
     let a = sig.UseWire(width)
     let b0 = sig.UseWire(1)
