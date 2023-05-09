@@ -207,13 +207,11 @@ public func Traverse<V, G>(
                 case EDGE(e) => actionAtEdge(e, traversalData)
                 case VERTEX(v) => actionAtVertex(v, traversalData)
             }
-            Debug("The next elements are ${elementsToAdd}")
             for(elem in elementsToAdd) {
-                if((revisit || !traversalData.visitedElements.contains(elem))) {
+                if(revisit || !traversalData.visitedElements.contains(elem)) {
                     traversalData.frontier.put(elem)
                 }
             }
-            Debug("The frontier is ${frontier.size} long and is now ${frontier}")
         }
     }
 }

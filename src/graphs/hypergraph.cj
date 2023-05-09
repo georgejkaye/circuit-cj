@@ -423,6 +423,7 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
         this.RemoveEdgeFromRightmostTraversalElements(e)
         this.delayEdges.remove(e)
         this.valueEdges.remove(e)
+        this.disconnectedEdges.remove(e)
         this.sequentialEdges.remove(e)
         this.feedbackConnections.removeIf(
             { ec : EdgeConnection<V, G> => ec.GetEdge() == e}

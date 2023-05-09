@@ -203,6 +203,9 @@ public class InterfacedHypergraph<V, G>
     public func GetValueEdges() : HashSet<Edge<V, G>> {
         this.f.GetValueEdges()
     }
+    public func GetDisconnectedEdges() : HashSet<Edge<V, G>> {
+        this.f.GetDisconnectedEdges()
+    }
     public func GetFeedbackConnections() : HashSet<EdgeConnection<V, G>> {
         this.f.GetFeedbackConnections()
     }
