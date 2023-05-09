@@ -690,6 +690,14 @@ func ExpandSubgraphRewrite<V, G>(
     let nextElements = HashSet<TraversalElement<V, G>>()
     // We assume there is a subgraph in this edge
     let subgraph = e.GetSubgraph().getOrThrow()
+    // Add the values contained within the subgraph to the next elements
+    for(edge in subgraph.GetValueEdges()){
+        nextElements.put(EDGE(edge))
+    }
+    // Do the same for the disconnected edges
+    for(edge in subgraph.GetDisconnectedEdges()) {
+        nextElements.put(EDGE(edge))
+    }
     let (newSources, newTargets) = e.BurstSubgraph()
     // Add the merged sources as the next elements to traverse
     for(v in newSources) {
@@ -700,10 +708,6 @@ func ExpandSubgraphRewrite<V, G>(
             case Some(ec) => nextElements.put(EDGE(ec.GetEdge()))
             case None => nextElements.put(VERTEX(v))
         }
-    }
-    // Also add the values contained within the subgraph
-    for(edge in subgraph.GetValueEdges()){
-        nextElements.put(EDGE(edge))
     }
     nextElements
 }
