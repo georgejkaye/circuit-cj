@@ -36,8 +36,12 @@ public class Evaluator<V, G> <: Drawable<V, G>
     let coreGraph : InterfacedHypergraph<V, G>
     var coreEdge : Edge<V, G>
     let stateWires : Int64
-    // The vertices at which to insert the next output, when it is computed
-    let nextOutputVertices : Array<Vertex<V, G>>
+    // The vertices that are the root of the next output (i.e. the sources of
+    // the last delay, or the outputs if there is no delay)
+    let nextRootVertices : Array<Vertex<V, G>>
+    // The vertices that were the targets of the last output signals, or the
+    // outputs if no signals have been computed yet
+    let lastSignalTargets : Array<Vertex<V, G>>
     // The edges representing the join of the current state and the feedback
     let stateJoinEdges : Array<TraversalElement<V, G>>
     // The sequence of inputs and corresponding outputs
@@ -68,13 +72,15 @@ public class Evaluator<V, G> <: Drawable<V, G>
                 allInstantaneous: false, debug: debug
             )
         }
-        this.nextOutputVertices = map({
-            iv => iv.GetVertex()
-        }, this.graph.GetOutputs())
+        this.nextRootVertices = this.graph.GetOutputVertices()
+        this.lastSignalTargets = this.graph.GetOutputVertices()
         this.stateJoinEdges = Array<TraversalElement<V, G>>(this.stateWires){
             i : Int64 => EDGE(coreEdge.NextEdgeLeft(i).getOrThrow().GetEdge())
         }
         this.inputOutputHistory = ArrayList()
+    }
+    public func GetInputOutputHistory() : ArrayList<InputOutput<V>> {
+        this.inputOutputHistory
     }
     public func GetGraph() : InterfacedHypergraph<V, G> {
         this.graph
@@ -139,7 +145,7 @@ public class Evaluator<V, G> <: Drawable<V, G>
                     splitJoinVertices[i][1]
                 } else {
                     let outputIndex = i - this.stateWires
-                    let outputVertex = nextOutputVertices[outputIndex]
+                    let outputVertex = nextRootVertices[outputIndex]
                     // We are going to insert the register containing the
                     // output subcircuit in between the previous register
                     // and the main graph
@@ -155,12 +161,13 @@ public class Evaluator<V, G> <: Drawable<V, G>
                     )
                     // The source of the output delay will be the output vertex
                     // in the next cycle
-                    nextOutputVertices[outputIndex] = leftVertex
+                    nextRootVertices[outputIndex] = leftVertex
                     // The output of the core copy we are constructing will be
                     // joined with the delay we just made
                     let outputTarget = Vertex<V, G>(
                         outputWidth, Some(this.graph.GetGraph())
                     )
+                    lastSignalTargets[outputIndex] = outputTarget
                     let joinEdge = Edge(
                         JOIN(outputWidth), [outputTarget, delayTarget],
                         [rightVertex], None, this.graph.GetGraph()
@@ -173,7 +180,6 @@ public class Evaluator<V, G> <: Drawable<V, G>
         let coreCopyEdge = this.coreEdge.Clone(
             coreCopyInputs, coreCopyOutputs, this.graph.GetGraph()
         )
-        this.graph.WriteDotToFile(1, "dot/before-comb-${currentCycle}", debug: true)
         // Rewrite the copy of the combinational core. We want to
         // force blackboxes as much as possible to the right so that each
         // element of the state is isolated. Moreover, since the core is
@@ -184,8 +190,8 @@ public class Evaluator<V, G> <: Drawable<V, G>
             rewriteEndingElements, copyBlackBoxes: true, allInstantaneous: true,
             debug: debug
         )
-        let outputSignals = GetOutputSignals(this.graph, this.currentCycle)
-        let inputOutput = InputOutput(inputSignals, outputSignals )
+        let outputSignals = GetOutputSignals(this.lastSignalTargets)
+        let inputOutput = InputOutput(inputSignals, outputSignals)
         this.inputOutputHistory.append(inputOutput)
         this.currentCycle++
     }
@@ -392,29 +398,23 @@ func EliminateInstantFeedback<V, G>(
  * the array will be None if the outputs cannot be successfully recovered, i.e.
  * if there is not a simple register at the desired tick of the clock.
  *
- * @param graph
- * @param currentCycle
+ * @param currentVertices
+ *             the array of vertices that are the targets of the output graph
+ *             for each tick of the clock
  * @return An array in which each element is either a signal, or None if there
- *              is not a simple register at the desired tick for this output
+ *             is not a simple register at the desired tick for this output
  */
 func GetOutputSignals<V, G>(
-    graph : InterfacedHypergraph<V, G>, currentCycle : Int64
+   signalVertices : Array<Vertex<V, G>>
 ) : Array<Option<Signal<V>>>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
-    Array<Option<Signal<V>>>(graph.GetCoarity()){
-        i : Int64 =>
-            var currentVertex = graph.GetOutput(i).GetVertex()
-            var currentOutput = None<Signal<V>>
-            for(j in 0..currentCycle) {
-                let (signal, vertex) = IsSimpleRegister(currentVertex)
-                currentOutput = signal
-                match(vertex) {
-                    case None => break
-                    case Some(v) => currentVertex = v
-                }
-            }
-            currentOutput
-    }
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    map({ v =>
+        match(v.GetInEdge()) {
+            case None => None
+            case Some(ec) => ec.GetEdge().GetLabel().GetMaybeSignal()
+        }
+    }, signalVertices)
 }
 /**
  * Allow evaluation using decimal values

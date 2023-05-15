@@ -60,8 +60,12 @@ public class InterfacedHypergraph<V, G>
     let f : Hypergraph<V, G>
     // Input vertices
     let inputs : Array<InterfaceVertex<V, G>>
+    // Input vertices as vertices
+    let inputVertices : Array<Vertex<V, G>>
     // Output vertices
     let outputs : Array<InterfaceVertex<V, G>>
+    // Output vertices as vertices
+    let outputVertices : Array<Vertex<V, G>>
     // Label for the interfaced hypergraph, to be displayed on its edge
     let label : Label<V, G>
     // Input vertices, vertices with no in edge, edges with no sources
@@ -92,7 +96,9 @@ public class InterfacedHypergraph<V, G>
     ){
         this.f = f
         this.inputs = inputs
+        this.inputVertices = map({ v => v.GetVertex() }, inputs)
         this.outputs = outputs
+        this.outputVertices = map({ v => v.GetVertex() }, outputs)
         this.label = label
         this.leftmostTraversalElements.putAll(
             f.GetLeftmostTraversalElements()
@@ -190,8 +196,14 @@ public class InterfacedHypergraph<V, G>
     public func GetInputs() : Array<InterfaceVertex<V, G>> {
         this.inputs
     }
+    public func GetInputVertices() : Array<Vertex<V, G>> {
+        this.inputVertices
+    }
     public func GetOutputs() : Array<InterfaceVertex<V, G>> {
         this.outputs
+    }
+    public func GetOutputVertices() : Array<Vertex<V, G>> {
+        this.outputVertices
     }
     public func GetDelayEdges() : HashSet<Edge<V, G>> {
         this.f.GetDelayEdges()
@@ -403,6 +415,7 @@ public class InterfacedHypergraph<V, G>
      */
     func UpdateInterface(
         interfaceArray : Array<InterfaceVertex<V, G>>,
+        interfaceVertexArray : Array<Vertex<V, G>>,
         interfaceMap : HashMap<Vertex<V, G>, HashSet<Int64>>,
         traversalElements : HashSet<TraversalElement<V, G>>,
         i : Int64,
@@ -412,6 +425,7 @@ public class InterfacedHypergraph<V, G>
         interfaceArray[i] = InterfaceVertex(
             newVertex, name: oldVertex.GetName()
         )
+        interfaceVertexArray[i] = newVertex
         match(interfaceMap.get(oldVertex.vertex)) {
             case None => ()
             case Some(ps) => ps.remove(i)
@@ -432,8 +446,8 @@ public class InterfacedHypergraph<V, G>
     public func ReplaceInput(i : Int64, newInput : Vertex<V, G>) : Unit {
         this.GetInput(i).vertex.RemoveAsInput(this, i)
         UpdateInterface(
-            this.inputs, this.inputMap, this.leftmostTraversalElements,
-            i, newInput
+            this.inputs, this.inputVertices, this.inputMap,
+            this.leftmostTraversalElements, i, newInput
         )
         newInput.SetAsInput(this, i)
         f.AddVertex(newInput)
@@ -447,8 +461,8 @@ public class InterfacedHypergraph<V, G>
     public func ReplaceOutput(i : Int64, newOutput : Vertex<V, G>) : Unit {
         this.GetOutput(i).vertex.RemoveAsOutput(this, i)
         UpdateInterface(
-            this.outputs, this.outputMap, this.rightmostTraversalElements,
-            i, newOutput
+            this.outputs, this.outputVertices, this.outputMap,
+            this.rightmostTraversalElements, i, newOutput
         )
         newOutput.SetAsOutput(this, i)
         f.AddVertex(newOutput)
