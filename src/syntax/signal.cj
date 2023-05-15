@@ -44,6 +44,9 @@ public struct Signal<V>
     public func GetValues() : Array<V> {
         this.values
     }
+    public func GetBit(i : Int64) : V {
+        this.values[i]
+    }
     public func toString() : String {
         "${values}"
     }
