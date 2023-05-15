@@ -8,7 +8,7 @@
  */
 package assertions
 import debug.*
-import utils.*
+import utils.collectionToString
 /**
  * Exception for when associated parameters of two objects are not equal.
  *

@@ -7,7 +7,7 @@
 
 package assertions
 
-import utils.map
+import utils.map, utils.mapCollection
 /**
  * Types of paramaters to assert conditions about. Used to make debugging
  * messages clearer.
