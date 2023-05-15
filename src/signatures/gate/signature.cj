@@ -147,8 +147,10 @@ extend GateLevelValue
         x : Int64, w : Int64
     ) : Signal<GateLevelValue> {
         let bin = UnsignedDecToSignal(abs(x), w).values
-        Invert(bin)
-        AddOne(bin)
+        if(x < 0) {
+            Invert(bin)
+            AddOne(bin)
+        }
         Signal(bin)
     }
     /**
@@ -162,11 +164,66 @@ extend GateLevelValue
      * @param signed
      * @return The corresponding bitstring
      */
-    public static func DecToSignal(x : Int64, w : Int64, signed : Bool) : Signal<GateLevelValue> {
+    public static func DecToSignal(
+        x : Int64, w : Int64, signed : Bool
+    ) : Signal<GateLevelValue> {
         if(signed) {
             GateLevelValue.SignedDecToSignal(x, w)
         } else {
             GateLevelValue.UnsignedDecToSignal(x, w)
+        }
+    }
+    public static func UnsignedSignalToDec(
+        signal : Signal<GateLevelValue>
+    ) : Option<Int64> {
+        var x = 0
+        for(i in 0..signal.GetWidth()) {
+            let bit = signal.GetBit(i)
+            let exponent = i
+            match(bit) {
+                case NONE => return None
+                case FALSE => ()
+                case TRUE => x += pow(2, exponent)
+                case BOTH => return None
+            }
+        }
+        Some(x)
+    }
+    public static func SignedSignalToDec(
+        signal : Signal<GateLevelValue>
+    ) : Option<Int64> {
+        let isPositive = match(signal.GetBit(signal.GetWidth() - 1)) {
+            case NONE => return None
+            case FALSE => true
+            case TRUE => false
+            case BOTH => return None
+        }
+        let complemented = if(isPositive) {
+            signal
+        } else {
+            let values = Array(signal.GetValues())
+            Invert(values)
+            AddOne(values)
+            Signal(values)
+        }
+        let value = UnsignedSignalToDec(complemented)
+        match(value) {
+            case None => None
+            case Some(v) =>
+                if(isPositive) {
+                    v
+                } else {
+                    -v
+                }
+        }
+    }
+    public static func SignalToDec(
+        signal : Signal<GateLevelValue>, signed : Bool
+    ) : Option<Int64> {
+        if(signed) {
+            SignedSignalToDec(signal)
+        } else {
+            UnsignedSignalToDec(signal)
         }
     }
 }

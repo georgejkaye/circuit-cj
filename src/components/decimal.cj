@@ -41,6 +41,31 @@ public interface Decimal<V>
     static func DecToSignal(
         x  : Int64, width : Int64, signed : Bool
     ) : Signal<V>
+    /**
+     * Attempt to convert an unsigned signal to a decimal number. Returns None
+     * if this is not possible for the given signal.
+     *
+     * @param signal
+     * @return The corresponding number if possible, or None if not
+     */
+    static func UnsignedSignalToDec(signal : Signal<V>) : Option<Int64>
+    /**
+     * Attempt to convert a signed signal to a decimal number. Returns None
+     * if this is not possible for the given signal.
+     *
+     * @param signal
+     * @return The corresponding number if possible, or None if not
+     */
+    static func SignedSignalToDec(signal : Signal<V>) : Option<Int64>
+    /**
+     * Attempt to convert a signal to a decimal number. Returns None
+     * if this is not possible for the given signal.
+     *
+     * @param signal
+     * @param signed Whether to interpret the signal as signed
+     * @return The corresponding number if possible, or None if not
+     */
+    static func SignalToDec(signal : Signal<V>, signed : Bool) : Option<Int64>
 }
 /**
  * Make a signal circuit for a signal converted from a decimal number.
@@ -55,7 +80,7 @@ public func MakeSignalFromInt<V, G>(
 ) : InterfacedHypergraph<V, G>
     where
         V <: ValueSymbol<V> & Decimal<V>,
-        G <: PrimitiveSymbol<V, G> & Equatable<G>
+        G <: PrimitiveSymbol<V, G>
 {
     let signal = V.DecToSignal(x, width, signed)
     MakeSignal(signal)
