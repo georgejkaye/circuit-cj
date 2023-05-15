@@ -93,7 +93,19 @@ public func GetArgumentString<V>(vs : Array<Signal<V>>) : String
 {
     arrayToString(
         vs, { s => s.GetName() },
-        openingBracket: "(", closingBracket: ")", delimiter: ","
+        openingBracket: "(", closingBracket: ")", delimiter: ", "
+    )
+}
+public func GetOutputString<V>(vs : Array<Option<Signal<V>>>) : String
+    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
+{
+    arrayToString(
+        vs, { opt =>
+            match(opt){
+                case None => "?"
+                case Some(s) => s.GetName()
+            }
+        }, openingBracket: "(", closingBracket: ")", delimiter: ","
     )
 }
 /**
