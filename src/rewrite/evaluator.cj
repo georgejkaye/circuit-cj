@@ -12,6 +12,17 @@ import syntax.*
 import debug.*
 import graphs.*
 import assertions.*
+
+public struct InputOutput<V> <: ToString where V <: ValueSymbol<V> {
+    public InputOutput(
+        public let input : Array<Signal<V>>,
+        public let output : Array<Option<Signal<V>>>
+    ){}
+    public func toString() : String {
+        "${GetArgumentString(this.input)} -> ${GetOutputString(this.output)}"
+    }
+}
+
 /**
  * Class for evaluating circuits given inputs at each tick of the clock
  */
@@ -29,6 +40,8 @@ public class Evaluator<V, G> <: Drawable<V, G>
     let nextOutputVertices : Array<Vertex<V, G>>
     // The edges representing the join of the current state and the feedback
     let stateJoinEdges : Array<TraversalElement<V, G>>
+    // The sequence of inputs and corresponding outputs
+    let inputOutputHistory : ArrayList<InputOutput<V>>
     public init(
         signature : Signature<V, G>, f : InterfacedHypergraph<V, G>,
         debug!: Bool = false
@@ -101,7 +114,7 @@ public class Evaluator<V, G> <: Drawable<V, G>
                 if(i < this.stateWires) {
                     splitJoinVertices[i][0]
                 } else {
-                    let signal = signals[i - this.stateWires]
+                    let signal = inputSignals[i - this.stateWires]
                     let signalLabel = GetSignalLabel<V, G>(signal.GetValues())
                     let signalVertex = Vertex<V, G>(signal.GetWidth(), None)
                     let signalSubgraph = if(signal.GetValues().size == 1) {
@@ -171,6 +184,9 @@ public class Evaluator<V, G> <: Drawable<V, G>
             rewriteEndingElements, copyBlackBoxes: true, allInstantaneous: true,
             debug: debug
         )
+        let outputSignals = GetOutputSignals(this.graph, this.currentCycle)
+        let inputOutput = InputOutput(inputSignals, outputSignals )
+        this.inputOutputHistory.append(inputOutput)
         this.currentCycle++
     }
 }
@@ -370,6 +386,35 @@ func EliminateInstantFeedback<V, G>(
         e.BurstSubgraph()
     }
     f.WriteDotToFile(1, "dot/core-unfolded", debug: true)
+}
+/**
+ * Get the array of output signals of a graph at a given time. The elements of
+ * the array will be None if the outputs cannot be successfully recovered, i.e.
+ * if there is not a simple register at the desired tick of the clock.
+ *
+ * @param graph
+ * @param currentCycle
+ * @return An array in which each element is either a signal, or None if there
+ *              is not a simple register at the desired tick for this output
+ */
+func GetOutputSignals<V, G>(
+    graph : InterfacedHypergraph<V, G>, currentCycle : Int64
+) : Array<Option<Signal<V>>>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
+    Array<Option<Signal<V>>>(graph.GetCoarity()){
+        i : Int64 =>
+            var currentVertex = graph.GetOutput(i).GetVertex()
+            var currentOutput = None<Signal<V>>
+            for(j in 0..currentCycle) {
+                let (signal, vertex) = IsSimpleRegister(currentVertex)
+                currentOutput = signal
+                match(vertex) {
+                    case None => break
+                    case Some(v) => currentVertex = v
+                }
+            }
+            currentOutput
+    }
 }
 /**
  * Allow evaluation using decimal values
