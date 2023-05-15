@@ -254,6 +254,17 @@ extend Label<V, G>
         }
     }
     /**
+     * @return the signal of this label, or None if there isn't one
+     */
+    public func GetMaybeSignal() : Option<Signal<V>> {
+        match(this) {
+            case VALUE(v) => Some(Signal(v))
+            case SIGNAL(spec) => Some(spec)
+            case REGISTER(signal) => Some(signal)
+            case _ => None
+        }
+    }
+    /**
      * @return the value array of this label:
      *           throws exception if not a value or signal
      */
