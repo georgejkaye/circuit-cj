@@ -10,6 +10,7 @@ package utils
 
 from std import collection.ArrayList
 from std import collection.HashMap
+from std import math.pow
 /**
  * Given an array of objects which have some numeric property, compute the sum
  * of these numbers, optionally from some start and end index.
@@ -67,4 +68,14 @@ public func Product(
     ts : Array<Int64>, start! : Int64 = 0, end!: Int64 = ts.size
 ) : Int64 {
     Product(ts, { i => i }, start: start, end: end)
+}
+/**
+ * Overload for standard library pow function for integer bases
+ *
+ * @param base
+ * @param exponent
+ * @return base^exponent as an Int64
+ */
+public func pow(base : Int64, exponent : Int64) : Int64 {
+    Int64(pow(Float64(base), exponent))
 }
