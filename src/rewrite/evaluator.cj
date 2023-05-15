@@ -59,8 +59,9 @@ public class Evaluator<V, G> <: Drawable<V, G>
             iv => iv.GetVertex()
         }, this.graph.GetOutputs())
         this.stateJoinEdges = Array<TraversalElement<V, G>>(this.stateWires){
-            i : Int64 => EDGE(coreEdge.NextEdgeLeft(i).GetEdge())
+            i : Int64 => EDGE(coreEdge.NextEdgeLeft(i).getOrThrow().GetEdge())
         }
+        this.inputOutputHistory = ArrayList()
     }
     public func GetGraph() : InterfacedHypergraph<V, G> {
         this.graph
@@ -76,15 +77,15 @@ public class Evaluator<V, G> <: Drawable<V, G>
      *
      * @param signals The input signals at the current tick of the clock
      */
-    public func PerformCycle(signals : Array<Signal<V>>) : Unit {
-        AssertHasLength(signals, this.graph.GetArity())
+    public func PerformCycle(inputSignals : Array<Signal<V>>) : Unit {
+        AssertHasLength(inputSignals, this.graph.GetArity())
         let rewriteStartingElements = HashSet<TraversalElement<V, G>>()
         let rewriteEndingElements = HashSet<TraversalElement<V, G>>()
         // Split the state vertices so we can insert the next state
         let splitJoinVertices = Array<(Vertex<V, G>, Vertex<V, G>)>(
             this.stateWires,
             { i : Int64 =>
-                let joinEdge = this.coreEdge.NextEdgeLeft(i).GetEdge()
+                let joinEdge = this.coreEdge.NextEdgeLeft(i).getOrThrow().GetEdge()
                 let joinSourceLeft = joinEdge.GetSource(0)
                 let (left, right) = joinSourceLeft.SplitVertex()
                 rewriteStartingElements.put(VERTEX(left))

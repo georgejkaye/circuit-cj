@@ -558,7 +558,7 @@ func PerformPassthroughRewrite<V, G>(
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     // Get the argument edge to remove
-    let arg = e.NextEdgeLeft(i).GetEdge()
+    let arg = e.NextEdgeLeft(i).getOrThrow().GetEdge()
     // Compute the index of the gate that will become the passthrough identity
     let otherIndex = if (i == 0) { 1 } else { 0 }
     // Track the source and target we will merge to get the identity

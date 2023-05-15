@@ -327,8 +327,8 @@ public class Edge<V, G>
      * @param i
      * @return The edge connection accessible from the targets
      */
-    public func NextEdgeLeft(i : Int64) : EdgeConnection<V, G> {
-        this.GetSource(i).GetInEdge().getOrThrow()
+    public func NextEdgeLeft(i : Int64) : Option<EdgeConnection<V, G>> {
+        this.GetSource(i).GetInEdge()
     }
     /**
      * Get the edges that can be accessed from traversing across one vertex from
