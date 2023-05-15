@@ -359,3 +359,47 @@ public func MakeInfiniteWaveform<V, G>(
         Label<V, G>.INFINITE_WAVEFORM(signals)
     )
 }
+/**
+ * Given a root vertex, check if it is the root of a simple register: a join
+ * of a signal on the left and a delay on the right. If it is, return the signal
+ * contained within the register and the root of the delayed subgraph; if either
+ * of these fails, return None. Note that there can be no signal but can still
+ * be a delayed subgraph and vice versa, so one of the elements may be None
+ * while the other is Some.
+ *
+ * @param v The root vertex
+ * @return A pair containing
+     0) The signal in the register if successful, None otherwise
+     1) The source of the delay (the root of the 'later' part of the graph) if
+            successful, None otherwise
+ */
+public func IsSimpleRegister<V, G>(
+    v : Vertex<V, G>
+) : (Option<Signal<V>>, Option<Vertex<V, G>>)
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    match(v.GetInEdge()) {
+        case None => (None, None)
+        case Some(ec) =>
+            let rootEdge = ec.GetEdge()
+            if(!rootEdge.GetLabel().IsJoin()) {
+                (None, None)
+            } else {
+                let signal = match(rootEdge.NextEdgeLeft(0)) {
+                    case None => None<Signal<V>>
+                    case Some(ec) => ec.GetEdge().GetLabel().GetMaybeSignal()
+                }
+                let vertex = match(rootEdge.NextEdgeLeft(1)) {
+                    case None => None<Vertex<V, G>>
+                    case Some(ec) =>
+                        let potentialDelay = ec.GetEdge()
+                        if(!potentialDelay.GetLabel().IsDelay()) {
+                            None<Vertex<V, G>>
+                        } else {
+                            Some(potentialDelay.GetSource(0))
+                        }
+                }
+                (signal, vertex)
+            }
+    }
+}
