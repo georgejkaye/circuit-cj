@@ -22,9 +22,7 @@ func CheckSpecCompatibility<V, G>(
     inputs: Array<Vertex<V, G>>,
     outputs: Array<Vertex<V, G>>
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     func CheckArrayCompatibility(
         desired : Array<Port>,
@@ -50,9 +48,7 @@ func CheckSpecCompatibility<V, G>(
 public class Edge<V, G>
     <: Specifiable & Identifiable<Edge<V, G>> &
         ToString & GraphElement<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let id : Int64 = GetNextId()
     let label : Label<V, G>

@@ -46,9 +46,7 @@ extend Enhancement <: Equatable<Enhancement> {
  * @param primitive
  */
 public func AssertSuitableToRipple<V, G>(primitive : G) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let inputs = primitive.GetInputPorts()
     let outputs = primitive.GetOutputPorts()
@@ -65,9 +63,7 @@ public func AssertSuitableToRipple<V, G>(primitive : G) : Unit
  * Exception for when AssertSuitableToRipple fails
  */
 class CannotRipplePrimitiveException<V, G> <: Exception
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public init(primitive : G) {
         ErrorMsg(
@@ -85,9 +81,7 @@ class CannotRipplePrimitiveException<V, G> <: Exception
  * @param primitive
  */
 public func AssertSuitableToBitwiseMap<V, G>(primitive : G) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertAllSameWidth(primitive.GetInputPorts())
     AssertAllSameWidth(primitive.GetOutputPorts())
@@ -96,9 +90,7 @@ public func AssertSuitableToBitwiseMap<V, G>(primitive : G) : Unit
  * Exception for when AssertSuitableToBitwiseMap fails
  */
 class CannotBitwiseMapPrimitiveException<V, G> <: Exception
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public init(primitive : G) {
         ErrorMsg(
@@ -113,9 +105,7 @@ class CannotBitwiseMapPrimitiveException<V, G> <: Exception
  */
 public struct EnhancedPrimitive<V, G>
     <: HasName & Specifiable & Equatable<EnhancedPrimitive<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public EnhancedPrimitive(
         public let primitive : G,

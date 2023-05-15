@@ -16,9 +16,7 @@ package components
 public func MakeSignal<V, G>(
     signal : Signal<V>
 ) : InterfacedHypergraph<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let outputWires = map(
         { v : V => UseValue<V, G>(v) },
@@ -39,9 +37,7 @@ public func MakeSignal<V, G>(
 public func MakeSignal<V, G>(
     v : V, width : Int64
 ) : InterfacedHypergraph<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let signal = Signal(Array<V>(width){ i : Int64 => v })
     MakeSignal(signal)
@@ -53,9 +49,7 @@ public func MakeSignal<V, G>(
 * @return The output of the value
 */
 public func UseValue<V, G>(v : V) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     UseEdgeWithNewOutputs<V, G, Vertex<V, G>>(
         Label<V, G>.VALUE(v),
@@ -73,9 +67,7 @@ public func UseValue<V, G>(v : V) : Wire<V, G>
 public func UseSignal<V, G>(
     spec : Signal<V>
 ) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     if(spec.GetWidth() == 1) {
         UseValue(spec.values[0])
@@ -94,9 +86,7 @@ public func UseSignal<V, G>(
 * @return The output of the signal circuit
 */
 public func UseSignal<V, G>(v : V, i : Int64) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let array : Array<V> = Array<V>(i, {i : Int64 => v})
     UseSignal(Signal(array))
@@ -107,9 +97,7 @@ public func UseSignal<V, G>(v : V, i : Int64) : Wire<V, G>
  * determined from the arguments
  */
 public interface SignalUser<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     func UseSignal(v : V) : Wire<V, G> {
         UseValue<V, G>(v)
@@ -122,9 +110,7 @@ public interface SignalUser<V, G>
     }
 }
 extend Signature<V, G> <: SignalUser<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {}
 /**
  * Use a delay component for a given duration
@@ -136,9 +122,7 @@ extend Signature<V, G> <: SignalUser<V, G>
 public func UseDelay<V, G>(
     input: Wire<V, G>, duration!: Int64 = 1
 ) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let width = input.GetWidth()
     var inputWire = input
@@ -162,9 +146,7 @@ public func UseDelay<V, G>(
 public func UseSimpleRegister<V, G>(
     initial : Signal<V>, input : Wire<V, G>
 ) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     UseSubcircuit_1(
         MakeSimpleRegister(initial),
@@ -183,9 +165,7 @@ public func UseSimpleRegister<V, G>(
 func PerformFeedback<V, G>(
     outgoing : Wire<V, G>, incoming : Wire<V, G>, instant : Bool
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertHasNoInEdge(incoming)
     let width = outgoing.GetWidth()
@@ -200,9 +180,7 @@ func PerformFeedback<V, G>(
  * @param incoming The wire to feed back into, must not have an incoming edge
  */
 public func Feedback<V, G>(outgoing : Wire<V, G>, incoming : Wire<V, G>) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     PerformFeedback(outgoing, incoming, true)
 }
@@ -217,9 +195,7 @@ public func Feedback<V, G>(outgoing : Wire<V, G>, incoming : Wire<V, G>) : Unit
 public func DelayGuardedFeedback<V, G>(
     outgoing : Wire<V, G>, incoming : Wire<V, G>
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let delay = UseDelay(outgoing)
     PerformFeedback(delay, incoming, false)
@@ -236,9 +212,7 @@ public func DelayGuardedFeedback<V, G>(
 public func RegisterGuardedFeedback<V, G>(
     initial : Signal<V>, outgoing : Wire<V, G>, incoming: Wire<V, G>
 ) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>{
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>{
     let register = UseSimpleRegister(initial, outgoing)
     PerformFeedback(register, incoming, false)
     register
@@ -253,9 +227,7 @@ public func RegisterGuardedFeedback<V, G>(
 public func UseOpenWaveform<V, G>(
     signals : Array<Signal<V>>, input : Wire<V, G>
 ) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     UseSubcircuit_1(MakeOpenWaveform(signals), [input])
 }
@@ -270,9 +242,7 @@ public func UseOpenWaveform<V, G>(
     signal : Signal<V>,
     input : Wire<V, G>
 ) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     UseOpenWaveform([signal], input)
 }
@@ -283,9 +253,7 @@ public func UseOpenWaveform<V, G>(
  * @return The output wire of the waveform
  */
 public func UseClosedWaveform<V, G>(signals : Array<Signal<V>>) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     UseSubcircuit_1(MakeClosedWaveform(signals))
 }
@@ -296,9 +264,7 @@ public func UseClosedWaveform<V, G>(signals : Array<Signal<V>>) : Wire<V, G>
  * @return The output wire of the waveform
  */
 public func UseInfiniteWaveform<V, G>(signals : Array<Signal<V>>) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     UseSubcircuit_1(MakeInfiniteWaveform(signals))
 }
@@ -311,9 +277,7 @@ public func UseInfiniteWaveform<V, G>(signals : Array<Signal<V>>) : Wire<V, G>
 public func MakeSimpleRegister<V, G>(
     initial : Signal<V>
 ) : InterfacedHypergraph<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let width = initial.GetWidth()
     let signal = UseSignal<V, G>(initial)
@@ -335,9 +299,7 @@ public func MakeSimpleRegister<V, G>(
 public func MakeOpenWaveform<V, G>(
     signals : Array<Signal<V>>
 ) : InterfacedHypergraph<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertNonEmpty(signals)
     let width = AssertAllSameWidth(signals)
@@ -364,9 +326,7 @@ public func MakeOpenWaveform<V, G>(
 public func MakeClosedWaveform<V, G>(
     signals : Array<Signal<V>>
 ) : InterfacedHypergraph<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertNonEmpty(signals)
     let width = AssertAllSameWidth(signals)
@@ -387,9 +347,7 @@ public func MakeClosedWaveform<V, G>(
 public func MakeInfiniteWaveform<V, G>(
     signals : Array<Signal<V>>
 ) : InterfacedHypergraph<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertNonEmpty(signals)
     let width = AssertAllSameWidth(signals)

@@ -11,9 +11,7 @@ package graphs
  * An interface vertex is a pair of a vertex and an optional name.
  */
 public class InterfaceVertex<V, G> <: HasPort & ContainsVertex<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public InterfaceVertex(
         let vertex : Vertex<V, G>,
@@ -55,9 +53,7 @@ public class InterfaceVertex<V, G> <: HasPort & ContainsVertex<V, G>
 public class InterfacedHypergraph<V, G>
     <: Identifiable<InterfacedHypergraph<V, G>> & ToString &
             Specifiable & HasName
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let uniqueId : Int64 = GetNextId()
     // The hypergraph being interfaced

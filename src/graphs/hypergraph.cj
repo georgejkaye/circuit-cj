@@ -15,9 +15,7 @@ from std import collection.HashSet
  * Types of ways a hypergraph can be malformed
  */
 public enum WellformednessIssue<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     | InputNotAssigned(Int64)
     | OutputNotAssigned(Int64)
@@ -55,9 +53,7 @@ extend WellformednessIssue<V, G> <: ToString {
  * vertex) can originate from.
  */
 public enum TentacleOrigin<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     | FROM_EDGE(EdgeConnection<V, G>)
     | FROM_VERTEX(Vertex<V, G>)
@@ -81,9 +77,7 @@ extend TentacleOrigin<V, G> <: HasWidth & ToString {
  * These hypergraphs are not interfaced.
  */
 public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let id : Int64 = GetNextId()
     let name : String = "hg${id}"
@@ -718,9 +712,7 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
  * Interface for elements belonging to a graph
  */
 public interface GraphElement<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     /**
      * @return The graph that owns this element
@@ -735,9 +727,7 @@ public interface GraphElement<V, G>
  * @return The owner of both elements after the merge
  */
 public func MergeHypergraphs<V, G, T, U>(a : T, b : U) : Hypergraph<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>,
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: GraphElement<V, G>,
         U <: GraphElement<V, G>
 {
@@ -757,9 +747,7 @@ public func MergeHypergraphs<V, G, T>(
     elems : Array<T>,
     initial!: Option<Hypergraph<V, G>> = None
 ) : Option<Hypergraph<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>,
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: GraphElement<V, G>
 {
     if(elems.size == 0) {

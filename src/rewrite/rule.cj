@@ -25,9 +25,7 @@ public enum EntryPoint {
  * traverse and the elements removed by the rewrite.
  */
 public struct RewriteRule<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public RewriteRule(
         let name : String,
@@ -89,9 +87,7 @@ public struct RewriteRule<V, G>
  * @param f The graph
  */
 func RemoveEdge<V, G>(e : Edge<V, G>, f : InterfacedHypergraph<V, G>) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     f.RemoveEdge(e)
 }
@@ -102,9 +98,7 @@ func RemoveEdge<V, G>(e : Edge<V, G>, f : InterfacedHypergraph<V, G>) : Unit
  * @param f The graph
  */
 func RemoveVertex<V, G>(v : Vertex<V, G>, f : InterfacedHypergraph<V, G>) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     f.RemoveVertex(v)
 }
@@ -120,9 +114,7 @@ func ForkCondition<V, G>(
     e : Edge<V, G>,
     f : InterfacedHypergraph<V, G>
 ) : Bool
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     if(e.GetCoarity() > 0){
         let firstTarget = e.GetTarget(0)
@@ -156,9 +148,7 @@ func PropagateAcrossFork<V, G>(
     f : InterfacedHypergraph<V, G>,
     outTentacles : Array<Array<Option<TentacleType<V, G>>>>
 ) : HashSet<TraversalElement<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let nextElements = HashSet<TraversalElement<V, G>>()
     // We use the original edge as one of the copies to reduce redundant
@@ -206,9 +196,7 @@ func GetOutgoingTentacles<V, G>(
     e : Edge<V, G>,
     i : Int64
 ) : Array<TentacleType<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let tentacleTargets = ArrayList<TentacleType<V, G>>()
     // Values always have precisely one target
@@ -228,9 +216,7 @@ func GetOutgoingTentacles<V, G>(
  * @return The fork rewrite rule
  */
 func GetForkRule<V, G>() : RewriteRule<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     RewriteRule<V, G>(
         "fork",
@@ -258,9 +244,7 @@ func GetForkRule<V, G>() : RewriteRule<V, G>
  * @return If the apply preconditions are met
  */
 func ApplyPreconditions<V, G>(e : Edge<V, G>) : Bool
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let sources = e.GetSources()
     // Check that none of the values are forked
@@ -295,9 +279,7 @@ func ApplyPreconditions<V, G>(e : Edge<V, G>) : Bool
 func GetArgs<V, G>(
     e : Edge<V, G>
 ) : (Array<Option<Edge<V, G>>>, Array<Option<Array<V>>>)
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let argumentEdges = map({
             v : Vertex<V, G> =>
@@ -341,9 +323,7 @@ func MakeValueOrSignal<V, G>(
     targets : Array<Vertex<V, G>>,
     owner : Hypergraph<V, G>
 ) : Edge<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let (label, graph) = if(vs.size == 1) {
         (Label<V, G>.VALUE(vs[0]), None<InterfacedHypergraph<V, G>>)
@@ -368,9 +348,7 @@ func MakeValueOrSignal<V, G>(
     signature : Signature<V, G>, f : InterfacedHypergraph<V, G>,
     e : Edge<V, G>, args : Array<Option<Edge<V, G>>>, results : Array<Array<V>>
 ) : HashSet<TraversalElement<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let nextEdges = HashSet<TraversalElement<V, G>>()
     // Each argument edge must be discarded
@@ -410,9 +388,7 @@ func MakeValueOrSignal<V, G>(
  * @return The apply rewrite rule
  */
 func GetPrimitiveRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     RewriteRule<V, G>(
         "primitive",
@@ -433,9 +409,7 @@ func GetPrimitiveRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
  * @return The stub rewrite rule
  */
 func GetStubRule<V, G>() : RewriteRule<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     RewriteRule<V, G>(
         "stub",
@@ -483,9 +457,7 @@ func GetApplyRule<V, G>(
         applyFn : (Array<Array<V>>) -> Array<Array<V>>,
         e : Edge<V, G>, f : InterfacedHypergraph<V, G>
 ) : Option<HashSet<TraversalElement<V, G>>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let (argumentEdges, argumentSignals) = GetArgs(e)
     try {
@@ -509,9 +481,7 @@ func GetApplyRule<V, G>(
  * @return The join rewrite rule
  */
 func GetJoinRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     RewriteRule<V, G>(
         "join",
@@ -537,9 +507,7 @@ func GetJoinRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
  * @return Whether the specific argument is all this value
  */
 func ArgumentIsAllUnsharedValue<V, G>(v : V, e : Edge<V, G>, i : Int64) : Bool
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let sourceVertex = e.GetSource(i)
     if(sourceVertex.GetOutEdges().size > 1) {
@@ -560,9 +528,7 @@ func ArgumentIsAllUnsharedValue<V, G>(v : V, e : Edge<V, G>, i : Int64) : Bool
  * @return Whether all arguments are this value
  */
 func ArgumentsAreAllUnsharedValue<V, G>(v : V, e : Edge<V, G>) : Bool
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     // Need to explicitly check for the zero case because otherwise it will
     // return true which is not desired
@@ -589,9 +555,7 @@ func ArgumentsAreAllUnsharedValue<V, G>(v : V, e : Edge<V, G>) : Bool
 func PerformPassthroughRewrite<V, G>(
     e : Edge<V, G>, i : Int64, f : InterfacedHypergraph<V, G>
 ) : HashSet<TraversalElement<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     // Get the argument edge to remove
     let arg = e.NextEdgeLeft(i).GetEdge()
@@ -627,9 +591,7 @@ func GetJoinUnitRule<V, G>(
     i : Int64,
     str : String
 ) : RewriteRule<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
         RewriteRule<V, G>(
         "join-unit-${str}",
@@ -652,9 +614,7 @@ func GetJoinUnitRule<V, G>(
  * @return The join left unitality rule
  */
 func GetJoinUnitLeftRule<V, G>(signature : Signature<V, G>)
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     GetJoinUnitRule(signature, 0, "l")
 }
@@ -666,8 +626,7 @@ func GetJoinUnitLeftRule<V, G>(signature : Signature<V, G>)
  * @return The join right unitality rule
  */
 func GetJoinUnitRightRule<V, G>(signature : Signature<V, G>)
-    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> & LessOrEqual<V>,
-    G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     GetJoinUnitRule(signature, 1, "r")
 }
@@ -682,9 +641,7 @@ func GetJoinUnitRightRule<V, G>(signature : Signature<V, G>)
 func ExpandSubgraphRewrite<V, G>(
     e : Edge<V, G>, f : InterfacedHypergraph<V, G>
 ) : HashSet<TraversalElement<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
 
     let nextElements = HashSet<TraversalElement<V, G>>()
@@ -719,9 +676,7 @@ func ExpandSubgraphRewrite<V, G>(
  * @return The enhanced rewrite rule
  */
 func GetEnhancedRule<V, G>(signature : Signature<V, G>)
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
         RewriteRule<V, G>(
         "enhanced",
@@ -744,9 +699,7 @@ func GetEnhancedRule<V, G>(signature : Signature<V, G>)
  * @return The composite rewrite rule
  */
 func GetCompositeRule<V, G>(signature : Signature<V, G>)
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     RewriteRule<V, G>(
         "composite",
@@ -765,9 +718,7 @@ func GetCompositeRule<V, G>(signature : Signature<V, G>)
  * @return The value bundle rule
  */
 func GetValueBundleRule<V, G>(signature : Signature<V, G>)
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     RewriteRule<V, G>(
         "bundle",
@@ -833,9 +784,7 @@ func GetValueBundleRule<V, G>(signature : Signature<V, G>)
  * @return The bottom rule
  */
 func GetBottomRule<V, G>(signature : Signature<V, G>)
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     RewriteRule<V, G>(
         "bottom",
@@ -871,9 +820,7 @@ func GetBottomRule<V, G>(signature : Signature<V, G>)
  * @return The copy blackbox rule
  */
 func GetCopyBlackboxRule<V, G>(blackBoxTracker : HashMap<Edge<V, G>, Int64>)
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     RewriteRule<V, G>(
         "blackbox-copy",
@@ -932,9 +879,7 @@ func GetCopyBlackboxRule<V, G>(blackBoxTracker : HashMap<Edge<V, G>, Int64>)
  * @return The fork blackbox rule
  */
 func GetForkBlackboxRule<V, G>(blackBoxTracker : HashMap<Edge<V, G>, Int64>)
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
         RewriteRule<V, G>(
             "blackbox-fork",
@@ -983,9 +928,7 @@ func GetForkBlackboxRule<V, G>(blackBoxTracker : HashMap<Edge<V, G>, Int64>)
 func ArgumentIsUnsharedTrigger<V, G>(
     e : Edge<V, G>, i : Int64, desired : Array<V>
 ) : Option<(Edge<V, G>, Vertex<V, G>)>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let vertex = e.GetSource(i)
     if(vertex.GetOutEdges().size == 1) {
@@ -1014,9 +957,7 @@ func ArgumentIsUnsharedTrigger<V, G>(
 func GetAnnihiliationRule<V, G>(
     ann : Annihilator<V, G>
 ) : RewriteRule<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     RewriteRule<V, G>(
         "annihilate-${ann.gate.GetName()}-${ann.index}-${ann.input}",
@@ -1076,9 +1017,7 @@ func GetAnnihiliationRule<V, G>(
 func GetIdentifierRule<V, G>(
     ide : Identifier<V, G>
 ) : RewriteRule<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     RewriteRule<V, G>(
         "identity-${ide.gate.GetName()}-${ide.index}-${ide.input}",

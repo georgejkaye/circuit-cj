@@ -18,9 +18,7 @@ import graphs.*
 public class Wire<V, G>
     <: Identifiable<Wire<V, G>> & ToString & ContainsVertex<V, G> &
         HasWidth & GraphElement<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let id : Int64 = GetNextId()
     var vertex : Vertex<V, G>
@@ -48,9 +46,7 @@ public class Wire<V, G>
     }
 }
 public interface ContainsWire<V, G> <: HasWidth & ContainsVertex<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     func GetWire() : Wire<V, G>
 }
@@ -65,9 +61,7 @@ extend Wire<V, G> <: ContainsWire<V, G> {
     * @return The wire
     */
 public func UseWire<V, G>(width : Int64) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let vertex = Vertex(width, None<Hypergraph<V, G>>)
     Wire(vertex)
@@ -79,9 +73,7 @@ public func UseWire<V, G>(width : Int64) : Wire<V, G>
     * @return The array of wires
     */
 public func UseWires<V, G>(width : Int64, n : Int64) : Array<Wire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertStrictlyPositive(n)
     Array<Wire<V, G>>(n, { i : Int64 => UseWire(width) })
@@ -92,9 +84,7 @@ public func UseWires<V, G>(width : Int64, n : Int64) : Array<Wire<V, G>>
     * @return The array of wires
     */
 public func UseWires<V, G>(widths : Array<Int64>) : Array<Wire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertNonEmpty(widths)
     map({ i : Int64 => UseWire(i) }, widths)
@@ -104,9 +94,7 @@ public func UseWires<V, G>(widths : Array<Int64>) : Array<Wire<V, G>>
  * specify the generics, since these can't be determined from the arguments
  */
 public interface WireUser<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     func UseWire(width : Int64) : Wire<V, G> {
         UseWire<V, G>(width)
@@ -119,9 +107,7 @@ public interface WireUser<V, G>
     }
 }
 extend Signature<V, G> <: WireUser<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {}
 /**
  * Make an edge and get the wires corresponding to its targets
@@ -138,9 +124,7 @@ func UseEdge<V, G>(
     subgraph : Option<InterfacedHypergraph<V, G>>,
     owner : Hypergraph<V, G>
 ) : Array<Wire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let newEdge = owner.AddNewEdge(label, sources, targets, subgraph)
     map({ t => Wire(t.GetVertex()) }, newEdge.GetTargets())
@@ -160,8 +144,7 @@ public func UseEdgeWithNewOutputs<V, G, T>(
     owner : Option<Hypergraph<V, G>>
 ) : Array<Wire<V, G>>
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>,
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: ContainsVertex<V, G>
 {
     let sourceVertices = map({ t : T => t.GetVertex() }, sources)
@@ -186,9 +169,7 @@ public func UseEdgeWithNewOutputs<V, G, T>(
 public func MergeWires<V, G>(
     v : Wire<V, G>, w : Wire<V, G>, feedback: Bool
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     v.GetVertex().MergeVertex(w.GetVertex(), feedback)
     w.SetVertex(v.GetVertex())
@@ -202,8 +183,7 @@ public func MergeWires<V, G>(
  */
 public func Split<V, G, T>(w : T, vs : Array<Int64>) : Array<Wire<V, G>>
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>,
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: ContainsWire<V, G> & ToString
 {
     AssertHasWidth(w, Sum(vs))
@@ -224,8 +204,7 @@ public func Split<V, G, T>(w : T, vs : Array<Int64>) : Array<Wire<V, G>>
  */
 public func Split<V, G, T>(w : T, l : Int64) : (Wire<V, G>, Wire<V, G>)
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>,
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: ContainsWire<V, G> & ToString
 {
     let r = w.GetWire().GetWidth() - l
@@ -239,8 +218,7 @@ public func Split<V, G, T>(w : T, l : Int64) : (Wire<V, G>, Wire<V, G>)
  */
 public func Split<V, G, T>(w : T) : Array<Wire<V, G>>
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>,
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: ContainsWire<V, G> & ToString
 {
     if(w.GetWidth() == 1) {
@@ -257,8 +235,7 @@ public func Split<V, G, T>(w : T) : Array<Wire<V, G>>
  */
 public func Combine<V, G, T>(ws : Array<T>) : Wire<V, G>
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>,
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: ContainsWire<V, G> & ToString
 {
     AssertMinimumLength(ws, 1)
@@ -282,8 +259,7 @@ public func Combine<V, G, T>(ws : Array<T>) : Wire<V, G>
  */
 public func Combine<V, G, T>(lhs : T, rhs : T) : Wire<V, G>
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>,
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: ContainsWire<V, G> & ToString
 {
     Combine<V, G, T>([lhs, rhs])
@@ -297,8 +273,7 @@ public func Combine<V, G, T>(lhs : T, rhs : T) : Wire<V, G>
  */
 public func GetBit<V, G>(w : Wire<V, G>, i : Int64) : Wire<V, G>
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertHasWidthAtLeast(w, i)
     let width = w.GetWidth()
@@ -320,8 +295,7 @@ public func GetBit<V, G>(w : Wire<V, G>, i : Int64) : Wire<V, G>
  */
 public func Lsb<V, G>(w : Wire<V, G>) : Wire<V, G>
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     LsbAndMsbs(w)[0]
 }
@@ -332,8 +306,7 @@ public func Lsb<V, G>(w : Wire<V, G>) : Wire<V, G>
  */
 public func Msbs<V, G>(w : Wire<V, G>) : Wire<V, G>
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     LsbAndMsbs(w)[1]
 }
@@ -344,8 +317,7 @@ public func Msbs<V, G>(w : Wire<V, G>) : Wire<V, G>
  */
 public func Msb<V, G>(w : Wire<V, G>) : Wire<V, G>
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     LsbsAndMsb(w)[1]
 }
@@ -356,8 +328,7 @@ public func Msb<V, G>(w : Wire<V, G>) : Wire<V, G>
  */
 public func Lsbs<V, G>(w : Wire<V, G>) : Wire<V, G>
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     LsbsAndMsb(w)[0]
 }
@@ -368,8 +339,7 @@ public func Lsbs<V, G>(w : Wire<V, G>) : Wire<V, G>
  */
 public func LsbAndMsbs<V, G>(w : Wire<V, G>) : (Wire<V, G>, Wire<V, G>)
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let splits = Split(w, [1, w.GetWidth() - 1])
     (splits[0], splits[1])
@@ -381,8 +351,7 @@ public func LsbAndMsbs<V, G>(w : Wire<V, G>) : (Wire<V, G>, Wire<V, G>)
  */
 public func LsbsAndMsb<V, G>(w : Wire<V, G>) : (Wire<V, G>, Wire<V, G>)
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let splits = Split(w, [w.GetWidth() - 1, 1])
     (splits[0], splits[1])
@@ -395,8 +364,7 @@ public func LsbsAndMsb<V, G>(w : Wire<V, G>) : (Wire<V, G>, Wire<V, G>)
  */
 public func Replicate<V, G>(a : Wire<V, G>, w : Int64) : Wire<V, G>
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     Combine(Array<Wire<V, G>>(w, { i : Int64 => a }))
 }
@@ -407,9 +375,7 @@ public func Replicate<V, G>(a : Wire<V, G>, w : Int64) : Wire<V, G>
 public class InterfaceWire<V, G>
     <: ContainsWire<V, G> & ToString & ContainsVertex<V, G> &
         HasPort & GraphElement<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public InterfaceWire(
         let wire : Wire<V, G>,
@@ -461,9 +427,7 @@ public func NameWires<V, G>(
     wires : Array<Wire<V, G>>,
     names : Array<String>
 ) : Array<InterfaceWire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertSameLength(wires, names)
     map2(
@@ -482,9 +446,7 @@ public func NameWires<V, G>(
     wires : Array<Wire<V, G>>,
     f : (Int64) -> String
 ) : Array<InterfaceWire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     Array<InterfaceWire<V, G>>(
         wires.size,

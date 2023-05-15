@@ -20,8 +20,7 @@ func AssertAtMostOneInEdge<V, G, T, U>(
     t : T, u : U
 ) : Option<EdgeConnection<V, G>>
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>,
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: ContainsVertex<V, G>, U <: ContainsVertex<V, G>
 {
     let v = t.GetVertex()
@@ -46,8 +45,7 @@ func AssertAtMostOneInEdge<V, G, T>(
     ts : Array<T>
 ) : Option<EdgeConnection<V, G>>
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>,
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: ContainsVertex<V, G>
 {
     var inEdge = None<EdgeConnection<V, G>>
@@ -72,8 +70,7 @@ func AssertAtMostOneInEdge<V, G, T>(
  */
 public func AssertHasNoInEdge<V, G, T>(v : T) : Unit
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>,
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: ContainsVertex<V, G>
 {
     AssertIsNone(v.GetVertex().GetInEdge(), InEdge)
@@ -86,8 +83,7 @@ public func AssertHasNoInEdge<V, G, T>(v : T) : Unit
  */
 public func AssertHasNoOutEdges<V, G, T>(v : T) : Unit
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>,
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: ContainsVertex<V, G>
 {
     AssertEmpty(v.GetVertex().GetOutEdges(), OutEdges)
@@ -100,8 +96,7 @@ public func AssertHasNoOutEdges<V, G, T>(v : T) : Unit
  */
 func AssertTargetsUnassigned<V, G, T>(targets : Array<T>) : Unit
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>,
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: ContainsVertex<V, G> & ToString
 {
     AssertElementsHaveParameter<T, Option<EdgeConnection<V, G>>>(
@@ -121,8 +116,7 @@ func AssertCompatibleInputOutput<V, G>(
     g : InterfacedHypergraph<V, G>
 ) : Unit
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertElementsHaveParameters<Port, Port, Port>(
         g.GetInputPorts(), f.GetOutputPorts(),
@@ -139,8 +133,7 @@ func AssertGraphHasMinimumInputs<V, G>(
     f : InterfacedHypergraph<V, G>, i : Int64
 ) : Unit
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertMinimumLength(f.GetInputPorts(), i)
 }
@@ -154,8 +147,7 @@ func AssertGraphHasMinimumOutputs<V, G>(
     f : InterfacedHypergraph<V, G>, i : Int64
 ) : Unit
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertMinimumLength(f.GetOutputPorts(), i)
 }
@@ -163,8 +155,7 @@ public func AssertAllOwnedBySame<V, G, T>(
     elems : Collection<T>
 ) : Hypergraph<V, G>
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>,
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: GraphElement<V, G> & ToString
 {
     AssertCollectionHasSameParameter(elems, { t : T => t.GetGraph() }, Owner)
@@ -177,8 +168,7 @@ public func AssertAllOwnedBySame<V, G, T>(
  */
 public func AssertNotOwnedBy<V, G>(e : Edge<V, G>, f : Hypergraph<V, G>) : Unit
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     if(e.GetGraph() == f) {
         throw BadOwnershipException(e, f, false)
@@ -189,8 +179,7 @@ public func AssertNotOwnedBy<V, G>(e : Edge<V, G>, f : Hypergraph<V, G>) : Unit
  */
 class BadOwnershipException<V, G> <: Exception
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     /**
      * Create a BadOwnershipException for an edge

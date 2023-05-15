@@ -54,8 +54,8 @@ public func MakeSignalFromInt<V, G>(
     x : Int64, width : Int64, signed!: Bool
 ) : InterfacedHypergraph<V, G>
     where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> & Decimal<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        V <: ValueSymbol<V> & Decimal<V>,
+        G <: PrimitiveSymbol<V, G> & Equatable<G>
 {
     let signal = V.DecToSignal(x, width, signed)
     MakeSignal(signal)
@@ -89,8 +89,8 @@ public func MakeOpenWaveformFromInt<V, G>(
     xs : Array<Int64>, width!: Int64, signed!: Bool
 ) : InterfacedHypergraph<V, G>
     where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> & Decimal<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        V <: ValueSymbol<V> & Decimal<V>,
+        G <: PrimitiveSymbol<V, G>
 {
     let signals = MakeDecimalSignalArray<V>(xs, width, signed)
     MakeOpenWaveform(signals)
@@ -106,9 +106,7 @@ public func MakeOpenWaveformFromInt<V, G>(
 public func MakeClosedWaveformFromInt<V, G>(
     xs : Array<Int64>, width!: Int64, signed!: Bool
 ) : InterfacedHypergraph<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> & Decimal<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
     let signals = MakeDecimalSignalArray<V>(xs, width, signed)
     MakeClosedWaveform(signals)
@@ -124,9 +122,7 @@ public func MakeClosedWaveformFromInt<V, G>(
 public func MakeInfiniteWaveformFromInt<V, G>(
     xs : Array<Int64>, width!: Int64, signed!: Bool
 ) : InterfacedHypergraph<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> & Decimal<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
     let signals = MakeDecimalSignalArray<V>(xs, width, signed)
     MakeInfiniteWaveform(signals)
@@ -142,9 +138,7 @@ public func MakeInfiniteWaveformFromInt<V, G>(
 public func UseSignalFromInt<V, G>(
     x : Int64, width!: Int64, signed!: Bool
 ) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> & Decimal<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
     let signal = V.DecToSignal(x, width, signed)
     UseSignal(signal)
@@ -156,9 +150,7 @@ public func UseSignalFromInt<V, G>(
  * @return The output wire of the zero signal
  */
 public func UseInstantZero<V, G>(width!: Int64) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> & Decimal<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
     UseSignalFromInt(0, width: width, signed: false)
 }
@@ -174,9 +166,7 @@ public func UseInstantZero<V, G>(width!: Int64) : Wire<V, G>
 func UseOpenWaveformFromInt<V, G>(
     xs : Array<Int64>,  input : Wire<V, G>, width!: Int64, signed!: Bool
 ) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> & Decimal<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
     let signals = MakeDecimalSignalArray<V>(xs, width, signed)
     UseOpenWaveform(signals, input)
@@ -192,9 +182,7 @@ func UseOpenWaveformFromInt<V, G>(
 func UseClosedWaveformFromInt<V, G>(
     xs : Array<Int64>, width!: Int64, signed!: Bool
 ) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> & Decimal<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
     let signals = MakeDecimalSignalArray<V>(xs, width, signed)
     UseClosedWaveform(signals)
@@ -210,9 +198,7 @@ func UseClosedWaveformFromInt<V, G>(
 func UseInfiniteWaveformFromInt<V, G>(
     xs : Array<Int64>, width!: Int64, signed!: Bool
 ) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> & Decimal<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
     let signals = MakeDecimalSignalArray<V>(xs, width, signed)
     UseInfiniteWaveform(signals)
@@ -224,9 +210,7 @@ func UseInfiniteWaveformFromInt<V, G>(
  * @return The output wire of the zero waveform
  */
 public func UseConstantZero<V, G>(width!: Int64) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> & Decimal<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
     UseInfiniteWaveformFromInt([0], width: width, signed: false)
 }
@@ -235,9 +219,7 @@ public func UseConstantZero<V, G>(width!: Int64) : Wire<V, G>
  * from decimal.
  */
 public interface DecimalSignalUser<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> & Decimal<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
     func UseSignalFromInt(
         x : Int64, width!: Int64, signed!: Bool
@@ -267,9 +249,7 @@ public interface DecimalSignalUser<V, G>
     }
 }
 extend Signature<V, G> <: DecimalSignalUser<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> & Decimal<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {}
 /**
  * Use a simple register with an initial value converted from a number.
@@ -286,9 +266,7 @@ public func UseSimpleRegister<V, G>(
     signed : Bool,
     input : Wire<V, G>
 ) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> & Decimal<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
     let signal = V.DecToSignal(initial, width, signed)
     UseSimpleRegister(signal, input)
@@ -307,9 +285,7 @@ public func RegisterGuardedFeedback<V, G>(
     initial : Int64, width : Int64, signed : Bool,
     input : Wire<V, G>, incoming : Wire<V, G>
 ) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> & Decimal<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
     let signal = V.DecToSignal(initial, width, signed)
     RegisterGuardedFeedback(signal, input, incoming)

@@ -187,7 +187,7 @@ type BelnapInterfacedCircuit =
  * Instantiate GateLevelPrimitive as a type of gate symbols
  */
 extend GateLevelPrimitive <:
-    PrimitiveSymbol<GateLevelValue> & Equatable<GateLevelPrimitive>
+    PrimitiveSymbol<GateLevelValue, GateLevelPrimitive>
 {
     public func hashCode() {
         match (this) {

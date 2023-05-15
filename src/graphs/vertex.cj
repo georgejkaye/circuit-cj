@@ -28,9 +28,7 @@ extend VertexType <: ToString {
 public struct EdgeConnection<V, G>
     <: ToString & Equatable<EdgeConnection<V, G>> &
         Hashable & GraphElement<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public EdgeConnection(
         public let edge : Edge<V, G>,
@@ -146,9 +144,7 @@ extend InterfaceType <: ToString & Hashable & Equatable<InterfaceType> {
  */
 public struct InterfaceElement<V, G>
     <: Hashable & ToString & Equatable<InterfaceElement<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let id : Int64 = GetNextId()
     public InterfaceElement(
@@ -172,9 +168,7 @@ public struct InterfaceElement<V, G>
     }
 }
 public enum TentacleType<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     | EDGE_TENTACLE(EdgeConnection<V, G>)
     | INTERFACE_TENTACLE(InterfacedHypergraph<V, G>, Int64)
@@ -187,9 +181,7 @@ public enum TentacleType<V, G>
 public class Vertex<V, G>
     <: Identifiable<Vertex<V, G>> & ToString & HasWidth &
             HasPort & GraphElement<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let width : Int64
     let id : Int64 = GetNextId()
@@ -461,9 +453,7 @@ public class Vertex<V, G>
  * Interface for structures that have vertex-like properties
  */
 public interface ContainsVertex<V, G> <: GraphElement<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     func GetVertex() : Vertex<V, G>
     func GetGraph() : Hypergraph<V, G> {

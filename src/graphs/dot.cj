@@ -439,9 +439,7 @@ func DrawEdgeNode<V, G>(
     e : Edge<V, G>,elementContent : ArrayList<DotLine>,
     connectionContent : ArrayList<DotLine>, debug : Bool
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let style = match(e.GetLabel()){
         case VALUE(v) =>
@@ -509,9 +507,7 @@ func DrawBoxNode<V, G, T1, U1, T2, U2>(
     rightPorts : Array<U2>, elementContent : ArrayList<DotLine>,
     connectionContent : ArrayList<DotLine>, debug : Bool
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>,
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T1 <: ContainsVertex<V, G>, T2 <: ContainsVertex<V, G>,
         U1 <: HasPort, U2 <: HasPort
 {
@@ -566,9 +562,7 @@ func DrawSubgraphInterfaceConnections<V, G>(
     vertexType : VertexType,
     connectionContent : ArrayList<DotLine>
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     for(i in 0..parentVertices.size) {
         let v = parentVertices[i]
@@ -599,9 +593,7 @@ func DrawEdge<V, G>(
     elementContent : ArrayList<DotLine>, connectionContent : ArrayList<DotLine>,
     debug : Bool
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let label = e.GetLabel()
     if (depth != 0 && label.IsExpandable()) {
@@ -634,9 +626,7 @@ func DrawEdge<V, G>(
 func DrawVertex<V, G>(
     v : Vertex<V, G>, content : ArrayList<DotLine>, debug : Bool
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let text = if(debug){
         "${v.GetId()}"
@@ -659,9 +649,7 @@ func DrawConnection<V, G, T>(
     vertex : T, eText : String, vertexFirst : Bool,
     connectionContent : ArrayList<DotLine>, feedback : Bool
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>,
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: ContainsVertex<V, G>
 {
     let vText = "v${vertex.GetVertex().GetId()}"
@@ -695,9 +683,7 @@ func DrawInterface<V, G>(
     connectionContent : ArrayList<DotLine>,
     debug : Bool
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let interfaceName =
         "\"${id}_${ if(isInputs) { "inputs" } else { "outputs" }}\""
@@ -730,9 +716,7 @@ func DrawOpeningContent<V, G>(
     label : String, parent : Option<Edge<V, G>>,
     elementContent : ArrayList<DotLine>, debug : Bool
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     // If there isn't a parent, declare that this is a graph
     // If there is a parent, then it is a subgraph and a cluster
@@ -780,9 +764,7 @@ func DrawInterfaces<V, G>(
     connectionContent : ArrayList<DotLine>,
     debug : Bool
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     // Draw the inputs
     if(f.GetArity() > 0) {
@@ -829,9 +811,7 @@ func DrawInterfacedHypergraph<V, G>(
     elementContent : ArrayList<DotLine>,
     debug : Bool
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let id = f.GetId()
     let label = f.GetLabel()
@@ -868,9 +848,7 @@ public func DrawHypergraph<V, G>(
     connectionContent : ArrayList<DotLine>,
     debug : Bool
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let vertexOptionsString = DrawOptions("node", vertexNodeOpts)
     elementContent.append(vertexOptionsString)
@@ -924,9 +902,7 @@ public func DrawHypergraph<V, G>(
 public func GenerateDotGraph<V, G>(
     f : InterfacedHypergraph<V, G>, depth : Int64, debug : Bool
 ) : String
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let elementContent = ArrayList<DotLine>()
     Debug("Drawing hypergraph for ${f.GetName()}")
@@ -949,9 +925,7 @@ func WriteDotFile(
  * Interface to extend signatures with ability to draw dot graphs
  */
 public interface Drawable<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     /**
      * Write the dot graph for a graph to a file with a given name,

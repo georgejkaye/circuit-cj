@@ -20,9 +20,7 @@ public enum TraversalDirection {
  * Types of element to traverse
  */
 public enum TraversalElement<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     | EDGE(Edge<V, G>)
     | VERTEX(Vertex<V, G>)
@@ -60,9 +58,7 @@ extend TraversalElement<V, G>
  * Data to keep track of while traversing a graph
  */
 public struct TraversalData<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public TraversalData(
         public let frontier : HashSet<TraversalElement<V, G>>,
@@ -91,9 +87,7 @@ func GetDefaultNextVertices<V, G>(
     direction : TraversalDirection,
     condition : (Edge<V, G>, Vertex<V, G>) -> Bool
 ) : (Edge<V, G>, TraversalData<V, G>) -> HashSet<TraversalElement<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     { e : Edge<V, G>, data : TraversalData<V, G> =>
         let nextElements = HashSet<TraversalElement<V, G>>()
@@ -130,9 +124,7 @@ func GetDefaultNextEdges<V, G>(
     direction : TraversalDirection,
     condition : (Vertex<V, G>, Edge<V, G>) -> Bool
 ) : (Vertex<V, G>, TraversalData<V, G>) -> HashSet<TraversalElement<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     { v : Vertex<V, G>, data : TraversalData<V, G> =>
         let nextElements = HashSet<TraversalElement<V, G>>()
@@ -185,9 +177,7 @@ public func Traverse<V, G>(
         (Edge<V, G>, TraversalData<V, G>) -> HashSet<TraversalElement<V, G>>,
     revisit!: Bool = false
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let graph = AssertAllOwnedBySame<V, G, TraversalElement<V, G>>(elements)
     let frontier = HashSet<TraversalElement<V, G>>(elements)
@@ -238,9 +228,7 @@ public func Traverse<V, G>(
     nextVertexCondition! :
         (Edge<V, G>, Vertex<V, G>) -> Bool = { e, v => true }
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let defaultNextVertices =
         GetDefaultNextVertices<V, G>(traversalDirection, nextVertexCondition)
@@ -271,9 +259,7 @@ public func Traverse<V, G>(
 func ExtendFunctionArgumentsWithTraversalData<T, U, V, G>(
     f : (T) -> U
 ) : (T, TraversalData<V, G>) -> U
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     { t : T, data : TraversalData<V, G> => f(t)}
 }
@@ -296,9 +282,7 @@ public func Traverse<V, G>(
     nextVertexCondition! : (Edge<V, G>, Vertex<V, G>) -> Bool = { e, v => true },
     nextEdgeCondition! : (Vertex<V, G>, Edge<V, G>) -> Bool = { v, e => true }
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G> {
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
     Traverse(
         elements,
         traversalDirection,
@@ -329,8 +313,7 @@ public func Traverse<V, G>(
     nextEdgeCondition!: (Vertex<V, G>, Edge<V, G>) -> Bool = { v, e => true }
 ) : Unit
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     Traverse<V, G>(
         HashSet([element]), traversalDirection, actionAtVertex: actionAtVertex,
@@ -358,9 +341,7 @@ public func TraverseAll<V, G>(
     actionAtEdge : (Edge<V, G>, TraversalData<V, G>) -> Unit,
     nextVertexCondition : (Edge<V, G>, Vertex<V, G>) -> Bool
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G> {
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
     let startingElements = f.GetTraversalElements(traversalDirection)
     Traverse<V, G>(
         startingElements, traversalDirection, actionAtVertex: actionAtVertex,
@@ -385,8 +366,7 @@ public func TraverseAll<V, G>(
     actionAtEdge : (Edge<V, G>) -> Unit
 ) : Unit
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     TraverseAll<V, G>(
         f, traversalDirection,

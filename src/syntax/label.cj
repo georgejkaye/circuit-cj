@@ -14,9 +14,7 @@ from std import collection.ArrayList
  * Enum for the different types of generators
  */
 public enum Label<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     // A basic value 0 -> 1
     | VALUE(V)
@@ -404,9 +402,7 @@ extend Label<V, G>
  * @return The corresponding label for these values
  */
 public func GetSignalLabel<V, G>(v : V, w : Int64) : Label<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     if(w == 1) {
         VALUE(v)
@@ -423,9 +419,7 @@ public func GetSignalLabel<V, G>(v : V, w : Int64) : Label<V, G>
  * @return The corresponding label for these values
  */
 public func GetSignalLabel<V, G>(values : Array<V>) : Label<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     if(values.size == 1) {
         VALUE(values[0])

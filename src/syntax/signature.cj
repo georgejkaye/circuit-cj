@@ -9,16 +9,23 @@
 package syntax
 from std import collection.HashSet, collection.HashMap
 import debug.*
-public interface ValueSymbol<V> <: Hashable & HasName & ToString {
-    // HACK: ideally we want to have this returning an element
-    // of the type the interface is being implemented on, but I don't
-    // know whether this is possible
+/**
+ * Interface for symbols that represent values.
+ *
+ * HACK: Ideally we don't want to have to specify the generic V: it should
+ * always be the same type that is being extended by ValueSymbol i.e.
+ * Value <: ValueSymbol<Value>, but I don't know if this is possible.
+ */
+public interface ValueSymbol<V>
+    <: Hashable & HasName & ToString & Equatable<V> & LessOrEqual<V>
+{
     static func GetDisconnected() : V
 }
 
-public interface PrimitiveSymbol<V>
-    <: Specifiable & HasName & ToString & Hashable
-    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> {
+public interface PrimitiveSymbol<V, G>
+    <: Specifiable & HasName & ToString & Hashable & Equatable<G>
+    where V <: ValueSymbol<V>
+{
     func GetEnhancedName(n: Int64, w: Int64): String
 }
 /**
@@ -35,10 +42,7 @@ func CheckTableMonotone<V>(
     lattice : FiniteLattice<V>,
     ports : Array<Port>,
     table : (Array<Array<V>>) -> (Array<Array<V>>)
-) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
-{
+) : Unit where V <: ValueSymbol<V> {
     let inputs = lattice.EnumerateInputs(ports)
     for(input1 in inputs) {
         for(input2 in inputs) {
@@ -75,9 +79,7 @@ class NonMonotoneFunctionException<T> <: Exception where T <: ToString {
  * that forces its output to be constant regardless of the other inputs
  */
 public struct Annihilator<V, G> <: ToString
-     where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public Annihilator(
         public let gate : G,
@@ -108,9 +110,7 @@ public struct Annihilator<V, G> <: ToString
  * that forces its behaviour to be the identity on the other inputs.
  */
 public struct Identifier<V, G> <: ToString
-     where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public Identifier(
         public let gate : G,
@@ -168,9 +168,7 @@ func GetAnnihilatorAndIdentifierRules<V, G>(
     annihilatorsList : ArrayList<Annihilator<V, G>>,
     identitiesList : ArrayList<Identifier<V, G>>
 ) : Unit
-     where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     // Only gates with multiple inputs can have annihilator and identity rules
     let arity = gate.GetArity()
@@ -265,9 +263,7 @@ func GetAnnihilatorAndIdentifierRules<V, G>(
  */
 public class Signature<V, G>
     <: HasName & ToString
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let uniqueId : Int64 = GetNextId()
     public let annihilators : Array<Annihilator<V, G>>

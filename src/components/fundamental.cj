@@ -35,9 +35,7 @@ public func Todo(msg : String) : Unit {
 func UseOperation<V, G>(
     label : Label<V, G>, inputs: Array<Wire<V, G>>
 ) : Array<Wire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertEqual(inputs.size, label.GetInputPorts().size)
     UseEdgeWithNewOutputs(label, inputs, None, None)
@@ -51,9 +49,7 @@ func UseOperation<V, G>(
 public func UseGate<V, G>(
     prim : G, inputs : Array<Wire<V, G>>
 ) : Array<Wire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertAllHaveWidth(inputs, 1)
     UseOperation(PRIMITIVE(prim), inputs)
@@ -68,9 +64,7 @@ public func UseGate<V, G>(
 public func UseUnaryGate<V, G>(
     prim : G, a : Wire<V, G>
 ) : Array<Wire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     UseGate(prim, [a])
 }
@@ -85,9 +79,7 @@ public func UseUnaryGate<V, G>(
 public func UseBinaryGate<V, G>(
     prim : G, a : Wire<V, G>, b : Wire<V, G>
 ) : Array<Wire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     UseGate(prim, [a,b])
 }
@@ -99,9 +91,7 @@ public func UseBinaryGate<V, G>(
  * @return The output of the join
  */
 public func UseJoin<V, G>(a : Wire<V, G>, b : Wire<V, G>) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     UseOperation(JOIN(a.GetWidth()), [a, b])[0]
 }
@@ -120,9 +110,7 @@ public func UseBlackbox<V, G>(
     codomain : Array<Port>,
     inputs: Array<Wire<V, G>>
 ) : Array<Wire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     UseEdgeWithNewOutputs<V, G, Wire<V, G>>(
         Label<V,G>.BLACKBOX(

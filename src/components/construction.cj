@@ -27,9 +27,7 @@ public enum Direction {
 func GeneraliseSingleOutputFunction<V, G>(
     f : (Array<Wire<V, G>>) -> Wire<V, G>
 ) : (Array<Wire<V, G>>) -> Array<Wire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     { inputs : Array<Wire<V, G>> => [f(inputs)] }
 }
@@ -44,9 +42,7 @@ func GeneraliseSingleOutputFunction<V, G>(
 func FlattenSingleWireOutputs<V, G>(
     inputss : Array<Array<Wire<V, G>>>
 ) : Array<Wire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     map({ inputs : Array<Wire<V, G>> => inputs[0] }, inputss)
 }
@@ -63,9 +59,7 @@ public func Map<V, G>(
     f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
     inputss : Array<Array<Wire<V, G>>>
 ) : Array<Array<Wire<V, G>>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let width = AssertArrayArraysSameWidths(inputss)
     map({inputs : Array<Wire<V, G>> => f(inputs)}, inputss)
@@ -82,9 +76,7 @@ public func Map<V, G>(
     f : (Array<Wire<V, G>>) -> Wire<V, G>,
     inputss : Array<Array<Wire<V, G>>>
 ) : Array<Wire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let outputWires = Map(GeneraliseSingleOutputFunction(f), inputss)
     FlattenSingleWireOutputs(outputWires)
@@ -100,8 +92,7 @@ public func BitwiseSplit<V, G>(
     inputs : Array<Wire<V, G>>
 ) : Array<Array<Wire<V, G>>>
     where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let width = AssertAllSameWidth(inputs)
     let splitInputs = map({ w : Wire<V, G> => Split(w) }, inputs)
@@ -119,9 +110,7 @@ public func BitwiseSplit<V, G>(
 public func BitwiseCombine<V, G>(
     inputs : Array<Array<Wire<V, G>>>
 ) : Array<Wire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let size = AssertAllSameLength(inputs)
     Array<Wire<V, G>>(size, {
@@ -141,9 +130,7 @@ public func BitwiseMap<V, G>(
     f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
     inputs : Array<Wire<V, G>>
 ) : Array<Wire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>,  G <: PrimitiveSymbol<V, G>
 {
     let inputWires = BitwiseSplit(inputs)
     let outputWires = Map(f, inputWires)
@@ -159,10 +146,7 @@ public func BitwiseMap<V, G>(
 public func BitwiseMap<V, G>(
     f : (Array<Wire<V, G>>) -> Wire<V, G>,
     inputs : Array<Wire<V, G>>
-) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+) : Wire<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     BitwiseMap({ inputs : Array<Wire<V, G>> => [f(inputs)] }, inputs)[0]
 }
@@ -177,9 +161,7 @@ public func BitwiseMap<V, G>(
     f : (Wire<V, G>) -> Wire<V, G>,
     input : Wire<V, G>
 ) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     BitwiseMap({ inputs : Array<Wire<V, G>> => [f(inputs[0])] }, [input])[0]
 }
@@ -202,9 +184,7 @@ public func RippleMap<V, G>(
     start!: Int64 = 0,
     end!: Int64 = inputs.size
 ) : (Array<Array<Wire<V, G>>>, Array<Wire<V, G>>)
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let width = AssertArrayArraysSameWidths(inputs)
     var acc = initial
@@ -242,9 +222,7 @@ public func RippleMap<V, G>(
     start!: Int64 = 0,
     end!: Int64 = inputs.size
 ) : (Array<Array<Wire<V, G>>>, Wire<V, G>)
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let rippleMapFunction =
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
@@ -275,9 +253,7 @@ public func RippleMap<V, G>(
     start!: Int64 = 0,
     end!: Int64 = inputs.size
 ) : (Array<Wire<V, G>>, Wire<V, G>)
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let (finalOut, finalAcc) = RippleMap(
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
@@ -311,9 +287,7 @@ public func RippleMap<V, G>(
     start!: Int64 = 0,
     end!: Int64 = inputs.size
 ) : (Array<Array<Wire<V, G>>>, Array<Wire<V, G>>)
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     RippleMap(
         f, inputs[start], inputs, direction: direction,
@@ -338,9 +312,7 @@ public func RippleMap<V, G>(
     start!: Int64 = 0,
     end!: Int64 = inputs.size
 ) : (Array<Wire<V, G>>, Wire<V, G>)
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let function =
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
@@ -372,9 +344,7 @@ public func Ripple<V, G>(
     start!: Int64 = 0,
     end!: Int64 = inputs.size
 ) : Array<Wire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let function =
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
@@ -406,9 +376,7 @@ public func Ripple<V, G>(
     start!: Int64 = 0,
     end!: Int64 = inputs.size
 ) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let rippleFunction =
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
@@ -438,9 +406,7 @@ public func Ripple<V, G>(
     start!: Int64 = 0,
     end!: Int64 = inputs.size
 ) : Array<Wire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     Ripple(
         f, inputs[start], inputs, direction: direction,
@@ -465,9 +431,7 @@ public func Ripple<V, G>(
     start!: Int64 = 0,
     end!: Int64 = inputs.size
 ) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let rippleFunction =
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
@@ -498,9 +462,7 @@ public func BitwiseRipple<V, G>(
     start!: Int64 = 0,
     end!: Int64 = inputs.size
 ) : Array<Wire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let inputWires = BitwiseSplit(inputs)
     Ripple(f, initial, inputWires, direction: direction, start: start, end: end)
@@ -524,9 +486,7 @@ public func BitwiseRipple<V, G>(
     start!: Int64 = 0,
     end!: Int64 = inputs.size
 ) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let function =
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
@@ -553,9 +513,7 @@ public func BitwiseRipple<V, G>(
     start!: Int64 = 0,
     end!: Int64 = inputs.size
 ) : Array<Wire<V, G>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let inputWires = BitwiseSplit(inputs)
     Ripple(
@@ -581,9 +539,7 @@ public func BitwiseRipple<V, G>(
     start!: Int64 = 0,
     end!: Int64 = inputs.size
 ) : Wire<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let function =
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
@@ -614,9 +570,7 @@ public func BitwiseRippleMap<V, G>(
     start!: Int64 = 0,
     end!: Int64 = inputs.size
 ) : (Array<Wire<V, G>>, Array<Wire<V, G>>)
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let inputWires = BitwiseSplit(inputs)
     let (output, acc) = RippleMap(
@@ -644,9 +598,7 @@ public func BitwiseRippleMap<V, G>(
     start!: Int64 = 0,
     end!: Int64 = inputs[0].GetWidth()
 ) : (Wire<V, G>, Wire<V, G>)
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let inputWires = BitwiseSplit(inputs)
     let function =
@@ -675,9 +627,7 @@ public func BitwiseRippleMap<V, G>(
     input : Wire<V, G>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : (Wire<V, G>, Wire<V, G>)
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let function =
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
@@ -704,9 +654,7 @@ public func BitwiseRippleMap<V, G>(
     inputs : Array<Wire<V, G>>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : (Array<Wire<V, G>>, Array<Wire<V, G>>)
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let inputWires = BitwiseSplit(inputs)
     let (output, acc) = RippleMap(
@@ -728,9 +676,7 @@ public func BitwiseRippleMap<V, G>(
     input : Wire<V, G>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : (Wire<V, G>, Wire<V, G>)
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let inputWires = BitwiseSplit([input])
     let function =
@@ -756,9 +702,7 @@ public func MakeBitwiseMapGate<V, G>(
     prim : G,
     w : Int64
 ) : InterfacedHypergraph<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let inputs = Array<Wire<V, G>>(
         prim.GetArity(),
@@ -798,9 +742,7 @@ public func MakeRippleGate<V, G>(
     n : Int64,
     w : Int64
 ) : InterfacedHypergraph<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let inputs = Array<Array<Wire<V, G>>>(n, {
         i : Int64 => [UseWire<V, G>(w)]
@@ -840,9 +782,7 @@ public func MakeBitwiseRippleGate<V, G>(
     prim : G,
     w : Int64
 ) : InterfacedHypergraph<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let input = UseWire<V, G>(w)
     let output = BitwiseRipple(

@@ -16,9 +16,7 @@ import assertions.*
  * Class for evaluating circuits given inputs at each tick of the clock
  */
 public class Evaluator<V, G> <: Drawable<V, G>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     var currentCycle = 0
     let debug : Bool
@@ -184,8 +182,7 @@ public class Evaluator<V, G> <: Drawable<V, G>
  */
 func BurstSequentialGraphs<V, G>(f : InterfacedHypergraph<V, G>) : Unit
     where
-        V <: ValueSymbol<V> & Equatable<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     var sequentialEdges = f.GetSequentialEdges().size
     while(sequentialEdges != 0) {
@@ -215,14 +212,9 @@ func BurstSequentialGraphs<V, G>(f : InterfacedHypergraph<V, G>) : Unit
  *                 register
  */
 func MakeRegisterJoin<V, G>(
-    sig : Signature<V, G>,
-    e : Edge<V, G>,
-    f : InterfacedHypergraph<V, G>
-) : (
-    Edge<V, G>, Edge<V, G>, Signal<V>, Vertex<V, G>
-) where
-    V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-    G <: PrimitiveSymbol<V> & Equatable<G>
+    sig : Signature<V, G>, e : Edge<V, G>,f : InterfacedHypergraph<V, G>
+) : (Edge<V, G>, Edge<V, G>, Signal<V>, Vertex<V, G>)
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     // We can only turn a delay or a value into a register
     let isDelay = e.GetLabel().IsDelay()
@@ -266,9 +258,7 @@ func ConvertToMealyForm<V, G>(
     InterfacedHypergraph<V, G>,
     Edge<V, G>,
     Int64
-) where
-    V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-    G <: PrimitiveSymbol<V> & Equatable<G>
+) where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let valueEdges = HashSet(f.GetValueEdges())
     let delayEdges = HashSet(f.GetDelayEdges())
@@ -313,9 +303,7 @@ func EliminateInstantFeedback<V, G>(
     sig : Signature<V, G>,
     f : InterfacedHypergraph<V, G>
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     f.WriteDotToFile(0, "dot/core", debug: true)
     let feedbackConnections = f.GetFeedbackConnections()

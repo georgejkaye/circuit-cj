@@ -29,9 +29,7 @@ func AttemptRewriteRule<V, G>(
     rule : RewriteRule<V, G>, f : InterfacedHypergraph<V, G>,
     debug!: Bool = false
 ) : Option<HashSet<TraversalElement<V, G>>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     match(rule.Rewrite(e, f)) {
         case None => None
@@ -72,9 +70,7 @@ func AttemptAllRewriteRules<V, G>(
     signature : Signature<V, G>, copyBlackBoxes!: Bool = false,
     allInstantaneous!: Bool = false, debug!: Bool = false
 ) : Option<HashSet<TraversalElement<V, G>>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let label = edge.GetLabel()
     let validRules = ArrayList<RewriteRule<V, G>>()
@@ -152,9 +148,7 @@ public func RewriteCombinational<V, G>(
     copyBlackBoxes!: Bool = false, allInstantaneous!: Bool = false,
     debug!: Bool = false
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let actionAtEdge = {
         e : Edge<V, G>, data : TraversalData<V, G> =>
@@ -219,9 +213,7 @@ public func RewriteCombinational<V, G>(
     startingElements : HashSet<TraversalElement<V, G>>, copyBlackBoxes!: Bool,
     allInstantaneous!: Bool, debug!: Bool = false
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     RewriteCombinational(
         signature, f, startingElements, HashSet<TraversalElement<V, G>>(),
@@ -248,9 +240,7 @@ public func RewriteCombinational<V, G>(
     signature : Signature<V, G>, f : InterfacedHypergraph<V, G>,
     copyBlackBoxes!: Bool, allInstantaneous!: Bool, debug!: Bool = false
 ) : Unit
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>,
-        G <: PrimitiveSymbol<V> & Equatable<G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     RewriteCombinational(
         signature, f, f.GetLeftmostTraversalElements(),
