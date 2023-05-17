@@ -72,8 +72,8 @@ public class Evaluator<V, G> <: Drawable<V, G>
                 allInstantaneous: false, debug: debug
             )
         }
-        this.nextRootVertices = this.graph.GetOutputVertices()
-        this.lastSignalTargets = this.graph.GetOutputVertices()
+        this.nextRootVertices = Array(this.graph.GetOutputVertices())
+        this.lastSignalTargets = Array(this.graph.GetOutputVertices())
         this.stateJoinEdges = Array<TraversalElement<V, G>>(this.stateWires){
             i : Int64 => EDGE(coreEdge.NextEdgeLeft(i).getOrThrow().GetEdge())
         }
