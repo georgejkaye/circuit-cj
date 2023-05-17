@@ -329,7 +329,7 @@ public interface DecimalDrawable {
         depth : Int64, file : String, signed!: Bool, debug!: Bool
     ) : Unit
 }
-func GetDecimalLabelFn<V, G>(signed : Bool) : (Label<V, G>) -> String
+public func GetDecimalLabelFn<V, G>(signed : Bool) : (Label<V, G>) -> String
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     { label : Label<V, G> =>
@@ -337,11 +337,17 @@ func GetDecimalLabelFn<V, G>(signed : Bool) : (Label<V, G>) -> String
             case None => label.GetName()
             case Some(s) => match(V.SignalToDec(s, signed)) {
                 case None => label.GetName()
-                case Some(n) => "${n}"
+                case Some(n) => match(label) {
+                    case VALUE(_) => "${n}"
+                    case SIGNAL(_) => "${n}"
+                    case REGISTER(_) => ":: ${n}"
+                    case _ => ""
+                }
             }
         }
     }
 }
+
 extend Hypergraph<V, G> <: DecimalDrawable
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {

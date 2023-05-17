@@ -86,9 +86,13 @@ public class Evaluator<V, G> <: Drawable<V, G>
         this.graph
     }
     public func WriteDotToFile(
-        depth : Int64, file : String, debug!: Bool = false
+        depth : Int64, file : String,
+        edgeLabelFn!: (Label<V, G>) -> String = { l => l.GetName()},
+        debug!: Bool = false
     ) : Unit {
-        this.GetGraph().WriteDotToFile(depth, file, debug: debug)
+        this.GetGraph().WriteDotToFile(
+            depth, file, edgeLabelFn: edgeLabelFn, debug: debug
+        )
     }
     /**
      * Perform a cycle using this evaluator for some given input signals
@@ -428,5 +432,17 @@ extend Evaluator<V, G> where V <: Decimal<V> {
             inputs
         )
         this.PerformCycle(inputSignals)
+    }
+}
+extend Evaluator<V, G> <: DecimalDrawable
+    where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    public func WriteDotToFile(
+        depth : Int64, file : String, signed!: Bool = false,
+        debug!: Bool = false
+    ) : Unit {
+        WriteDotToFile(
+            depth, file, edgeLabelFn: GetDecimalLabelFn(signed), debug: debug
+        )
     }
 }
