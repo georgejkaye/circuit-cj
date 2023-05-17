@@ -68,6 +68,36 @@ public interface Decimal<V>
     static func SignalToDec(signal : Signal<V>, signed : Bool) : Option<Int64>
 }
 /**
+ * Given a signal, attempt to convert it to decimal and return it as a string;
+ * if it fails, return the string of the original signal instead.
+ *
+ * @param signal
+ * @param signed
+ * @return The string representing the signal, in decimal if possible
+ */
+public func MaybeDecimalToString<V>(
+    signal : Signal<V>, signed: Bool
+) : String
+    where V <: Decimal<V>
+{
+    match(V.SignalToDec(signal, signed)) {
+        case None => signal.GetName()
+        case Some(n) => "${n}"
+    }
+}
+public func GetArgumentString<V>(vs : Array<Signal<V>>, signed!: Bool) : String
+    where V <: ValueSymbol<V> & Decimal<V>
+{
+    GetArgumentString(vs, printFn: { s => MaybeDecimalToString(s, signed) })
+}
+public func GetOutputString<V>(
+    vs : Array<Option<Signal<V>>>, signed!: Bool
+) : String
+    where V <: ValueSymbol<V> & Decimal<V>
+{
+    GetOutputString(vs, printFn: { s => MaybeDecimalToString(s, signed)})
+}
+/**
  * Make a signal circuit for a signal converted from a decimal number.
  *
  * @param x
@@ -352,7 +382,7 @@ extend Hypergraph<V, G> <: DecimalDrawable
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public func WriteDotToFile(
-        depth : Int64, file : String, signed!: Bool = false,
+        depth : Int64, file : String, signed!: Bool,
         debug!: Bool = false
     ) : Unit {
         WriteDotToFile(
@@ -364,7 +394,7 @@ extend InterfacedHypergraph<V, G> <: DecimalDrawable
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public func WriteDotToFile(
-        depth : Int64, file : String, signed!: Bool = false,
+        depth : Int64, file : String, signed!: Bool,
         debug!: Bool = false
     ) : Unit {
         WriteDotToFile(

@@ -14,7 +14,7 @@ import assertions.*
  */
 public struct Signal<V>
     <: ToString & HasName & Specifiable & HasWidth & Equatable<Signal<V>>
-    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
+    where V <: ValueSymbol<V>
 {
     public Signal(
         public let values : Array<V>
@@ -91,22 +91,27 @@ public struct Signal<V>
  * @param vs The array
  * @return The signa
  */
-public func GetArgumentString<V>(vs : Array<Signal<V>>) : String
-    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
+public func GetArgumentString<V>(
+    vs : Array<Signal<V>>,
+    printFn!: (Signal<V>) -> String = { s => s.GetName() }
+) : String
+    where V <: ValueSymbol<V>
 {
     arrayToString(
-        vs, { s => s.GetName() },
-        openingBracket: "(", closingBracket: ")", delimiter: ", "
+        vs, printFn, openingBracket: "(", closingBracket: ")", delimiter: ", "
     )
 }
-public func GetOutputString<V>(vs : Array<Option<Signal<V>>>) : String
-    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
+public func GetOutputString<V>(
+    vs : Array<Option<Signal<V>>>,
+    printFn!: (Signal<V>) -> String = { s => s.GetName() }
+) : String
+    where V <: ValueSymbol<V>
 {
     arrayToString(
         vs, { opt =>
             match(opt){
                 case None => "?"
-                case Some(s) => s.GetName()
+                case Some(s) => printFn(s)
             }
         }, openingBracket: "(", closingBracket: ")", delimiter: ","
     )
