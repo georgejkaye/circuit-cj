@@ -315,3 +315,54 @@ public func RegisterGuardedFeedback<V, G>(
     let signal = V.DecToSignal(initial, width, signed)
     RegisterGuardedFeedback(signal, input, incoming)
 }
+
+public interface DecimalDrawable {
+    /**
+     * Write the dot graph for a graph to a file with a given name, with the
+     * option to toggle representing signals as decimal numbers.
+     * @param depth The maximum depth of subgraphs to draw
+     * @param file The file name to write to
+     * @param signed Whether to interpret signals as signed or not
+     * @param debug Whether to print debug info on the graph
+     */
+    func WriteDotToFile(
+        depth : Int64, file : String, signed!: Bool, debug!: Bool
+    ) : Unit
+}
+func GetDecimalLabelFn<V, G>(signed : Bool) : (Label<V, G>) -> String
+    where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    { label : Label<V, G> =>
+        match(label.GetMaybeSignal()) {
+            case None => label.GetName()
+            case Some(s) => match(V.SignalToDec(s, signed)) {
+                case None => label.GetName()
+                case Some(n) => "${n}"
+            }
+        }
+    }
+}
+extend Hypergraph<V, G> <: DecimalDrawable
+    where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    public func WriteDotToFile(
+        depth : Int64, file : String, signed!: Bool = false,
+        debug!: Bool = false
+    ) : Unit {
+        WriteDotToFile(
+            depth, file, edgeLabelFn: GetDecimalLabelFn(signed), debug: debug
+        )
+    }
+}
+extend InterfacedHypergraph<V, G> <: DecimalDrawable
+    where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    public func WriteDotToFile(
+        depth : Int64, file : String, signed!: Bool = false,
+        debug!: Bool = false
+    ) : Unit {
+        WriteDotToFile(
+            depth, file, edgeLabelFn: GetDecimalLabelFn(signed), debug: debug
+        )
+    }
+}
