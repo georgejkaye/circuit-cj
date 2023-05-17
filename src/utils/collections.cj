@@ -125,6 +125,25 @@ public func arrayToString<T>(
     )
 }
 /**
+ * Get a bespokely printed string of an arraylist.
+ *
+ * @param array
+ * @param printFn The function that generates a string for an element
+ * @param openingBracket
+ * @param closingBracket
+ * @param delimiter
+ */
+public func arrayListToString<T>(
+    list : ArrayList<T>, printFn : (T) -> String,
+    openingBracket!: String = "[", closingBracket!: String = "]",
+    delimiter!: String = ", "
+) : String {
+    collectionToString(
+        list, printFn, openingBracket: openingBracket,
+        closingBracket: closingBracket, delimiter: delimiter
+    )
+}
+/**
  * Attempt to get the value mapped to by a key in a hashmap in an unsafe way,
  * throwing NoneException if it doesn't exist.
  *
