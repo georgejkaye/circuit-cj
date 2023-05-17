@@ -22,7 +22,12 @@ public struct InputOutput<V> <: ToString where V <: ValueSymbol<V> {
         "${GetArgumentString(this.input)} -> ${GetOutputString(this.output)}"
     }
 }
-
+extend InputOutput<V> where V <: Decimal<V> {
+    public func GetDecimalString(signed : Bool) : String {
+        "${GetArgumentString(this.input, signed: signed)}" +
+        " -> ${GetOutputString(this.output, signed: signed)}"
+    }
+}
 /**
  * Class for evaluating circuits given inputs at each tick of the clock
  */
@@ -198,6 +203,14 @@ public class Evaluator<V, G> <: Drawable<V, G>
         let inputOutput = InputOutput(inputSignals, outputSignals)
         this.inputOutputHistory.append(inputOutput)
         this.currentCycle++
+    }
+}
+extend Evaluator<V, G> where V <: Decimal<V> {
+    public func GetInputOutputHistoryString(signed!: Bool) : String {
+        arrayListToString(
+            this.inputOutputHistory,
+            { io => io.GetDecimalString(signed) }
+        )
     }
 }
 /**
@@ -438,8 +451,7 @@ extend Evaluator<V, G> <: DecimalDrawable
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public func WriteDotToFile(
-        depth : Int64, file : String, signed!: Bool = false,
-        debug!: Bool = false
+        depth : Int64, file : String, signed!: Bool, debug!: Bool = false
     ) : Unit {
         WriteDotToFile(
             depth, file, edgeLabelFn: GetDecimalLabelFn(signed), debug: debug
