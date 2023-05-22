@@ -12,7 +12,7 @@ For more documentation see the [wiki](https://gitee.com/HW-PLLab/circuit-cj/wiki
 
 ## Compiling
 
-The library compiles with Cangjie version `0.37.2`.
+The library compiles with Cangjie version `0.38.2`.
 
 ```
 cpm build
