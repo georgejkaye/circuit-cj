@@ -20,6 +20,8 @@ public interface ValueSymbol<V>
     <: Hashable & HasName & ToString & Equatable<V> & LessOrEqual<V>
 {
     static func GetDisconnected() : V
+    static func GetHighestWaveformLevel() : Int64
+    func GetWaveformLevel() : Option<Int64>
 }
 
 public interface PrimitiveSymbol<V, G>

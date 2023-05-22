@@ -51,6 +51,12 @@ public class Evaluator<V, G> <: Drawable<V, G>
     let stateJoinEdges : Array<TraversalElement<V, G>>
     // The sequence of inputs and corresponding outputs
     let inputOutputHistory : ArrayList<InputOutput<V>>
+    let inputHistory : ArrayList<Array<Signal<V>>>
+    let outputHistory : ArrayList<Array<Option<Signal<V>>>>
+    // The list of signals given to each input of this circuit over time
+    let inputSignalHistory : Array<ArrayList<Signal<V>>>
+    // The list of opt signals produced at each output of the circuit over time
+    let outputSignalHistory : Array<ArrayList<Option<Signal<V>>>>
     public init(
         signature : Signature<V, G>, f : InterfacedHypergraph<V, G>,
         debug!: Bool = false
@@ -83,6 +89,12 @@ public class Evaluator<V, G> <: Drawable<V, G>
             i : Int64 => EDGE(coreEdge.NextEdgeLeft(i).getOrThrow().GetEdge())
         }
         this.inputOutputHistory = ArrayList()
+        this.inputHistory = ArrayList()
+        this.outputHistory = ArrayList()
+        this.inputSignalHistory =
+            Array(this.graph.GetArity()){ i => ArrayList<Signal<V>>()}
+        this.outputSignalHistory =
+            Array(this.graph.GetCoarity()){ i => ArrayList<Option<Signal<V>>>()}
     }
     public func GetInputOutputHistory() : ArrayList<InputOutput<V>> {
         this.inputOutputHistory
@@ -201,7 +213,22 @@ public class Evaluator<V, G> <: Drawable<V, G>
         )
         let outputSignals = GetOutputSignals(this.lastSignalTargets)
         let inputOutput = InputOutput(inputSignals, outputSignals)
+        this.inputHistory.append(inputSignals)
+        this.outputHistory.append(outputSignals)
+        for(i in 0..this.graph.GetArity()) {
+            this.inputSignalHistory[i].append(inputSignals[i])
+        }
+        for(i in 0..this.graph.GetCoarity()) {
+            this.outputSignalHistory[i].append(outputSignals[i])
+        }
         this.inputOutputHistory.append(inputOutput)
+        println(
+            SignalsToWaveformString<V, Signal<V>>(
+                this.inputSignalHistory,
+                { s => Some(s) },
+                { i => this.graph.GetInput(i).GetWidth()}
+            )
+        )
         this.currentCycle++
     }
 }

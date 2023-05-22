@@ -17,11 +17,21 @@ public enum GateLevelValue {
  * Instantiate Belnap values as a type of value symbols
  */
 extend GateLevelValue
-    <: ValueSymbol<GateLevelValue> & LessOrEqual<GateLevelValue> &
-        Equatable<GateLevelValue> & Decimal<GateLevelValue>
+    <: ValueSymbol<GateLevelValue> & Decimal<GateLevelValue>
 {
     public static func GetDisconnected() : GateLevelValue {
         NONE
+    }
+    public static func GetHighestWaveformLevel() : Int64 {
+        1
+    }
+    public func GetWaveformLevel() : Option<Int64> {
+        match(this) {
+            case NONE => None
+            case TRUE => Some(1)
+            case FALSE => Some(0)
+            case BOTH => None
+        }
     }
     public func hashCode(): Int64 {
         match (this) {
