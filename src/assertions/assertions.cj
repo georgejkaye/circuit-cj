@@ -307,7 +307,7 @@ public func AssertElementsHaveParameter<T, V>(
  * @param fnu The function to transalte y into a parameter
  * @param paramType
  */
-public func AssertTwoSameParameter<T, U, V>(
+public func AssertBothSameParameter<T, U, V>(
     x : T, y : U, fnt : (T) -> V, fnu : (U) -> V, paramType : ParamType
 ) : V where T <: ToString, U <: ToString, V <: ToString & Equatable<V> {
     let xParam = fnt(x)

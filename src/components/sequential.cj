@@ -169,7 +169,7 @@ func PerformFeedback<V, G>(
 {
     AssertHasNoInEdge(incoming)
     let width = outgoing.GetWidth()
-    AssertAllSameWidth(outgoing, incoming)
+    AssertBothSameWidth(outgoing, incoming)
     MergeWires(outgoing, incoming, instant)
 }
 /**

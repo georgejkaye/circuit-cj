@@ -295,7 +295,7 @@ public func UseRippleAdder(
     b : BelnapWire,
     c : BelnapWire
 ) : (BelnapWire, BelnapWire) {
-    let width = AssertAllSameWidth(a, b)
+    let width = AssertBothSameWidth(a, b)
     UseSubcircuit_2(MakeRippleAdder(width), [a, b, c])
 }
 /**
@@ -356,7 +356,7 @@ public func Mux2_1_W(width : Int64) : BelnapInterfacedCircuit {
  * @return Output Z (w)
  */
 public func Mux2(sel!: BelnapWire, a!: BelnapWire, b!: BelnapWire) : BelnapWire {
-    let width = AssertAllSameWidth(a, b)
+    let width = AssertBothSameWidth(a, b)
     UseSubcircuit_1(
         Mux2_1_W(width),
         [sel, a, b]
@@ -414,9 +414,9 @@ public func Mux4(
     s0: BelnapWire, s1: BelnapWire,
     a: BelnapWire, b: BelnapWire, c: BelnapWire, d: BelnapWire
 ) : BelnapWire {
-    let width = AssertAllSameWidth(a, b)
-    AssertAllSameWidth(b, c)
-    AssertAllSameWidth(c, d)
+    let width = AssertBothSameWidth(a, b)
+    AssertBothSameWidth(b, c)
+    AssertBothSameWidth(c, d)
     UseSubcircuit_1(
         Mux4_1_W(width),
         [s0, s1, a, b, c, d]
