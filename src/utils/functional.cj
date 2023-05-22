@@ -34,6 +34,26 @@ public func fold_left<T,U>(
     acc
 }
 /**
+ * Given some initial value init, a function (acc1, cur) -> acc2, and start and
+ * end integers, compute
+ *
+ *     f(... f(f(init, start), start+1) ...), end-1)
+ *
+ * @param f The function (acc, cur) -> new acc
+ * @param initial The initial value of the accumulator
+ * @param xs The collection
+ * @return The result of the fold
+ */
+public func fold_left<U>(
+    f : (U, Int64) -> U, initial : U, start!: Int64 = 0, end!: Int64
+) : U {
+    var acc = initial
+    for(i in start..end) {
+        acc = f(acc, i)
+    }
+    acc
+}
+/**
  * Given a function (acc1, cur) -> acc2, and a collection xs, compute
  *
  *     f(... f(f(xs[0], xs[1]), xs[2]) ...), xs[n-1])

@@ -156,3 +156,12 @@ public func unsafeGet<T,U>(map : HashMap<T,U>, key: T) : U
 {
     map.get(key).getOrThrow()
 }
+public func concatStrings(
+    strings : Array<String>, delimiter!: String = ", "
+) : String {
+    arrayToString<String>(
+        strings, {s => s}, openingBracket: "", closingBracket: "",
+        delimiter: delimiter
+    )
+}
+
