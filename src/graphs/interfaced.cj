@@ -545,7 +545,7 @@ public class InterfacedHypergraph<V, G>
         ) : Array<InterfaceVertex<V, G>> {
             map({ iv : InterfaceVertex<V, G> =>
                 let v = vertexMap[iv.GetVertex()]
-                let name = v.GetName()
+                let name = iv.GetName()
                 InterfaceVertex(v, name: name)
             }, ws)
         }
