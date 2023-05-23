@@ -33,12 +33,27 @@ public func Todo(msg : String) : Unit {
  * @return The output wire of the gate
  */
 func UseOperation<V, G>(
-    label : Label<V, G>, inputs: Array<Wire<V, G>>
+    label : Label<V, G>, inputs: Array<Wire<V, G>>, delay!: Int64 = 0
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertEqual(inputs.size, label.GetInputPorts().size)
-    UseEdgeWithNewOutputs(label, inputs, None, None)
+    let opWires = UseEdgeWithNewOutputs(label, inputs, None, None)
+    fold_left(
+        { acc, cur =>
+            map<Wire<V, G>, Wire<V, G>>(
+                { w : Wire<V, G> =>
+                    UseEdgeWithNewOutputs(
+                        Label<V, G>.DELAY(w.GetWidth()),
+                        [w],
+                        None<InterfacedHypergraph<V, G>>,
+                        None<Hypergraph<V, G>>
+                    )[0]
+                },
+                acc
+            )
+        }, opWires, start: 0, end: delay
+    )
 }
 /**
  * Use a primitive gate
@@ -47,12 +62,12 @@ func UseOperation<V, G>(
  * @param inputs The input wires
  */
 public func UseGate<V, G>(
-    prim : G, inputs : Array<Wire<V, G>>
+    prim : G, inputs : Array<Wire<V, G>>, delay!: Int64 = 0
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertAllHaveWidth(inputs, 1)
-    UseOperation(PRIMITIVE(prim), inputs)
+    UseOperation(PRIMITIVE(prim), inputs, delay: delay)
 }
 /**
  * Use a unary primitive gate
@@ -62,11 +77,11 @@ public func UseGate<V, G>(
  * @return The output wire of the gate
  */
 public func UseUnaryGate<V, G>(
-    prim : G, a : Wire<V, G>
+    prim : G, a : Wire<V, G>, delay!: Int64 = 0
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    UseGate(prim, [a])
+    UseGate(prim, [a], delay: delay)
 }
 /**
  * Use a binary primitive gate
@@ -77,11 +92,11 @@ public func UseUnaryGate<V, G>(
  * @return The output wire of the gate
  */
 public func UseBinaryGate<V, G>(
-    prim : G, a : Wire<V, G>, b : Wire<V, G>
+    prim : G, a : Wire<V, G>, b : Wire<V, G>, delay!: Int64 = 0
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    UseGate(prim, [a,b])
+    UseGate(prim, [a,b], delay: delay)
 }
 /**
  * Use a join operation on two wires

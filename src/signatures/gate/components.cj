@@ -10,48 +10,42 @@ package signatures.gate
 import graphs.*
 import components.*
 public func UseBufGate(
-    a : BelnapWire
+    a : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseUnaryGate(BUF, a)[0]
+    UseUnaryGate(BUF, a, delay: delay)[0]
 }
 public func UseNotGate(
-    a : BelnapWire
+    a : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseUnaryGate(NOT, a)[0]
+    UseUnaryGate(NOT, a, delay: delay)[0]
 }
 public func UseAndGate(
-    a : BelnapWire,
-    b : BelnapWire
+    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBinaryGate(AND, a, b)[0]
+    UseBinaryGate(AND, a, b, delay: delay)[0]
 }
 public func UseOrGate(
-    a : BelnapWire,
-    b : BelnapWire
+    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBinaryGate(OR, a, b)[0]
+    UseBinaryGate(OR, a, b, delay: delay)[0]
 }
 public func UseNandGate(
-    a : BelnapWire,
-    b : BelnapWire
+    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBinaryGate(NAND, a, b)[0]
+    UseBinaryGate(NAND, a, b, delay: delay)[0]
 }
 public func UseNorGate(
-    a : BelnapWire,
-    b : BelnapWire
+    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBinaryGate(NOR, a, b)[0]
+    UseBinaryGate(NOR, a, b, delay: delay)[0]
 }
 public func UseXorGate(
-    a : BelnapWire,
-    b : BelnapWire
+    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBinaryGate(XOR, a, b)[0]
+    UseBinaryGate(XOR, a, b, delay: delay)[0]
 }
 public func UseXnorGate(
-    a : BelnapWire,
-    b : BelnapWire
+    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
     UseBinaryGate(XNOR, a, b)[0]
 }
