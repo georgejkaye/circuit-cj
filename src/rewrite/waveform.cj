@@ -202,8 +202,10 @@ func DrawWaveformsForSignal<V, T>(
     let totalLines = linesPerValue * width
     fold_left(
         { acc, currentLine =>
-            let currentBit = currentLine / linesPerValue
+            // We want to draw the msb at the top and work down
+            let currentBit = width - (currentLine / linesPerValue) - 1
             let currentPhysicalDrawingLevel = currentLine % linesPerValue
+            // The lowest level should be drawn at the bottom
             let currentLogicalDrawingLevel =
                 linesPerValue - currentPhysicalDrawingLevel - 1
             let rowString =
@@ -212,23 +214,13 @@ func DrawWaveformsForSignal<V, T>(
                     currentLogicalDrawingLevel, fn,
                     "${waveformName}[${currentBit}]", maxNameLength
                 )
-            // Insert a new line if this is not the first line in the
-            // waveform
+            // Insert a new line if this is not the first level
             let preNewLines = if(currentLine == 0) {
                 ""
             } else {
                 "\n"
             }
-            // Insert a new line after if this is the last level of the current
-            // waveform but not the last in the signal, to separate it from the
-            // next one
-            let postNewLines =
-                if(currentLogicalDrawingLevel == 0 && currentLine != totalLines - 1) {
-                    "\n"
-                } else {
-                    ""
-                }
-            "${acc}${preNewLines}${rowString}${postNewLines}"
+            "${acc}${preNewLines}${rowString}"
         }, "", end: totalLines
     )
 }
