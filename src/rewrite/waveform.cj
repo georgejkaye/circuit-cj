@@ -10,13 +10,14 @@
  */
 package rewrite
 // Components for drawing waveforms
-let offSignalString = "  "
-let onSignalString = "──"
-let highToLowUpString = "┐ "
-let highToLowDownString = "└─"
-let lowToHighUpString = "┌─"
-let lowToHighDownString = "┘ "
-let upDownString = "| "
+let componentLength = 8
+let offSignalString = "".padRight(componentLength, paddingChar: ' ')
+let onSignalString = "".padRight(componentLength, paddingChar: '─')
+let highToLowUpString = "┐".padRight(componentLength, paddingChar: ' ')
+let highToLowDownString = "└".padRight(componentLength, paddingChar: '─')
+let lowToHighUpString = "┌".padRight(componentLength, paddingChar: '─')
+let lowToHighDownString = "┘".padRight(componentLength, paddingChar: ' ')
+let upDownString = "|".padRight(componentLength, paddingChar: ' ')
 /**
  * Attempt to get the waveform level at a given tick of the clock of a waveform
  * for a given bit of a signal
@@ -182,6 +183,71 @@ func DrawWaveformLevel<V, T>(
             "${acc}${currentTickString}"
     }, prefix, end: ticks.size)
 }
+func DrawSignalOverview<V, T>(
+    ticks : ArrayList<T>, fn : (T) -> Option<Signal<V>>, width : Int64,
+    maxNameLength : Int64, signalDisplayFn : (Option<Signal<V>>) -> String
+) : String where V <: ValueSymbol<V> {
+    let prefix = "".padRight(maxNameLength)
+    foldi_left(
+        { acc, i, cur =>
+            let maybeSignal = fn(cur)
+            let text =
+                if(i == 0 || fn(ticks[i-1]) != maybeSignal) {
+                    let signalDisplay = signalDisplayFn(maybeSignal)
+                    let signalLength = fold_left_while(
+                        { acc, next =>
+                            if(fn(next) == maybeSignal) {
+                                (acc + componentLength, false)
+                            } else {
+                                (acc, true)
+                            }
+                        }, componentLength, ticks, start: i+1
+                    )
+                    if(signalDisplay.size >= signalLength) {
+                        "|".padRight(signalLength, paddingChar: '*')
+                    } else {
+                        "|${signalDisplay}".padRight(signalLength)
+                    }
+                } else {
+                    ""
+                }
+            "${acc}${text}"
+        },
+        "${prefix}",
+        ticks
+    )
+}
+func DrawWaveformHeaderForSignal<V, T>(
+    ticks : ArrayList<T>, fn : (T) -> Option<Signal<V>>, width : Int64,
+    signalName : String, maxNameLength : Int64,
+    signalDisplayFn : (Option<Signal<V>>) -> String
+) : String where V <: ValueSymbol<V> {
+    let actualSignalName =
+        if(signalName == "") {
+            "_"
+        } else {
+            signalName
+        }
+    let waveformLength = ticks.size * componentLength
+    let lineLength = maxNameLength + waveformLength
+    let firstLine =
+        "${actualSignalName} ".padRight(lineLength, paddingChar: '─')
+    let secondLine = DrawSignalOverview(
+        ticks, fn, width, maxNameLength, signalDisplayFn
+    )
+    let thirdLine = "".padRight(lineLength, paddingChar: '─')
+    "${firstLine}\n${secondLine}\n${thirdLine}"
+}
+func DefaultSignalDisplayFn<V>() : (Option<Signal<V>>) -> String
+    where V <: ValueSymbol<V>
+{
+    { sopt : Option<Signal<V>> =>
+        match(sopt) {
+            case None => ""
+            case Some(s) => s.GetName()
+        }
+    }
+}
 /**
  * Draw the waveforms for a signal across a given list of ticks.
  *
@@ -194,13 +260,19 @@ func DrawWaveformLevel<V, T>(
  */
 func DrawWaveformsForSignal<V, T>(
     ticks : ArrayList<T>, fn : (T) -> Option<Signal<V>>, width : Int64,
-    waveformName : String, maxNameLength : Int64
+    signalName : String, maxNameLength : Int64,
+    signalDisplayFn!: (Option<Signal<V>>) -> String
 ) : String
     where V <: ValueSymbol<V>
 {
     let linesPerValue = V.GetHighestWaveformLevel() + 1
     let totalLines = linesPerValue * width
-    fold_left(
+    let waveformLength = ticks.size * componentLength
+    let lineLength = maxNameLength + waveformLength
+    let signalHeading = DrawWaveformHeaderForSignal(
+        ticks, fn, width, signalName, maxNameLength, signalDisplayFn
+    )
+    let rows = fold_left(
         { acc, currentLine =>
             // We want to draw the msb at the top and work down
             let currentBit = width - (currentLine / linesPerValue) - 1
@@ -212,17 +284,12 @@ func DrawWaveformsForSignal<V, T>(
                 DrawWaveformLevel(
                     ticks, currentBit, currentPhysicalDrawingLevel,
                     currentLogicalDrawingLevel, fn,
-                    "${waveformName}[${currentBit}]", maxNameLength
+                    "[${currentBit}]", maxNameLength
                 )
-            // Insert a new line if this is not the first level
-            let preNewLines = if(currentLine == 0) {
-                ""
-            } else {
-                "\n"
-            }
-            "${acc}${preNewLines}${rowString}"
-        }, "", end: totalLines
+            "${acc}\n${rowString}"
+        }, "${signalHeading}", end: totalLines
     )
+    "${rows}\n${"".padRight(lineLength, paddingChar: '─')}"
 }
 /**
  * Draw the waveforms for an array of signals.
@@ -230,11 +297,13 @@ func DrawWaveformsForSignal<V, T>(
  * @param signals The array of lists of the optional signals over time
  * @param fn The function to interpret elements as optional signals
  * @param widthFn The function to get the width of each element of signals
+ * @param signalDisplayFn How the print the signals in shorthand
  * @return A string visualising the waveforms
  */
 func DrawWaveformsForSignalArray<V, T>(
     signals : Array<ArrayList<T>>, fn : (T) -> Option<Signal<V>>,
-    widthFn : (Int64) -> Int64, nameFn : (Int64) -> String
+    widthFn : (Int64) -> Int64, nameFn : (Int64) -> String,
+    signalDisplayFn!: (Option<Signal<V>>) -> String = DefaultSignalDisplayFn()
 ) : String
     where V <: ValueSymbol<V>
 {
@@ -248,7 +317,9 @@ func DrawWaveformsForSignalArray<V, T>(
     )
     let waveforms = mapi<ArrayList<T>, String>(
         { xs, i =>
-            DrawWaveformsForSignal<V, T>(xs, fn, widthFn(i), nameFn(i), maximumLength)
+            DrawWaveformsForSignal<V, T>(
+                xs, fn, widthFn(i), nameFn(i), maximumLength, signalDisplayFn
+            )
         },
         signals
     )
