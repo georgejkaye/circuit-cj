@@ -444,16 +444,16 @@ func GateLevelValueToDec(
             case FALSE => ()
             case _ => return None<Int64>
         }
+        var carry = true
         for (i in 0..values.size) {
-            var carry = true
             match(values[i]) {
                 case TRUE =>
                     if(!carry) {
-                        x += 2**UInt64(i)
+                        x += pow(2, i)
                     }
                 case FALSE =>
                     if(carry) {
-                        x += 2**UInt64(i)
+                        x += pow(2, i)
                         carry = false
                     }
                 case _ => return None<Int64>
@@ -463,7 +463,7 @@ func GateLevelValueToDec(
         for (i in 0..values.size) {
             match(values[i]) {
                 case TRUE =>
-                    x += 2**UInt64(i)
+                    x += pow(2, i)
                 case FALSE => ()
                 case _ => return None<Int64>
             }
