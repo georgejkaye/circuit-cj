@@ -300,7 +300,7 @@ func DrawWaveformsForSignal<V, T>(
  * @param signalDisplayFn How the print the signals in shorthand
  * @return A string visualising the waveforms
  */
-func DrawWaveformsForSignalArray<V, T>(
+public func DrawWaveformsForSignalArray<V, T>(
     signals : Array<ArrayList<T>>, fn : (T) -> Option<Signal<V>>,
     widthFn : (Int64) -> Int64, nameFn : (Int64) -> String,
     signalDisplayFn!: (Option<Signal<V>>) -> String = DefaultSignalDisplayFn()
@@ -318,10 +318,41 @@ func DrawWaveformsForSignalArray<V, T>(
     let waveforms = mapi<ArrayList<T>, String>(
         { xs, i =>
             DrawWaveformsForSignal<V, T>(
-                xs, fn, widthFn(i), nameFn(i), maximumLength, signalDisplayFn
+                xs, fn, widthFn(i), nameFn(i), maximumLength,
+                signalDisplayFn: signalDisplayFn
             )
         },
         signals
     )
     concatStrings(waveforms, delimiter: "\n\n")
+}
+/**
+ * Draw the waveforms for an array of signals, with labels in decimal.
+ *
+ * @param signals The array of lists of the optional signals over time
+ * @param fn The function to interpret elements as optional signals
+ * @param widthFn The function to get the width of each element of signals
+ * @param signed Whether to interpret signals in decimal
+ * @return A string visualising the waveforms
+ */
+public func DrawWaveformsForSignalArray<V, T>(
+    signals : Array<ArrayList<T>>, fn : (T) -> Option<Signal<V>>,
+    widthFn : (Int64) -> Int64, nameFn : (Int64) -> String, signed!: Bool
+) : String
+    where V <: ValueSymbol<V> & Decimal<V>
+{
+    let signalDisplayFn =
+        { sopt : Option<Signal<V>> =>
+            match(sopt) {
+                case None => ""
+                case Some(s) =>
+                    match(V.SignalToDec(s, signed)){
+                        case None => s.GetName()
+                        case Some(n) => "${n}"
+                    }
+            }
+        }
+    DrawWaveformsForSignalArray(
+        signals, fn, widthFn, nameFn, signalDisplayFn: signalDisplayFn
+    )
 }
