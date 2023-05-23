@@ -8,6 +8,40 @@
  */
 package utils
 /**
+ * Given some initial value init, a function (acc1, cur) -> (acc2, b), and an
+ * collection xs, begin computing
+ *
+ *     f(... f(f(init, xs[0]), xs[1]) ...), xs[n-1])
+ *
+ * but immediately return when b is true.
+ *
+ * @param f The function (acc, cur) -> new acc
+ * @param initial The initial value of the accumulator
+ * @param xs The collection
+ * @return The result of the fold
+ */
+public func fold_left_while<T, U>(
+    f : (U, T) -> (U, Bool), initial: U, xs : Collection<T>,
+    start!: Int64 = 0, end!: Int64 = xs.size
+) : U {
+    var acc = initial
+    var done = false
+    let iter = xs.iterator()
+    for(i in 0..start) {
+        iter.next()
+    }
+    for(i in start..end){
+        let cur = iter.next().getOrThrow()
+        let (newAcc, newDone) = f(acc, cur)
+        acc = newAcc
+        done = newDone
+        if(done) {
+            return acc
+        }
+    }
+    acc
+}
+/**
  * Given some initial value init, a function (acc1, cur) -> acc2, and an
  * collection xs, compute
  *
@@ -22,16 +56,10 @@ public func fold_left<T,U>(
     f : (U, T) -> U, initial : U,  xs : Collection<T>,
     start!: Int64 = 0, end!: Int64 = xs.size
 ) : U {
-    var acc = initial
-    let iter = xs.iterator()
-    for(i in 0..start) {
-        iter.next()
-    }
-    for(i in start..end) {
-        let cur = iter.next().getOrThrow()
-        acc = f(acc, cur)
-    }
-    acc
+    fold_left_while(
+        { acc, cur => (f(acc, cur), false) },
+        initial, xs, start: start, end: end
+    )
 }
 /**
  * Given some initial value init, a function (acc1, cur) -> acc2, and start and
