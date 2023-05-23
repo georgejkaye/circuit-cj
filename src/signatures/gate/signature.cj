@@ -13,6 +13,7 @@ import assertions.*
 public enum GateLevelValue {
     | NONE | TRUE | FALSE | BOTH
 }
+let trueLevel = 1
 /**
  * Instantiate Belnap values as a type of value symbols
  */
@@ -23,12 +24,12 @@ extend GateLevelValue
         NONE
     }
     public static func GetHighestWaveformLevel() : Int64 {
-        1
+        trueLevel
     }
     public func GetWaveformLevel() : Option<Int64> {
         match(this) {
             case NONE => None
-            case TRUE => Some(1)
+            case TRUE => Some(trueLevel)
             case FALSE => Some(0)
             case BOTH => None
         }
