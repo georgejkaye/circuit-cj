@@ -14,23 +14,26 @@ from std import math.MathExtension
  *
  * @param xs The collection
  * @param lowest Some predetermined base minimum element
- * @param f A function mapping each element in xs to a comparable
+ * @param f A function mapping the index and each element in xs to a comparable
  * @return The highest element
  */
 public func max<T, U>(
-    xs : Collection<T>, lowest : U, f : (T) -> U
+    xs : Collection<T>, lowest : U, f : (Int64, T) -> U
 ): U where U <: Comparable<U> {
-    fold_left({ acc : U, cur : T => max(acc, f(cur))}, lowest, xs)
+    foldi_left(
+        { acc : U, i : Int64, cur : T => max(acc, f(i, cur))},
+        lowest, xs
+    )
 }
 /**
  * Get the maximum element in an iterable of elements which can be mapped to
  * integers
  *
  * @param xs The iterable
- * @param f A function mapping each element in xs to an integer
+ * @param f A function mapping the index and each element in xs to an integer
  * @return The highest element
  */
-public func max<T>(xs : Array<T>, f : (T) -> Int64) {
+public func max<T>(xs : Array<T>, f : (Int64, T) -> Int64) {
     max(xs, Int64.Min, f)
 }
 /**
@@ -39,7 +42,7 @@ public func max<T>(xs : Array<T>, f : (T) -> Int64) {
  *
  * @param xs The iterable
  * @param lowest Some predetermined base maximum element
- * @param f A function mapping each element in xs to a comparable
+ * @param f A function mapping the index and each element in xs to a comparable
  * @return The lowest element
  */
 public func min<T, U>(
