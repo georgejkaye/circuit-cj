@@ -290,10 +290,17 @@ public class Edge<V, G>
                             this.GetGraph().IsFeedback(this, i)
                         parentVertex.MergeVertex(actualChildVertex, feedback)
                         mergeMap.put(actualChildVertex, parentVertex)
+                        for((k, v) in mergeMap) {
+                            if(v == actualChildVertex) {
+                                mergeMap.put(k, parentVertex)
+                            }
+                        }
                     }
                 }
-                MergeInterfaces(this.GetSources(), f.GetInputs())
-                MergeInterfaces(this.GetTargets(), f.GetOutputs())
+                let originalChildInputs = Array(f.GetInputs())
+                let originalChildOutputs = Array(f.GetOutputs())
+                MergeInterfaces(this.GetSources(), originalChildInputs)
+                MergeInterfaces(this.GetTargets(), originalChildOutputs)
                 /**
                  * For an array of tentacles, get an array of the tentacles
                  * mapped by the merge map
@@ -315,7 +322,6 @@ public class Edge<V, G>
                 }
                 let newSources = GetNewVertices(this.GetSources())
                 let newTargets = GetNewVertices(this.GetTargets())
-                this.owner.MergeHypergraphs(f.GetGraph())
                 (newSources, newTargets)
         }
     }
