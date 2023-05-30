@@ -511,7 +511,7 @@ public func BitwiseRipple<V, G>(
     inputs : Array<Wire<V, G>>,
     direction!: Direction = TOP_TO_BOTTOM,
     start!: Int64 = 0,
-    end!: Int64 = inputs.size
+    end!: Int64 = if(inputs.size == 0){ 0 } else { inputs[0].GetWidth() }
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
