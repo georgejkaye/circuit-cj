@@ -699,8 +699,7 @@ public func BitwiseRippleMap<V, G>(
  * @return The bitwise gate circuit
  */
 public func MakeBitwiseMapGate<V, G>(
-    prim : G,
-    w : Int64
+    prim : G, w : Int64, delay!: Int64 = 0
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -709,7 +708,7 @@ public func MakeBitwiseMapGate<V, G>(
         {i : Int64 => UseWire<V, G>(w) }
     )
     let output = BitwiseMap(
-        { inputs : Array<Wire<V, G>> => UseGate(prim, inputs) },
+        { inputs : Array<Wire<V, G>> => UseGate(prim, inputs, delay: delay) },
         inputs
     )[0]
     MakeSubcircuit(
@@ -743,9 +742,7 @@ public func MakeBitwiseMapGate<V, G>(
  * @return The ripple gate circuit
  */
 public func MakeRippleGate<V, G>(
-    prim : G,
-    n : Int64,
-    w : Int64
+    prim : G, n : Int64, w : Int64, delay!: Int64 = 0
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -754,7 +751,7 @@ public func MakeRippleGate<V, G>(
     })
     let output = Ripple(
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
-            UseGate(prim, [acc[0], cur[0]])
+            UseGate(prim, [acc[0], cur[0]], delay: delay)
         },
         inputs
     )[0]

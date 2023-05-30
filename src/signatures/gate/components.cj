@@ -64,109 +64,104 @@ public func UnsignedExtend(
  * Bitwise gate
  */
 public func UseBuf(
-    a : BelnapWire
+    a : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseMapGate(BUF, [a])[0]
+    UseBitwiseMapGate(BUF, [a], delay: delay)[0]
 }
 public func UseNot(
-    a : BelnapWire
+    a : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseMapGate(NOT, [a])[0]
+    UseBitwiseMapGate(NOT, [a], delay: delay)[0]
 }
 public func UseAnd(
-    a : BelnapWire,
-    b : BelnapWire
+    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseMapGate(AND, [a, b])[0]
+    UseBitwiseMapGate(AND, [a, b], delay: delay)[0]
 }
 public func UseOr(
-    a : BelnapWire,
-    b : BelnapWire
+    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseMapGate(OR, [a, b])[0]
+    UseBitwiseMapGate(OR, [a, b], delay: delay)[0]
 }
 public func UseNand(
-    a : BelnapWire,
-    b : BelnapWire
+    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseMapGate(NAND, [a, b])[0]
+    UseBitwiseMapGate(NAND, [a, b], delay: delay)[0]
 }
 public func UseNor(
-    a : BelnapWire,
-    b : BelnapWire) : BelnapWire {
-    UseBitwiseMapGate(NOR, [a, b])[0]
+    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
+) : BelnapWire {
+    UseBitwiseMapGate(NOR, [a, b], delay: delay)[0]
 }
 public func UseXor(
-    a : BelnapWire,
-    b : BelnapWire
+    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseMapGate(XOR, [a, b])[0]
+    UseBitwiseMapGate(XOR, [a, b], delay: delay)[0]
 }
 public func UseXnor(
-    a : BelnapWire,
-    b : BelnapWire
+    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseMapGate(XNOR, [a, b])[0]
+    UseBitwiseMapGate(XNOR, [a, b], delay: delay)[0]
 }
 public func UseAnd(
-    ws : Array<BelnapWire>
+    ws : Array<BelnapWire>, delay!: Int64 = 0
 ) : BelnapWire {
-    UseRippleGate(AND, ws)[0]
+    UseRippleGate(AND, ws, delay: delay)[0]
 }
 public func UseOr(
-    ws : Array<BelnapWire>
+    ws : Array<BelnapWire>, delay!: Int64 = 0
 ) : BelnapWire {
-    UseRippleGate(OR, ws)[0]
+    UseRippleGate(OR, ws, delay: delay)[0]
 }
 public func UseNand(
-    ws : Array<BelnapWire>
+    ws : Array<BelnapWire>, delay!: Int64 = 0
 ) : BelnapWire {
-    UseRippleGate(NAND, ws)[0]
+    UseRippleGate(NAND, ws, delay: delay)[0]
 }
 public func UseNor(
-    ws : Array<BelnapWire>
+    ws : Array<BelnapWire>, delay!: Int64 = 0
 ) : BelnapWire {
-    UseRippleGate(NOR, ws)[0]
+    UseRippleGate(NOR, ws, delay: delay)[0]
 }
 public func UseXor(
-    ws : Array<BelnapWire>
+    ws : Array<BelnapWire>, delay!: Int64 = 0
 ) : BelnapWire {
-    UseRippleGate(XOR, ws)[0]
+    UseRippleGate(XOR, ws, delay: delay)[0]
 }
 public func UseXnor(
-    ws : Array<BelnapWire>
+    ws : Array<BelnapWire>, delay!: Int64 = 0
 ) : BelnapWire {
-    UseRippleGate(XNOR, ws)[0]
+    UseRippleGate(XNOR, ws, delay: delay)[0]
 }
 public func UseAnd(
-    w : BelnapWire
+    w : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseRippleGate(AND, [w])[0]
+    UseBitwiseRippleGate(AND, [w], delay: delay)[0]
 }
 public func UseOr(
-    w : BelnapWire
+    w : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseRippleGate(OR, [w])[0]
+    UseBitwiseRippleGate(OR, [w], delay: delay)[0]
 }
 public func UseNand(
-    w : BelnapWire
+    w : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseRippleGate(NAND, [w])[0]
+    UseBitwiseRippleGate(NAND, [w], delay: delay)[0]
 }
 public func UseNor(
-    w : BelnapWire
+    w : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseRippleGate(NOR, [w])[0]
+    UseBitwiseRippleGate(NOR, [w], delay: delay)[0]
 }
 public func UseXor(
-    w : BelnapWire
+    w : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseRippleGate(XOR, [w])[0]
+    UseBitwiseRippleGate(XOR, [w], delay: delay)[0]
 }
 public func UseXnor(
-    w : BelnapWire
+    w : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseRippleGate(XNOR, [w])[0]
+    UseBitwiseRippleGate(XNOR, [w], delay: delay)[0]
 }
 /**
  * Create a half adder subcircuit.
