@@ -720,10 +720,15 @@ public func MakeBitwiseMapGate<V, G>(
             inputs
         ),
         [InterfaceWire(output, "Z")],
-        ENHANCED_PRIMITIVE(
-            EnhancedPrimitive(
-                prim,
-                BITWISE_MAP(w)
+        COMPOSITE(
+            Specification(
+                "${prim.GetName()}_${w}",
+                Array<Port>(
+                    prim.GetArity(), { i => Port(w, numToUppercaseLetter(i)) }
+                ),
+                Array<Port>(
+                    prim.GetCoarity(), { i => Port(w, numToUppercaseLetter(i)) }
+                )
             )
         )
     )
@@ -761,10 +766,11 @@ public func MakeRippleGate<V, G>(
             inputs
         ),
         [InterfaceWire(output, "Z")],
-        ENHANCED_PRIMITIVE(
-            EnhancedPrimitive(
-                prim,
-                RIPPLE(n-1)
+        COMPOSITE(
+            Specification(
+                "${prim.GetName()}_${n}_${w}",
+                Array<Port>(n, { i => Port(w, numToUppercaseLetter(i)) }),
+                [Port(w)]
             )
         )
     )
@@ -779,25 +785,24 @@ public func MakeRippleGate<V, G>(
  * @return The internal ripple gate circuit
  */
 public func MakeBitwiseRippleGate<V, G>(
-    prim : G,
-    w : Int64
+    prim : G, w : Int64, delay!: Int64 = 0
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let input = UseWire<V, G>(w)
     let output = BitwiseRipple(
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
-            UseGate(prim, [acc[0], cur[0]])
+            UseGate(prim, [acc[0], cur[0]], delay: delay)
         },
         [input]
     )[0]
     MakeSubcircuit(
         [InterfaceWire(input, "A")],
         [InterfaceWire(output, "Z")],
-        ENHANCED_PRIMITIVE(
-            EnhancedPrimitive(
-                prim,
-                BITWISE_RIPPLE(w-1)
+        COMPOSITE(
+            Specification(
+                "${prim.GetName()}_1_${w}",
+                [Port(w)], [Port(1)]
             )
         )
     )
