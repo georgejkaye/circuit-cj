@@ -295,11 +295,11 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
         this.edges.put(e)
         e.SetOwner(this)
         AddEdgeToHypergraphData(e)
-        for(t in e.GetSources()) {
-            this.AddVertex(t.GetVertex())
+        for(v in e.GetSources()) {
+            this.AddVertex(v)
         }
-        for(t in e.GetTargets()) {
-            this.AddVertex(t.GetVertex())
+        for(v in e.GetTargets()) {
+            this.AddVertex(v)
         }
     }
     public func AddEdges(es : Iterable<Edge<V, G>>) : Unit {
@@ -691,6 +691,7 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
      */
     public func MergeHypergraphs(f : Hypergraph<V, G>) : Unit {
         if(this != f) {
+            this.feedbackConnections.putAll(f.GetFeedbackConnections())
             for(e in HashSet(f.GetEdges())) {
                 this.AddEdge(e)
             }
