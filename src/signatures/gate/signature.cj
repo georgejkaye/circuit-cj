@@ -484,3 +484,8 @@ public let belnapSignature = Signature<GateLevelValue, GateLevelPrimitive>(
     gateLevelInterpretation,
     GateLevelValueToDec
 )
+public func GenerateClock(
+    rate!: Int64, cycles!: Int64
+) : Waveform<GateLevelValue> {
+    GenerateClock(rate: rate, cycles: cycles, high: TRUE, low: FALSE)
+}

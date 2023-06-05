@@ -63,3 +63,41 @@ public struct Waveform<V>
         this.signals.size
     }
 }
+
+public func ArrayOfInputsToArrayOfTicks<V, T>(
+    waveforms : Array<Waveform<V>>
+) : Array<Array<Signal<V>>>
+    where V <: ValueSymbol<V>, T <: HasWidth
+{
+    let numberOfInputs = waveforms.size
+    let numberOfTicks = max(waveforms, { i, w => w.GetLength() })
+    println(numberOfTicks)
+    Array<Array<Signal<V>>>(numberOfTicks, { currentTickIndex : Int64 =>
+        println("tick ${currentTickIndex}")
+        Array<Signal<V>>(numberOfInputs, { currentInputIndex : Int64 =>
+            println("input ${currentInputIndex}")
+            let currentInput = waveforms[currentInputIndex]
+            let currentInputWidth = waveforms[currentInputIndex].GetWidth()
+            if(currentTickIndex >= currentInput.GetLength()) {
+                Signal(V.GetDisconnected(), currentInputWidth)
+            } else {
+                currentInput.GetSignalAtTick(currentTickIndex)
+            }
+        })
+    })
+}
+public func GenerateClock<V>(
+    rate!: Int64, cycles!: Int64, high!: V, low!: V
+): Waveform<V>
+    where V <: ValueSymbol<V>
+{
+    let length = 2 * rate * cycles
+    let signals = Array<Signal<V>>(length, { i : Int64 =>
+        if(i % (rate * 2) < rate) {
+            Signal(high)
+        } else {
+            Signal(low)
+        }
+    })
+    Waveform(signals)
+}
