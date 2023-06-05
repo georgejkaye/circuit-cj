@@ -124,13 +124,14 @@ public func MakeSignalFromInt<V, G>(
  * @param signed
  * @return The array of corresponding signals
  */
-func MakeDecimalSignalArray<V>(
+func MakeDecimalWaveform<V>(
     vs : Array<Int64>, width: Int64, signed: Bool
-) : Array<Signal<V>>
+) : Waveform<V>
     where
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> & Decimal<V>
 {
-    map({ v : Int64 => V.DecToSignal(v, width, signed)}, vs)
+    let signals = map({ v : Int64 => V.DecToSignal(v, width, signed)}, vs)
+    Waveform(signals)
 }
 /**
  * Convert an array of numbers into an open waveform of signals.
@@ -147,8 +148,8 @@ public func MakeOpenWaveformFromInt<V, G>(
         V <: ValueSymbol<V> & Decimal<V>,
         G <: PrimitiveSymbol<V, G>
 {
-    let signals = MakeDecimalSignalArray<V>(xs, width, signed)
-    MakeOpenWaveform(signals)
+    let waveform = MakeDecimalWaveform<V>(xs, width, signed)
+    MakeOpenWaveform(waveform)
 }
 /**
  * Convert an array of numbers into a closed waveform of signals.
@@ -163,8 +164,8 @@ public func MakeClosedWaveformFromInt<V, G>(
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
-    let signals = MakeDecimalSignalArray<V>(xs, width, signed)
-    MakeClosedWaveform(signals)
+    let waveform = MakeDecimalWaveform<V>(xs, width, signed)
+    MakeClosedWaveform(waveform)
 }
 /**
  * Convert an array of numbers into an infinite waveform of signals.
@@ -179,8 +180,8 @@ public func MakeInfiniteWaveformFromInt<V, G>(
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
-    let signals = MakeDecimalSignalArray<V>(xs, width, signed)
-    MakeInfiniteWaveform(signals)
+    let waveform = MakeDecimalWaveform<V>(xs, width, signed)
+    MakeInfiniteWaveform(waveform)
 }
 /**
  * Use a signal circuit corresponding to a number.
@@ -223,8 +224,8 @@ func UseOpenWaveformFromInt<V, G>(
 ) : Wire<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
-    let signals = MakeDecimalSignalArray<V>(xs, width, signed)
-    UseOpenWaveform(signals, input)
+    let waveform = MakeDecimalWaveform<V>(xs, width, signed)
+    UseOpenWaveform(waveform, input)
 }
 /**
  * Use a closed waveform circuit corresponding to an array of numbers.
@@ -239,8 +240,8 @@ func UseClosedWaveformFromInt<V, G>(
 ) : Wire<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
-    let signals = MakeDecimalSignalArray<V>(xs, width, signed)
-    UseClosedWaveform(signals)
+    let waveform = MakeDecimalWaveform<V>(xs, width, signed)
+    UseClosedWaveform(waveform)
 }
 /**
  * Use an infinite waveform circuit corresponding to an array of numbers.
@@ -255,8 +256,8 @@ func UseInfiniteWaveformFromInt<V, G>(
 ) : Wire<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
-    let signals = MakeDecimalSignalArray<V>(xs, width, signed)
-    UseInfiniteWaveform(signals)
+    let waveform = MakeDecimalWaveform<V>(xs, width, signed)
+    UseInfiniteWaveform(waveform)
 }
 /**
  * Use an infinite waveform circuit that constantly outputs zero.

@@ -1,6 +1,6 @@
 
 /**
- * rewrite/waveform.cj
+ * rewrite/waves.cj
  *
  * Waveform visualiser, inspired by hardcaml_waveterm
  * https://github.com/janestreet/hardcaml_waveterm
@@ -10,7 +10,7 @@
  */
 package rewrite
 // Components for drawing waveforms
-let componentLength = 8
+let componentLength = 4
 let offSignalString = "".padRight(componentLength, paddingChar: ' ')
 let onSignalString = "".padRight(componentLength, paddingChar: '─')
 let highToLowUpString = "┐".padRight(componentLength, paddingChar: ' ')

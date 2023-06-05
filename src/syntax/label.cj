@@ -23,11 +23,11 @@ public enum Label<V, G>
     // A join of a signal and a delay
     | REGISTER(Signal<V>)
     // A sequence of signals over time
-    | OPEN_WAVEFORM(Array<Signal<V>>)
+    | OPEN_WAVEFORM(Waveform<V>)
     // A sequence of signals over time, capped with a disconnect
-    | CLOSED_WAVEFORM(Array<Signal<V>>)
+    | CLOSED_WAVEFORM(Waveform<V>)
     // A sequence of signals over time that repeats periodically
-    | INFINITE_WAVEFORM(Array<Signal<V>>)
+    | INFINITE_WAVEFORM(Waveform<V>)
     // A bundler changes how wires are bundled
     | BUNDLER(Array<Int64>, Array<Int64>)
     // Join two wires together
@@ -60,11 +60,11 @@ extend Label<V, G>
                 []
             case REGISTER(signal) =>
                 [Port(signal.GetWidth())]
-            case OPEN_WAVEFORM(signals) =>
-                [Port(signals[0].GetWidth())]
-            case CLOSED_WAVEFORM(signals) =>
+            case OPEN_WAVEFORM(wf) =>
+                [Port(wf.GetSignalAtTick(0).GetWidth())]
+            case CLOSED_WAVEFORM(wf) =>
                 []
-            case INFINITE_WAVEFORM(signals) =>
+            case INFINITE_WAVEFORM(wf) =>
                 []
             case BUNDLER(ms, _) =>
                 map({ i : Int64 => Port(i)}, ms)
@@ -90,12 +90,12 @@ extend Label<V, G>
                 spec.GetOutputPorts()
             case REGISTER(signal) =>
                 [Port(signal.GetWidth())]
-            case OPEN_WAVEFORM(signals) =>
-                [Port(signals[0].GetWidth())]
-            case CLOSED_WAVEFORM(signals) =>
-                [Port(signals[0].GetWidth())]
-            case INFINITE_WAVEFORM(signals) =>
-                [Port(signals[0].GetWidth())]
+            case OPEN_WAVEFORM(wf) =>
+                [Port(wf.GetSignalAtTick(0).GetWidth())]
+            case CLOSED_WAVEFORM(wf) =>
+                [Port(wf.GetSignalAtTick(0).GetWidth())]
+            case INFINITE_WAVEFORM(wf) =>
+                [Port(wf.GetSignalAtTick(0).GetWidth())]
             case BUNDLER(ms, ns) =>
                 map({ i : Int64 => Port(i)}, ns)
             case JOIN(w) =>
@@ -119,12 +119,12 @@ extend Label<V, G>
                 spec.GetName()
             case REGISTER(signal) =>
                 "${signal.GetName()} ::"
-            case OPEN_WAVEFORM(signals) =>
-                "${GetWaveformString(signals)} ::"
-            case CLOSED_WAVEFORM(signals) =>
-                GetWaveformString(signals)
-            case INFINITE_WAVEFORM(signals) =>
-                "(${GetWaveformString(signals)})${omega}"
+            case OPEN_WAVEFORM(wf) =>
+                "${wf.GetName()} ::"
+            case CLOSED_WAVEFORM(wf) =>
+                wf.GetName()
+            case INFINITE_WAVEFORM(wf) =>
+                "(${wf.GetName()})${omega}"
             case BUNDLER(ms, ns) =>
                 if (ms.size < ns.size) { bundleExpand } else { bundleCombine }
             case JOIN(w) =>
@@ -158,16 +158,16 @@ extend Label<V, G>
                 case REGISTER(t) => s == t
                 case _ => false
             }
-            case OPEN_WAVEFORM(signals1) => match(rhs) {
-                case OPEN_WAVEFORM(signals2) => signals1 == signals2
+            case OPEN_WAVEFORM(wf1) => match(rhs) {
+                case OPEN_WAVEFORM(wf2) => wf1 == wf2
                 case _ => false
             }
-            case CLOSED_WAVEFORM(signals1) => match(rhs) {
-                case CLOSED_WAVEFORM(signals2) => signals1 == signals2
+            case CLOSED_WAVEFORM(wf1) => match(rhs) {
+                case CLOSED_WAVEFORM(wf2) => wf1 == wf2
                 case _ => false
             }
-            case INFINITE_WAVEFORM(signals1) => match(rhs) {
-                case INFINITE_WAVEFORM(signals2) => signals1 == signals2
+            case INFINITE_WAVEFORM(wf1) => match(rhs) {
+                case INFINITE_WAVEFORM(wf2) => wf1 == wf2
                 case _ => false
             }
             case BUNDLER(ms, ns) => match(rhs) {
@@ -355,11 +355,11 @@ extend Label<V, G>
      * @return the waveform of this label:
      *  throws exception if not a waveform
      */
-    public func GetWaveform() : Array<Signal<V>> {
+    public func GetWaveform() : Waveform<V> {
         match(this) {
-            case OPEN_WAVEFORM(signals) => signals
-            case CLOSED_WAVEFORM(signals) => signals
-            case INFINITE_WAVEFORM(signals) => signals
+            case OPEN_WAVEFORM(wf) => wf
+            case CLOSED_WAVEFORM(wf) => wf
+            case INFINITE_WAVEFORM(wf) => wf
             case _ => throw IncompatibleVariantException(this, "WAVEFORM")
         }
     }

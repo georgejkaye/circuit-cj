@@ -225,11 +225,11 @@ public func RegisterGuardedFeedback<V, G>(
  * @return The output wire of the waveform
  */
 public func UseOpenWaveform<V, G>(
-    signals : Array<Signal<V>>, input : Wire<V, G>
+    waveform : Waveform<V>, input : Wire<V, G>
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    UseSubcircuit_1(MakeOpenWaveform(signals), [input])
+    UseSubcircuit_1(MakeOpenWaveform(waveform), [input])
 }
 /**
  * Use a waveform
@@ -244,7 +244,7 @@ public func UseOpenWaveform<V, G>(
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    UseOpenWaveform([signal], input)
+    UseOpenWaveform(Waveform(signal), input)
 }
 /**
  * Use a closed waveform
@@ -252,10 +252,10 @@ public func UseOpenWaveform<V, G>(
  * @param signals The signals that make up the waveform
  * @return The output wire of the waveform
  */
-public func UseClosedWaveform<V, G>(signals : Array<Signal<V>>) : Wire<V, G>
+public func UseClosedWaveform<V, G>(waveform : Waveform<V>) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    UseSubcircuit_1(MakeClosedWaveform(signals))
+    UseSubcircuit_1(MakeClosedWaveform(waveform))
 }
 /**
  * Use an infinite waveform
@@ -263,10 +263,10 @@ public func UseClosedWaveform<V, G>(signals : Array<Signal<V>>) : Wire<V, G>
  * @param signals The signals that make up the waveform
  * @return The output wire of the waveform
  */
-public func UseInfiniteWaveform<V, G>(signals : Array<Signal<V>>) : Wire<V, G>
+public func UseInfiniteWaveform<V, G>(waveform : Waveform<V>) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    UseSubcircuit_1(MakeInfiniteWaveform(signals))
+    UseSubcircuit_1(MakeInfiniteWaveform(waveform))
 }
 /**
  * Make a simple register component
@@ -297,24 +297,24 @@ public func MakeSimpleRegister<V, G>(
 * @return The circuit containing the waveform
 */
 public func MakeOpenWaveform<V, G>(
-    signals : Array<Signal<V>>
+    waveform : Waveform<V>
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    AssertNonEmpty(signals)
-    let width = AssertAllSameWidth(signals)
-    let input = UseWire<V, G>(width)
+    let input = UseWire<V, G>(waveform.GetWidth())
     var currentWire = input
-    for(i in 0..signals.size) {
+    let waveformLength = waveform.GetLength()
+    for(i in 0..waveformLength) {
         // Construct the waveform from back to front
-        let j = signals.size - i - 1
-        let register = UseSimpleRegister(signals[j], currentWire)
+        let j = waveformLength - i - 1
+        let register =
+            UseSimpleRegister(waveform.GetSignalAtTick(j), currentWire)
         currentWire = register
     }
     MakeSubcircuit(
         [InterfaceWire(input)],
         [InterfaceWire(currentWire)],
-        Label<V, G>.OPEN_WAVEFORM(signals)
+        Label<V, G>.OPEN_WAVEFORM(waveform)
     )
 }
 /**
@@ -324,18 +324,16 @@ public func MakeOpenWaveform<V, G>(
  * @return The circuit containing the closed waveform
  */
 public func MakeClosedWaveform<V, G>(
-    signals : Array<Signal<V>>
+    waveform : Waveform<V>
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    AssertNonEmpty(signals)
-    let width = AssertAllSameWidth(signals)
     let waveformCircuit = Hypergraph<V, G>()
-    let bottomWire = UseSignal<V, G>(V.GetDisconnected(), width)
-    let waveformWire = UseOpenWaveform(signals, bottomWire)
+    let bottomWire = UseSignal<V, G>(V.GetDisconnected(), waveform.GetWidth())
+    let waveformWire = UseOpenWaveform(waveform, bottomWire)
     MakeSubcircuit(
         [InterfaceWire(waveformWire)],
-        Label<V, G>.CLOSED_WAVEFORM(signals)
+        Label<V, G>.CLOSED_WAVEFORM(waveform)
     )
 }
 /**
@@ -345,18 +343,16 @@ public func MakeClosedWaveform<V, G>(
  * @return The circuit containing the infinite waveform
  */
 public func MakeInfiniteWaveform<V, G>(
-    signals : Array<Signal<V>>
+    waveform : Waveform<V>
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    AssertNonEmpty(signals)
-    let width = AssertAllSameWidth(signals)
-    let inputWire = UseWire<V, G>(width)
-    let waveformWire = UseOpenWaveform(signals, inputWire)
+    let inputWire = UseWire<V, G>(waveform.GetWidth())
+    let waveformWire = UseOpenWaveform(waveform, inputWire)
     PerformFeedback(waveformWire, inputWire, false)
     MakeSubcircuit(
         [InterfaceWire(waveformWire)],
-        Label<V, G>.INFINITE_WAVEFORM(signals)
+        Label<V, G>.INFINITE_WAVEFORM(waveform)
     )
 }
 /**

@@ -116,29 +116,3 @@ public func GetOutputString<V>(
         }, openingBracket: "(", closingBracket: ")", delimiter: ","
     )
 }
-/**
- * Types of waveform used in circuits.
- */
-public enum WaveformType {
-    // A waveform with finitely many elements and an input wire
-    | FINITE_OPEN
-    // A waveform with finitely many elements followed by a disconnected value
-    | FINITE_CLOSED
-    // An waveform with finitely many elements under a loop
-    | INFINITE
-}
-/**
- * Given an array of signals, get a string representing their waveform, i.e.
- * a string of the form s1 :: s2 :: s3 :: ...
- *
- * @param signals
- * @return The waveform string
- */
-public func GetWaveformString<V>(signals : Array<Signal<V>>) : String
-    where V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
-{
-    arrayToString(
-        signals, { s : Signal<V> => s.GetName() },
-        openingBracket: "", closingBracket: "", delimiter: " :: "
-    )
-}
