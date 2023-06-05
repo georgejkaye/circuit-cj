@@ -23,9 +23,16 @@ public struct Waveform<V>
         this.width = AssertAllSameWidth(signals)
         this.signals = signals
     }
+    public init(length : Int64, fn : (Int64) -> Signal<V>) {
+        this.signals = Array(length, { i => fn(i) })
+        this.width = AssertAllSameWidth(this.signals)
+    }
     public init(signals : Array<V>) {
         this.signals = map({ v : V => Signal(v) }, signals)
         this.width = 1
+    }
+    public init(length : Int64, fn : (Int64) -> V) {
+        this(length, { i => Signal(fn(i))} )
     }
     public init(width : Int64) {
         this.signals = Array<Signal<V>>()
@@ -33,6 +40,12 @@ public struct Waveform<V>
     }
     public init(signal : Signal<V>) {
         this([signal])
+    }
+    public init(signal : Signal<V>, length : Int64) {
+        this(Array(length, { i => signal }))
+    }
+    public init(value : V, length : Int64) {
+        this(Signal(value), length)
     }
     public func GetWidth() : Int64 {
         this.width
