@@ -8,6 +8,7 @@
  */
 
 package graphs
+from std import time.Time
 /**
  * Strategies for traversing a graph
  */
@@ -185,7 +186,9 @@ public func Traverse<V, G>(
         frontier, HashSet<TraversalElement<V, G>>(),
         actionAtVertex, actionAtEdge
     )
+
     while(traversalData.frontier.size != 0) {
+        let startTime = Time.now()
         let currentElement = frontier.iterator().next().getOrThrow()
         frontier.remove(currentElement)
         // Check that this element is actually still in the graph
@@ -202,6 +205,7 @@ public func Traverse<V, G>(
                     traversalData.frontier.put(elem)
                 }
             }
+            // println("Traversed element in ${Time.since(startTime)}")
         }
     }
 }
@@ -342,7 +346,16 @@ public func TraverseAll<V, G>(
     nextVertexCondition : (Edge<V, G>, Vertex<V, G>) -> Bool
 ) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
-    let startingElements = f.GetTraversalElements(traversalDirection)
+    let startingElements = HashSet<TraversalElement<V, G>>()
+    match(traversalDirection) {
+        case LEFT_TO_RIGHT =>
+            startingElements.putAll(f.GetLeftmostTraversalElements())
+        case RIGHT_TO_LEFT =>
+            startingElements.putAll(f.GetRightmostTraversalElements())
+        case BOTH_DIRECTIONS =>
+            startingElements.putAll(f.GetLeftmostTraversalElements())
+            startingElements.putAll(f.GetRightmostTraversalElements())
+    }
     Traverse<V, G>(
         startingElements, traversalDirection, actionAtVertex: actionAtVertex,
         actionAtEdge: actionAtEdge, nextVertexCondition: nextVertexCondition,

@@ -68,12 +68,6 @@ public class InterfacedHypergraph<V, G>
     let outputVertices : Array<Vertex<V, G>>
     // Label for the interfaced hypergraph, to be displayed on its edge
     let label : Label<V, G>
-    // Input vertices, vertices with no in edge, edges with no sources
-    let leftmostTraversalElements : HashSet<TraversalElement<V, G>> =
-        HashSet<TraversalElement<V, G>>()
-    // Output vertices, vertices with no out edges, edges with no targets
-    let rightmostTraversalElements : HashSet<TraversalElement<V, G>> =
-        HashSet<TraversalElement<V, G>>()
     // Associates vertices with their positions in the inputs
     let inputMap : HashMap<Vertex<V, G>, HashSet<Int64>> =
         HashMap<Vertex<V, G>, HashSet<Int64>>()
@@ -100,15 +94,8 @@ public class InterfacedHypergraph<V, G>
         this.outputs = outputs
         this.outputVertices = map({ v => v.GetVertex() }, outputs)
         this.label = label
-        this.leftmostTraversalElements.putAll(
-            f.GetLeftmostTraversalElements()
-        )
-        this.rightmostTraversalElements.putAll(
-            f.GetRightmostTraversalElements()
-        )
         for(i in 0..inputs.size){
             let v = inputs[i].GetVertex()
-            this.leftmostTraversalElements.put(VERTEX(v))
             match(inputMap.get(v)) {
                 case None =>
                     let vs = HashSet<Int64>([i])
@@ -119,7 +106,6 @@ public class InterfacedHypergraph<V, G>
         }
         for(i in 0..outputs.size){
             let v = outputs[i].GetVertex()
-            this.rightmostTraversalElements.put(VERTEX(v))
             match(outputMap.get(v)) {
                 case None =>
                     let vs = HashSet<Int64>([i])
@@ -221,18 +207,6 @@ public class InterfacedHypergraph<V, G>
         this.f.GetSequentialEdges()
     }
     /**
-     * Add a vertex to a given set of traversal elements.
-     *
-     * @param traversalElements
-     * @param v
-     */
-    func AddVertexToTraversalElements(
-        traversalElements : HashSet<TraversalElement<V, G>>,
-        v : Vertex<V, G>
-    ) : Unit {
-        traversalElements.put(VERTEX(v))
-    }
-    /**
      * Add a vertex to a set of traversal elements based on a given
      * traversal direction.
      *
@@ -243,19 +217,7 @@ public class InterfacedHypergraph<V, G>
         direction : TraversalDirection,
         v : Vertex<V, G>
     ) : Unit {
-        AddVertexToTraversalElements(GetTraversalElements(direction), v)
-    }
-    /**
-     * Add an edge to a given set of traversal elements.
-     *
-     * @param traversalElements
-     * @param e
-     */
-    func AddEdgeToTraversalElements(
-        traversalElements : HashSet<TraversalElement<V, G>>,
-        e : Edge<V, G>
-    ) : Unit {
-        traversalElements.put(EDGE(e))
+       this.f.AddVertexToTraversalElements(direction, v)
     }
     /**
      * Add an edge to a set of traversal elements given a traversal direction.
@@ -264,56 +226,9 @@ public class InterfacedHypergraph<V, G>
      * @param e
      */
     public func AddEdgeToTraversalElements(
-        direction : TraversalDirection,
-        e : Edge<V, G>
+        direction : TraversalDirection, e : Edge<V, G>
     ) : Unit {
-        let elem = EDGE(e)
-        match(direction) {
-            case LEFT_TO_RIGHT =>
-                this.GetLeftmostTraversalElements().put(elem)
-            case RIGHT_TO_LEFT =>
-                this.GetRightmostTraversalElements().put(elem)
-            case BOTH_DIRECTIONS =>
-                this.GetLeftmostTraversalElements().put(elem)
-                this.GetRightmostTraversalElements().put(elem)
-        }
-    }
-    /**
-     * Remove a vertex from a given set of traversal elements.
-     *
-     * @param traversalElements
-     * @param v
-     */
-    func RemoveVertexFromTraversalElements(
-        traversalElements : HashSet<TraversalElement<V, G>>,
-        v : Vertex<V, G>
-    ) : Unit {
-        traversalElements.remove(VERTEX(v))
-    }
-    /**
-     * Remove a vertex from a set of traversal elements based on a given
-     * traversal direction.
-     *
-     * @param direction
-     * @param v
-     */
-    public func RemoveVertexFromTraversalElements(
-        direction : TraversalDirection,
-        v : Vertex<V, G>
-    ) : Unit {
-        RemoveVertexFromTraversalElements(GetTraversalElements(direction), v)
-    }
-    /**
-     * Remove an edge from a given set of traversal elements.
-     *
-     * @param traversalElements
-     * @param e
-     */
-    func RemoveEdgeFromTraversalElements(
-        traversalElements : HashSet<TraversalElement<V, G>>,
-        e : Edge<V, G>
-    ) : Unit {
-        traversalElements.remove(EDGE(e))
+        this.f.AddEdgeToTraversalElements(direction, e)
     }
     /**
      * Remove an edge from a set of traversal elements based on a given
@@ -323,39 +238,15 @@ public class InterfacedHypergraph<V, G>
      * @param e
      */
     public func RemoveEdgeFromTraversalElements(
-        direction : TraversalDirection,
-        e : Edge<V, G>
+        direction : TraversalDirection, e : Edge<V, G>
     ) : Unit {
-        RemoveEdgeFromTraversalElements(GetTraversalElements(direction), e)
+        this.f.RemoveEdgeFromTraversalElements(direction, e)
     }
     public func GetLeftmostTraversalElements() : HashSet<TraversalElement<V, G>> {
-        this.leftmostTraversalElements
+        this.f.GetLeftmostTraversalElements()
     }
     public func GetRightmostTraversalElements() : HashSet<TraversalElement<V, G>> {
-        this.rightmostTraversalElements
-    }
-    /**
-     * Get the starting traversal elements for a given traversal direction: i.e.
-     * left to right -> leftmost, right to left -> rightmost, both directions
-     * -> leftmost and rightmost.
-     *
-     * @param direction
-     * @return The appropriate set of traversal elements
-     */
-    public func GetTraversalElements(
-        direction : TraversalDirection
-    ) : HashSet<TraversalElement<V, G>> {
-        let traversalElements = HashSet<TraversalElement<V, G>>()
-        match(direction) {
-            case LEFT_TO_RIGHT =>
-                traversalElements.putAll(this.GetLeftmostTraversalElements())
-            case RIGHT_TO_LEFT =>
-                traversalElements.putAll(this.GetRightmostTraversalElements())
-            case BOTH_DIRECTIONs =>
-                traversalElements.putAll(this.GetLeftmostTraversalElements())
-                traversalElements.putAll(this.GetRightmostTraversalElements())
-        }
-        traversalElements
+        this.f.GetRightmostTraversalElements()
     }
     /**
      * @param i
@@ -417,7 +308,6 @@ public class InterfacedHypergraph<V, G>
         interfaceArray : Array<InterfaceVertex<V, G>>,
         interfaceVertexArray : Array<Vertex<V, G>>,
         interfaceMap : HashMap<Vertex<V, G>, HashSet<Int64>>,
-        traversalElements : HashSet<TraversalElement<V, G>>,
         i : Int64,
         newVertex : Vertex<V, G>
     ) : Unit {
@@ -434,8 +324,6 @@ public class InterfacedHypergraph<V, G>
             case Some(vs) => vs.put(i)
             case None => interfaceMap.put(newVertex, HashSet<Int64>([i]))
         }
-        traversalElements.remove(VERTEX(oldVertex.vertex))
-        traversalElements.put(VERTEX(newVertex))
     }
     /**
      * Replace the input at a given index with a new one
@@ -446,8 +334,7 @@ public class InterfacedHypergraph<V, G>
     public func ReplaceInput(i : Int64, newInput : Vertex<V, G>) : Unit {
         this.GetInput(i).vertex.RemoveAsInput(this, i)
         UpdateInterface(
-            this.inputs, this.inputVertices, this.inputMap,
-            this.leftmostTraversalElements, i, newInput
+            this.inputs, this.inputVertices, this.inputMap, i, newInput
         )
         newInput.SetAsInput(this, i)
         f.AddVertex(newInput)
@@ -461,8 +348,7 @@ public class InterfacedHypergraph<V, G>
     public func ReplaceOutput(i : Int64, newOutput : Vertex<V, G>) : Unit {
         this.GetOutput(i).vertex.RemoveAsOutput(this, i)
         UpdateInterface(
-            this.outputs, this.outputVertices, this.outputMap,
-            this.rightmostTraversalElements, i, newOutput
+            this.outputs, this.outputVertices, this.outputMap, i, newOutput
         )
         newOutput.SetAsOutput(this, i)
         f.AddVertex(newOutput)
