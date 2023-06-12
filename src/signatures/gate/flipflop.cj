@@ -33,7 +33,7 @@ public func DFlipFlop(delay!: Int64 = 0) : BelnapInterfacedCircuit {
         [topLatchQBar, botLatchQ]
     )
     MakeSubcircuit([
-            InterfaceWire(clock, "C"),
+            InterfaceWire(clock, "Clk"),
             InterfaceWire(data, "D")
         ], [
             InterfaceWire(rightLatchQ, "Q"),
