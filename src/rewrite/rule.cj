@@ -573,7 +573,7 @@ func PerformPassthroughRewrite<V, G>(
         RemoveVertex(v, f)
     }
     // Merge the dangling source and target
-    source.MergeVertex(target, false)
+    source.MergeVertex(target)
     // We don't need to add anything to the frontier because
     HashSet<TraversalElement<V, G>>()
 }
@@ -1047,7 +1047,7 @@ func GetIdentifierRule<V, G>(
                             }
                             let source = e.GetSource(actualIndex)
                             let target = e.GetTarget(i)
-                            source.MergeVertex(target, false)
+                            source.MergeVertex(target)
                             if(i != index) {
                                 let nextElement = match(source.GetInEdge()) {
                                     case None => VERTEX(source)

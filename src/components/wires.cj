@@ -167,11 +167,11 @@ public func UseEdgeWithNewOutputs<V, G, T>(
  * @return A tuple (merged vertex, removed vertex)
  */
 public func MergeWires<V, G>(
-    v : Wire<V, G>, w : Wire<V, G>, feedback: Bool
+    v : Wire<V, G>, w : Wire<V, G>, instant!: Bool
 ) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    v.GetVertex().MergeVertex(w.GetVertex(), feedback)
+    v.GetVertex().MergeVertex(w.GetVertex(), instant: instant)
     w.SetVertex(v.GetVertex())
 }
 /**

@@ -385,7 +385,7 @@ public class Vertex<V, G>
      *
      * @param w The vertex to be merged into this one
     */
-    public func MergeVertex(v : Vertex<V, G>, instant : Bool) : Unit {
+    public func MergeVertex(v : Vertex<V, G>, instant!: Bool = false) : Unit {
         // We can only merge in a vertex owned by the same graph
         this.GetGraph().MergeHypergraphs(v)
         // We cannot allow the merged vertex to have multiple in edge

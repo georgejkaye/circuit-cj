@@ -50,9 +50,7 @@ func Seq<V, G>(
     let (newG, newGInputs, newGOutputs) = CloneOrRetain(g, clone)
     // The outputs of f and the inputs of g must be merged pointwise
     for (i in 0..f.GetCoarity()){
-        newFOutputs[i].GetVertex().MergeVertex(
-            newGInputs[i].GetVertex(), false
-        )
+        newFOutputs[i].GetVertex().MergeVertex(newGInputs[i].GetVertex())
     }
     let fVertices = newF.GetVertices()
     let gVertices = newG.GetVertices()

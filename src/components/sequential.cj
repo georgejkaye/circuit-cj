@@ -163,14 +163,14 @@ public func UseSimpleRegister<V, G>(
  * @param instant Whether this is instant feedback or not.
  */
 func PerformFeedback<V, G>(
-    outgoing : Wire<V, G>, incoming : Wire<V, G>, instant : Bool
+    outgoing : Wire<V, G>, incoming : Wire<V, G>, instant: Bool
 ) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertHasNoInEdge(incoming)
     let width = outgoing.GetWidth()
     AssertBothSameWidth(outgoing, incoming)
-    MergeWires(outgoing, incoming, instant)
+    MergeWires(outgoing, incoming, instant: instant)
 }
 /**
  * Create a feedback loop: join a wire to a wire that is not connected

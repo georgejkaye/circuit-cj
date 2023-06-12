@@ -531,7 +531,7 @@ public class InterfacedHypergraph<V, G>
         let mergedVertices = Array<Vertex<V, G>>(slicedVertices.size){
             i : Int64 =>
                 let primaryVertex = newEdge.GetSource(i)
-                primaryVertex.MergeVertex(newEdge.GetTarget(i), false)
+                primaryVertex.MergeVertex(newEdge.GetTarget(i))
                 primaryVertex
         }
         for(i in 0..connections.size) {
