@@ -251,6 +251,11 @@ public class Edge<V, G>
             case None => (this.GetSources(), this.GetTargets())
             // If there is a subgraph, we will burst it
             case Some(f) =>
+                for(i in 0..this.GetArity()) {
+                    if(this.GetGraph().IsFeedback(this, i)) {
+                        f.GetGraph().AddFeedback(f.GetInput(i).GetVertex())
+                    }
+                }
                 // This edge will not belong to the parent graph any more
                 this.GetGraph().RemoveEdge(this)
                 // Some of the targets may be merged by the interfaces so we
@@ -286,9 +291,7 @@ public class Edge<V, G>
                                 case Some(v) => v
                                 case None => originalChildVertex
                             }
-                        let feedback =
-                            this.GetGraph().IsFeedback(this, i)
-                        parentVertex.MergeVertex(actualChildVertex, feedback)
+                        parentVertex.MergeVertex(actualChildVertex)
                         mergeMap.put(actualChildVertex, parentVertex)
                         for((k, v) in mergeMap) {
                             if(v == actualChildVertex) {

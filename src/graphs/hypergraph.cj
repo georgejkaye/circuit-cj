@@ -561,6 +561,11 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
     public func AddFeedback(ec : EdgeConnection<V, G>) : Unit {
         this.feedbackConnections.put(ec)
     }
+    public func AddFeedback(v : Vertex<V, G>) : Unit {
+        for(ec in v.GetOutEdges()) {
+            this.AddFeedback(ec)
+        }
+    }
     public func IsFeedback(ec : EdgeConnection<V, G>) : Bool {
         this.feedbackConnections.contains(ec)
     }
