@@ -167,7 +167,7 @@ func PropagateAcrossFork<V, G>(
         // Send tentacles to each target vertex
         for(i in 0..targetDestinations.size) {
             let td = targetDestinations[i]
-            let targetVertex = newTargets[i].GetVertex()
+            let targetVertex = newTargets[i]
             match(td){
                 case None => ()
                 case Some(tt) =>
@@ -1020,7 +1020,7 @@ func GetIdentifierRule<V, G>(
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     RewriteRule<V, G>(
-        "identity-${ide.gate.GetName()}-${ide.index}-${ide.input}",
+        "identifier-${ide.gate.GetName()}-${ide.index}-${ide.input}",
         PRIMITIVE,
         { e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
             // Check this is the right gate
@@ -1040,26 +1040,23 @@ func GetIdentifierRule<V, G>(
                         // Put the other vertices as the next elements,
                         // as they will become the identity
                         for(i in 0..e.GetCoarity()) {
-                            let v = e.GetSource(i)
-                            if(i != index) {
-                                nextElements.put(VERTEX(v))
-                            }
-                        }
-                        for(i in 0..e.GetCoarity()) {
                             let actualIndex = if(i < index) {
                                 i
                             } else {
                                 i + 1
                             }
                             let source = e.GetSource(actualIndex)
-                            if(i != index) {
-                                nextElements.put(VERTEX(source))
-                            }
                             let target = e.GetTarget(i)
                             source.MergeVertex(target, false)
-                            nextElements.put(VERTEX(source))
+                            if(i != index) {
+                                let nextElement = match(source.GetInEdge()) {
+                                    case None => VERTEX(source)
+                                    case Some(ec) => EDGE(ec.GetEdge())
+                                }
+                                nextElements.put(nextElement)
+                            }
                         }
-                        Some(HashSet<TraversalElement<V, G>>())
+                        Some(nextElements)
                 }
             }
         }
