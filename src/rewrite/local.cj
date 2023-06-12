@@ -150,12 +150,20 @@ public func RewriteCombinational<V, G>(
 ) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
+    let visitedSources = HashMap<Edge<V, G>, HashSet<Vertex<V, G>>>()
     let actionAtEdge = {
         e : Edge<V, G>, data : TraversalData<V, G> =>
             // Only rewrite or proceed from this edge if its sources have
             // all been traversed
+            let visitedSet = match(visitedSources.get(e)) {
+                case None =>
+                    let set = HashSet<Vertex<V, G>>()
+                    visitedSources.put(e, set)
+                    set
+                case Some(set) => set
+            }
             for(v in e.GetSources()) {
-                if (!data.visitedElements.contains(VERTEX(v))) {
+                if(visitedSet.contains(v)) {
                     return HashSet<TraversalElement<V, G>>()
                 }
             }
