@@ -61,7 +61,8 @@ public class Edge<V, G>
         sources : Array<Vertex<V, G>>,
         targets : Array<Vertex<V, G>>,
         subgraph : Option<InterfacedHypergraph<V, G>>,
-        owner : Option<Hypergraph<V, G>>
+        owner : Option<Hypergraph<V, G>>,
+        bench!: Bool = false
     ){
         // Vertices cannot be the targets of multiple edges
         AssertTargetsUnassigned(targets)
@@ -86,9 +87,13 @@ public class Edge<V, G>
             v.AddOutEdge(this, i)
         })
         // Add this edge as an in edge to the sources
+        let beforeTarget = Time.now()
         ForEachTarget({ v, i =>
-            v.SetInEdge(this, i)
+            v.SetInEdge(this, i, bench: true)
         })
+        if(bench) {
+            println("               Setting targets ${Time.since(beforeTarget)}")
+        }
         // Add this edge to its new owner
         this.owner.AddEdge(this)
     }
@@ -357,15 +362,30 @@ public class Edge<V, G>
     public func Clone(
         sources : Array<Vertex<V, G>>,
         targets : Array<Vertex<V, G>>,
-        owner : Hypergraph<V, G>
+        owner : Hypergraph<V, G>,
+        bench!: Bool = false
     ) : Edge<V, G> {
+        let time = Time.now()
         AssertHasLength(sources, this.sources.size)
         AssertHasLength(targets, this.targets.size)
+        if(bench){
+            println("       Asserting ${Time.since(time)}")
+        }
+        let time2 = Time.now()
         let clonedSubgraph = match(this.subgraph) {
             case None    => None<InterfacedHypergraph<V, G>>
             case Some(f) => Some(f.Clone())
         }
-        Edge(this.GetLabel(), sources, targets, clonedSubgraph, owner)
+        if(bench) {
+            println("       Cloning subgraph ${Time.since(time2)}")
+        }
+        let time3 = Time.now()
+        let e = Edge(this.GetLabel(), sources, targets, clonedSubgraph, owner, bench: bench)
+        if(bench){
+            println("       Making edge ${Time.since(time3)}")
+        }
+        e
+
     }
     /**
      * Create a new edge belonging to a specified graph with the same properties
