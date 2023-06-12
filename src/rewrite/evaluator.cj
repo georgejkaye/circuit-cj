@@ -96,11 +96,23 @@ public class Evaluator<V, G> <: Drawable<V, G>
         this.outputSignalHistory =
             Array(this.graph.GetCoarity()){ i => ArrayList<Option<Signal<V>>>()}
     }
-    public func GetInputOutputHistory() : ArrayList<InputOutput<V>> {
-        this.inputOutputHistory
-    }
     public func GetGraph() : InterfacedHypergraph<V, G> {
         this.graph
+    }
+    public func GetInput(i : Int64) : InterfaceVertex<V, G> {
+        this.graph.GetInput(i)
+    }
+    public func GetOutput(i : Int64) : InterfaceVertex<V, G> {
+        this.graph.GetOutput(i)
+    }
+    public func GetInputSignalHistory() : Array<ArrayList<Signal<V>>> {
+        this.inputSignalHistory
+    }
+    public func GetOutputSignalHistory() : Array<ArrayList<Option<Signal<V>>>> {
+        this.outputSignalHistory
+    }
+    public func GetInputOutputHistory() : ArrayList<InputOutput<V>> {
+        this.inputOutputHistory
     }
     public func WriteDotToFile(
         depth : Int64, file : String,
@@ -222,14 +234,32 @@ public class Evaluator<V, G> <: Drawable<V, G>
             this.outputSignalHistory[i].append(outputSignals[i])
         }
         this.inputOutputHistory.append(inputOutput)
-        println(
-            SignalsToWaveformString<V, Signal<V>>(
-                this.inputSignalHistory,
-                { s => Some(s) },
-                { i => this.graph.GetInput(i).GetWidth()}
-            )
-        )
         this.currentCycle++
+    }
+    /**
+     * Perform a cycle using this evaluator for some given input values
+     * for this cycle
+     *
+     * @param signals The input values at the current tick of the clock
+     */
+    public func PerformCycle(inputValues : Array<V>) : Unit {
+        let inputSignals =
+            map({ v : V => Signal(v) }, inputValues)
+        this.PerformCycle(inputSignals)
+    }
+    public func PerformCycles(ticks!: Array<Array<Signal<V>>>) : Unit {
+        for(input in ticks) {
+            this.PerformCycle(input)
+        }
+    }
+    public func PerformCycles(ticks!: Array<Array<V>>) : Unit {
+        for(input in ticks) {
+            this.PerformCycle(input)
+        }
+    }
+    public func PerformCycles(waveforms!: Array<Waveform<V>>) : Unit {
+        let inputTicks = ArrayOfInputsToArrayOfTicks(waveforms)
+        PerformCycles(ticks: inputTicks)
     }
 }
 extend Evaluator<V, G> where V <: Decimal<V> {
@@ -372,7 +402,6 @@ func EliminateInstantFeedback<V, G>(
 ) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    f.WriteDotToFile(0, "dot/core", debug: true)
     let feedbackConnections = f.GetFeedbackConnections()
     let feedbackWires = feedbackConnections.size
     // Extract the instant feedback tentacles so they are the inputs and outputs
@@ -382,7 +411,6 @@ func EliminateInstantFeedback<V, G>(
             Array(feedbackConnections),
             "PreMealyCore(${f.GetName()})"
         )
-    f.WriteDotToFile(1, "dot/core-isolated", debug: true)
     // In the first iteration, the feedback wires are initialised as the
     // disconnected bottom value
     for(i in 0..feedbackWires) {
@@ -430,12 +458,10 @@ func EliminateInstantFeedback<V, G>(
         }
         coreEdges.put(coreCopy)
     }
-    f.WriteDotToFile(1, "dot/core-copies", debug: true)
     // We don't need to have the cores collapsed any more
     for(e in coreEdges) {
         e.BurstSubgraph()
     }
-    f.WriteDotToFile(1, "dot/core-unfolded", debug: true)
 }
 /**
  * Get the array of output signals of a graph at a given time. The elements of
