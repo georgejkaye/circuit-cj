@@ -156,6 +156,13 @@ public func unsafeGet<T,U>(map : HashMap<T,U>, key: T) : U
 {
     map.get(key).getOrThrow()
 }
+/**
+ * Given an array of strings, concatenate them together with some delimiter.
+ *
+ * @param strings
+ * @param delimiter The delimiter between the strings, by default ", "
+ * @return The concatenated string
+ */
 public func concatStrings(
     strings : Array<String>, delimiter!: String = ", "
 ) : String {
@@ -164,4 +171,12 @@ public func concatStrings(
         delimiter: delimiter
     )
 }
-
+/**
+ * Given an array of collections of elements, get the length of the longest one.
+ *
+ * @param xss The array of collections
+ * @return The length of the longest collection
+ */
+public func longest<T, U>(xss : Array<U>) : Int64 where U <: Collection<T> {
+    max(xss, { i, xs => xs.size })
+}
