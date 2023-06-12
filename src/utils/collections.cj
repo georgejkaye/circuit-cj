@@ -180,3 +180,17 @@ public func concatStrings(
 public func longest<T, U>(xss : Array<U>) : Int64 where U <: Collection<T> {
     max(xss, { i, xs => xs.size })
 }
+public func ElementNumberArrayToArray<T>(ts : Array<(T, Int64)>) : Array<T> {
+    let length = Sum(ts, { tx => tx[1] })
+    Array<T>(length, {
+        i =>
+            var runningSum = 0
+            for(tx in ts) {
+                let (elem, len) = tx
+                if(i < runningSum + len) {
+                    return elem
+                }
+            }
+            return ts[ts.size - 1][0]
+    })
+}

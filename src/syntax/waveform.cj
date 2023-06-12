@@ -47,6 +47,12 @@ public struct Waveform<V>
     public init(value : V, length : Int64) {
         this(Signal(value), length)
     }
+    public init(values : Array<(Signal<V>, Int64)>) {
+        this(ElementNumberArrayToArray(values))
+    }
+    public init(values : Array<(V, Int64)>) {
+        this(ElementNumberArrayToArray(values))
+    }
     public func GetWidth() : Int64 {
         this.width
     }
@@ -84,7 +90,6 @@ public func ArrayOfInputsToArrayOfTicks<V, T>(
 {
     let numberOfInputs = waveforms.size
     let numberOfTicks = max(waveforms, { i, w => w.GetLength() })
-    println(numberOfTicks)
     Array<Array<Signal<V>>>(numberOfTicks, { currentTickIndex : Int64 =>
         println("tick ${currentTickIndex}")
         Array<Signal<V>>(numberOfInputs, { currentInputIndex : Int64 =>
