@@ -10,7 +10,7 @@
  */
 package rewrite
 // Components for drawing waveforms
-let componentLength = 4
+let componentLength = 2
 let offSignalString = "".padRight(componentLength, paddingChar: ' ')
 let onSignalString = "".padRight(componentLength, paddingChar: '─')
 let highToLowUpString = "┐".padRight(componentLength, paddingChar: ' ')
