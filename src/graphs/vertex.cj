@@ -232,13 +232,13 @@ public class Vertex<V, G>
         this.outEdges.size + f.GetOutputPositions(this).size
     }
     public func SetInEdge(
-        e : Edge<V, G>, i : Int64, feedback!: Bool = false, bench!: Bool = false
+        e : Edge<V, G>, i : Int64, feedback!: Bool = false
     ) : Unit {
-        SetInEdge(EdgeConnection(e, i, TARGET), bench: bench)
+        SetInEdge(EdgeConnection(e, i, TARGET))
     }
-    public func SetInEdge(ec : EdgeConnection<V, G>, bench!: Bool = false) : Unit {
+    public func SetInEdge(ec : EdgeConnection<V, G>) : Unit {
         this.inEdge = Some(ec)
-        this.owner.RemoveVertexFromLeftmostTraversalElements(this, bench: bench)
+        this.owner.RemoveVertexFromLeftmostTraversalElements(this)
     }
     public func SetInEdge(ec : Option<EdgeConnection<V, G>>) : Unit {
         match(ec) {

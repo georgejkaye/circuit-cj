@@ -256,20 +256,15 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
     }
     func RemoveVertexFromTraversalElements(
         traversalElements : HashSet<TraversalElement<V, G>>,
-        v : Vertex<V, G>, bench!: Bool = false
+        v : Vertex<V, G>
     ) : Unit {
-        let firstTime = Time.now()
         traversalElements.remove(VERTEX(v))
-        let firstDuration = Time.since(firstTime)
-        if(bench) {
-            println("       Remove from hypergraph ${firstDuration}")
-        }
     }
     public func RemoveVertexFromLeftmostTraversalElements(
-        v : Vertex<V, G>, bench!: Bool = false
+        v : Vertex<V, G>
     ) : Unit {
         RemoveVertexFromTraversalElements(
-            this.leftmostTraversalElements, v, bench: bench
+            this.leftmostTraversalElements, v
         )
     }
     public func RemoveVertexFromRightmostTraversalElements(v : Vertex<V, G>) : Unit {
