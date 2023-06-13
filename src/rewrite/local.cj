@@ -255,8 +255,13 @@ public func RewriteCombinational<V, G>(
 ) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
+    let startingElements = HashSet<TraversalElement<V, G>>()
+    startingElements.putAll(f.GetLeftmostTraversalElements())
+    for(iv in f.GetInputs()) {
+        startingElements.put(VERTEX(iv.GetVertex()))
+    }
     RewriteCombinational(
-        signature, f, f.GetLeftmostTraversalElements(),
+        signature, f, startingElements,
         HashSet<TraversalElement<V, G>>(), copyBlackBoxes: copyBlackBoxes,
         allInstantaneous: allInstantaneous, debug: debug, draw: draw
     )
