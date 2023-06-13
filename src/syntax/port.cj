@@ -155,6 +155,11 @@ public interface HasOptionalName {
         }
     }
 }
+public func GetLongestNameLength<T>(ts : Array<T>) : Int64
+    where T <: HasOptionalName
+{
+    max(ts, { i, t => t.GetNameString().size })
+}
 /**
  * A HasPort is something with a width, optional name, and string identifier
  */

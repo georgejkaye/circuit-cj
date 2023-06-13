@@ -131,7 +131,13 @@ func DrawWaveformLevel<V, T>(
     where V <: ValueSymbol<V>
 {
     let prefix = if(currentPhysicalDrawingLevel == 0) {
-        waveformName.padRight(maxNameLength)
+        if(waveformName.size > maxNameLength) {
+            waveformName.substring(0, maxNameLength)
+        } else if (waveformName.size == maxNameLength) {
+            waveformName
+        } else {
+            waveformName.padRight(maxNameLength)
+        }
     } else {
         "".padRight(maxNameLength)
     }
@@ -303,22 +309,23 @@ func DrawWaveformsForSignal<V, T>(
 public func DrawWaveformsForSignalArray<V, T>(
     signals : Array<ArrayList<T>>, fn : (T) -> Option<Signal<V>>,
     widthFn : (Int64) -> Int64, nameFn : (Int64) -> String,
-    signalDisplayFn!: (Option<Signal<V>>) -> String = DefaultSignalDisplayFn()
+    signalDisplayFn!: (Option<Signal<V>>) -> String = DefaultSignalDisplayFn(),
+    labelLength!: Int64 =
+        max(
+        signals,
+            { i, t =>
+                let name = nameFn(i)
+                let width = "[${widthFn(i)}]"
+                name.size + width.size + 4
+            }
+        )
 ) : String
     where V <: ValueSymbol<V>
 {
-    let maximumLength = max(
-        signals,
-        { i, t =>
-            let name = nameFn(i)
-            let width = "[${widthFn(i)}]"
-            name.size + width.size + 4
-        }
-    )
     let waveforms = mapi<ArrayList<T>, String>(
         { xs, i =>
             DrawWaveformsForSignal<V, T>(
-                xs, fn, widthFn(i), nameFn(i), maximumLength,
+                xs, fn, widthFn(i), nameFn(i), labelLength,
                 signalDisplayFn: signalDisplayFn
             )
         },
@@ -326,6 +333,23 @@ public func DrawWaveformsForSignalArray<V, T>(
     )
     concatStrings(waveforms, delimiter: "\n\n")
 }
+func OptionalDecSignalDisplayFn<V>(
+    signed!: Bool
+) : (Option<Signal<V>>) -> String
+    where V <: ValueSymbol<V> & Decimal<V>
+{
+    { sopt : Option<Signal<V>> =>
+        match(sopt) {
+            case None => ""
+            case Some(s) =>
+                match(V.SignalToDec(s, signed)){
+                    case None => s.GetName()
+                    case Some(n) => "${n}"
+                }
+        }
+    }
+}
+
 /**
  * Draw the waveforms for an array of signals, with labels in decimal.
  *
@@ -337,22 +361,53 @@ public func DrawWaveformsForSignalArray<V, T>(
  */
 public func DrawWaveformsForSignalArray<V, T>(
     signals : Array<ArrayList<T>>, fn : (T) -> Option<Signal<V>>,
-    widthFn : (Int64) -> Int64, nameFn : (Int64) -> String, signed!: Bool
+    widthFn : (Int64) -> Int64, nameFn : (Int64) -> String, signed!: Bool,
+    labelLength!: Int64 =
+        max(
+        signals,
+            { i, t =>
+                let name = nameFn(i)
+                let width = "[${widthFn(i)}]"
+                name.size + width.size + 4
+            }
+        )
 ) : String
     where V <: ValueSymbol<V> & Decimal<V>
 {
-    let signalDisplayFn =
-        { sopt : Option<Signal<V>> =>
-            match(sopt) {
-                case None => ""
-                case Some(s) =>
-                    match(V.SignalToDec(s, signed)){
-                        case None => s.GetName()
-                        case Some(n) => "${n}"
-                    }
-            }
-        }
+    let signalDisplayFn = OptionalDecSignalDisplayFn<V>(signed: signed)
     DrawWaveformsForSignalArray(
-        signals, fn, widthFn, nameFn, signalDisplayFn: signalDisplayFn
+        signals, fn, widthFn, nameFn, signalDisplayFn: signalDisplayFn,
+        labelLength: labelLength
     )
+}
+
+extend Evaluator<V,G> {
+    public func DrawWaveformDiagram(
+        signalDisplayFn!: (Option<Signal<V>>) -> String =
+            DefaultSignalDisplayFn<V>()
+    ) : String {
+        let labelLength = this.longestPortName + 4
+        let inputWaves = DrawWaveformsForSignalArray<V, Signal<V>>(
+            this.GetInputSignalHistory(),
+            { t => Some(t) },
+            { i => this.GetInput(i).GetWidth() },
+            { i => this.GetInput(i).GetNameString() },
+            labelLength: labelLength
+        )
+        let outputWaves = DrawWaveformsForSignalArray<V, Option<Signal<V>>>(
+            this.GetOutputSignalHistory(),
+            { t => t },
+            { i => this.GetOutput(i).GetWidth() },
+            { i => this.GetOutput(i).GetNameString() },
+            labelLength: labelLength
+        )
+        "${inputWaves}\n${outputWaves}"
+    }
+}
+extend Evaluator<V, G> where V <: Decimal<V> {
+    public func DrawWaveformDiagram(signed!: Bool) : String {
+        this.DrawWaveformDiagram(
+            signalDisplayFn: OptionalDecSignalDisplayFn<V>(signed: signed)
+        )
+    }
 }

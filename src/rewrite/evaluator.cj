@@ -49,6 +49,8 @@ public class Evaluator<V, G> <: Drawable<V, G>
     let lastSignalTargets : Array<Vertex<V, G>>
     // The edges representing the join of the current state and the feedback
     let stateJoinEdges : Array<TraversalElement<V, G>>
+    // The longest name of a port in the graph, used for waveform diagrams
+    let longestPortName : Int64
     // The sequence of inputs and corresponding outputs
     let inputOutputHistory : ArrayList<InputOutput<V>>
     let inputHistory : ArrayList<Array<Signal<V>>>
@@ -88,6 +90,9 @@ public class Evaluator<V, G> <: Drawable<V, G>
         this.stateJoinEdges = Array<TraversalElement<V, G>>(this.stateWires){
             i : Int64 => EDGE(coreEdge.NextEdgeLeft(i).getOrThrow().GetEdge())
         }
+        let longestInputPortName = GetLongestNameLength(this.graph.GetInputPorts())
+        let longestOutputPortName = GetLongestNameLength(this.graph.GetOutputPorts())
+        this.longestPortName = max(longestInputPortName, longestOutputPortName)
         this.inputOutputHistory = ArrayList()
         this.inputHistory = ArrayList()
         this.outputHistory = ArrayList()
