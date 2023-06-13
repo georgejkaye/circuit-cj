@@ -91,9 +91,7 @@ public func ArrayOfInputsToArrayOfTicks<V, T>(
     let numberOfInputs = waveforms.size
     let numberOfTicks = max(waveforms, { i, w => w.GetLength() })
     Array<Array<Signal<V>>>(numberOfTicks, { currentTickIndex : Int64 =>
-        println("tick ${currentTickIndex}")
         Array<Signal<V>>(numberOfInputs, { currentInputIndex : Int64 =>
-            println("input ${currentInputIndex}")
             let currentInput = waveforms[currentInputIndex]
             let currentInputWidth = waveforms[currentInputIndex].GetWidth()
             if(currentTickIndex >= currentInput.GetLength()) {

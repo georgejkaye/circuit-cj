@@ -186,7 +186,6 @@ public func Traverse<V, G>(
         frontier, HashSet<TraversalElement<V, G>>(),
         actionAtVertex, actionAtEdge
     )
-
     while(traversalData.frontier.size != 0) {
         let startTime = Time.now()
         let currentElement = frontier.iterator().next().getOrThrow()
@@ -205,7 +204,6 @@ public func Traverse<V, G>(
                     traversalData.frontier.put(elem)
                 }
             }
-            // println("Traversed element in ${Time.since(startTime)}")
         }
     }
 }
