@@ -27,7 +27,7 @@ var totalRewrites = 0
 func AttemptRewriteRule<V, G>(
     signature : Signature<V, G>, e : Edge<V, G>,
     rule : RewriteRule<V, G>, f : InterfacedHypergraph<V, G>,
-    debug!: Bool = false
+    draw!: Bool = false, debug!: Bool = false
 ) : Option<HashSet<TraversalElement<V, G>>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -35,10 +35,10 @@ func AttemptRewriteRule<V, G>(
         case None => None
         case Some(result) =>
             Debug("Rewrote ${e} with ${rule.name}")
-            if(debug) {
+            if(draw) {
                 let fileName =
                     "rewrite-${totalRewrites}-${e.GetId()}-${rule.GetName()}"
-                f.WriteDotToFile(0, "dot/${fileName}", debug: true)
+                f.WriteDotToFile(0, "dot/${fileName}", debug: debug)
             }
             totalRewrites++
             Some(result)
@@ -68,7 +68,7 @@ func AttemptRewriteRule<V, G>(
 func AttemptAllRewriteRules<V, G>(
     edge : Edge<V, G>, f : InterfacedHypergraph<V, G>,
     signature : Signature<V, G>, copyBlackBoxes!: Bool = false,
-    allInstantaneous!: Bool = false, debug!: Bool = false
+    allInstantaneous!: Bool = false, debug!: Bool = false, draw!: Bool = false
 ) : Option<HashSet<TraversalElement<V, G>>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -116,7 +116,11 @@ func AttemptAllRewriteRules<V, G>(
         case _ => ()
     }
     for(rule in validRules) {
-        match(AttemptRewriteRule(signature, edge, rule, f, debug: debug)){
+        match(
+            AttemptRewriteRule(
+                signature, edge, rule, f, debug: debug, draw: draw
+            )
+        ){
             case None => ()
             case Some(result) => return Some(result)
         }
@@ -146,7 +150,7 @@ public func RewriteCombinational<V, G>(
     startingElements : HashSet<TraversalElement<V, G>>,
     endingElements : HashSet<TraversalElement<V, G>>,
     copyBlackBoxes!: Bool = false, allInstantaneous!: Bool = false,
-    debug!: Bool = false
+    debug!: Bool = false, draw!: Bool = false
 ) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -169,7 +173,7 @@ public func RewriteCombinational<V, G>(
             }
             match(AttemptAllRewriteRules(
                 e, f, signature, copyBlackBoxes: copyBlackBoxes,
-                allInstantaneous: true, debug: debug
+                allInstantaneous: true, debug: debug, draw: draw
             )) {
                 case Some(result) => result
                 case None =>
@@ -219,13 +223,13 @@ public func RewriteCombinational<V, G>(
 public func RewriteCombinational<V, G>(
     signature : Signature<V, G>, f : InterfacedHypergraph<V, G>,
     startingElements : HashSet<TraversalElement<V, G>>, copyBlackBoxes!: Bool,
-    allInstantaneous!: Bool, debug!: Bool = false
+    allInstantaneous!: Bool, debug!: Bool = false, draw!: Bool = false
 ) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     RewriteCombinational(
         signature, f, startingElements, HashSet<TraversalElement<V, G>>(),
-        copyBlackBoxes: copyBlackBoxes, debug: debug
+        copyBlackBoxes: copyBlackBoxes, debug: debug, draw: draw
     )
 }
 /**
@@ -246,13 +250,14 @@ public func RewriteCombinational<V, G>(
  */
 public func RewriteCombinational<V, G>(
     signature : Signature<V, G>, f : InterfacedHypergraph<V, G>,
-    copyBlackBoxes!: Bool, allInstantaneous!: Bool, debug!: Bool = false
+    copyBlackBoxes!: Bool, allInstantaneous!: Bool, debug!: Bool = false,
+    draw!: Bool = false
 ) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     RewriteCombinational(
         signature, f, f.GetLeftmostTraversalElements(),
         HashSet<TraversalElement<V, G>>(), copyBlackBoxes: copyBlackBoxes,
-        allInstantaneous: allInstantaneous, debug: debug
+        allInstantaneous: allInstantaneous, debug: debug, draw: draw
     )
 }
