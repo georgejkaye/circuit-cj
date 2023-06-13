@@ -39,21 +39,11 @@ func UseOperation<V, G>(
 {
     AssertEqual(inputs.size, label.GetInputPorts().size)
     let opWires = UseEdgeWithNewOutputs(label, inputs, None, None)
-    fold_left(
-        { acc, cur =>
-            map<Wire<V, G>, Wire<V, G>>(
-                { w : Wire<V, G> =>
-                    UseEdgeWithNewOutputs(
-                        Label<V, G>.DELAY(w.GetWidth()),
-                        [w],
-                        None<InterfacedHypergraph<V, G>>,
-                        None<Hypergraph<V, G>>
-                    )[0]
-                },
-                acc
-            )
-        }, opWires, start: 0, end: delay
-    )
+    if(delay > 0) {
+        UseDelays(opWires, duration: delay)
+    } else {
+        opWires
+    }
 }
 /**
  * Use a primitive gate

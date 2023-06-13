@@ -115,8 +115,8 @@ extend Signature<V, G> <: SignalUser<V, G>
 /**
  * Use a delay component for a given duration
  *
- * @param duration The length of the delay
  * @param input The input wire
+ * @param duration The length of the delay
  * @return The output of the delay
  */
 public func UseDelay<V, G>(
@@ -126,15 +126,30 @@ public func UseDelay<V, G>(
 {
     let width = input.GetWidth()
     var inputWire = input
-    for(i in 0..duration) {
-        inputWire = UseEdgeWithNewOutputs(
-            Label<V,G>.DELAY(width),
-            [inputWire],
-            None<InterfacedHypergraph<V, G>>,
-            input.GetGraph()
-        )[0]
-    }
-    inputWire
+    fold_left(
+        { prevWire, _ =>
+            UseEdgeWithNewOutputs(
+                Label<V, G>.DELAY(prevWire.GetWidth()),
+                [prevWire],
+                None<InterfacedHypergraph<V, G>>,
+                input.GetGraph()
+            )[0]
+        }, inputWire, start: 0, end: duration
+    )
+}
+/**
+ * Use a delay component for multiple input wires for a given duration
+ *
+ * @param inputs The array of input wires
+ * @param duration The length of the delay
+ * @return The output of the delay
+ */
+public func UseDelays<V, G>(
+    inputs : Array<Wire<V, G>>, duration!: Int64 = 1
+) : Array<Wire<V, G>>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    map({ w : Wire<V, G> => UseDelay(w, duration: duration)}, inputs)
 }
 /**
  * Use a simple register with an initial signal
