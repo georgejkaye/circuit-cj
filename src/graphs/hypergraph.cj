@@ -207,7 +207,7 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
      * @param width
      * @return The new vertex
      */
-    public func AddNewVertex(width : Int64) : Vertex<V, G> {
+    public func AddNewVertex(width : Int64, name!: Option<String> = None) : Vertex<V, G> {
         Vertex(width, this)
     }
     public func RemoveVertex(v : Vertex<V, G>) : Unit {

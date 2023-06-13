@@ -180,22 +180,28 @@ public enum TentacleType<V, G>
  */
 public class Vertex<V, G>
     <: Identifiable<Vertex<V, G>> & ToString & HasWidth &
-            HasPort & GraphElement<V, G>
+            HasPort & HasOptionalName & GraphElement<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let width : Int64
     let id : Int64 = GetNextId()
+    let name : Option<String>
     var inEdge : Option<EdgeConnection<V, G>> = None
     var outEdges : HashSet<EdgeConnection<V, G>> = HashSet()
     var owner : Hypergraph<V, G>
     let interfacedInputs : HashSet<InterfaceElement<V, G>> = HashSet()
     let interfacedOutputs : HashSet<InterfaceElement<V, G>> = HashSet()
-    public init(width: Int64, owner : Option<Hypergraph<V, G>>){
+    public init(
+        width: Int64,
+        owner : Option<Hypergraph<V, G>>,
+        name!: Option<String> = None
+    ){
         this.width = width
         this.owner = match(owner) {
             case None => Hypergraph<V, G>()
             case Some(f) => f
         }
+        this.name = name
         this.owner.AddVertex(this)
     }
     public func hashCode() : Int64 {
@@ -214,7 +220,14 @@ public class Vertex<V, G>
         this.GetId() != right.GetId()
     }
     public func GetName() : Option<String> {
-        None
+        this.name
+    }
+    // Why is this required? It should use the default implementation
+    public func GetNameString() : String {
+        match(this.GetName()) {
+            case None => ""
+            case Some(n) => n
+        }
     }
     public func GetId() : Int64 {
         this.id

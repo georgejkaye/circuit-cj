@@ -153,10 +153,7 @@ public func UseSubcircuit<V, G>(
     }
     let newGraph = childCircuit.Clone()
     let subcircuitWires = UseEdgeWithNewOutputs(
-        childCircuit.GetLabel(),
-        inputs,
-        newGraph,
-        actualOwner
+        childCircuit.GetLabel(), inputs, newGraph, actualOwner
     )
     if(delay > 0) {
         UseDelays(subcircuitWires, duration: delay)

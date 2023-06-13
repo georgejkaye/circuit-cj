@@ -17,7 +17,7 @@ import graphs.*
  */
 public class Wire<V, G>
     <: Identifiable<Wire<V, G>> & ToString & ContainsVertex<V, G> &
-        HasWidth & GraphElement<V, G>
+        HasWidth & HasOptionalName & GraphElement<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let id : Int64 = GetNextId()
@@ -28,6 +28,9 @@ public class Wire<V, G>
     public func SetVertex(v : Vertex<V, G>) : Unit {
         let owner = v.GetGraph()
         this.vertex = v
+    }
+    public func GetName() : Option<String> {
+        this.vertex.GetName()
     }
     public func GetId() : Int64 {
         this.id
@@ -141,7 +144,8 @@ public func UseEdgeWithNewOutputs<V, G, T>(
     label : Label<V, G>,
     sources : Array<T>,
     graph : Option<InterfacedHypergraph<V, G>>,
-    owner : Option<Hypergraph<V, G>>
+    owner : Option<Hypergraph<V, G>>,
+    nameTargets!: Bool = false
 ) : Array<Wire<V, G>>
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
@@ -154,7 +158,13 @@ public func UseEdgeWithNewOutputs<V, G, T>(
         case Some(f) => f
     }
     let targetVertices = map(
-        { p : Port => actualOwner.AddNewVertex(p.GetWidth()) },
+        { p : Port =>
+            let name = if(nameTargets) {
+                p.GetName()
+            } else {
+                None<String>
+            }
+            actualOwner.AddNewVertex(p.GetWidth(), name: name) },
         label.GetOutputPorts()
     )
     UseEdge<V, G>(label, sourceVertices, targetVertices, graph, actualOwner)
