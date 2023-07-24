@@ -17,18 +17,21 @@ CPM_FLAGS = --verbose --incremental
 MODULE_RESOLVE_JSON = module-resolve.json
 
 # All the dot files in dot/
-DOTS = $(shell find $(DOT_DIR)/*.dot)
+DOTS = $(shell if [ -d "$(DOT_DIR)" ]; then find $(DOT_DIR)/*.dot; fi)
 # Dot svgs
 DOTS_SVGS = $(foreach dot, $(DOTS), $(dot).svg)
 # Dot pngs
 DOTS_PNGS = $(foreach dot, $(DOTS), $(dot).png)
 
-.PHONY: main build clean dot dotpng
+.PHONY: main build dot dotpng docs clean cleandot cleandocs
 
 main: build
 
 build:
 	$(CPM) build $(CPM_FLAGS)
+
+docs: $(DOCS_BUILD)
+	cd docs && make html
 
 # Make all the dot graphs
 dot: $(DOTS_SVGS)
@@ -40,7 +43,12 @@ clean:
 	$(CPM) clean
 
 cleandot:
-	rm -f dot/*.dot dot/*.svg dot/*.png
+	rm -f $(DOT_DIR)/*.dot $(DOT_DIR)/*.svg $(DOT_DIR)/*.png
+
+cleandocs:
+	rm -rf $(DOCS_OUT)
+
+cleanall: clean cleandot cleandocs
 
 # Draw a dot graph
 $(DOT_DIR)/%.svg: $(DOT_DIR)/%
