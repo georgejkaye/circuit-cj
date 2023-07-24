@@ -1,5 +1,5 @@
 CJC = cjc
-CPM = cpm
+CPM = cjpm
 
 MODULE_NAME = circuitscj
 BUILD_DIR = build
@@ -7,6 +7,8 @@ BIN_DIR = bin
 MODULE_DIR = $(BUILD_DIR)/$(MODULE_NAME)
 SRC_DIR = src
 DOT_DIR = dot
+DOCS_DIR = docs
+DOCS_OUT = $(DOCS_DIR)/_build
 
 MIDDLE_EXT = cjo
 

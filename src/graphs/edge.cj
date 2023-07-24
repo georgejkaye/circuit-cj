@@ -368,7 +368,6 @@ public class Edge<V, G>
             case None    => None<InterfacedHypergraph<V, G>>
             case Some(f) => Some(f.Clone())
         }
-        let time3 = Time.now()
         let e = Edge(this.GetLabel(), sources, targets, clonedSubgraph, owner)
         e
 

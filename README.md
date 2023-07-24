@@ -12,15 +12,15 @@ For more documentation see the [wiki](https://gitee.com/HW-PLLab/circuit-cj/wiki
 
 ## Compiling
 
-The library compiles with Cangjie version `0.38.2`.
+The library compiles with Cangjie version `0.39.4`.
 
 ```
-cpm build
+cjpm build
 ```
 
 When developing, you may wish to add the `--incremental` flag so you don't need
 to compile the whole project from scratch each time.
 
 ```
-cpm build --incremental
+cjpm build --incremental
 ```

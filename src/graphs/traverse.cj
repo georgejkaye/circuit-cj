@@ -8,7 +8,6 @@
  */
 
 package graphs
-from std import time.Time
 /**
  * Strategies for traversing a graph
  */
@@ -187,7 +186,6 @@ public func Traverse<V, G>(
         actionAtVertex, actionAtEdge
     )
     while(traversalData.frontier.size != 0) {
-        let startTime = Time.now()
         let currentElement = frontier.iterator().next().getOrThrow()
         frontier.remove(currentElement)
         // Check that this element is actually still in the graph
