@@ -8,8 +8,6 @@ In particular, we want to be able to perform the following things:
 - Synthesis
 - Verification
 
-For more documentation see the [wiki](https://gitee.com/HW-PLLab/circuit-cj/wikis).
-
 ## Compiling
 
 The library compiles with Cangjie version `0.39.4`.
@@ -23,4 +21,14 @@ to compile the whole project from scratch each time.
 
 ```
 cjpm build --incremental
+```
+
+## Documentation
+
+Documentation can be generated using [Sphinx](https://www.sphinx-doc.org/en/master/).
+If you have Sphinx installed, run the following to generate HTML docs in
+`docs/_build/html`.
+
+```
+make docs
 ```
