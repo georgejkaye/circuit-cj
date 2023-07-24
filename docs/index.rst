@@ -1,8 +1,3 @@
-.. CircuitCJ documentation master file, created by
-   sphinx-quickstart on Mon Jul 24 14:17:02 2023.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to CircuitCJ's documentation!
 =====================================
 
@@ -11,7 +6,11 @@ Welcome to CircuitCJ's documentation!
    :caption: Contents:
 
    install
-   develop
+   background/index
+   design/index
+   advanced/index
+   examples/index
+
 
 
 Indices and tables
