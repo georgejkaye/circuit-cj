@@ -6,3 +6,4 @@ Designing circuits
    :caption: Contents:
 
    wires
+   primitives

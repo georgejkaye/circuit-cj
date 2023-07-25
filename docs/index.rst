@@ -6,10 +6,10 @@ Welcome to CircuitCJ's documentation!
    :caption: Contents:
 
    install
-   background/index
    design/index
    advanced/index
    examples/index
+   background/index
 
 
 

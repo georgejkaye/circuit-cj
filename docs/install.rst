@@ -17,4 +17,4 @@ compile only the packages changed since the last build.
 
 .. code-block:: bash
 
-    cjpm build --verb
+    cjpm build --incremental
