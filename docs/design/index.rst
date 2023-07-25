@@ -8,6 +8,7 @@ Designing circuits
    wires
    primitives
    subcircuits
+   constructions
    sequential
    drawing
    state
