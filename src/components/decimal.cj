@@ -357,7 +357,7 @@ public interface DecimalDrawable {
      * @param debug Whether to print debug info on the graph
      */
     func WriteDotToFile(
-        depth : Int64, file : String, signed!: Bool, debug!: Bool
+        file : String, depth!: Int64, signed!: Bool, debug!: Bool
     ) : Unit
 }
 public func GetDecimalLabelFn<V, G>(signed : Bool) : (Label<V, G>) -> String
@@ -383,11 +383,11 @@ extend Hypergraph<V, G> <: DecimalDrawable
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public func WriteDotToFile(
-        depth : Int64, file : String, signed!: Bool,
-        debug!: Bool = false
+        file : String, depth!: Int64 = 0, signed!: Bool, debug!: Bool = false
     ) : Unit {
         WriteDotToFile(
-            depth, file, edgeLabelFn: GetDecimalLabelFn(signed), debug: debug
+            file, depth: depth, edgeLabelFn: GetDecimalLabelFn(signed),
+            debug: debug
         )
     }
 }
@@ -395,11 +395,11 @@ extend InterfacedHypergraph<V, G> <: DecimalDrawable
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public func WriteDotToFile(
-        depth : Int64, file : String, signed!: Bool,
-        debug!: Bool = false
+        file : String, depth!: Int64 = 0, signed!: Bool, debug!: Bool = false
     ) : Unit {
         WriteDotToFile(
-            depth, file, edgeLabelFn: GetDecimalLabelFn(signed), debug: debug
+            file, depth: depth, edgeLabelFn: GetDecimalLabelFn(signed),
+            debug: debug
         )
     }
 }

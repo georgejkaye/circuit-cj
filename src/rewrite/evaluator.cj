@@ -120,12 +120,13 @@ public class Evaluator<V, G> <: Drawable<V, G>
         this.inputOutputHistory
     }
     public func WriteDotToFile(
-        depth : Int64, file : String,
+        file : String,
+        depth!: Int64 = 0,
         edgeLabelFn!: (Label<V, G>) -> String = { l => l.GetName()},
         debug!: Bool = false
     ) : Unit {
         this.GetGraph().WriteDotToFile(
-            depth, file, edgeLabelFn: edgeLabelFn, debug: debug
+            file, depth: depth, edgeLabelFn: edgeLabelFn, debug: debug
         )
     }
     /**
@@ -509,10 +510,10 @@ extend Evaluator<V, G> <: DecimalDrawable
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public func WriteDotToFile(
-        depth : Int64, file : String, signed!: Bool, debug!: Bool = false
+        file : String, depth!: Int64 = 0, signed!: Bool, debug!: Bool = false
     ) : Unit {
         WriteDotToFile(
-            depth, file, edgeLabelFn: GetDecimalLabelFn(signed), debug: debug
+            file, depth: depth, edgeLabelFn: GetDecimalLabelFn(signed), debug: debug
         )
     }
 }

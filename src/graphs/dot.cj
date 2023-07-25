@@ -937,20 +937,20 @@ public interface Drawable<V, G>
 {
     /**
      * Write the dot graph for a graph to a file with a given name.
-     * @param depth The maximum depth of subgraphs to draw
      * @param file The file name to write to
+     * @param depth The maximum depth of subgraphs to draw
      * @param edgeLabelFn the function to determine the strings on edges
      * @param debug Whether to print debug info on the graph
      */
     func WriteDotToFile(
-        depth : Int64, file : String, edgeLabelFn!: (Label<V, G>) -> String,
+        file : String, depth!: Int64, edgeLabelFn!: (Label<V, G>) -> String,
         debug!: Bool
     ) : Unit
 }
 extend InterfacedHypergraph<V, G> <: Drawable<V, G> {
     public func WriteDotToFile(
-        depth : Int64,
         file : String,
+        depth!: Int64 = 0,
         edgeLabelFn!: (Label<V, G>) -> String = { l => l.GetName() },
         debug!: Bool = false
     ) : Unit {
@@ -963,8 +963,8 @@ extend InterfacedHypergraph<V, G> <: Drawable<V, G> {
 }
 extend Hypergraph<V, G> <: Drawable<V, G> {
     public func WriteDotToFile(
-        depth : Int64,
         file : String,
+        depth!: Int64 = 0,
         edgeLabelFn!: (Label<V, G>) -> String = { l => l.GetName() },
         debug!: Bool = false
     ) : Unit {

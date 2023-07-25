@@ -38,7 +38,7 @@ func AttemptRewriteRule<V, G>(
             if(draw) {
                 let fileName =
                     "rewrite-${totalRewrites}-${e.GetId()}-${rule.GetName()}"
-                f.WriteDotToFile(0, "dot/${fileName}", debug: debug)
+                f.WriteDotToFile("dot/${fileName}", depth: 0, debug: debug)
             }
             totalRewrites++
             Some(result)

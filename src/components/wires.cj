@@ -466,12 +466,12 @@ public func NameWires<V, G>(
 
 extend Wire<V, G> <: Drawable<V, G> {
     public func WriteDotToFile(
-        depth : Int64, file : String,
+        file : String, depth!: Int64 = 0,
         edgeLabelFn!: (Label<V, G>) -> String = { l => l.GetName() },
         debug!: Bool = false
     ) : Unit {
         this.GetGraph().WriteDotToFile(
-            depth, file, edgeLabelFn: edgeLabelFn, debug: debug
+            file, depth: depth, edgeLabelFn: edgeLabelFn, debug: debug
         )
     }
 }
