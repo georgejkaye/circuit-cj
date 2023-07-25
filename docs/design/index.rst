@@ -9,6 +9,5 @@ Designing circuits
    primitives
    subcircuits
    constructions
-   sequential
    drawing
    state
