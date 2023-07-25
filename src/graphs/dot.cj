@@ -970,7 +970,7 @@ extend Hypergraph<V, G> <: Drawable<V, G> {
     ) : Unit {
         let dotLines = ArrayList<DotLine>()
         let connectionContent = ArrayList<DotLine>()
-        DrawOpeningContent(this.GetName(), None<Edge<V, G>>, dotLines, debug)
+        DrawOpeningContent("", None<Edge<V, G>>, dotLines, debug)
         DrawHypergraph(
             this, depth, HashSet(), dotLines, connectionContent, edgeLabelFn,
             debug
