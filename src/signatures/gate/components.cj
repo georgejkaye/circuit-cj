@@ -47,7 +47,7 @@ public func UseXorGate(
 public func UseXnorGate(
     a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBinaryGate(XNOR, a, b)[0]
+    UseBinaryGate(XNOR, a, b, delay: delay)[0]
 }
 /**
 * Perform an unsigned extension on a wire, i.e. add a false as its msb
