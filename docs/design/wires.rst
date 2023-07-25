@@ -36,22 +36,9 @@ through each wire.
     let a = sig.UseWire(1)
     let b = sig.UseWire(8)
 
-In a wire ``w`` carrying multiple bits, we consider ``w[0]`` to be the
-*least significant bit* and ``w[n-1]`` to be the *most significant bit*.
-
 .. note::
-    Conventionally, functions starting with ``Use`` return one or more ``Wire``
-    objects , so they can immediately be passed to other functions.
-
-We
-
-.. code-block:: scala
-
-    a.WriteDotToFile(0, "wire")
-
-
-.. image:: imgs/wires/split-1.svg
-
+    Conventionally, functions prefixed with ``Use`` return one or more ``Wire``
+    objects, so they can immediately be passed to other functions.
 
 Splitting wires
 ---------------
@@ -103,6 +90,8 @@ one, *concatenating* their contents.
 
 .. code-block:: scala
 
+    import components.Combine
+
     let a = sig.UseWire(4)
     let b = sig.UseWire(4)
     let c = sig.UseWire(8)
@@ -120,3 +109,24 @@ one, *concatenating* their contents.
     let w2 = Combine([a, b, c])
 
 .. image:: imgs/wires/combine-2.svg
+
+Bits
+----
+
+In a wire ``w`` carrying multiple bits, we consider ``w[0]`` to be the
+*least significant bit* and ``w[n-1]`` to be the *most significant bit*.
+
+One could use the `Split` functions to grab
+
+.. code-block:: scala
+
+    let a = sig.UseWire(4)
+    let b = sig.UseWire(4)
+
+    let (lsbA, msbsA)= a.LsbAndMsbs()
+    let (lsbsB, msbB) = b.LsbsAndMsb()
+
+    let w1 = Combine(lsbA, msbB)
+    let w2 = Combine(msbsA, lsbsB)
+
+.. image:: imgs/wires/lsb-and-msb.svg
