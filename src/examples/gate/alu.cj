@@ -78,9 +78,9 @@ public func AddSub(width : Int64) {
     // To allow subtraction
     let xorGates = UseXor(b, Replicate(c, width))
     let (sum, carry) = UseSubcircuit_2(MultibitFullAdder(width), [a, b, c])
-    let finalBitA = Msb(a)
-    let finalBitB = Msb(xorGates)
-    let finalBitSum = Msb(sum)
+    let finalBitA = a.Msb()
+    let finalBitB = xorGates.Msb()
+    let finalBitSum = sum.Msb()
     let not = UseNot(finalBitSum)
     let overflow = UseOr(
         UseAnd([not, finalBitB, finalBitA]),
@@ -118,7 +118,7 @@ public func ALU(w : Int64){
     let result = mux2
     let notzero = UseOr(result)
     let zero = UseNot(notzero)
-    let negative = Msb(result)
+    let negative = result.Msb()
     // Put everything together
     MakeSubcircuit([
             InterfaceWire(a, "A"), InterfaceWire(b, "B"),

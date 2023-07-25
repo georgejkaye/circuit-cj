@@ -47,6 +47,77 @@ public class Wire<V, G>
     public func GetGraph() : Hypergraph<V, G> {
         this.vertex.GetGraph()
     }
+    /**
+     * Get the least significant bit (bit 0) of a wire.
+     * @param w The wire to get the lsb from
+     * @return The least significant bit of the wire
+     */
+    public func Lsb() : Wire<V, G> {
+        this.LsbAndMsbs()[0]
+    }
+    /**
+     * Get the most significant bits (not bit 0) of a wire.
+     * @param w The wire to get the msbs from
+     * @return The most significant bits of the wire
+     */
+    public func Msbs() : Wire<V, G> {
+        this.LsbAndMsbs()[1]
+    }
+    /**
+     * Get the most significant bit (bit n-1) of a wire.
+     * @param w The wire to get the msb from
+     * @return The most significant bit of the wire
+     */
+    public func Msb() : Wire<V, G> {
+        this.LsbsAndMsb()[1]
+    }
+    /**
+     * Get the least significant bits (not bit n-1) of a wire.
+     * @param w The wire to get the lsbs from
+     * @return The leasts significant bits of the wire
+     */
+    public func Lsbs() : Wire<V, G> {
+        this.LsbsAndMsb()[0]
+    }
+    /**
+     * Split a wire so that its least significant bit is a separate wire
+     * @param w The wire to split
+     * @return A tuple (lsb, msbs)
+     */
+    public func LsbAndMsbs() : (Wire<V, G>, Wire<V, G>) {
+        let splits = Split(this, [1, this.GetWidth() - 1])
+        (splits[0], splits[1])
+    }
+    /**
+     * Split a wire so that its most significant bit is a separate wire
+     * @param w The wire to split
+     * @return A tuple (lsbs, msb)
+     */
+    public func LsbsAndMsb() : (Wire<V, G>, Wire<V, G>) {
+        let splits = Split(this, [this.GetWidth() - 1, 1])
+        (splits[0], splits[1])
+    }
+    /**
+     * Extract a given bit from a wire by splitting it into its constituent bits and
+     * returning the appropriate one. Bits are numbered starting with the lsb as 0.
+     * @param w The wire to extract from
+     * @param i The bit to extract
+     * @return The specified bit of the wire
+     */
+    public func Get(i : Int64) : Wire<V, G> {
+        AssertHasWidthAtLeast(this, i)
+        let width = this.GetWidth()
+        if (i == 0) {
+            let ws = Split(this, [1, width - 1])
+            ws[0]
+        } else if (i == width-1) {
+            let ws = Split(this, [width - 1, 1])
+            ws[1]
+        } else {
+            let ws = Split(this, [i, 1, width - i - 1])
+            ws[1]
+        }
+    }
 }
 public interface ContainsWire<V, G> <: HasWidth & ContainsVertex<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
@@ -70,11 +141,11 @@ public func UseWire<V, G>(width : Int64) : Wire<V, G>
     Wire(vertex)
 }
 /**
-    * Make an array of wires all of a given width
-    * @param n The number of wires to create
-    * @param width The width of the wire
-    * @return The array of wires
-    */
+ * Make an array of wires all of a given width
+ * @param n The number of wires to create
+ * @param width The width of the wire
+ * @return The array of wires
+ */
 public func UseWires<V, G>(width : Int64, n : Int64) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -82,10 +153,10 @@ public func UseWires<V, G>(width : Int64, n : Int64) : Array<Wire<V, G>>
     Array<Wire<V, G>>(n, { i : Int64 => UseWire(width) })
 }
 /**
-    * Make an array of wires of given widths
-    * @param widths The array of widths for the wires
-    * @return The array of wires
-    */
+ * Make an array of wires of given widths
+ * @param widths The array of widths for the wires
+ * @return The array of wires
+ */
 public func UseWires<V, G>(widths : Array<Int64>) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -273,98 +344,6 @@ public func Combine<V, G, T>(lhs : T, rhs : T) : Wire<V, G>
         T <: ContainsWire<V, G> & ToString
 {
     Combine<V, G, T>([lhs, rhs])
-}
-/**
- * Extract a given bit from a wire by splitting it into its constituent bits and
- * returning the appropriate one. Bits are numbered starting with the lsb as 0.
- * @param w The wire to extract from
- * @param i The bit to extract
- * @return The specified bit of the wire
- */
-public func GetBit<V, G>(w : Wire<V, G>, i : Int64) : Wire<V, G>
-    where
-        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    AssertHasWidthAtLeast(w, i)
-    let width = w.GetWidth()
-    if (i == 0) {
-        let ws = Split(w, [1, width - 1])
-        ws[0]
-    } else if (i == width-1) {
-        let ws = Split(w, [width - 1, 1])
-        ws[1]
-    } else {
-        let ws = Split(w, [i, 1, width - i - 1])
-        ws[1]
-    }
-}
-/**
- * Get the least significant bit (bit 0) of a wire.
- * @param w The wire to get the lsb from
- * @return The least significant bit of the wire
- */
-public func Lsb<V, G>(w : Wire<V, G>) : Wire<V, G>
-    where
-        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    LsbAndMsbs(w)[0]
-}
-/**
- * Get the most significant bits (not bit 0) of a wire.
- * @param w The wire to get the msbs from
- * @return The most significant bits of the wire
- */
-public func Msbs<V, G>(w : Wire<V, G>) : Wire<V, G>
-    where
-        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    LsbAndMsbs(w)[1]
-}
-/**
- * Get the most significant bit (bit n-1) of a wire.
- * @param w The wire to get the msb from
- * @return The most significant bit of the wire
- */
-public func Msb<V, G>(w : Wire<V, G>) : Wire<V, G>
-    where
-        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    LsbsAndMsb(w)[1]
-}
-/**
- * Get the least significant bits (not bit n-1) of a wire.
- * @param w The wire to get the lsbs from
- * @return The leasts significant bits of the wire
- */
-public func Lsbs<V, G>(w : Wire<V, G>) : Wire<V, G>
-    where
-        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    LsbsAndMsb(w)[0]
-}
-/**
- * Split a wire so that its least significant bit is a separate wire
- * @param w The wire to split
- * @return A tuple (lsb, msbs)
- */
-public func LsbAndMsbs<V, G>(w : Wire<V, G>) : (Wire<V, G>, Wire<V, G>)
-    where
-        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    let splits = Split(w, [1, w.GetWidth() - 1])
-    (splits[0], splits[1])
-}
-/**
- * Split a wire so that its most significant bit is a separate wire
- * @param w The wire to split
- * @return A tuple (lsbs, msb)
- */
-public func LsbsAndMsb<V, G>(w : Wire<V, G>) : (Wire<V, G>, Wire<V, G>)
-    where
-        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    let splits = Split(w, [w.GetWidth() - 1, 1])
-    (splits[0], splits[1])
 }
 /**
  * Replicate a signal into a wire of a given width

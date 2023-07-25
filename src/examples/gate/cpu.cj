@@ -485,7 +485,7 @@ public func SimpleCPU() {
     let cpu_di = RAM(cpu_do, addr, ram_we, UseNot(clk))
     Feedback(cpu_di, instruction)
     // Serial out
-    let serial_out = UseNot(FDCE(Lsb(cpu_do), UseAnd(addr), clk, clr))
+    let serial_out = UseNot(FDCE(cpu_do.Lsb(), UseAnd(addr), clk, clr))
     // Make the subcircuit
     MakeSubcircuit(
         [
