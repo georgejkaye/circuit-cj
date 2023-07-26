@@ -64,6 +64,14 @@ public func Map<V, G>(
     let width = AssertArrayArraysSameWidths(inputss)
     map({inputs : Array<Wire<V, G>> => f(inputs)}, inputss)
 }
+/**
+ * Make a subcircuit containing an operation mapped a given number of times.
+ *
+ * @param f The operation
+ * @param n The number of times to map
+ * @param wires The widths of the expected input wires
+ * @param label The label to give the new subcircuit
+ */
 public func MakeMap<V, G, T>(
     f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
     n : Int64, wires : Array<T>,
@@ -71,20 +79,43 @@ public func MakeMap<V, G, T>(
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>, T <: HasWidth
 {
-    let inputs =
-        Array<Array<Wire<V, G>>>(
-            n,
-            {i =>
-                map({ t => UseWire<V, G>(t.GetWidth())}, wires)
-            }
-        )
+    let inputs = Array<Array<Wire<V, G>>>(n, {i =>
+        map({ t => UseWire<V, G>(t.GetWidth())}, wires)
+    })
     let outputs = Map(f, inputs)
-    let subcircuitInputs = concat<Wire<V, G>, InterfaceWire<V, G>>(inputs, { w => InterfaceWire(w) })
-    let subcircuitOutputs = concat<Wire<V, G>, InterfaceWire<V, G>>(outputs, { w => InterfaceWire(w) })
+    let subcircuitInputs =
+        concat(inputs, { w : Wire<V, G> => InterfaceWire(w) })
+    let subcircuitOutputs =
+        concat(outputs, { w : Wire<V, G> => InterfaceWire(w) })
     MakeSubcircuit<V, G>(
         subcircuitInputs, subcircuitOutputs, label
     )
-
+}
+/**
+ * Make a subcircuit containing an subcircuit mapped a given number of times.
+ *
+ * @param f The subcircuit to map
+ * @param n The number of times to map
+ * @param label The label to give the new subcircuit
+ */
+public func MakeMap<V, G>(f : InterfacedHypergraph<V, G>, n : Int64)
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    let inputPorts = Array<Port>(f.GetArity() * n, { i =>
+        let originalInput = f.GetInput(i % n)
+        Port(originalInput.GetWidth(), name: originalInput.GetName())
+    })
+    let outputPorts = Array<Port>(f.GetCoarity() * n, { i =>
+        let originalOutput = f.GetOutput(i % n)
+        Port(originalOutput.GetWidth(), name: originalOutput.GetName())
+    })
+    let spec = Specification(
+        "${f.GetName()}^${n}", inputPorts, outputPorts
+    )
+    MakeMap(
+        { ws : Array<Wire<V, G>> => UseSubcircuit(f, ws)},
+        n, f.GetInputPorts(), Label<V, G>.COMPOSITE(spec)
+    )
 }
 /**
  * Given an array of arrays of wires, apply an operation that transforms an
