@@ -11,13 +11,9 @@ to build such subcircuits.
 The functional programmer may recognise them!
 
 .. note::
-    Constructions are based on an *operation* which is designed to take a
-    certain number of input wires and a certain number of output wires.
-    To illustrate the constructions below we will talk about inputs and outputs
-    in terms of *lists* of wires of specified widths.
-    For example, a ripple adder of width ``4`` has type ``[4,4] -> [4,1]``.
-    We will also use some shorthand: ``n^x`` means a list of length ``x``
-    only containing wires of length ``n``.
+    Operations have *types*: the widths of their input and output wires.
+    For example, a 4-bit ripple adder has type ``[4,4] -> [4,1]``.
+    We write ``[n^x]`` for a list of length ``x`` containing only ``n``.
 
 Map
 ---
