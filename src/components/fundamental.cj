@@ -119,11 +119,7 @@ public func UseBlackbox<V, G>(
 {
     UseEdgeWithNewOutputs<V, G, Wire<V, G>>(
         Label<V,G>.BLACKBOX(
-            Specification<V>(
-                name,
-                domain,
-                codomain
-            )
+            Specification(name, domain, codomain)
         ),
         inputs,
         None<InterfacedHypergraph<V, G>>,

@@ -37,9 +37,9 @@ public enum Label<V, G>
     // An primitive that has been enhanced (e.g. a bitwise variant)
     | ENHANCED_PRIMITIVE(EnhancedPrimitive<V, G>)
     // A composite of primitives
-    | COMPOSITE(Specification<V>)
+    | COMPOSITE(Specification)
      // A black box with arbitrary name, arity and coarity
-    | BLACKBOX(Specification<V>)
+    | BLACKBOX(Specification)
     // A delay parameterised by a width
     | DELAY(Int64)
 }

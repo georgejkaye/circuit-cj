@@ -32,10 +32,8 @@ public func numToUppercaseLetter(n : Int64) : String {
  * A specification defines an arbitrary label with a name and arrays of
  * input/output ports
  */
-public class Specification<V>
-     <: Specifiable & HasName & Equatable<Specification<V>>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V>
+public class Specification
+     <: Specifiable & HasName & Equatable<Specification>
 {
     let id : Int64
     public Specification(
@@ -57,12 +55,12 @@ public class Specification<V>
     public func GetOutputPorts() : Array<Port> {
         this.outputPorts
     }
-    public operator func ==(rhs : Specification<V>) {
+    public operator func ==(rhs : Specification) {
         this.name == rhs.name &&
             this.inputPorts == rhs.inputPorts &&
             this.outputPorts == rhs.outputPorts
     }
-    public operator func !=(rhs : Specification<V>) {
+    public operator func !=(rhs : Specification) {
         !(this == rhs)
     }
     public func hashCode() : Int64 {

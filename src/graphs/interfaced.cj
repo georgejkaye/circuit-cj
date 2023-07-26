@@ -134,7 +134,7 @@ public class InterfacedHypergraph<V, G>
         this(
             f, inputs, outputs,
             COMPOSITE(
-                Specification<V>(
+                Specification(
                     name, map(
                         { iv : InterfaceVertex<V, G> =>
                             Port(iv.GetWidth(), name: iv.GetName() )
