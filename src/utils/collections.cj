@@ -33,7 +33,7 @@ public func prepend<T>(x : T, ys : Array<T>) {
  * @param y
  * @return The array xs ++ u
  */
-public func append<T>(xs : Array<T>, y : T) {
+public func append<T>(xs : Array<T>, y : T) : Array<T> {
     Array<T>(xs.size + 1){
         i : Int64 =>
             if(i == xs.size) {
@@ -50,7 +50,7 @@ public func append<T>(xs : Array<T>, y : T) {
  * @param ys
  * @return The concatenation of xs and ys
  */
-public func concat<T>(xs : Array<T>, ys : Array<T>) {
+public func concat<T>(xs : Array<T>, ys : Array<T>) : Array<T> {
     Array<T>(xs.size + ys.size){
         i : Int64 =>
             if(i < xs.size) {
@@ -59,6 +59,22 @@ public func concat<T>(xs : Array<T>, ys : Array<T>) {
                 ys[i - xs.size]
             }
     }
+}
+public func concat<T, U>(xss : Array<Array<T>>, f : (T) -> U) : Array<U> {
+    Array(Sum(xss, { xs => xs.size }), {
+        i =>
+            var j = i
+            var elm = 0
+            for(xs in xss){
+                elm++
+                if(j < xs.size) {
+                    return f(xs[j])
+                }
+                j -= xs.size
+            }
+            throw Exception("This shouldn't happen")
+
+    })
 }
 /**
  * Get a bespokely printed string of a collection.

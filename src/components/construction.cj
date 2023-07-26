@@ -64,6 +64,28 @@ public func Map<V, G>(
     let width = AssertArrayArraysSameWidths(inputss)
     map({inputs : Array<Wire<V, G>> => f(inputs)}, inputss)
 }
+public func MakeMap<V, G, T>(
+    f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
+    n : Int64, wires : Array<T>,
+    label : Label<V, G>
+) : InterfacedHypergraph<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>, T <: HasWidth
+{
+    let inputs =
+        Array<Array<Wire<V, G>>>(
+            n,
+            {i =>
+                map({ t => UseWire<V, G>(t.GetWidth())}, wires)
+            }
+        )
+    let outputs = Map(f, inputs)
+    let subcircuitInputs = concat<Wire<V, G>, InterfaceWire<V, G>>(inputs, { w => InterfaceWire(w) })
+    let subcircuitOutputs = concat<Wire<V, G>, InterfaceWire<V, G>>(outputs, { w => InterfaceWire(w) })
+    MakeSubcircuit<V, G>(
+        subcircuitInputs, subcircuitOutputs, label
+    )
+
+}
 /**
  * Given an array of arrays of wires, apply an operation that transforms an
  * array of wires into a new wire, to each array of wires in the input.
