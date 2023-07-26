@@ -66,15 +66,14 @@ func ALU() {
  * @return FDCE register blackbox
  */
 func FDCE(d: Wire_, ce: Wire_, c: Wire_, clr: Wire_) {
-    UseBlackbox(
+    let fdce = belnapSignature.AddBlackbox(
         "FDCE",
         [
             Port(1, name: "D"), Port(1, name: "CE"),
             Port(1, name: "C"), Port(1, name: "CLR")
         ],
-        [Port(1, name: "Q")],
-        [d, ce, c, clr]
-    )[0]
+        [Port(1, name: "Q")])
+    UseBlackbox(fdce, [d, ce, c, clr])[0]
 }
 /**
  * @param pre
@@ -84,7 +83,7 @@ func FDCE(d: Wire_, ce: Wire_, c: Wire_, clr: Wire_) {
  * @return FDPE register blackbox
  */
 func FDPE(pre: Wire_, d: Wire_, ce: Wire_, c: Wire_) {
-    UseBlackbox(
+    let fdpe = belnapSignature.AddBlackbox(
         "FDPE",
         [
             Port(1, name: "PRE"),
@@ -92,9 +91,9 @@ func FDPE(pre: Wire_, d: Wire_, ce: Wire_, c: Wire_) {
             Port(1, name: "CE"),
             Port(1, name: "C")
         ],
-        [Port(1, name: "Q")],
-        [pre, d, ce, c]
-    )[0]
+        [Port(1, name: "Q")]
+    )
+    UseBlackbox(fdpe, [pre, d, ce, c])[0]
 }
 /**
  * @param d
@@ -103,16 +102,16 @@ func FDPE(pre: Wire_, d: Wire_, ce: Wire_, c: Wire_) {
  * @return FDC register blackbox
  */
 func FDC(d: Wire_, c: Wire_, clr: Wire_) {
-    UseBlackbox(
+    let fdc = belnapSignature.AddBlackbox(
         "FDC",
         [
             Port(1, name: "D"),
             Port(1, name: "C"),
             Port(1, name: "CLR")
         ],
-        [Port(1, name: "Q")],
-        [d, c, clr]
-    )[0]
+        [Port(1, name: "Q")]
+    )
+    UseBlackbox(fdc, [d, c, clr])[0]
 }
 /**
  * @param d
@@ -120,15 +119,15 @@ func FDC(d: Wire_, c: Wire_, clr: Wire_) {
  * @return FD register blackbox
  */
 func FD(d: Wire_, c: Wire_) {
-    UseBlackbox(
+    let fd = belnapSignature.AddBlackbox(
         "FD",
         [
             Port(1, name: "D"),
             Port(1, name: "C")
         ],
         [Port(1, name: "Q")],
-        [d, c]
-    )[0]
+    )
+    UseBlackbox(fd, [d, c])[0]
 }
 /**
  * @param cpu_do
@@ -138,7 +137,7 @@ func FD(d: Wire_, c: Wire_) {
  * @return RAM blackbox
  */
 func RAM(cpu_do: Wire_, addr: Wire_, ram_we: Wire_, clk: Wire_) {
-    UseBlackbox(
+    let ram = belnapSignature.AddBlackbox(
         "ram",
         [
             Port(16, name: "din"),
@@ -146,9 +145,9 @@ func RAM(cpu_do: Wire_, addr: Wire_, ram_we: Wire_, clk: Wire_) {
             Port(1, name: "we"),
             Port(1, name: "clk")
         ],
-        [Port(16, name: "dout")],
-        [cpu_do, addr, ram_we, clk]
-    )[0]
+        [Port(16, name: "dout")]
+    )
+    UseBlackbox(ram, [cpu_do, addr, ram_we, clk])[0]
 }
 /**
  * @param w The width of the input wire

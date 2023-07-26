@@ -39,7 +39,7 @@ public enum Label<V, G>
     // A composite of primitives
     | COMPOSITE(Specification)
      // A black box with arbitrary name, arity and coarity
-    | BLACKBOX(Specification)
+    | BLACKBOX(Blackbox<V, G>)
     // A delay parameterised by a width
     | DELAY(Int64)
 }

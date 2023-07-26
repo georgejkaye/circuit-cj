@@ -110,19 +110,37 @@ public func UseJoin<V, G>(a : Wire<V, G>, b : Wire<V, G>) : Wire<V, G>
  * @return The array of outputs of this blackbox
  */
 public func UseBlackbox<V, G>(
-    name : String,
-    domain : Array<Port>,
-    codomain : Array<Port>,
+    blackbox : Blackbox<V, G>,
     inputs: Array<Wire<V, G>>
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     UseEdgeWithNewOutputs<V, G, Wire<V, G>>(
-        Label<V,G>.BLACKBOX(
-            Specification(name, domain, codomain)
-        ),
+        Label<V,G>.BLACKBOX(blackbox),
         inputs,
         None<InterfacedHypergraph<V, G>>,
         inputs[0].GetGraph()
+    )
+}
+
+public func MakeBlackbox<V, G>(
+    blackbox : Blackbox<V, G>
+) : InterfacedHypergraph<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    let inputs = map(
+        { p : Port => UseWire<V, G>(p.GetWidth()) }, blackbox.GetInputPorts()
+    )
+    let outputs = UseBlackbox(blackbox, inputs)
+    MakeSubcircuit(
+        mapi(
+            { w : Wire<V, G>, i : Int64 => InterfaceWire(w, blackbox.GetInputPort(i).GetName())},
+            inputs
+        ),
+        mapi(
+            { w : Wire<V, G>, i : Int64 => InterfaceWire(w, blackbox.GetOutputPort(i).GetName())},
+            outputs
+        ),
+        blackbox.GetName()
     )
 }

@@ -259,6 +259,40 @@ func GetAnnihilatorAndIdentifierRules<V, G>(
         }
     }
 }
+public struct Blackbox<V, G>
+    <: Hashable & Equatable<Blackbox<V, G>> & HasName & Specifiable
+{
+    static var nextBlackBoxId = 0
+    let id : Int64
+    Blackbox(
+        let name : String,
+        let inputs : Array<Port>,
+        let outputs : Array<Port>
+    ){
+        this.id = nextBlackBoxId
+        nextBlackBoxId++
+    }
+    public func hashCode() : Int64 {
+        this.id
+    }
+    public func GetName() : String {
+        this.name
+    }
+    public func GetInputPorts() : Array<Port> {
+        this.inputs
+    }
+    public func GetOutputPorts() : Array<Port> {
+        this.outputs
+    }
+    public operator func ==(rhs : Blackbox<V, G>) : Bool {
+        this.name == rhs.GetName() &&
+            this.inputs == rhs.GetInputPorts() &&
+            this.outputs == rhs.GetOutputPorts()
+    }
+    public operator func !=(rhs : Blackbox<V, G>) : Bool {
+        !(this == rhs)
+    }
+}
 /**
  * A signature defines the value and gate components that can be used in a
  * circuit.
@@ -270,6 +304,7 @@ public class Signature<V, G>
     let uniqueId : Int64 = GetNextId()
     public let annihilators : Array<Annihilator<V, G>>
     public let identities : Array<Identifier<V, G>>
+    let blackboxes : HashSet<Blackbox<V, G>> = HashSet<Blackbox<V, G>>()
     public Signature(
         let name : String,
         let latticeStructure: FiniteLattice<V>,
@@ -294,9 +329,9 @@ public class Signature<V, G>
         this.annihilators = annihilatorsList.toArray()
         this.identities = identitiesList.toArray()
     }
-    // public func GetId() : Int64 {
-    //     this.uniqueId
-    // }
+    public func GetId() : Int64 {
+        this.uniqueId
+    }
     /**
      * @param gate
      * @return The interpretation of gate in this signature
@@ -366,5 +401,23 @@ public class Signature<V, G>
     }
     public func toString() : String {
         this.GetName()
+    }
+    /**
+     * Add a blackbox to this signature.
+     *
+     * @param name
+     * @param inputs
+     * @param outputs
+     */
+    public func AddBlackbox(
+        name : String, inputs : Array<Port>, outputs : Array<Port>
+    ) : Blackbox<V, G> {
+        let bb = Blackbox<V, G>(name, inputs, outputs)
+        if(this.blackboxes.contains(bb)) {
+            bb
+        } else {
+            this.blackboxes.put(bb)
+            bb
+        }
     }
 }

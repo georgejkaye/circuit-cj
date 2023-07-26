@@ -17,12 +17,12 @@ package examples.gate
  * @return The two output wires of the comparator
  */
 func SortingComparator(width : Int64, w1 : Wire_, w2 : Wire_) : (Wire_, Wire_) {
-    let cmp = UseBlackbox(
+    let bb = belnapSignature.AddBlackbox(
         "cmp${width}",
         [Port(width), Port(width)],
-        [Port(width), Port(width)],
-        [w1, w2]
+        [Port(width), Port(width)]
     )
+    let cmp = UseBlackbox(bb, [w1, w2])
     (cmp[0], cmp[1])
 }
 /**

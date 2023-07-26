@@ -14,6 +14,7 @@ public enum GateLevelValue {
     | NONE | TRUE | FALSE | BOTH
 }
 let trueLevel = 1
+
 /**
  * Instantiate Belnap values as a type of value symbols
  */
