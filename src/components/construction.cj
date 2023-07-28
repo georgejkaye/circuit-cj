@@ -102,11 +102,11 @@ public func MakeMap<V, G>(f : InterfacedHypergraph<V, G>, n : Int64)
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     func GetPorts(
-        getNumber : (InterfacedHypergraph<V, G>) -> Int64,
+        getNumberOfPorts : (InterfacedHypergraph<V, G>) -> Int64,
         getVertex : (InterfacedHypergraph<V, G>, Int64) -> InterfaceVertex<V, G>
     ) : Array<Port> {
-        let numberOfPorts = getNumber(f)
-        Array<Port>(getNumber(f) * n, { i =>
+        let numberOfPorts = getNumberOfPorts(f)
+        Array<Port>(numberOfPorts * n, { i =>
             let portVertex = getVertex(f, i % numberOfPorts)
             Port(portVertex.GetWidth(), name: portVertex.GetName())
         })
@@ -225,6 +225,40 @@ public func BitwiseMap<V, G>(
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     BitwiseMap({ inputs : Array<Wire<V, G>> => [f(inputs[0])] }, [input])[0]
+}
+public func MakeBitwiseMap<V, G>(
+    f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
+    n : Int64, wires: Int64, label: Label<V, G>
+) : InterfacedHypergraph<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    let inputs = Array<Wire<V, G>>(wires, {i => UseWire<V, G>(n)})
+    let outputs = BitwiseMap(f, inputs)
+    let inputWires = map({ w : Wire<V, G> => InterfaceWire(w) }, inputs)
+    let outputWires = map({ w : Wire<V, G> => InterfaceWire(w) }, outputs)
+    MakeSubcircuit(inputWires, outputWires, label)
+}
+public func MakeBitwiseMap<V, G>(
+    f : InterfacedHypergraph<V, G>,
+    n : Int64
+) : InterfacedHypergraph<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    func GetPorts(
+        getNumberOfPorts : (InterfacedHypergraph<V, G>) -> Int64,
+        getVertex : (InterfacedHypergraph<V, G>, Int64) -> InterfaceVertex<V, G>
+    ) : Array<Port> {
+        Array<Port>(getNumberOfPorts(f), { i =>
+            let portVertex = getVertex(f, i)
+            Port(n, name: portVertex.GetName())
+        })
+    }
+    let inputPorts = GetPorts({ f => f.GetArity() }, { f, i => f.GetInput(i) })
+    let outputPorts = GetPorts({ f => f.GetCoarity() }, { f, i => f.GetOutput(i) })
+    let spec = Specification(
+        "${f.GetName()}_${n}", inputPorts, outputPorts
+    )
+    MakeBitwiseMap({ ws : Array<Wire<V, G>> => UseSubcircuit(f, ws) }, n, f.GetArity(), Label<V, G>.COMPOSITE(spec))
 }
 /**
  * Perform a ripple map.
