@@ -21,6 +21,7 @@ cp -r $REPO_DIR .
 cd "${REPO_DIR##*/}"
 
 # Reset to head
+git switch $DEVELOP_BRANCH
 git fetch
 git reset --hard origin/$DEVELOP_BRANCH
 
