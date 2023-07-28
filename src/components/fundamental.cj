@@ -141,6 +141,6 @@ public func MakeBlackbox<V, G>(
             { w : Wire<V, G>, i : Int64 => InterfaceWire(w, blackbox.GetOutputPort(i).GetName())},
             outputs
         ),
-        blackbox.GetName()
+        BLACKBOX(blackbox)
     )
 }
