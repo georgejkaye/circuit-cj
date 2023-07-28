@@ -1,13 +1,13 @@
 #!/bin/bash
 
-REPO_DIR=/home/gkaye/repos/circuit-cj
+REPO_DIR=$1
+GITEE_EMAIL="$2"
+GITEE_NAME="$3"
+
 DOCS_BRANCH=docs
 DEVELOP_BRANCH=dev
 DOCS_MAKE_TARGET=docs
 DOCS_BUILD=docs/_build
-
-GITEE_EMAIL="george.kaye1@huawei.com"
-GITEE_NAME="George Kaye"
 
 DATE=$(date +"%Y-%m-%dT%T")
 TEMP_DIR=$DATE
