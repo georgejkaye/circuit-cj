@@ -101,14 +101,22 @@ public func MakeMap<V, G, T>(
 public func MakeMap<V, G>(f : InterfacedHypergraph<V, G>, n : Int64)
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let inputPorts = Array<Port>(f.GetArity() * n, { i =>
-        let originalInput = f.GetInput(i % n)
-        Port(originalInput.GetWidth(), name: originalInput.GetName())
-    })
-    let outputPorts = Array<Port>(f.GetCoarity() * n, { i =>
-        let originalOutput = f.GetOutput(i % n)
-        Port(originalOutput.GetWidth(), name: originalOutput.GetName())
-    })
+    func GetPorts(
+        getNumber : (InterfacedHypergraph<V, G>) -> Int64,
+        getVertex : (InterfacedHypergraph<V, G>, Int64) -> InterfaceVertex<V, G>
+    ) : Array<Port> {
+        let numberOfPorts = getNumber(f)
+        Array<Port>(getNumber(f) * n, { i =>
+            let portVertex = getVertex(f, i % numberOfPorts)
+            Port(portVertex.GetWidth(), name: portVertex.GetName())
+        })
+    }
+    let inputPorts = GetPorts(
+        { f => f.GetArity() }, { f, i => f.GetInput(i)}
+    )
+    let outputPorts = GetPorts(
+        { f => f.GetCoarity() }, { f, i => f.GetOutput(i)}
+    )
     let spec = Specification(
         "${f.GetName()}^${n}", inputPorts, outputPorts
     )
