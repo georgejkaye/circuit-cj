@@ -18,6 +18,12 @@ cd $TEMP_DIR
 
 # Clone the repo
 git clone $REPO_URL $REPO_NAME
+
+if [ $? != 0 ]; then
+    echo "Clone failed..."
+    exit 1
+fi
+
 cd $REPO_NAME
 
 # Set up user details for this repo
