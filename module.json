@@ -11,7 +11,7 @@
 	},
 	"foreign_requires": {},
 	"output_type": "executable",
-	"command_option": "-O2",
+	"command_option": "",
 	"condition_option": {},
 	"link_option": "",
 	"cross_compile_configuration": {},
