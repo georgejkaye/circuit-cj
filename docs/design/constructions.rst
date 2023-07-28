@@ -18,32 +18,33 @@ The functional programmer may recognise them!
 Map
 ---
 
-Given an operation ``f : [m1,...,mx] -> [n1,...,ny]``, create a construction
-``map(f) : [[m1,...,mx],...[m1,...,mx]] -> [[n1,...,nx],...[n1,...,nx]]`` that
-applies ``f`` independently to each array of inputs, i.e.
-``map(f)(wss)[i][j] = f(wss[i])[j]``.
+Apply multiple copies of an operation in parallel.
+
+.. code-block:: scala
+
+    let bb = sig.AddBlackbox("f", [Port(2), Port(4)], [Port(1), Port(3)])
+    let f = MakeBlackbox(bb)
+    let bmapf = MakeMap(f, 3)
+
+
+.. image:: imgs/constructions/map.svg
 
 
 Bitwise map
 -----------
 
-Given  ``f : 1^x -> 1^y``
-
-
-The first construction is applying a circuit ``Bitwise``.
-This means that, given a subcircuit ``f`` and array of wires ``ws``, we split
-each wire into its constituent bits, compute ``f(ws[0][0], ws[1][0], ...)``,
-``f(ws[0][1], ws[1][1], ...)`` and so on, before joining the results back
-together.
+Apply multiple copies of an operation in parallel for each bit of a wire.
 
 .. code-block:: scala
 
-    func Bitwise(
-        f : (Array<Wire>) -> Array<Wire>,
-        ws : Array<Wire>
-    ) : Array<Wire>
+    let bb = sig.AddBlackbox("f", [Port(1), Port(1)], [Port(1)])
+    let f = MakeBlackbox(bb)
+    let bmapf = MakeBitwiseMap(f, 3)
 
-This corresponds to the functional construction ``map``.
+
+.. image:: imgs/constructions/bitwise-map.svg
+
+
 
 Bitwise logic gates
 *******************
