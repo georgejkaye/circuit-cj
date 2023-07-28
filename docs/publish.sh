@@ -1,8 +1,8 @@
 #!/bin/bash
 
-REPO_URL=https://gitee.com/HW-PLLab/circuit-cj.git
-REPO_NAME=circuit-cj
+REPO_DIR=/home/gkaye/repos/circuit-cj
 DOCS_BRANCH=docs
+DEVELOP_BRANCH=dev
 DOCS_MAKE_TARGET=docs
 DOCS_BUILD=docs/_build
 
@@ -10,21 +10,19 @@ GITEE_EMAIL="george.kaye1@huawei.com"
 GITEE_NAME="George Kaye"
 
 DATE=$(date +"%Y-%m-%dT%T")
-TEMP_DIR=$REPO_NAME-$DATE
+TEMP_DIR=$DATE
 
 # Make temp dir
 mkdir $TEMP_DIR
 cd $TEMP_DIR
 
-# Clone the repo
-git clone $REPO_URL $REPO_NAME
+# Copy the repo to avoid messing up current working directory
+cp -r $REPO_DIR .
+cd "${REPO_DIR##*/}"
 
-if [ $? != 0 ]; then
-    echo "Clone failed..."
-    exit 1
-fi
-
-cd $REPO_NAME
+# Reset to head
+git fetch
+git reset --hard origin/$DEVELOP_BRANCH
 
 # Set up user details for this repo
 git config user.email $GITEE_EMAIL
@@ -38,6 +36,8 @@ cp -r $DOCS_BUILD/html ..
 
 # Switch to docs branch
 git switch $DOCS_BRANCH
+git fetch
+git reset --hard origin/$DOCS_BRANCH
 
 # Delete old docs
 rm -rf *
@@ -48,7 +48,7 @@ mv ../html/* .
 # Commit
 git add .
 git commit -m "Docs as of $DATE"
-git push
+git push --set-upstream origin $DOCS_BRANCH
 
 # Delete temp dir
 cd ../..
