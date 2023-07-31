@@ -65,7 +65,7 @@ public func Map<V, G>(
     map({inputs : Array<Wire<V, G>> => f(inputs)}, inputss)
 }
 /**
- * Make a subcircuit containing an operation mapped a given number of times.
+ * Make a map circuit for an operation.
  *
  * @param f The operation
  * @param n The number of times to map
@@ -92,7 +92,7 @@ public func MakeMap<V, G, T>(
     )
 }
 /**
- * Make a subcircuit containing an subcircuit mapped a given number of times.
+ * Make a map subcircuit for a given subcircuit.
  *
  * @param f The subcircuit to map
  * @param n The number of times to map
@@ -226,6 +226,14 @@ public func BitwiseMap<V, G>(
 {
     BitwiseMap({ inputs : Array<Wire<V, G>> => [f(inputs[0])] }, [input])[0]
 }
+/**
+ * Make a bitwise map subcircuit for an operation.
+ *
+ * @param f The operation
+ * @param n The number of times to map (the width of the input wires)
+ * @param wires The number of input wires (the number of inputs f expects)
+ * @param label The label to give the new subcircuit
+ */
 public func MakeBitwiseMap<V, G>(
     f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
     n : Int64, wires: Int64, label: Label<V, G>
@@ -238,6 +246,12 @@ public func MakeBitwiseMap<V, G>(
     let outputWires = map({ w : Wire<V, G> => InterfaceWire(w) }, outputs)
     MakeSubcircuit(inputWires, outputWires, label)
 }
+/**
+ * Make a bitwise map subcircut for a subcircuit.
+ *
+ * @param f The subcircuit
+ * @param n The number of times to map (the widtrh of the input wires)
+ */
 public func MakeBitwiseMap<V, G>(
     f : InterfacedHypergraph<V, G>,
     n : Int64
@@ -258,7 +272,10 @@ public func MakeBitwiseMap<V, G>(
     let spec = Specification(
         "${f.GetName()}_${n}", inputPorts, outputPorts
     )
-    MakeBitwiseMap({ ws : Array<Wire<V, G>> => UseSubcircuit(f, ws) }, n, f.GetArity(), Label<V, G>.COMPOSITE(spec))
+    MakeBitwiseMap(
+        { ws : Array<Wire<V, G>> => UseSubcircuit(f, ws) },
+        n, f.GetArity(), Label<V, G>.COMPOSITE(spec)
+    )
 }
 /**
  * Perform a ripple map.
