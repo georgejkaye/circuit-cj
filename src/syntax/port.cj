@@ -13,6 +13,11 @@ package syntax
 public interface HasWidth {
     func GetWidth() : Int64
 }
+extend Int64 <: HasWidth {
+    public func GetWidth() : Int64 {
+        this
+    }
+}
 /**
  * Assert something has a width of exactly some value.
  *
