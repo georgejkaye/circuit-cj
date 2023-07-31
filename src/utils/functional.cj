@@ -27,10 +27,10 @@ public func fold_left_while<T, U>(
     var acc = initial
     var done = false
     let iter = xs.iterator()
-    for(i in 0..start) {
+    for(_ in 0..start) {
         iter.next()
     }
-    for(i in start..end){
+    for(_ in start..end){
         let cur = iter.next().getOrThrow()
         let (newAcc, newDone) = f(acc, cur)
         acc = newAcc
@@ -143,7 +143,7 @@ public func foldi_left<T,U>(
 ) : U {
     var acc = initial
     let iter = xs.iterator()
-    for(i in 0..start) {
+    for(_ in 0..start) {
         iter.next()
     }
     for(i in start..end) {
