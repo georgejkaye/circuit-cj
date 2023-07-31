@@ -728,9 +728,14 @@ func DrawOpeningContent<V, G>(
             case None =>
                 ("graph \"${label}\" {", "${label}")
             case Some(p) =>
+                let labelText = if(debug) {
+                    "$e${p.GetId()}: ${label}"
+                } else {
+                    "${label}"
+                }
                 (
                     "subgraph \"cluster_${label}_${p.GetId()}\" {",
-                    "e${p.GetId()}: ${label}"
+                    labelText
                 )
         }
     let openingLine = DotLine(openingText, Indent)
