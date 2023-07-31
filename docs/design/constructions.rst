@@ -34,6 +34,8 @@ Bitwise map
 -----------
 
 Apply multiple copies of an operation in parallel for each bit of a wire.
+This corresponds to the functional construction ``fold`` (also known as
+``reduce``).
 
 .. code-block:: scala
 
@@ -56,37 +58,31 @@ easy to define them.
 .. code-block:: scala
 
     // Create a bitwise AND gate
-    let a = MakeWire(2)
-    let b = MakeWire(2)
+    let a = sig.UseWire(2)
+    let b = sig.UseWire(2)
     // AND(a[0], b[0]) ++ AND(a[1], b[1])
-    And(a, b)
+    UseAnd(a, b)
 
 At the highest level this just appears to be a normal ``AND`` gate:
 
-.. image:: imgs/constructions/bitwise-and-1.svg
+.. image:: imgs/constructions/bitwise-and-0.svg
 
 If we open up the ``AND2_2`` box we can see what's going on inside:
 
-.. image:: imgs/constructions/bitwise-and-2.svg
+.. image:: imgs/constructions/bitwise-and-1.svg
 
 .. warning::
-    Although the inputs can be of any width, they must still all be the *same* width!
+    Although the inputs to bitwise logic gates can be of any width, each input
+    wire must still be the *same* width!
 
 Ripple
 ------
 
-The next construction is to start with some initial value, then apply a circuit
-to each input wire and the result of the previous computation in sequence.
-
-.. code-block:: scala
-
-    func Ripple(
-        f : InterfacedHypergraph,
-        initial : Array<Wire>,
-        wss : Array<Array<Wire>>
-    ) : Array<Wire>
-
+Starting with some initial value, apply an operation to each input wire and
+the result of the previous computation in sequence.
 This corresponds to the functional construction ``fold``.
+
+
 
 If there is no special initial value, the first array of wires in the inputs can
 be used instead:
@@ -164,6 +160,8 @@ This construction has an interpretation is Belnap logic gates:
 Ripple map
 ----------
 
+The ``Map`` and ``Ripple`` constructions are actually generalisat
+
 It is sometimes useful to extend the ``Ripple`` construction so that each
 iteration of the circuit can produce an output in addition to the threaded
 accumulator.
@@ -183,13 +181,14 @@ single wire for output.
 Ripple map logic gates
 ***********************
 
-The bitwise ripple construction is used in the Belnap signature for
-implementation of a *ripple adder*.
+A classic example of a ripple map circuit is a *ripple adder*.
 
 .. code-block:: scala
 
-    let circ = MakeRippleAdder(2)
+    let fullAdder = MakeFullAdder()
+    // The outputs of the full adder are (sum (output), carry (acc))
+    let rippleAdder = MakeRippleMap(fullAdder, 1, 4)
+
+.. image:: imgs/constructions/ripple-map-adder-0.svg
 
 .. image:: imgs/constructions/ripple-map-adder-1.svg
-
-.. image:: imgs/constructions/ripple-map-adder-2.svg

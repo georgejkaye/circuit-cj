@@ -711,17 +711,22 @@ public func MakeRippleMap<V, G>(
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertAtMost(numberOfAccWires, f.GetArity())
-    let op = {
-        first : Array<Wire<V, G>>, second : Array<Wire<V, G>> =>
-            let inputs = concat(first, second)
-            let subcircuit = UseSubcircuit(f, inputs)
-            partition(subcircuit, numberOfAccWires)
-    }
     // Whether the accumulator wires should come first or last in the
     // input or output ports
     let (inputAccFirst, outputAccFirst) = match(direction) {
         case TOP_TO_BOTTOM => (true, false)
         case BOTTOM_TO_TOP => (false, true)
+    }
+    let op = {
+        first : Array<Wire<V, G>>, second : Array<Wire<V, G>> =>
+            let inputs = concat(first, second)
+            let subcircuit = UseSubcircuit(f, inputs)
+            let outputsSplitPoint = if(outputAccFirst) {
+                numberOfAccWires
+            } else {
+                f.GetCoarity() - numberOfAccWires
+            }
+            partition(subcircuit, outputsSplitPoint)
     }
     // Get an array of the widths of wires in the accumulator bundle
     let accWidths = GetBundleArray(
