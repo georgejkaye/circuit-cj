@@ -82,19 +82,6 @@ Starting with some initial value, apply an operation to each input wire and
 the result of the previous computation in sequence.
 This corresponds to the functional construction ``fold``.
 
-
-
-If there is no special initial value, the first array of wires in the inputs can
-be used instead:
-
-.. code-block:: scala
-
-    func Ripple(
-        // (acc, cur) -> acc
-        f :  (Array<Wire>, Array<Wire) -> Array<Wire>,
-        wss : Array<Array<Wire>>
-    ) : Array<Wire>
-
 Ripple logic gates
 ******************
 
@@ -160,7 +147,9 @@ This construction has an interpretation is Belnap logic gates:
 Ripple map
 ----------
 
-The ``Map`` and ``Ripple`` constructions are actually generalisat
+The ``Map`` and ``Ripple`` constructions are actually generalisations of a
+construction called a ``RippleMap``.
+
 
 It is sometimes useful to extend the ``Ripple`` construction so that each
 iteration of the circuit can produce an output in addition to the threaded
@@ -169,14 +158,7 @@ One such example is a ripple adder.
 In a ``BitwiseRipple``, these outputs will be collected and combined into a
 single wire for output.
 
-.. code-block:: scala
-
-    func RippleMap(
-        // (acc, cur) -> (out, acc)
-        f : (Array<Wire>, Array<Wire) -> (Array<Wire>, Array<Wire>)
-        initial : Array<Wire>,
-        wss : Array<Array<Wire>
-    ) : (Array<Array<Wire>>, Array<Wire>)
+.. image:: imgs/constructions/ripple-map.svg
 
 Ripple map logic gates
 ***********************
