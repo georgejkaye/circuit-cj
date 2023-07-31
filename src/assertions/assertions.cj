@@ -67,6 +67,17 @@ public func AssertAtLeast(i : Int64, t : Int64) : Unit {
     }
 }
 /**
+ * Assert that a number is at least some target number.
+ *
+ * @param i The number to check
+ * @param t The target number
+ */
+public func AssertAtMost(i : Int64, t : Int64) : Unit {
+    if(i > t) {
+        throw OversufficientParameterException(i, t)
+    }
+}
+/**
  * Assert a number is greater than or equal to zero.
  *
  * @param x

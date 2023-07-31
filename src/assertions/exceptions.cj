@@ -148,6 +148,16 @@ class InsufficientParameterException <: Exception {
     }
 }
 /**
+ * Exception for when a parameter is insufficiently high.
+ *
+ * @param <T> The type of the parameter
+ */
+class OversufficientParameterException <: Exception {
+    public init(i : Int64, t : Int64) {
+        ErrorMsg("Expected ${i} to be less than or equal to ${t}")
+    }
+}
+/**
  * Exception for when an enum is of an unexpected variant.
  *
  * @param <T> The type of the parameter
