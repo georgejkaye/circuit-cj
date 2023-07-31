@@ -76,6 +76,16 @@ public func concat<T, U>(xss : Array<Array<T>>, f : (T) -> U) : Array<U> {
 
     })
 }
+public func partition<T>(xs : Array<T>, at : Int64) : (Array<T>, Array<T>) {
+    if(at > xs.size) {
+        throw Exception(
+            "Tried to partition array of length ${xs.size} at index ${at}"
+        )
+    }
+    let first = Array(at, { i : Int64 => xs[i] })
+    let second = Array(xs.size - at, { i : Int64 => xs[at + i] })
+    (first, second)
+}
 /**
  * Get a bespokely printed string of a collection.
  *
