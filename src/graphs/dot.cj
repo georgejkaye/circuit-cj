@@ -361,7 +361,7 @@ let tab = "    "
 */
 func indentString(n : Int64, str : String) : String {
     var tabs = ""
-    for (i in 0..n) {
+    for (_ in 0..n) {
         tabs = "${tabs}${tab}"
     }
     "${tabs}${str}"
