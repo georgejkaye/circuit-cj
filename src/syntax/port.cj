@@ -176,7 +176,7 @@ public interface HasPort <: HasWidth & HasOptionalName & ToString {
 /**
  * A port has a width and an optional name
  */
-public class Port <: Equatable<Port> & HasPort {
+public struct Port <: Equatable<Port> & HasPort {
     public Port(
         public let width : Int64,
         public let name!: Option<String> = None
