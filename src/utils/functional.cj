@@ -7,6 +7,7 @@
  * @since 0.2
  */
 package utils
+from std import math.abs
 /**
  * Given some initial value init, a function (acc1, cur) -> (acc2, b), and an
  * collection xs, begin computing
@@ -180,6 +181,25 @@ public func fold_right<T,U>(f : (U, T) -> U, initial : U,  xs : Array<T>) : U {
  */
 public func map<T, U>(f : (T) -> U, xs : Array<T>) : Array<U> {
     Array<U>(xs.size, { i : Int64 => f(xs[i]) })
+}
+/**
+ * Given a function f and a range of numbers, create the array ys in which
+ * each element is the result of applying f to elements of the range
+ *
+ * @param The function (element in range) -> u
+ * @param range
+ * @return The result of the map
+ */
+public func map<T>(f : (Int64) -> T, start!: Int64, end!: Int64, step!: Int64 = 1) : Array<T> {
+    let stepFunc = { i : Int64 => i * step }
+    let elemFunc = { i : Int64 =>
+        if(start < end) {
+            start + stepFunc(i)
+        } else {
+            start - stepFunc(i)
+        }
+    }
+    Array<T>(abs(end - start) / step, { i => f(elemFunc(i)) })
 }
 /**
  * Given a function f and a collection xs, create the array ys in which
