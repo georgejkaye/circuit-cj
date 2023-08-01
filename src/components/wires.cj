@@ -130,10 +130,10 @@ extend Wire<V, G> <: ContainsWire<V, G> {
     }
 }
 /**
-    * Make a wire (and underlying vertex) of a given width
-    * @param width The width of the wire
-    * @return The wire
-    */
+ * Make a wire (and underlying vertex) of a given width
+ * @param width The width of the wire
+ * @return The wire
+ */
 public func UseWire<V, G>(width : Int64) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
