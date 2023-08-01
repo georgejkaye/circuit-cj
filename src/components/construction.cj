@@ -57,12 +57,22 @@ func FlattenSingleWireOutputs<V, G>(
  */
 public func Map<V, G>(
     f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
-    inputss : Array<Array<Wire<V, G>>>
-) : Array<Array<Wire<V, G>>>
+    inputWires : Array<Wire<V, G>>,
+    inputBundleWidth : Int64
+) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let width = AssertArrayArraysSameWidths(inputss)
-    map({inputs : Array<Wire<V, G>> => f(inputs)}, inputss)
+    let numberOfOperations = inputWires.size / inputBundleWidth
+    let outputBundles =
+        Array<Array<Wire<V, G>>>(numberOfOperations, {
+            i =>
+                let curInputWires = inputWires.slice(
+                    i * inputBundleWidth, inputBundleWidth
+                )
+                f(curInputWires)
+        })
+    concat(outputBundles)
+
 }
 /**
  * Make a map circuit for an operation.
@@ -72,24 +82,41 @@ public func Map<V, G>(
  * @param wires The widths of the expected input wires
  * @param label The label to give the new subcircuit
  */
-public func MakeMap<V, G, T>(
+public func MakeMap<V, G, T, U>(
     f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
-    n : Int64, wires : Array<T>,
-    label : Label<V, G>
+    inputPorts : Array<T>, outputPorts : Array<U>,
+    numberOfOperations: Int64, label : Label<V, G>
 ) : InterfacedHypergraph<V, G>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>, T <: HasWidth
+    where
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
+        T <: HasPort, U <: HasPort
 {
-    let inputs = Array<Array<Wire<V, G>>>(n, {i =>
-        map({ t => UseWire<V, G>(t.GetWidth())}, wires)
-    })
-    let outputs = Map(f, inputs)
-    let subcircuitInputs =
-        concat(inputs, { w : Wire<V, G> => InterfaceWire(w) })
-    let subcircuitOutputs =
-        concat(outputs, { w : Wire<V, G> => InterfaceWire(w) })
-    MakeSubcircuit<V, G>(
-        subcircuitInputs, subcircuitOutputs, label
+    let inputWires = map(
+        { t : T => UseWire<V, G>(t.GetWidth()) }, inputPorts
     )
+    let inputBundleWidth = inputPorts.size / numberOfOperations
+    let outputBundleWidth = outputPorts.size / numberOfOperations
+    let outputWires = Map(f, inputWires, inputBundleWidth)
+    let subcircuitInputs = map2(
+        { w : Wire<V, G>, t : T => InterfaceWire(w, t.GetName()) },
+        inputWires, inputPorts
+    )
+    let subcircuitOutputs = map2(
+        { w : Wire<V, G>, u : U => InterfaceWire(w, u.GetName()) },
+        outputWires, outputPorts
+    )
+    MakeSubcircuit(subcircuitInputs, subcircuitOutputs, label)
+}
+func GetPorts<V, G>(
+    numberOfPorts : Int64, numberOfOperations : Int64,
+    getVertex : (Int64) -> InterfaceVertex<V, G>
+) : Array<Port>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    Array<Port>(numberOfPorts * numberOfOperations, { i =>
+        let portVertex = getVertex(i % numberOfPorts)
+        Port(portVertex.GetWidth(), name: portVertex.GetName())
+    })
 }
 /**
  * Make a map subcircuit for a given subcircuit.
@@ -98,31 +125,24 @@ public func MakeMap<V, G, T>(
  * @param n The number of times to map
  * @param label The label to give the new subcircuit
  */
-public func MakeMap<V, G>(f : InterfacedHypergraph<V, G>, n : Int64)
+public func MakeMap<V, G>(
+    f : InterfacedHypergraph<V, G>,
+    numberOfOperations : Int64
+) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    func GetPorts(
-        getNumberOfPorts : (InterfacedHypergraph<V, G>) -> Int64,
-        getVertex : (InterfacedHypergraph<V, G>, Int64) -> InterfaceVertex<V, G>
-    ) : Array<Port> {
-        let numberOfPorts = getNumberOfPorts(f)
-        Array<Port>(numberOfPorts * n, { i =>
-            let portVertex = getVertex(f, i % numberOfPorts)
-            Port(portVertex.GetWidth(), name: portVertex.GetName())
-        })
-    }
     let inputPorts = GetPorts(
-        { f => f.GetArity() }, { f, i => f.GetInput(i)}
+        f.GetArity(), numberOfOperations, { i : Int64 => f.GetInput(i)}
     )
     let outputPorts = GetPorts(
-        { f => f.GetCoarity() }, { f, i => f.GetOutput(i)}
+        f.GetCoarity(), numberOfOperations, { i : Int64 => f.GetOutput(i)}
     )
     let spec = Specification(
-        "${f.GetName()}^${n}", inputPorts, outputPorts
+        "${f.GetName()}^${numberOfOperations}", inputPorts, outputPorts
     )
     MakeMap(
-        { ws : Array<Wire<V, G>> => UseSubcircuit(f, ws)},
-        n, f.GetInputPorts(), Label<V, G>.COMPOSITE(spec)
+        { ws : Array<Wire<V, G>> => UseSubcircuit(f, ws)}, inputPorts,
+        outputPorts, numberOfOperations, Label<V, G>.COMPOSITE(spec)
     )
 }
 /**
@@ -135,11 +155,15 @@ public func MakeMap<V, G>(f : InterfacedHypergraph<V, G>, n : Int64)
  */
 public func Map<V, G>(
     f : (Array<Wire<V, G>>) -> Wire<V, G>,
-    inputss : Array<Array<Wire<V, G>>>
+    inputs : Array<Wire<V, G>>,
+    inputBundleWidth : Int64
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let outputWires = Map(GeneraliseSingleOutputFunction(f), inputss)
+    let outputWires = Map(
+        GeneraliseSingleOutputFunction(f), inputs,
+        inputBundleWidth
+    )
     FlattenSingleWireOutputs(outputWires)
 }
 /**
@@ -151,15 +175,13 @@ public func Map<V, G>(
  */
 public func BitwiseSplit<V, G>(
     inputs : Array<Wire<V, G>>
-) : Array<Array<Wire<V, G>>>
+) : Array<Wire<V, G>>
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let width = AssertAllSameWidth(inputs)
+    let totalBits = Sum(inputs, { w => w.GetWidth() })
     let splitInputs = map({ w : Wire<V, G> => Split(w) }, inputs)
-    Array<Array<Wire<V, G>>>(width){ i : Int64 =>
-        Array<Wire<V, G>>(inputs.size){ j : Int64 => splitInputs[j][i] }
-    }
+    concat(splitInputs)
 }
 /**
  * Given an array of arrays of wires, combine them to create an array of wires,
@@ -169,15 +191,18 @@ public func BitwiseSplit<V, G>(
  * @return The array of combined wires
  */
 public func BitwiseCombine<V, G>(
-    inputs : Array<Array<Wire<V, G>>>
+    inputWires : Array<Wire<V, G>>,
+    bundleWidth : Int64
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let size = AssertAllSameLength(inputs)
-    Array<Wire<V, G>>(size, {
-        i : Int64 => Combine(Array<Wire<V, G>>(inputs.size){
-            j : Int64 => inputs[j][i]
-        })
+    let numberOfBundles = inputWires.size / bundleWidth
+    Array<Wire<V, G>>(numberOfBundles, { i =>
+        Combine(
+            Array<Wire<V, G>>(bundleWidth, { j =>
+                inputWires[bundleWidth * j + i]
+            })
+        )
     })
 }
 /**
@@ -189,13 +214,14 @@ public func BitwiseCombine<V, G>(
  */
 public func BitwiseMap<V, G>(
     f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
-    inputs : Array<Wire<V, G>>
+    inputs : Array<Wire<V, G>>,
+    outputBundleWidth : Int64
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>,  G <: PrimitiveSymbol<V, G>
 {
     let inputWires = BitwiseSplit(inputs)
-    let outputWires = Map(f, inputWires)
-    BitwiseCombine(outputWires)
+    let outputWires = Map(f, inputWires, inputs.size)
+    BitwiseCombine<V, G>(outputWires, outputBundleWidth)
 }
 /**
  * Perform a bitwise map.
@@ -206,10 +232,13 @@ public func BitwiseMap<V, G>(
  */
 public func BitwiseMap<V, G>(
     f : (Array<Wire<V, G>>) -> Wire<V, G>,
-    inputs : Array<Wire<V, G>>
+    inputs : Array<Wire<V, G>>,
+    inputBundleWidth : Int64,
+    outputBundleWidth : Int64
 ) : Wire<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    BitwiseMap({ inputs : Array<Wire<V, G>> => [f(inputs)] }, inputs)[0]
+    let fAdjusted = { inputs : Array<Wire<V, G>> => [f(inputs)] }
+    BitwiseMap(fAdjusted, inputs, outputBundleWidth)[0]
 }
 /**
  * Perform a bitwise map.
@@ -220,11 +249,14 @@ public func BitwiseMap<V, G>(
  */
 public func BitwiseMap<V, G>(
     f : (Wire<V, G>) -> Wire<V, G>,
-    input : Wire<V, G>
+    input : Wire<V, G>,
+    inputBundleWidth : Int64,
+    outputBundleWidth : Int64
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    BitwiseMap({ inputs : Array<Wire<V, G>> => [f(inputs[0])] }, [input])[0]
+    let fAdjusted = { inputs : Array<Wire<V, G>> => [f(inputs[0])] }
+    BitwiseMap(fAdjusted, [input], outputBundleWidth)[0]
 }
 /**
  * Make a bitwise map subcircuit for an operation.
@@ -234,17 +266,42 @@ public func BitwiseMap<V, G>(
  * @param wires The number of input wires (the number of inputs f expects)
  * @param label The label to give the new subcircuit
  */
-public func MakeBitwiseMap<V, G>(
+public func MakeBitwiseMap<V, G, T, U>(
     f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
-    n : Int64, wires: Int64, label: Label<V, G>
+    inputPorts : Array<T>, outputPorts : Array<U>,
+    inputBundleWidth: Int64, outputBundleWidth: Int64, label: Label<V, G>
 ) : InterfacedHypergraph<V, G>
+    where
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
+        T <: HasPort, U <: HasPort
+{
+    let inputWires = map(
+        { t : T => UseWire<V, G>(t.GetWidth()) }, inputPorts
+    )
+    let outputWires =
+        BitwiseMap(f, inputWires, outputBundleWidth)
+    let inputInterfaceWires =
+        map2(
+            { w : Wire<V, G>, t : T => InterfaceWire(w, t.GetName()) },
+            inputWires, inputPorts
+        )
+    let outputInterfaceWires =
+        map2(
+            { w : Wire<V, G>, u : U => InterfaceWire(w, u.GetName()) },
+            outputWires, outputPorts
+        )
+    MakeSubcircuit(inputInterfaceWires, outputInterfaceWires, label)
+}
+func GetBitwiseMapPorts<V, G>(
+    numberOfPorts : Int64, numberOfOperations : Int64,
+    getVertex : (Int64) -> InterfaceVertex<V, G>
+) : Array<Port>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let inputs = Array<Wire<V, G>>(wires, {i => UseWire<V, G>(n)})
-    let outputs = BitwiseMap(f, inputs)
-    let inputWires = map({ w : Wire<V, G> => InterfaceWire(w) }, inputs)
-    let outputWires = map({ w : Wire<V, G> => InterfaceWire(w) }, outputs)
-    MakeSubcircuit(inputWires, outputWires, label)
+    Array<Port>(numberOfPorts * numberOfOperations, { i =>
+        let portVertex = getVertex(i % numberOfPorts)
+        Port(portVertex.GetWidth(), name: portVertex.GetName())
+    })
 }
 /**
  * Make a bitwise map subcircut for a subcircuit.
@@ -254,104 +311,96 @@ public func MakeBitwiseMap<V, G>(
  */
 public func MakeBitwiseMap<V, G>(
     f : InterfacedHypergraph<V, G>,
-    n : Int64
+    numberOfOperations : Int64
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    func GetPorts(
-        getNumberOfPorts : (InterfacedHypergraph<V, G>) -> Int64,
-        getVertex : (InterfacedHypergraph<V, G>, Int64) -> InterfaceVertex<V, G>
-    ) : Array<Port> {
-        Array<Port>(getNumberOfPorts(f), { i =>
-            let portVertex = getVertex(f, i)
-            Port(n, name: portVertex.GetName())
-        })
-    }
-    let inputPorts = GetPorts({ f => f.GetArity() }, { f, i => f.GetInput(i) })
-    let outputPorts = GetPorts({ f => f.GetCoarity() }, { f, i => f.GetOutput(i) })
+
+    let inputPorts = GetBitwiseMapPorts(
+        f.GetArity(), numberOfOperations, { i : Int64 => f.GetInput(i) })
+    let outputPorts = GetBitwiseMapPorts(
+        f.GetCoarity(), numberOfOperations, { i : Int64 => f.GetOutput(i) })
     let spec = Specification(
-        "${f.GetName()}_${n}", inputPorts, outputPorts
+        "${f.GetName()}_${numberOfOperations}", inputPorts, outputPorts
     )
     MakeBitwiseMap(
         { ws : Array<Wire<V, G>> => UseSubcircuit(f, ws) },
-        n, f.GetArity(), Label<V, G>.COMPOSITE(spec)
+        inputPorts, outputPorts, f.GetArity(), f.GetCoarity(),
+        Label<V, G>.COMPOSITE(spec)
     )
 }
 /**
  * Perform a ripple map.
  *
  * @param f (acc array, cur array) -> (out array, acc array)
- * @param inputs array array
+ * @param inputWires
+ * @param accBundleWidth
+ * @param inputBundleWidth
  * @param direction
  * @param start
  * @param end
- * @return outputs array array, acc array
+ * @return outputWires
  */
 public func RippleMap<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) ->
             (Array<Wire<V, G>>, Array<Wire<V, G>>),
-    initial : Array<Wire<V, G>>,
-    inputs : Array<Array<Wire<V, G>>>,
+    inputWires : Array<Wire<V, G>>,
+    accBundleWidth : Int64,
+    inputBundleWidth : Int64,
+    outputBundleWidth : Int64,
     direction!: Direction = TOP_TO_BOTTOM,
     start!: Int64 = 0,
-    end!: Int64 = inputs.size
-) : (Array<Array<Wire<V, G>>>, Array<Wire<V, G>>)
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+    end!: Int64 = (inputWires.size - accBundleWidth) / inputBundleWidth
+) : Array<Wire<V, G>>
+    where
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let width = AssertArrayArraysSameWidths(inputs)
-    var acc = initial
-    let outputs = ArrayList<Array<Wire<V, G>>>()
-    for(i in start..end) {
-        let j = match(direction) {
-            case TOP_TO_BOTTOM => i
-            case BOTTOM_TO_TOP => inputs.size - 1 - i
-        }
-        let cur = inputs[j]
-        let (curRes, curAcc) = f(acc, cur)
-        match(direction) {
-            case TOP_TO_BOTTOM => outputs.append(curRes)
-            case BOTTOM_TO_TOP => outputs.prepend(curRes)
-        }
-        acc = curAcc
-    }
-    (outputs.toArray(), acc)
-}
-/**
- * Perform a ripple map.
- *
- * @param f (acc wire, cur array) -> (out array, acc wire)
- * @param inputs array array
- * @param direction
- * @param start
- * @param end
- * @return outputs array array, acc wire
- */
-public func RippleMap<V, G>(
-    f : (Wire<V, G>, Array<Wire<V, G>>) -> (Array<Wire<V, G>>, Wire<V, G>),
-    initial : Wire<V, G>,
-    inputs : Array<Array<Wire<V, G>>>,
-    direction!: Direction = TOP_TO_BOTTOM,
-    start!: Int64 = 0,
-    end!: Int64 = inputs.size
-) : (Array<Array<Wire<V, G>>>, Wire<V, G>)
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    let rippleMapFunction =
-        { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
-            let (curOutput, curAcc) = f(acc[0], cur)
-            (curOutput, [curAcc])
-        }
-    let (outputs, acc) = RippleMap(
-        rippleMapFunction, [initial], inputs, direction: direction,
-        start: start, end: end
+    let numberOfInputBundles =
+        (inputWires.size - accBundleWidth / inputBundleWidth)
+    let totalInputWires =
+        (inputBundleWidth * numberOfInputBundles) + accBundleWidth
+    let totalOutputWires =
+        (outputBundleWidth * numberOfInputBundles) + accBundleWidth
+    AssertHasLength(
+        inputWires, accBundleWidth + (inputBundleWidth * numberOfInputBundles)
     )
-    (outputs, acc[0])
+    let (accStart, accEnd, addNextBundle) = match(direction) {
+        case TOP_TO_BOTTOM =>
+            (0, accBundleWidth,
+                { list : ArrayList<Wire<V, G>>, bundle : Array<Wire<V, G>> =>
+                    list.appendAll(bundle)
+                }
+            )
+        case BOTTOM_TO_TOP =>
+            (inputWires.size - accBundleWidth, inputWires.size,
+                { list : ArrayList<Wire<V, G>>, bundle : Array<Wire<V, G>> =>
+                    list.prependAll(bundle)
+                }
+            )
+    }
+    var curAcc = inputWires.sliceArray(start: accStart, end: accEnd)
+    let outputWires = ArrayList<Wire<V, G>>(totalOutputWires)
+    for(i in start..end) {
+        let curInputStart = match(direction) {
+            case TOP_TO_BOTTOM =>
+                accBundleWidth + (i * inputBundleWidth)
+            case BOTTOM_TO_TOP =>
+                inputWires.size - accBundleWidth - ((i+1) * inputBundleWidth)
+        }
+        let curInputEnd = curInputStart + inputBundleWidth
+        let curIn = inputWires.sliceArray(start: curInputStart, end: curInputEnd)
+        let (newOut, newAcc) = f(curAcc, curIn)
+        addNextBundle(outputWires, newOut)
+        curAcc = newAcc
+    }
+    addNextBundle(outputWires, curAcc)
+    outputWires.toArray()
 }
 /**
  * Perform a ripple map.
  *
  * @param f (acc wire, cur wire) -> (out wire, acc wire)
- * @param inputs array array
+ * @param inputWires
  * @param direction
  * @param start
  * @param end
@@ -359,33 +408,31 @@ public func RippleMap<V, G>(
  */
 public func RippleMap<V, G>(
     f : (Wire<V, G>, Wire<V, G>) -> (Wire<V, G>, Wire<V, G>),
-    initial : Wire<V, G>,
-    inputs : Array<Wire<V, G>>,
+    inputWires : Array<Wire<V, G>>,
     direction!: Direction = TOP_TO_BOTTOM,
     start!: Int64 = 0,
-    end!: Int64 = inputs.size
-) : (Array<Wire<V, G>>, Wire<V, G>)
+    end!: Int64 = inputWires.size - 1
+) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let (finalOut, finalAcc) = RippleMap(
+    let fAdjusted =
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
             let (newOut, newCur) = f(acc[0], cur[0])
             ([newOut], [newCur])
-        },
-        [initial],
-        map({ w : Wire<V, G> => [w] }, initial),
-        direction: direction,
-        start: start,
-        end: end
+        }
+    RippleMap(
+        fAdjusted, inputWires, 1, 1, 1, direction: direction,
+        start: start, end: end
     )
-    (FlattenSingleWireOutputs(finalOut), finalAcc[0])
 }
 /**
  * Perform a ripple map, with the first input wire as the start wire for the
  * accumulator.
  *
  * @param f (acc wire, cur wire) -> (out wire, acc wire)
- * @param inputs array array
+ * @param inputWires
+ * @param inputBundleWidth
+ * @param outputBundleWidth
  * @param direction
  * @param start
  * @param end
@@ -394,227 +441,56 @@ public func RippleMap<V, G>(
 public func RippleMap<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) ->
             (Array<Wire<V, G>>, Array<Wire<V, G>>),
-    inputs : Array<Array<Wire<V, G>>>,
+    inputWires : Array<Wire<V, G>>,
+    inputBundleWidth : Int64,
+    outputBundleWidth : Int64,
     direction!: Direction = TOP_TO_BOTTOM,
     start!: Int64 = 0,
-    end!: Int64 = inputs.size
-) : (Array<Array<Wire<V, G>>>, Array<Wire<V, G>>)
+    end!: Int64 = inputWires.size / inputBundleWidth
+) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     RippleMap(
-        f, inputs[start], inputs, direction: direction,
-        start: start + 1, end: end
+        f, inputWires, inputBundleWidth, inputBundleWidth, outputBundleWidth,
+        direction: direction, start: start + 1, end: end
     )
 }
-/**
- * Perform a ripple map, with the first input wire as the start wire for the
- * accumulator.
- *
- * @param f (acc wire, cur wire) -> (out wire, acc wire)
- * @param inputs array
- * @param direction
- * @param start
- * @param end
- * @return outputs array, acc wire
- */
-public func RippleMap<V, G>(
-    f : (Wire<V, G>, Wire<V, G>) -> (Wire<V, G>, Wire<V, G>),
-    inputs : Array<Wire<V, G>>,
-    direction!: Direction = TOP_TO_BOTTOM,
-    start!: Int64 = 0,
-    end!: Int64 = inputs.size
-) : (Array<Wire<V, G>>, Wire<V, G>)
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    let function =
-        { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
-            let (curRes, curAcc) = f(acc[0], cur[0])
-            ([curRes], [curAcc])
-        }
-    let (outputs, acc) = RippleMap<V, G>(
-        function, map({ w : Wire<V, G> => [w] }, inputs), direction: direction,
-        start: start, end: end
-    )
-    (FlattenSingleWireOutputs(outputs), acc[0])
-}
-/**
- * Perform a ripple.
- *
- * @param f (acc array, cur array) -> acc array
- * @param initial array
- * @param inputs array array
- * @param direction
- * @param start
- * @param end
- * @return acc wire
- */
-public func Ripple<V, G>(
-    f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> Array<Wire<V, G>>,
-    initial : Array<Wire<V, G>>,
-    inputs : Array<Array<Wire<V, G>>>,
-    direction!: Direction = TOP_TO_BOTTOM,
-    start!: Int64 = 0,
-    end!: Int64 = inputs.size
-) : Array<Wire<V, G>>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    let function =
-        { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
-            let curAcc = f(acc, cur)
-            (Array<Wire<V, G>>(), curAcc)
-        }
-    let (_, acc) = RippleMap(
-        function, initial, inputs, direction: direction,
-        start: start, end: end
-    )
-    acc
-}
-/**
- * Perform a ripple.
- *
- * @param f (acc wire, cur array) -> acc wire
- * @param initial wire
- * @param inputs array
- * @param direction
- * @param start
- * @param end
- * @return acc wire
- */
-public func Ripple<V, G>(
-    f : (Wire<V, G>, Array<Wire<V, G>>) -> Wire<V, G>,
-    initial : Wire<V, G>,
-    inputs : Array<Array<Wire<V, G>>>,
-    direction!: Direction = TOP_TO_BOTTOM,
-    start!: Int64 = 0,
-    end!: Int64 = inputs.size
-) : Wire<V, G>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    let rippleFunction =
-        { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
-            let curAcc = f(acc[0], cur)
-            [curAcc]
-        }
-    Ripple(
-        rippleFunction, [initial], inputs, direction: direction,
-        start: start, end: end
-    )[0]
-}
-/**
- * Perform a ripple.
- *
- * @param f (acc array, cur array) -> acc array
- * @param initial wire
- * @param inputs array
- * @param direction
- * @param start
- * @param end
- * @return acc array
- */
-public func Ripple<V, G>(
-    f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> Array<Wire<V, G>>,
-    inputs : Array<Array<Wire<V, G>>>,
-    direction!: Direction = TOP_TO_BOTTOM,
-    start!: Int64 = 0,
-    end!: Int64 = inputs.size
-) : Array<Wire<V, G>>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    Ripple(
-        f, inputs[start], inputs, direction: direction,
-        start: start + 1, end: end
-    )
-}
-/**
- * Perform a ripple.
- *
- * @param f (acc wire, cur wire) -> acc wire
- * @param initial wire
- * @param inputs array
- * @param direction
- * @param start
- * @param end
- * @return acc wire
- */
-public func Ripple<V, G>(
-    f : (Wire<V, G>, Wire<V, G>) -> Wire<V, G>,
-    inputs : Array<Wire<V, G>>,
-    direction!: Direction = TOP_TO_BOTTOM,
-    start!: Int64 = 0,
-    end!: Int64 = inputs.size
-) : Wire<V, G>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    let rippleFunction =
-        { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
-            let newAcc = f(acc[0], cur[0])
-            [newAcc]
-        }
-    Ripple<V, G>(
-        rippleFunction, map({ w : Wire<V, G> => [w] }, inputs),
-        direction: direction, start: start, end: end
-    )[0]
-}
-public func MakeRippleMap<V, G, T, U>(
+func MakeRippleMap<V, G, T, U, W>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) ->
             (Array<Wire<V, G>>, Array<Wire<V, G>>),
-    n : Int64,
-    accWidths: Array<T>,
-    inputWidths: Array<U>,
+    inputPorts : Array<T>,
+    outputPorts : Array<U>,
+    accBundleWidth : Int64,
+    inputBundleWidth : Int64,
+    outputBundleWidth : Int64,
     label : Label<V, G>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : InterfacedHypergraph<V, G>
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
-        T <: HasWidth, U <: HasWidth
+        T <: HasPort, U <: HasPort, W <: HasPort
 {
-    let initialWires = map(
-        { t : T => UseWire<V, G>(t.GetWidth())}, accWidths
+    let (inputAccFirst, outputAccFirst) = match(direction) {
+        case TOP_TO_BOTTOM => (true, false)
+        case BOTTOM_TO_TOP => (false, true)
+    }
+    let inputWires = map(
+        { t : T => UseWire<V, G>(t.GetWidth()) }, inputPorts
     )
-    let inputWires = Array<Array<Wire<V, G>>>(n, { i =>
-        map<U, Wire<V, G>>(
-            { u : U => UseWire<V, G>(u.GetWidth())}, inputWidths
-        )
-    })
-    let (outputWires, accWires) =
-        RippleMap(
-            f, initialWires, inputWires, direction: direction
-        )
-    let numberOfInputWiresPerOp = inputWidths.size
-    let numberOfInputAccWires = accWidths.size
-    let numberofInputInputWires = numberOfInputWiresPerOp * n
-    let numberOfInputWires = numberOfInputAccWires + numberofInputInputWires
-    let subcircuitInputs = Array<InterfaceWire<V, G>>(
-        numberOfInputWires, { i =>
-            if(i < accWidths.size) {
-                InterfaceWire(initialWires[i])
-            } else {
-                let iAdjusted = i - numberOfInputAccWires
-                let inputNumber = iAdjusted / numberOfInputWiresPerOp
-                let inputIndex = iAdjusted % numberOfInputWiresPerOp
-                InterfaceWire(inputWires[inputNumber][inputIndex])
-            }
-        }
+    let rippleMapWires = RippleMap(
+        f, inputWires, accBundleWidth, inputBundleWidth,
+        outputBundleWidth, direction: direction
     )
-    let numberOfOutputWiresPerOp = outputWires[0].size
-    let numberOfOutputOutputWires = numberOfOutputWiresPerOp * n
-    let numberOfOutputAccWires = accWires.size
-    let numberOfOutputWires = numberOfOutputOutputWires + numberOfOutputAccWires
-    let subcircuitOutputs = Array<InterfaceWire<V, G>>(
-        numberOfOutputWires, {i =>
-            if( i < numberOfOutputOutputWires){
-                let outputNumber = i / numberOfOutputWiresPerOp
-                let outputIndex = i % numberOfOutputWiresPerOp
-                InterfaceWire(outputWires[outputNumber][outputIndex])
-            } else {
-                let iAdjusted = i - numberOfOutputOutputWires
-                InterfaceWire(accWires[iAdjusted])
-            }
-        }
+    let inputInterfaceWires = map2(
+        { w : Wire<V, G>, t : T => InterfaceWire(w, t.GetName()) },
+        inputWires, inputPorts
     )
-    MakeSubcircuit<V, G>(
-        subcircuitInputs, subcircuitOutputs, label
+    let outputInterfaceWires = map2(
+        { w : Wire<V, G>, u : U => InterfaceWire(w, u.GetName())},
+        rippleMapWires, outputPorts
     )
+    MakeSubcircuit(inputInterfaceWires, outputInterfaceWires, label)
+
 }
 /**
  * Get an array of widths of elements in the interface of a subcircuit that
@@ -726,7 +602,7 @@ public func MakeRippleMap<V, G>(
             } else {
                 f.GetCoarity() - numberOfAccWires
             }
-            partition(subcircuit, outputsSplitPoint)
+            subcircuit.partition(outputsSplitPoint)
     }
     // Get an array of the widths of wires in the accumulator bundle
     let accWidths = GetBundleArray(
@@ -760,38 +636,47 @@ public func MakeRippleMap<V, G>(
     }
     // Create the label specification for the ripple map subcircuit
     let spec = Specification(circuitLabel, inputPorts, outputPorts)
-    MakeRippleMap<V, G, InterfaceVertex<V, G>, InterfaceVertex<V, G>>(
-        op, numberOfOperations, accWidths, inputWidths,
+    MakeRippleMap(
+        op, inputPorts, outputPorts, numberOfAccWires,
+        f.GetArity() - numberOfAccWires, f.GetCoarity() - numberOfAccWires,
         Label<V, G>.COMPOSITE(spec), direction: direction
     )
 
 }
 /**
- * Perform a bitwise ripple.
+ * Perform a ripple.
  *
  * @param f (acc array, cur array) -> acc array
- * @param initial wire
- * @param inputs array
+ * @param initial array
+ * @param inputs array array
  * @param direction
  * @param start
  * @param end
- * @return acc array
+ * @return acc wire
  */
-public func BitwiseRipple<V, G>(
+public func Ripple<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> Array<Wire<V, G>>,
-    initial : Array<Wire<V, G>>,
-    inputs : Array<Wire<V, G>>,
+    inputWires : Array<Wire<V, G>>,
+    accBundleWidth: Int64,
+    inputBundleWidth: Int64,
     direction!: Direction = TOP_TO_BOTTOM,
     start!: Int64 = 0,
-    end!: Int64 = inputs.size
+    end!: Int64 = (inputWires.size - accBundleWidth) / inputBundleWidth
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let inputWires = BitwiseSplit(inputs)
-    Ripple(f, initial, inputWires, direction: direction, start: start, end: end)
+    let function =
+        { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
+            let curAcc = f(acc, cur)
+            (Array<Wire<V, G>>(), curAcc)
+        }
+    RippleMap(
+        function, inputWires, accBundleWidth, inputBundleWidth,
+        0, direction: direction, start: start, end: end
+    )
 }
 /**
- * Perform a bitwise ripple.
+ * Perform a ripple.
  *
  * @param f (acc wire, cur array) -> acc wire
  * @param initial wire
@@ -799,220 +684,29 @@ public func BitwiseRipple<V, G>(
  * @param direction
  * @param start
  * @param end
- * @return acc array
+ * @return acc wire
  */
-public func BitwiseRipple<V, G>(
+public func Ripple<V, G>(
     f : (Wire<V, G>, Array<Wire<V, G>>) -> Wire<V, G>,
-    initial : Wire<V, G>,
-    inputs : Array<Wire<V, G>>,
+    inputWires : Array<Wire<V, G>>,
+    accBundleWidth: Int64,
+    inputBundleWidth: Int64,
     direction!: Direction = TOP_TO_BOTTOM,
     start!: Int64 = 0,
-    end!: Int64 = inputs.size
+    end!: Int64 = (inputWires.size - accBundleWidth) / inputBundleWidth
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let function =
+    let rippleFunction =
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
-            let newAcc = f(acc[0], cur)
-            [newAcc]
+            let curAcc = f(acc[0], cur)
+            [curAcc]
         }
-    BitwiseRipple(function, [initial], inputs, direction: direction)[0]
-}
-/**
- * Perform a bitwise ripple.
- *
- * @param f (acc array, cur array) -> acc array
- * @param initial wire
- * @param inputs array
- * @param direction
- * @param start
- * @param end
- * @return acc array
- */
-public func BitwiseRipple<V, G>(
-    f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> Array<Wire<V, G>>,
-    inputs : Array<Wire<V, G>>,
-    direction!: Direction = TOP_TO_BOTTOM,
-    start!: Int64 = 0,
-    end!: Int64 = if(inputs.size == 0){ 0 } else { inputs[0].GetWidth() }
-) : Array<Wire<V, G>>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    let inputWires = BitwiseSplit(inputs)
     Ripple(
-        f, inputWires[start], inputWires, direction: direction,
-        start: start + 1, end: end
-    )
-}
-/**
- * Perform a bitwise ripple.
- *
- * @param f (acc wire, cur wire) -> acc wire
- * @param initial wire
- * @param inputs array
- * @param direction
- * @param start
- * @param end
- * @return acc array
- */
-public func BitwiseRipple<V, G>(
-    f : (Wire<V, G>, Wire<V, G>) -> Wire<V, G>,
-    inputs : Array<Wire<V, G>>,
-    direction!: Direction = TOP_TO_BOTTOM,
-    start!: Int64 = 0,
-    end!: Int64 = inputs.size
-) : Wire<V, G>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    let function =
-        { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
-            let newAcc = f(acc[0], cur[0])
-            [newAcc]
-        }
-    BitwiseRipple(
-        function, inputs, direction: direction, start: start, end: end
+        rippleFunction, inputWires, accBundleWidth, inputBundleWidth,
+        direction: direction, start: start, end: end
     )[0]
 }
-/**
- * Perform a bitwise ripple map.
- *
- * @param f (acc array, cur array) -> (out array, acc array)
- * @param initial array
- * @param inputs array
- * @param direction
- * @param start
- * @param end
- * @return (combined outputs array, acc array)
- */
-public func BitwiseRippleMap<V, G>(
-    f : (Array<Wire<V, G>>, Array<Wire<V, G>>) ->
-            (Array<Wire<V, G>>, Array<Wire<V, G>>),
-    initial : Array<Wire<V, G>>,
-    inputs : Array<Wire<V, G>>,
-    direction!: Direction = TOP_TO_BOTTOM,
-    start!: Int64 = 0,
-    end!: Int64 = inputs.size
-) : (Array<Wire<V, G>>, Array<Wire<V, G>>)
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    let inputWires = BitwiseSplit(inputs)
-    let (output, acc) = RippleMap(
-        f, initial, inputWires, direction: direction, start: start, end: end
-    )
-    let combinedOutput = BitwiseCombine(output)
-    (combinedOutput, acc)
-}
-/**
- * Perform a bitwise ripple map.
- *
- * @param f (acc wire, cur array) -> (out wire, acc wire)
- * @param initial wire
- * @param inputs array
- * @param direction
- * @param start
- * @param end
- * @return (combined outputs wire, acc wire)
- */
-public func BitwiseRippleMap<V, G>(
-    f : (Wire<V, G>, Array<Wire<V, G>>) -> (Wire<V, G>, Wire<V, G>),
-    initial : Wire<V, G>,
-    inputs : Array<Wire<V, G>>,
-    direction!: Direction = TOP_TO_BOTTOM,
-    start!: Int64 = 0,
-    end!: Int64 = inputs[0].GetWidth()
-) : (Wire<V, G>, Wire<V, G>)
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    let inputWires = BitwiseSplit(inputs)
-    let function =
-        { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
-            let (newCur, newAcc) = f(acc[0], cur)
-            ([newCur], [newAcc])
-        }
-    let (output, acc) = RippleMap(
-        function, [initial], inputWires, direction: direction,
-        start: start, end: end)
-    let combinedOutput = BitwiseCombine(output)
-    (combinedOutput[0], acc[0])
-}
-/**
- * Perform a bitwise ripple map.
- *
- * @param f (acc, cur) -> (out, acc)
- * @param initial
- * @param inputs
- * @param direction
- * @return The combined outputs and the final accumulator
- */
-public func BitwiseRippleMap<V, G>(
-    f : (Wire<V, G>, Wire<V, G>) -> (Wire<V, G>, Wire<V, G>),
-    initial : Wire<V, G>,
-    input : Wire<V, G>,
-    direction!: Direction = TOP_TO_BOTTOM
-) : (Wire<V, G>, Wire<V, G>)
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    let function =
-        { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
-            let (newOut, newAcc) = f(acc[0], cur[0])
-            ([newOut], [newAcc])
-        }
-    let (output, acc) = BitwiseRippleMap(
-        function, [initial], [input], direction: direction
-    )
-    (output[0], acc[0])
-}
-/**
- * Perform a bitwise ripple map with the first input as the initial value of
- * the accumulator.
- *
- * @param f (acc array, cur array) -> (out array, acc array)
- * @param inputs
- * @param direction
- * @return (output array, acc array)
- */
-public func BitwiseRippleMap<V, G>(
-    f : (Array<Wire<V, G>>, Array<Wire<V, G>>) ->
-            (Array<Wire<V, G>>, Array<Wire<V, G>>),
-    inputs : Array<Wire<V, G>>,
-    direction!: Direction = TOP_TO_BOTTOM
-) : (Array<Wire<V, G>>, Array<Wire<V, G>>)
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    let inputWires = BitwiseSplit(inputs)
-    let (output, acc) = RippleMap(
-        f, inputWires[0], inputWires, direction: direction, start: 1
-    )
-    (BitwiseCombine(output), acc)
-}
-/**
- * Perform a bitwise ripple map with the first input as the initial value of
- * the accumulator.
- *
- * @param f (acc wire, cur wire) -> (out wire, acc wire)
- * @param input
- * @param direction
- * @return (output wire, acc wire)
- */
-public func BitwiseRippleMap<V, G>(
-    f : (Wire<V, G>, Wire<V, G>) -> (Wire<V, G>, Wire<V, G>),
-    input : Wire<V, G>,
-    direction!: Direction = TOP_TO_BOTTOM
-) : (Wire<V, G>, Wire<V, G>)
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    let inputWires = BitwiseSplit([input])
-    let function =
-        { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
-            let (newOut, newAcc) = f(acc[0], cur[0])
-            ([newOut], [newAcc])
-        }
-    let (output, acc) = RippleMap(
-        function, inputWires[0], inputWires, direction: direction, start: 1
-    )
-    (BitwiseCombine(output)[0], acc[0])
-}
-
 /**
  * Make a circuit that applies a given primitive bitwise, i.e. the primitive
  * will be applied to each bit of the input wires independently
@@ -1026,34 +720,35 @@ public func MakeBitwiseMapGate<V, G>(
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let inputs = Array<Wire<V, G>>(
-        prim.GetArity(),
-        {i : Int64 => UseWire<V, G>(w) }
-    )
-    let output = BitwiseMap(
-        { inputs : Array<Wire<V, G>> => UseGate(prim, inputs, delay: delay) },
-        inputs
-    )[0]
-    MakeSubcircuit(
-        mapi(
-            { w : Wire<V, G>, i : Int64 =>
-                InterfaceWire(w, numToUppercaseLetter(i))
-            },
-            inputs
-        ),
-        [InterfaceWire(output, "Z")],
-        COMPOSITE(
-            Specification(
-                "${prim.GetName()}_${w}",
-                Array<Port>(
-                    prim.GetArity(), { i => Port(w, numToUppercaseLetter(i)) }
-                ),
-                Array<Port>(
-                    prim.GetCoarity(), { i => Port(w, numToUppercaseLetter(i)) }
-                )
-            )
-        )
-    )
+    // let inputs = Array<Wire<V, G>>(
+    //     prim.GetArity(),
+    //     {i : Int64 => UseWire<V, G>(w) }
+    // )
+    // let output = BitwiseMap(
+    //     { inputs : Array<Wire<V, G>> => UseGate(prim, inputs, delay: delay) },
+    //     inputs
+    // )[0]
+    // MakeSubcircuit(
+    //     mapi(
+    //         { w : Wire<V, G>, i : Int64 =>
+    //             InterfaceWire(w, numToUppercaseLetter(i))
+    //         },
+    //         inputs
+    //     ),
+    //     [InterfaceWire(output, "Z")],
+    //     COMPOSITE(
+    //         Specification(
+    //             "${prim.GetName()}_${w}",
+    //             Array<Port>(
+    //                 prim.GetArity(), { i => Port(w, numToUppercaseLetter(i)) }
+    //             ),
+    //             Array<Port>(
+    //                 prim.GetCoarity(), { i => Port(w, numToUppercaseLetter(i)) }
+    //             )
+    //         )
+    //     )
+    // )
+    throw Exception("to do")
 }
 /**
  * Make a circuit that ripples a given primitive over some inputs, i.e. the
@@ -1069,31 +764,32 @@ public func MakeRippleGate<V, G>(
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let inputs = Array<Array<Wire<V, G>>>(n, {
-        i : Int64 => [UseWire<V, G>(w)]
-    })
-    let output = Ripple(
-        { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
-            UseGate(prim, [acc[0], cur[0]], delay: delay)
-        },
-        inputs
-    )[0]
-    MakeSubcircuit(
-        mapi(
-            {inputs : Array<Wire<V, G>>, i : Int64 =>
-                InterfaceWire(inputs[0], numToUppercaseLetter(i))
-            },
-            inputs
-        ),
-        [InterfaceWire(output, "Z")],
-        COMPOSITE(
-            Specification(
-                "${prim.GetName()}_${n}_${w}",
-                Array<Port>(n, { i => Port(w, numToUppercaseLetter(i)) }),
-                [Port(w)]
-            )
-        )
-    )
+    // let inputWires = Array<Array<Wire<V, G>>>(n, {
+    //     i : Int64 => [UseWire<V, G>(w)]
+    // })
+    // let output = Ripple<V, G>(
+    //     { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
+    //         UseGate(prim, [acc[0], cur[0]], delay: delay)
+    //     },
+    //     inputWires, 1, 1
+    // )[0]
+    // MakeSubcircuit(
+    //     mapi(
+    //         {inputs : Array<Wire<V, G>>, i : Int64 =>
+    //             InterfaceWire(inputs[0], numToUppercaseLetter(i))
+    //         },
+    //         inputs
+    //     ),
+    //     [InterfaceWire(output, "Z")],
+    //     COMPOSITE(
+    //         Specification(
+    //             "${prim.GetName()}_${n}_${w}",
+    //             Array<Port>(n, { i => Port(w, numToUppercaseLetter(i)) }),
+    //             [Port(w)]
+    //         )
+    //     )
+    // )
+    throw Exception("to do")
 }
 /**
  * Make a circuit that ripples a given primitive over the bits in a single
@@ -1109,21 +805,22 @@ public func MakeBitwiseRippleGate<V, G>(
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let input = UseWire<V, G>(w)
-    let output = BitwiseRipple(
-        { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
-            UseGate(prim, [acc[0], cur[0]], delay: delay)
-        },
-        [input]
-    )[0]
-    MakeSubcircuit(
-        [InterfaceWire(input, "A")],
-        [InterfaceWire(output, "Z")],
-        COMPOSITE(
-            Specification(
-                "${prim.GetName()}_1_${w}",
-                [Port(w)], [Port(1)]
-            )
-        )
-    )
+    // let input = UseWire<V, G>(w)
+    // let output = BitwiseRipple(
+    //     { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
+    //         UseGate(prim, [acc[0], cur[0]], delay: delay)
+    //     },
+    //     [input]
+    // )[0]
+    // MakeSubcircuit(
+    //     [InterfaceWire(input, "A")],
+    //     [InterfaceWire(output, "Z")],
+    //     COMPOSITE(
+    //         Specification(
+    //             "${prim.GetName()}_1_${w}",
+    //             [Port(w)], [Port(1)]
+    //         )
+    //     )
+    // )
+    throw Exception("to do")
 }
