@@ -60,6 +60,9 @@ public func concat<T>(xs : Array<T>, ys : Array<T>) : Array<T> {
             }
     }
 }
+public func concat<T>(xss : Array<Array<T>>) : Array<T> {
+    concat(xss, { t => t })
+}
 public func concat<T, U>(xss : Array<Array<T>>, f : (T) -> U) : Array<U> {
     Array(Sum(xss, { xs => xs.size }), {
         i =>
@@ -76,15 +79,24 @@ public func concat<T, U>(xss : Array<Array<T>>, f : (T) -> U) : Array<U> {
 
     })
 }
-public func partition<T>(xs : Array<T>, at : Int64) : (Array<T>, Array<T>) {
-    if(at > xs.size) {
-        throw Exception(
-            "Tried to partition array of length ${xs.size} at index ${at}"
-        )
+
+public interface ExtraArrayUtils<T> {
+    func sliceArray(start!: Int64, end!: Int64) : Array<T>
+    func partition(at : Int64) : (Array<T>, Array<T>)
+}
+
+extend Array<T> <: ExtraArrayUtils<T> {
+    public func sliceArray(
+        start!: Int64 = 0, end!: Int64 = this.size
+    ) : Array<T> {
+        let len = end - start
+        this.slice(start, len)
     }
-    let first = Array(at, { i : Int64 => xs[i] })
-    let second = Array(xs.size - at, { i : Int64 => xs[at + i] })
-    (first, second)
+    public func partition(at : Int64) : (Array<T>, Array<T>) {
+        let first = this.sliceArray(end: at)
+        let second = this.sliceArray(start: at)
+        (first, second)
+    }
 }
 /**
  * Get a bespokely printed string of a collection.
