@@ -529,6 +529,16 @@ func GetBundleArray<T>(
         getVertex(index)
     })
 }
+func GetAccWirePort<T>(t : T) : Port where T <: HasPort {
+    t.ToPort()
+}
+func GetOtherWirePort<T>(t : T, index : Int64) : Port where T <: HasPort {
+    let name = match(t.GetName()) {
+        case Some(s) => "${s}[${index}]"
+        case None => None<String>
+    }
+    Port(t.GetWidth(), name: name)
+}
 /**
  * Get the port array for either the inputs of outputs of a ripple map.
  *
@@ -562,16 +572,18 @@ func GetPorts<T, U>(
         { i =>
             if(accFirst) {
                 if(i < accWiresPerOp) {
-                    accWidthsAndNames[i].ToPort()
+                    GetAccWirePort(accWidthsAndNames[i])
                 } else {
                     let iOffset = i - accWiresPerOp
-                    otherWidthsAndNames[iOffset % otherWiresPerOp].ToPort()
+                    let index = iOffset % otherWiresPerOp
+                    GetOtherWirePort(otherWidthsAndNames[index], iOffset)
                 }
             } else {
                 if(i < totalOtherWires) {
-                    otherWidthsAndNames[i % otherWiresPerOp].ToPort()
+                    let index = i % otherWiresPerOp
+                    GetOtherWirePort(otherWidthsAndNames[index], i)
                 } else {
-                    accWidthsAndNames[i - totalOtherWires].ToPort()
+                    GetAccWirePort(accWidthsAndNames[i - totalOtherWires])
                 }
             }
         }
