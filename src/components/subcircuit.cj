@@ -8,6 +8,7 @@
  */
 package components
 import utils.*
+
 /**
  * Make a subcircuit with some (optionally named) input and
  * output wires. This circuit can then be used in other subcircuits,
@@ -267,59 +268,4 @@ public func UseSubcircuit_3<V, G>(
 {
     AssertHasArity(childCircuit, 0)
     UseSubcircuit_3(childCircuit, Array<Wire<V, G>>(), delay: delay)
-}
-/**
- * Connect some inputs to a bitwise primitive
- *
- * @param prim The primitive to bitwise
- * @param ws The input wires
- * @return The output wire from the bitwise gate
- */
-public func UseBitwiseMapGate<V, G>(
-    prim : G, ws : Array<Wire<V, G>>, delay!: Int64 = 0
-) : Array<Wire<V, G>>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    AssertAllSameWidth(ws)
-    AssertHasLength(ws, prim.GetArity())
-    if(ws[0].GetWidth() == 1) {
-        UseGate(prim, ws, delay: delay)
-    } else {
-        UseSubcircuit(
-            MakeBitwiseMapGate(prim, ws[0].GetWidth(), delay: delay),
-            ws
-        )
-    }
-}
-/**
-* Connect some inputs to a rippled primitive
-*
-* @param prim The primitive to ripple
-* @param ws The input wires
-* @return The output wire from the rippled gate
-*/
-public func UseRippleGate<V, G>(
-    prim : G, ws : Array<Wire<V, G>>, delay!: Int64 = 0
-) : Array<Wire<V, G>>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    AssertNonEmpty(ws)
-    AssertMinimumLength(ws, prim.GetArity())
-    let width = AssertAllSameWidth(ws)
-    UseSubcircuit(MakeRippleGate(prim, ws.size, width, delay: delay), ws)
-}
-/**
- * Connect an input to an internally rippled primitive
- *
- * @param prim The primitive to ripple
- * @param w The input wire
- * @return The output wire from the internally rippled gate
- */
-public func UseBitwiseRippleGate<V, G>(
-    prim : G, ws : Array<Wire<V, G>>, delay!: Int64 = 0
-) : Array<Wire<V, G>>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    let width = AssertAllSameWidth(ws)
-    UseSubcircuit(MakeBitwiseRippleGate(prim, width, delay: delay), ws)
 }
