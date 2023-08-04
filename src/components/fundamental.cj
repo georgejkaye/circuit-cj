@@ -51,13 +51,13 @@ func UseOperation<V, G>(
  * @param prim The primitive to apply
  * @param inputs The input wires
  */
-public func UseGate<V, G>(
-    prim : G, inputs : Array<Wire<V, G>>, delay!: Int64 = 0
+public func UsePrimitive<V, G>(
+    primitive : G, inputs : Array<Wire<V, G>>, delay!: Int64 = 0
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertAllHaveWidth(inputs, 1)
-    UseOperation(PRIMITIVE(prim), inputs, delay: delay)
+    UseOperation(PRIMITIVE(primitive), inputs, delay: delay)
 }
 /**
  * Use a unary primitive gate
@@ -66,12 +66,12 @@ public func UseGate<V, G>(
  * @param a The input wire
  * @return The output wire of the gate
  */
-public func UseUnaryGate<V, G>(
-    prim : G, a : Wire<V, G>, delay!: Int64 = 0
+public func UseUnaryPrimitive<V, G>(
+    primitive : G, a : Wire<V, G>, delay!: Int64 = 0
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    UseGate(prim, [a], delay: delay)
+    UsePrimitive(primitive, [a], delay: delay)
 }
 /**
  * Use a binary primitive gate
@@ -81,12 +81,12 @@ public func UseUnaryGate<V, G>(
  * @param a The second input wire
  * @return The output wire of the gate
  */
-public func UseBinaryGate<V, G>(
-    prim : G, a : Wire<V, G>, b : Wire<V, G>, delay!: Int64 = 0
+public func UseBinaryPrimitive<V, G>(
+    primitive : G, a : Wire<V, G>, b : Wire<V, G>, delay!: Int64 = 0
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    UseGate(prim, [a,b], delay: delay)
+    UsePrimitive(primitive, [a,b], delay: delay)
 }
 /**
  * Use a join operation on two wires
