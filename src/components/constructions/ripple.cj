@@ -1,24 +1,26 @@
 package components.constructions
-
 /**
- * Perform a ripple.
+ * Perform a ripple, an operation that starts with an accumulator bundle and
+ * successively apply an operation to the accumulator and a data bundle,
+ * creating a new accumulator bundle.
  *
- * @param f (acc array, cur array) -> acc array
- * @param initial array
- * @param inputs array array
+ * @param f (acc bundle, cur bundle) -> acc bundle
+ * @param inputWires
+ * @param accBundleSize The number of wires that make up the accumulator bundle
+ * @param dataBundleSize The number of wires that make up each data bundle
  * @param direction
- * @param start
- * @param end
- * @return acc wire
+ * @param start The input bundle to start rippling from
+ * @param end The input bundle to end rippling at
+ * @return The final accumulator bundle
  */
 public func Ripple<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> Array<Wire<V, G>>,
     inputWires : Array<Wire<V, G>>,
-    accBundleWidth: Int64,
-    inputBundleWidth: Int64,
+    accBundleSize: Int64,
+    dataBundleSize: Int64,
     direction!: Direction = TOP_TO_BOTTOM,
     start!: Int64 = 0,
-    end!: Int64 = (inputWires.size - accBundleWidth) / inputBundleWidth
+    end!: Int64 = (inputWires.size - accBundleSize) / dataBundleSize
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -28,97 +30,135 @@ public func Ripple<V, G>(
             (Array<Wire<V, G>>(), curAcc)
         }
     RippleMap(
-        function, inputWires, accBundleWidth, inputBundleWidth,
+        function, inputWires, accBundleSize, dataBundleSize,
         0, direction: direction, start: start, end: end
     )
 }
 /**
- * Perform a ripple.
+ * Perform a ripple, an operation that starts with an accumulator bundle and
+ * successively apply an operation to the accumulator and a data bundle,
+ * creating a new accumulator bundle.
  *
- * @param f (acc wire, cur array) -> acc wire
- * @param initial wire
- * @param inputs array
+ * @param f (acc wire, cur bundle) -> acc wire
+ * @param inputWires
+ * @param dataBundleSize The number of wires that make up each data bundle
  * @param direction
- * @param start
- * @param end
- * @return acc wire
+ * @param start The input bundle to start rippling from
+ * @param end The input bundle to end rippling at
+ * @return The final accumulator bundle
  */
 public func Ripple<V, G>(
     f : (Wire<V, G>, Array<Wire<V, G>>) -> Wire<V, G>,
     inputWires : Array<Wire<V, G>>,
-    accBundleWidth: Int64,
-    inputBundleWidth: Int64,
+    dataBundleSize: Int64,
     direction!: Direction = TOP_TO_BOTTOM,
     start!: Int64 = 0,
-    end!: Int64 = (inputWires.size - accBundleWidth) / inputBundleWidth
+    end!: Int64 = (inputWires.size - 1) / dataBundleSize
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let rippleFunction =
+    let function =
         { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
             let curAcc = f(acc[0], cur)
             [curAcc]
         }
     Ripple(
-        rippleFunction, inputWires, accBundleWidth, inputBundleWidth,
+        function, inputWires, 1, dataBundleSize,
         direction: direction, start: start, end: end
     )[0]
 }
 /**
-* Connect some inputs to a rippled primitive
-*
-* @param prim The primitive to ripple
-* @param ws The input wires
-* @return The output wire from the rippled gate
-*/
-public func UseRippleGate<V, G>(
-    prim : G, ws : Array<Wire<V, G>>, delay!: Int64 = 0
-) : Array<Wire<V, G>>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+ * Make a ripple curcuit, an operation that starts with an accumulator bundle
+ * and successively apply an operation to the accumulator and a data bundle,
+ * creating a new accumulator bundle.
+ *
+ * @param f (acc bundle, cur bundle) -> acc bundle
+ * @param allInputPorts
+            Array of the input ports of the completed ripple circuit
+ * @param allOutputPorts
+            Array of the output ports of the completed ripple circuit
+ * @param accBundleSize The number of wires in the accumulator bundle
+ * @param incomingBundleSize The number of wires in the incoming bundles
+ * @param direction
+ * @return The ripple circuit
+ */
+func MakeRipple<V, G, T, U>(
+    f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> Array<Wire<V, G>>,
+    allInputPorts : Array<T>,
+    allOutputPorts : Array<U>,
+    accBundleSize : Int64,
+    incomingBundleSize : Int64,
+    label : Label<V, G>,
+    direction!: Direction = TOP_TO_BOTTOM
+) : InterfacedHypergraph<V, G>
+    where
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
+        T <: HasPort, U <: HasPort
 {
-    AssertNonEmpty(ws)
-    AssertMinimumLength(ws, prim.GetArity())
-    let width = AssertAllSameWidth(ws)
-    UseSubcircuit(MakeRippleGate(prim, ws.size, width, delay: delay), ws)
+    let function  = {
+        acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
+            (Array<Wire<V, G>>(), f(acc, cur))
+    }
+    MakeRippleMap<V, G, T, U>(
+        function, allInputPorts, allOutputPorts, accBundleSize,
+        incomingBundleSize, accBundleSize, label, direction: direction
+    )
 }
 /**
- * Make a circuit that ripples a given primitive over some inputs, i.e. the
- * primitive will be applied to each input wire one at a time in succession
+ * Make a ripple curcuit, an operation that starts with an accumulator bundle
+ * and successively apply an operation to the accumulator and a data bundle,
+ * creating a new accumulator bundle.
  *
- * @param prim The primitive to apply
- * @param n The number of input wires
- * @param w The width of the input wires
- * @return The ripple gate circuit
+ * @param f (acc bundle, cur bundle) -> acc bundle
+ * @param accPorts The ports that make up the accumulator bundle
+ * @param incomingPorts The ports that make up each incoming bundle
+ * @param numberOfOperations
+ * @param name
+ * @param direction
+ * @return The ripple circuit
  */
-public func MakeRippleGate<V, G>(
-    prim : G, n : Int64, w : Int64, delay!: Int64 = 0
+public func MakeRipple<V, G, T>(
+    f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> Array<Wire<V, G>>,
+    accPorts : Array<T>,
+    incomingPorts : Array<T>,
+    numberOfOperations : Int64,
+    name : String,
+    direction!: Direction = TOP_TO_BOTTOM
+) : InterfacedHypergraph<V, G>
+    where
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>, T <: HasPort
+{
+    let op = {
+        acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
+            (f(acc, cur), Array<Wire<V, G>>())
+    }
+    MakeRippleMap<V, G, T>(
+        op, accPorts, incomingPorts, Array<T>(), numberOfOperations,
+        name, direction: direction
+    )
+}
+/**
+ * Make a ripple curcuit, an operation that starts with an accumulator bundle
+ * and successively apply an operation to the accumulator and a data bundle,
+ * creating a new accumulator bundle.
+ *
+ * @param f The circuit to ripple
+ * @param numberOfOperations
+ * @param name
+ * @param direction
+ * @return The ripple circuit
+ */
+public func MakeRipple<V, G>(
+    f : InterfacedHypergraph<V, G>,
+    accBundleSize : Int64,
+    numberOfOperations : Int64,
+    name!: Option<String> = None<String>,
+    direction!: Direction = TOP_TO_BOTTOM
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    // let inputWires = Array<Array<Wire<V, G>>>(n, {
-    //     i : Int64 => [UseWire<V, G>(w)]
-    // })
-    // let output = Ripple<V, G>(
-    //     { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
-    //         UseGate(prim, [acc[0], cur[0]], delay: delay)
-    //     },
-    //     inputWires, 1, 1
-    // )[0]
-    // MakeSubcircuit(
-    //     mapi(
-    //         {inputs : Array<Wire<V, G>>, i : Int64 =>
-    //             InterfaceWire(inputs[0], numToUppercaseLetter(i))
-    //         },
-    //         inputs
-    //     ),
-    //     [InterfaceWire(output, "Z")],
-    //     COMPOSITE(
-    //         Specification(
-    //             "${prim.GetName()}_${n}_${w}",
-    //             Array<Port>(n, { i => Port(w, numToUppercaseLetter(i)) }),
-    //             [Port(w)]
-    //         )
-    //     )
-    // )
-    throw Exception("to do")
+    MakeRippleMap(
+        f, accBundleSize, numberOfOperations, name: name,
+        direction: direction
+    )
 }
