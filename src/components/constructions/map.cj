@@ -1,27 +1,26 @@
 package components.constructions
-
 /**
- * Given an array of arrays of wires, apply an operation that transforms an
- * array of wires into a new array of wires, to each array of wires in the
- * input.
+ * Perform a map, an operation that applies an operation in parallel to
+ * multiple bundles.
  *
- * @param f The operation to apply
- * @param inputss The array of arrays of wires
-* @return The output array of arrays of wires
+ * @param f The operation to apply to each bundle
+ * @param incomingWires
+ * @param incomingBundleSize The number of wires in each incoming bundle
+ * @return An array containing all of the outgoing bundles
  */
 public func Map<V, G>(
     f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
-    inputWires : Array<Wire<V, G>>,
-    inputBundleWidth : Int64
+    incomingWires : Array<Wire<V, G>>,
+    incomingBundleSize : Int64
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let numberOfOperations = inputWires.size / inputBundleWidth
+    let numberOfOperations = incomingWires.size / incomingBundleSize
     let outputBundles =
         Array<Array<Wire<V, G>>>(numberOfOperations, {
             i =>
-                let curInputWires = inputWires.slice(
-                    i * inputBundleWidth, inputBundleWidth
+                let curInputWires = incomingWires.slice(
+                    i * incomingBundleSize, incomingBundleSize
                 )
                 f(curInputWires)
         })
@@ -29,16 +28,41 @@ public func Map<V, G>(
 
 }
 /**
- * Make a map circuit for an operation.
+ * Perform a map, an operation that applies an operation in parallel to
+ * multiple bundles.
  *
- * @param f The operation
- * @param n The number of times to map
- * @param wires The widths of the expected input wires
- * @param label The label to give the new subcircuit
+ * @param f The operation to apply to each bundle
+ * @param incomingWires
+ * @param incomingBundleSize The number of wires in each incoming bundle
+ * @return An array containing all of the outgoing bundles
+ */
+public func Map<V, G>(
+    f : (Array<Wire<V, G>>) -> Wire<V, G>,
+    inputWires : Array<Wire<V, G>>,
+    incomingBundleSize : Int64
+) : Array<Wire<V, G>>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    let outputWires = Map(
+        GeneraliseSingleOutputFunction(f), inputWires,
+        incomingBundleSize
+    )
+    FlattenSingleWireOutputs(outputWires)
+}
+/**
+ * Make a map circuit, an operation that applies an operation in parallel to
+ * multiple bundles.
+ *
+ * @param f The operation to apply to each bundle
+ * @param incomingBundlePorts The port details for each incoming bundle
+ * @param outgoingBundlePorts The port details for each outgoing bundle
+ * @param numberOfOperations
+ * @param label
+ * @return The map circuit
  */
 public func MakeMap<V, G, T, U>(
     f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
-    inputPorts : Array<T>, outputPorts : Array<U>,
+    incomingBundlePorts : Array<T>, outgoingBundlePorts : Array<U>,
     numberOfOperations: Int64, label : Label<V, G>
 ) : InterfacedHypergraph<V, G>
     where
@@ -46,38 +70,45 @@ public func MakeMap<V, G, T, U>(
         T <: HasPort, U <: HasPort
 {
     let inputWires = map(
-        { t : T => UseWire<V, G>(t.GetWidth()) }, inputPorts
+        { t : T => UseWire<V, G>(t.GetWidth()) }, incomingBundlePorts
     )
-    let inputBundleWidth = inputPorts.size / numberOfOperations
-    let outputBundleWidth = outputPorts.size / numberOfOperations
+    let inputBundleWidth = incomingBundlePorts.size / numberOfOperations
+    let outputBundleWidth = outgoingBundlePorts.size / numberOfOperations
     let outputWires = Map(f, inputWires, inputBundleWidth)
     let subcircuitInputs = map2(
         { w : Wire<V, G>, t : T => InterfaceWire(w, t.GetName()) },
-        inputWires, inputPorts
+        inputWires, incomingBundlePorts
     )
     let subcircuitOutputs = map2(
         { w : Wire<V, G>, u : U => InterfaceWire(w, u.GetName()) },
-        outputWires, outputPorts
+        outputWires, outgoingBundlePorts
     )
     MakeSubcircuit(subcircuitInputs, subcircuitOutputs, label)
 }
-func GetPorts<V, G>(
-    numberOfPorts : Int64, numberOfOperations : Int64,
-    getVertex : (Int64) -> InterfaceVertex<V, G>
+/**
+ * Get an array of all the incoming or outgoing ports to a map circuit
+ *
+ * @param numberOfOperations
+ * @param portDetails An array containing port-like objects
+ * @return The array of map ports
+ */
+func GetMapPorts<V, G, T>(
+    numberOfOperations : Int64, portDetails : Array<T>
 ) : Array<Port>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>, T <: HasPort
 {
-    Array<Port>(numberOfPorts * numberOfOperations, { i =>
-        let portVertex = getVertex(i % numberOfPorts)
+    Array<Port>(portDetails.size * numberOfOperations, { i =>
+        let portVertex = portDetails[i % numberOfOperations]
         Port(portVertex.GetWidth(), name: portVertex.GetName())
     })
 }
 /**
- * Make a map subcircuit for a given subcircuit.
+ * Make a map circuit, an operation that applies an operation in parallel to
+ * multiple bundles.
  *
- * @param f The subcircuit to map
- * @param n The number of times to map
- * @param label The label to give the new subcircuit
+ * @param f The circuit to apply to each bundle
+ * @param numberOfOperations
+ * @return The map circuit
  */
 public func MakeMap<V, G>(
     f : InterfacedHypergraph<V, G>,
@@ -85,11 +116,11 @@ public func MakeMap<V, G>(
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let inputPorts = GetPorts(
-        f.GetArity(), numberOfOperations, { i : Int64 => f.GetInput(i)}
+    let inputPorts = GetMapPorts<V, G, InterfaceVertex<V, G>>(
+        numberOfOperations, f.GetInputs()
     )
-    let outputPorts = GetPorts(
-        f.GetCoarity(), numberOfOperations, { i : Int64 => f.GetOutput(i)}
+    let outputPorts = GetMapPorts<V, G, InterfaceVertex<V, G>>(
+        numberOfOperations, f.GetOutputs()
     )
     let spec = Specification(
         "${f.GetName()}^${numberOfOperations}", inputPorts, outputPorts
@@ -98,25 +129,4 @@ public func MakeMap<V, G>(
         { ws : Array<Wire<V, G>> => UseSubcircuit(f, ws)}, inputPorts,
         outputPorts, numberOfOperations, Label<V, G>.COMPOSITE(spec)
     )
-}
-/**
- * Given an array of arrays of wires, apply an operation that transforms an
- * array of wires into a new wire, to each array of wires in the input.
- *
- * @param f The operation to apply
- * @param inputss The array of arrays of wires
- * @return The output array of wires
- */
-public func Map<V, G>(
-    f : (Array<Wire<V, G>>) -> Wire<V, G>,
-    inputs : Array<Wire<V, G>>,
-    inputBundleWidth : Int64
-) : Array<Wire<V, G>>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    let outputWires = Map(
-        GeneraliseSingleOutputFunction(f), inputs,
-        inputBundleWidth
-    )
-    FlattenSingleWireOutputs(outputWires)
 }
