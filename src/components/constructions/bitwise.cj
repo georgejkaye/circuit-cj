@@ -1,147 +1,254 @@
 package components.constructions
-
 /**
- * Given an array of wires, split them to create an array of arrays of one-bit
- * wires of the form output[i][j] = input[j][i].
+ * Given an array of wires
  *
- * @param inputs The array of wires to split
- * @return The array of arrays of split wires
+ * [inputs[0], inputs[1], ... , inputs[n-1]]
+ *
+ * split each wire to create an array of one-bit wires
+ *
+ * [inputs[0][0], inputs[1][0], ... inputs[n-1][0], inputs[0][1], ...]
+ *
+ * @param inputWires
+ * @return The array of split wires
  */
 public func BitwiseSplit<V, G>(
-    inputs : Array<Wire<V, G>>
+    inputWires : Array<Wire<V, G>>
 ) : Array<Wire<V, G>>
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let totalBits = Sum(inputs, { w => w.GetWidth() })
-    let splitInputs = map({ w : Wire<V, G> => Split(w) }, inputs)
-    concat(splitInputs)
-}
-/**
- * Given an array of arrays of wires, combine them to create an array of wires,
- * so that outputs[i] = [inputs[0][i], inputs[1][i], ...].
- *
- * @param inputs The array of arrays of wires to combine
- * @return The array of combined wires
- */
-public func BitwiseCombine<V, G>(
-    inputWires : Array<Wire<V, G>>,
-    bundleWidth : Int64
-) : Array<Wire<V, G>>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    let numberOfBundles = inputWires.size / bundleWidth
-    Array<Wire<V, G>>(numberOfBundles, { i =>
-        Combine(
-            Array<Wire<V, G>>(bundleWidth, { j =>
-                inputWires[bundleWidth * j + i]
-            })
-        )
+    let width = AssertAllSameWidth(inputWires)
+    let totalBits = Sum(inputWires, { w => w.GetWidth() })
+    let splitInputs = map({ w : Wire<V, G> => Split(w) }, inputWires)
+    Array<Wire<V, G>>(totalBits, {
+        i : Int64 =>
+            let element = i % inputWires.size
+            let index = i / inputWires.size
+            println("Getting ${element}:${index}")
+            splitInputs[element][index]
     })
 }
 /**
- * Perform a bitwise map.
+ * Given an array of one-bit wires sorted as
  *
- * @param f (input array) -> output array
- * @param input array
- * @return output wire
+ * [outputs[0][0], outputs[1][0], ... outputs[n][0], outputs[0][1], ...]
+ *
+ * and so on, combine them to create an array
+ *
+ * [outputs[0], outputs[1], ..., outputs[n]]
+ *
+ * @param inputWires
+ * @param numberOfOutputBundles
+ *              The number of bundles the bitwise operation has created
+ * @return The array of combined wires
+ */
+public func BitwiseCombine<V, G>(
+    inputWires : Array<Wire<V, G>>, numberOfOutputBundles : Int64
+) : Array<Wire<V, G>>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    AssertAllHaveWidth(inputWires, 1)
+    let wiresPerOutputBundle = inputWires.size / numberOfOutputBundles
+    let numberOfOutputWires = wiresPerOutputBundle
+    Array<Wire<V, G>>(numberOfOutputWires, {
+        i =>
+            Combine(
+                Array<Wire<V, G>>(numberOfOutputBundles, { j =>
+                    let index = j + (i * numberOfOutputWires)
+                    inputWires[index]
+                })
+            )
+    })
+}
+/**
+ * Perform an operation bitwise: split input wires into one-bit wires,
+ * apply an operation to all of them, then combine the outputs.
+ *
+ * @param f (split incoming) -> (split outgoing)
+ * @param inputWires
+ * @param numberOfOutputBundles The number of bundles created by the operation
+ * @return The array of combined wires
+ */
+public func Bitwise<V, G>(
+    f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
+    inputWires : Array<Wire<V, G>>,
+    numberOfOutputBundles : Int64
+) : Array<Wire<V, G>> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
+    let width = AssertAllSameWidth(inputWires)
+    let splitWires = BitwiseSplit(inputWires)
+    let outputWires = f(splitWires)
+    let combinedWires = BitwiseCombine(outputWires, numberOfOutputBundles)
+    combinedWires
+}
+/**
+ * Perform a bitwise map: splitting input wires into one-bit wires, applying an
+ * operation to wires with the same index of each input, then combining the
+ * wires again.
+ *
+ * @param f (ingoing bundle) -> outgoing bundle
+ * @param inputWires
+ * @return The array of combined wires
  */
 public func BitwiseMap<V, G>(
     f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
-    inputs : Array<Wire<V, G>>,
-    outputBundleWidth : Int64
+    inputWires : Array<Wire<V, G>>
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>,  G <: PrimitiveSymbol<V, G>
 {
-    let inputWires = BitwiseSplit(inputs)
-    let outputWires = Map(f, inputWires, inputs.size)
-    BitwiseCombine<V, G>(outputWires, outputBundleWidth)
+    let width = AssertAllSameWidth(inputWires)
+    Bitwise(
+        { ws : Array<Wire<V, G>> => Map(f, ws, width) }, inputWires, width
+    )
 }
 /**
- * Perform a bitwise map.
+ * Perform a bitwise map: splitting input wires into one-bit wires, applying an
+ * operation to wires with the same index of each input, then combining the
+ * wires again.
  *
- * @param f (input array) -> output wire
- * @param input wire
- * @return output wire
+ * @param f (ingoing bundle) -> outgoing wire
+ * @param inputWires
+ * @return The array of combined wires
  */
 public func BitwiseMap<V, G>(
     f : (Array<Wire<V, G>>) -> Wire<V, G>,
-    inputs : Array<Wire<V, G>>,
-    inputBundleWidth : Int64,
-    outputBundleWidth : Int64
+    inputWires : Array<Wire<V, G>>
 ) : Wire<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let fAdjusted = { inputs : Array<Wire<V, G>> => [f(inputs)] }
-    BitwiseMap(fAdjusted, inputs, outputBundleWidth)[0]
+    BitwiseMap(fAdjusted, inputWires)[0]
 }
 /**
- * Perform a bitwise map.
+ * Perform a bitwise map: splitting input wires into one-bit wires, applying an
+ * operation to wires with the same index of each input, then combining the
+ * wires again.
  *
- * @param f (input wire) -> output wire
- * @param input wire
- * @return output wire
+ * @param f (ingoing wire) -> outgoing wire
+ * @param inputWires
+ * @return The array of combined wires
  */
 public func BitwiseMap<V, G>(
-    f : (Wire<V, G>) -> Wire<V, G>,
-    input : Wire<V, G>,
-    inputBundleWidth : Int64,
-    outputBundleWidth : Int64
+    f : (Wire<V, G>) -> Wire<V, G>, input : Wire<V, G>
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let fAdjusted = { inputs : Array<Wire<V, G>> => [f(inputs[0])] }
-    BitwiseMap(fAdjusted, [input], outputBundleWidth)[0]
+    BitwiseMap(fAdjusted, [input])[0]
 }
 /**
- * Make a bitwise map subcircuit for an operation.
+ * Make a bitwise circuit: splitting input wires into one-bit wires,
+ * applying an operation to these wires, then combining the wires again.
  *
- * @param f The operation
- * @param n The number of times to map (the width of the input wires)
- * @param wires The number of input wires (the number of inputs f expects)
- * @param label The label to give the new subcircuit
+ * @param f (ingoing bundle) -> outgoing bundle
+ * @param allInputPorts The port details for all input ports
+ * @param allOutputPorts The port details for all output ports
+ * @return The bitwise circuit
  */
-public func MakeBitwiseMap<V, G, T, U>(
+func MakeBitwise<V, G, T, U>(
     f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
-    inputPorts : Array<T>, outputPorts : Array<U>,
-    inputBundleWidth: Int64, outputBundleWidth: Int64, label: Label<V, G>
+    allInputPorts : Array<T>,
+    allOutputPorts : Array<U>,
+    label : Label<V, G>
+) : InterfacedHypergraph<V, G>
+    where V <: ValueSymbol<V>,  G <: PrimitiveSymbol<V, G>,
+            T <: HasPort, U <: HasPort
+{
+    let outputBundleSize = AssertAllSameWidth(allOutputPorts)
+    let inputWires = map(
+        { t : T => UseWire<V, G>(t.GetWidth()) }, allInputPorts
+    )
+    let outputWires = Bitwise(f, inputWires, outputBundleSize)
+    let inputInterfaceWires = map2(
+        { w : Wire<V, G>, t : T => InterfaceWire(w, t.GetName()) },
+        inputWires, allInputPorts
+    )
+    let outputInterfaceWires = map2(
+        { w : Wire<V, G>, u : U => InterfaceWire(w, u.GetName()) },
+        outputWires, allOutputPorts
+    )
+    MakeSubcircuit<V, G>(inputInterfaceWires, outputInterfaceWires, label)
+}
+/**
+ * Make a bitwise map circuit: splitting input wires into one-bit wires,
+ * applying an operation to wires with the same index of each input, then
+ * combining the wires again.
+ *
+ * @param f (ingoing bundle) -> outgoing bundle
+ * @param allInputPorts The port details for all input ports
+ * @param allOutputPorts The port details for all output ports
+ * @return The bitwise map circuit
+ */
+func MakeBitwiseMap<V, G, T, U>(
+    f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
+    allInputPorts : Array<T>, allOutputPorts : Array<U>,
+    label: Label<V, G>
 ) : InterfacedHypergraph<V, G>
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: HasPort, U <: HasPort
 {
-    let inputWires = map(
-        { t : T => UseWire<V, G>(t.GetWidth()) }, inputPorts
+    let width = AssertAllSameWidth(allInputPorts)
+    MakeBitwise(
+        { ws : Array<Wire<V, G>> => Map(f, ws, allInputPorts.size)},
+        allInputPorts, allOutputPorts, label
     )
-    let outputWires =
-        BitwiseMap(f, inputWires, outputBundleWidth)
-    let inputInterfaceWires =
-        map2(
-            { w : Wire<V, G>, t : T => InterfaceWire(w, t.GetName()) },
-            inputWires, inputPorts
-        )
-    let outputInterfaceWires =
-        map2(
-            { w : Wire<V, G>, u : U => InterfaceWire(w, u.GetName()) },
-            outputWires, outputPorts
-        )
-    MakeSubcircuit(inputInterfaceWires, outputInterfaceWires, label)
-}
-func GetBitwiseMapPorts<V, G>(
-    numberOfPorts : Int64, numberOfOperations : Int64,
-    getVertex : (Int64) -> InterfaceVertex<V, G>
-) : Array<Port>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    Array<Port>(numberOfPorts * numberOfOperations, { i =>
-        let portVertex = getVertex(i % numberOfPorts)
-        Port(portVertex.GetWidth(), name: portVertex.GetName())
-    })
 }
 /**
- * Make a bitwise map subcircut for a subcircuit.
+ * Get the input or output ports for a bitwise map circuit.
  *
- * @param f The subcircuit
- * @param n The number of times to map (the widtrh of the input wires)
+ * @param bundlePorts The port details for one bundle
+ * @param numberOfOperations
+ * @return An array of ports for the complete map circuit
+ */
+func GetMapPorts<V, G, T>(
+    bundlePorts : Array<T>, numberOfOperations : Int64
+) : Array<Port>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>, T <: HasPort
+{
+    map(
+        { t : T =>
+            let width = t.GetWidth() * numberOfOperations
+            Port(width, name: t.GetName())
+        },
+        bundlePorts
+    )
+}
+/**
+ * Make a bitwise map circuit: splitting input wires into one-bit wires,
+ * applying an operation to wires with the same index of each input, then
+ * combining the wires again.
+ *
+ * @param f (ingoing bundle) -> outgoing bundle
+ * @param incomingBundlePorts The port details for an incoming bundle
+ * @param outgoingBundlePorts The port details for an outgoing bundle
+ * @return The bitwise map circuit
+ */
+public func MakeBitwiseMap<V, G, T, U>(
+    f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
+    incomingBundlePorts : Array<T>,
+    outgoingBundlePorts : Array<U>,
+    numberOfOperations : Int64,
+    name : String
+) : InterfacedHypergraph<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
+                T <: HasPort, U <: HasPort
+{
+    let totalInputPorts =
+        GetMapPorts<V, G, T>(incomingBundlePorts, numberOfOperations)
+    let totalOutputPorts =
+        GetMapPorts<V, G, U>(outgoingBundlePorts, numberOfOperations)
+    let spec = Specification(name, totalInputPorts, totalOutputPorts)
+    MakeBitwiseMap(
+        f, totalInputPorts, totalOutputPorts, Label<V, G>.COMPOSITE(spec)
+    )
+}
+/**
+ * Make a bitwise map circuit: splitting input wires into one-bit wires,
+ * applying an operation to wires with the same index of each input, then
+ * combining the wires again.
+ *
+ * @param f The circuit to bitwise map
+ * @param numberOfOperations
+ * @return The bitwise map circuit
  */
 public func MakeBitwiseMap<V, G>(
     f : InterfacedHypergraph<V, G>,
@@ -149,133 +256,35 @@ public func MakeBitwiseMap<V, G>(
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-
-    let inputPorts = GetBitwiseMapPorts(
-        f.GetArity(), numberOfOperations, { i : Int64 => f.GetInput(i) })
-    let outputPorts = GetBitwiseMapPorts(
-        f.GetCoarity(), numberOfOperations, { i : Int64 => f.GetOutput(i) })
+    let inputPorts = GetMapPorts<V, G, InterfaceVertex<V, G>>(
+        f.GetInputs(), numberOfOperations
+    )
+    let outputPorts = GetMapPorts<V, G, InterfaceVertex<V, G>>(
+        f.GetOutputs(), numberOfOperations
+    )
     let spec = Specification(
         "${f.GetName()}_${numberOfOperations}", inputPorts, outputPorts
     )
     MakeBitwiseMap(
         { ws : Array<Wire<V, G>> => UseSubcircuit(f, ws) },
-        inputPorts, outputPorts, f.GetArity(), f.GetCoarity(),
-        Label<V, G>.COMPOSITE(spec)
+        inputPorts, outputPorts, Label<V, G>.COMPOSITE(spec)
     )
 }
-
-
 /**
- * Make a circuit that applies a given primitive bitwise, i.e. the primitive
- * will be applied to each bit of the input wires independently
+ * Use a bitwise map circuit: splitting input wires into one-bit wires,
+ * applying an operation to wires with the same index of each input, then
+ * combining the wires again.
  *
- * @param prim The primitive to apply
- * @param w The width of the input wires
- * @return The bitwise gate circuit
+ * @param f The circuit to bitwise map
+ * @param inputWires
+ * @return The outputs of the bitwise map circuit
  */
-public func MakeBitwiseMapGate<V, G>(
-    prim : G, w : Int64, delay!: Int64 = 0
-) : InterfacedHypergraph<V, G>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    // let inputs = Array<Wire<V, G>>(
-    //     prim.GetArity(),
-    //     {i : Int64 => UseWire<V, G>(w) }
-    // )
-    // let output = BitwiseMap(
-    //     { inputs : Array<Wire<V, G>> => UseGate(prim, inputs, delay: delay) },
-    //     inputs
-    // )[0]
-    // MakeSubcircuit(
-    //     mapi(
-    //         { w : Wire<V, G>, i : Int64 =>
-    //             InterfaceWire(w, numToUppercaseLetter(i))
-    //         },
-    //         inputs
-    //     ),
-    //     [InterfaceWire(output, "Z")],
-    //     COMPOSITE(
-    //         Specification(
-    //             "${prim.GetName()}_${w}",
-    //             Array<Port>(
-    //                 prim.GetArity(), { i => Port(w, numToUppercaseLetter(i)) }
-    //             ),
-    //             Array<Port>(
-    //                 prim.GetCoarity(), { i => Port(w, numToUppercaseLetter(i)) }
-    //             )
-    //         )
-    //     )
-    // )
-    throw Exception("to do")
-}
-/**
- * Connect some inputs to a bitwise primitive
- *
- * @param prim The primitive to bitwise
- * @param ws The input wires
- * @return The output wire from the bitwise gate
- */
-public func UseBitwiseMapGate<V, G>(
-    prim : G, ws : Array<Wire<V, G>>, delay!: Int64 = 0
+public func UseBitwiseMap<V, G>(
+    f : InterfacedHypergraph<V, G>,
+    inputWires : Array<Wire<V, G>>
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    AssertAllSameWidth(ws)
-    AssertHasLength(ws, prim.GetArity())
-    if(ws[0].GetWidth() == 1) {
-        UseGate(prim, ws, delay: delay)
-    } else {
-        UseSubcircuit(
-            MakeBitwiseMapGate(prim, ws[0].GetWidth(), delay: delay),
-            ws
-        )
-    }
-}
-/**
- * Connect an input to an internally rippled primitive
- *
- * @param prim The primitive to ripple
- * @param w The input wire
- * @return The output wire from the internally rippled gate
- */
-public func UseBitwiseRippleGate<V, G>(
-    prim : G, ws : Array<Wire<V, G>>, delay!: Int64 = 0
-) : Array<Wire<V, G>>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    let width = AssertAllSameWidth(ws)
-    UseSubcircuit(MakeBitwiseRippleGate(prim, width, delay: delay), ws)
-}
-/**
- * Make a circuit that ripples a given primitive over the bits in a single
- * wire, i.e. the primitive will be applied to each bit wire one at a time in
- * succession.
- *
- * @param prim The primitive to apply
- * @param w The width of the input wire
- * @return The internal ripple gate circuit
- */
-public func MakeBitwiseRippleGate<V, G>(
-    prim : G, w : Int64, delay!: Int64 = 0
-) : InterfacedHypergraph<V, G>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    // let input = UseWire<V, G>(w)
-    // let output = BitwiseRipple(
-    //     { acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
-    //         UseGate(prim, [acc[0], cur[0]], delay: delay)
-    //     },
-    //     [input]
-    // )[0]
-    // MakeSubcircuit(
-    //     [InterfaceWire(input, "A")],
-    //     [InterfaceWire(output, "Z")],
-    //     COMPOSITE(
-    //         Specification(
-    //             "${prim.GetName()}_1_${w}",
-    //             [Port(w)], [Port(1)]
-    //         )
-    //     )
-    // )
-    throw Exception("to do")
+    let width = AssertAllSameWidth(inputWires)
+    UseSubcircuit(MakeBitwiseMap(f, width))
 }
