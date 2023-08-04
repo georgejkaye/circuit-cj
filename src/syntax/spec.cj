@@ -33,7 +33,7 @@ public func numToUppercaseLetter(n : Int64) : String {
  * input/output ports
  */
 public class Specification
-     <: Specifiable & HasName & Equatable<Specification> & Hashable
+     <: Specifiable & HasName & Equatable<Specification> & Hashable & ToString
 {
     let id : Int64
     public Specification(
@@ -45,9 +45,6 @@ public class Specification
     }
     public func GetName() : String {
         this.name
-    }
-    public func toString() : String {
-        this.GetName()
     }
     public func GetInputPorts() : Array<Port> {
         this.inputPorts
@@ -65,5 +62,8 @@ public class Specification
     }
     public func hashCode() : Int64 {
         this.id
+    }
+    public func toString() : String {
+        "${name}: ${inputPorts} -> ${outputPorts}"
     }
 }
