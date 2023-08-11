@@ -74,6 +74,24 @@ func GetInputAccumulatorIndices(
     (start, start + accBundleSize)
 }
 /**
+ * Get the start and end indices of the accumulator bundle in some larger output
+ * wire array.
+ *
+ * @param direction
+ * @param accBundleSize
+ * @param totaloutputPorts
+ * @return A tuple of start and end indices of the accumulator bundle
+ */
+func GetOutputAccumulatorIndices(
+    direction : Direction, accBundleSize : Int64, totalinputPorts : Int64
+) : (Int64, Int64) {
+    let start = match(direction) {
+        case TOP_TO_BOTTOM => totalinputPorts - accBundleSize
+        case BOTTOM_TO_TOP => 0
+    }
+    (start, start + accBundleSize)
+}
+/**
  * Get the start and end indices of the input bundle with a certin index in some
  * larger input wire array.
  *
@@ -130,42 +148,42 @@ func AddNextBundle<V, G>(
 public func RippleMap<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) ->
             (Array<Wire<V, G>>, Array<Wire<V, G>>),
-    inputPorts : Array<Wire<V, G>>,
+    inputWires : Array<Wire<V, G>>,
     accBundleSize : Int64,
-    incomingBundleSize : Int64,
+    numberOfIncomingBundles : Int64,
     outgoingBundleSize : Int64,
     direction!: Direction = TOP_TO_BOTTOM,
     start!: Int64 = 0,
-    end!: Int64 = (inputPorts.size - accBundleSize) / incomingBundleSize
+    end!: Int64 = numberOfIncomingBundles
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     // Check that the input wires are of the form [acc, input, ... , input]
-    let numberOfInputBundles =
-        (inputPorts.size - accBundleSize / incomingBundleSize)
+    let incomingBundleSize =
+        (inputWires.size - accBundleSize) / numberOfIncomingBundles
     AssertHasLength(
-        inputPorts,
-        accBundleSize + (incomingBundleSize * numberOfInputBundles)
+        inputWires,
+        accBundleSize + (incomingBundleSize * numberOfIncomingBundles)
     )
-    let totalinputPorts = inputPorts.size
-    let totaloutputPorts =
-        (outgoingBundleSize * numberOfInputBundles) + accBundleSize
+    let numberOfInputWires = inputWires.size
     let (accStart, accEnd) =
-        GetInputAccumulatorIndices(direction, accBundleSize, totalinputPorts)
+        GetInputAccumulatorIndices(direction, accBundleSize, numberOfInputWires)
     // Initialise the accumulator with the wires from the inputs
-    var curAcc = inputPorts.sliceArray(start: accStart, end: accEnd)
+    var curAcc = inputWires.sliceArray(start: accStart, end: accEnd)
+    let numberOfOutputWires =
+        (outgoingBundleSize * numberOfIncomingBundles) + accBundleSize
     // Initialise the output wires with the correct length
-    let outputPorts = ArrayList<Wire<V, G>>(totaloutputPorts)
+    let outputPorts = ArrayList<Wire<V, G>>(numberOfOutputWires)
     // Perform the ripple
     for(i in start..end) {
         // Identify where the current input bundle starts
         let (curInputStart, curInputEnd) =
             GetInputIndices(
                 direction, i, accBundleSize,
-                incomingBundleSize, totalinputPorts
+                incomingBundleSize, numberOfInputWires
             )
         // Extract the current input bundle
-        let curIn = inputPorts.sliceArray(start: curInputStart, end: curInputEnd)
+        let curIn = inputWires.sliceArray(start: curInputStart, end: curInputEnd)
         // Perform the operation
         let (newAcc, newOut) = f(curAcc, curIn)
         // Add the outputs to the output wires
@@ -267,6 +285,72 @@ func MakeRippleMap<V, G, T, U>(
     MakeSubcircuit(inputInterfaceWires, outputInterfaceWires, label)
 }
 /**
+ * Get the port array for either the inputs of outputs of a ripple map.
+ *
+ * @param accFirst
+ *          Whether the accumulator wires come before the remaining wires
+ * @param accPortsPerOp
+ *          The number of wires that make up the accumulator bundle
+ * @param totalWiresPerOp
+ *          The total number of wires the make up the interface
+ * @param getAccVertex
+ *          Function (index, numberOfaccPorts, numberOfOtherWires) -> vertex
+ *          that returns the indexth accumulator interface vertex of f
+ * @param getOtherVertex
+ *          Function (index, numberOfaccPorts, numberOfOtherWires) -> vertex
+ *          that returns the indexth other vertex of f
+ * @return An array of ports for the inputs or outputs of a ripple map
+ */
+func GetRippleMapPorts<T>(
+    opPorts : Array<T>, accFirst : Bool, accBundleSize : Int64,
+    numberOfOperations : Int64, getAccWirePort : (T) -> Port,
+    getOtherWirePort : (T, Int64) -> Port
+) : Array<Port> where T <: HasPort {
+    let totalWiresPerOp = opPorts.size
+    let dataWireBundleSize = totalWiresPerOp - accBundleSize
+    let totalDataWires = dataWireBundleSize * numberOfOperations
+    let totalWires = totalDataWires + accBundleSize
+    Array<Port>(totalWires, { i : Int64 =>
+        if(accFirst) {
+            if(i < accBundleSize) {
+                let port = opPorts[i]
+                getAccWirePort(port)
+            } else {
+                let dataWireIndex =
+                    ((i - accBundleSize) % dataWireBundleSize) +
+                        accBundleSize
+                let port = opPorts[dataWireIndex]
+                let iteration = (i - accBundleSize) / dataWireBundleSize
+                getOtherWirePort(port, iteration)
+            }
+        } else {
+            if(i < totalDataWires) {
+                let port = opPorts[i % dataWireBundleSize]
+                let iteration = i / dataWireBundleSize
+                getOtherWirePort(port, iteration)
+            } else {
+                let accWireIndex =
+                    (i - totalDataWires) % accBundleSize +
+                        dataWireBundleSize
+                let port = opPorts[accWireIndex]
+                getAccWirePort(port)
+            }
+        }
+    })
+}
+func GetRippleMapAccPort<T>(t : T) : Port where T <: HasPort {
+    t.ToPort()
+}
+func GetRippleMapOtherPort<T>(t : T, index : Int64) : Port
+    where T <: HasPort
+{
+    let name = match(t.GetName()) {
+        case Some(s) => "${s}[${index}]"
+        case None => None<String>
+    }
+    Port(t.GetWidth(), name: name)
+}
+/**
  * Make a circuit for a ripple map, an operation that starts with an accumulator
  * bundle and successively apply an operation to the accumulator and a data
  * bundle, creating an outgoing bundle for each operation as well as a new
@@ -302,7 +386,8 @@ public func MakeRippleMap<V, G, T>(
     }
     let allInputPorts = GetRippleMapPorts(
         concat(inputFirst, inputSecond), inputAccFirst, accPorts.size,
-        numberOfOperations
+        numberOfOperations, GetRippleMapAccPort<T>,
+        GetRippleMapOtherPort<T>
     )
     let (outputFirst, outputSecond) = if(outputAccFirst) {
         (accPorts, outgoingPorts)
@@ -311,7 +396,8 @@ public func MakeRippleMap<V, G, T>(
     }
     let allOutputPorts = GetRippleMapPorts(
         concat(outputFirst, outputSecond), outputAccFirst, accPorts.size,
-        numberOfOperations
+        numberOfOperations, GetRippleMapAccPort<T>,
+        GetRippleMapOtherPort<T>
     )
     let spec = Specification(name, allInputPorts, allOutputPorts)
     let label = Label<V, G>.COMPOSITE(spec)
@@ -361,86 +447,29 @@ func GetBundleArray<T>(
         getVertex(index)
     })
 }
-/**
- * Get the port for an accumulator wire in a ripple map.
- *
- * @param t The port-like object
- * @return The port for the accumulator wire
- */
-func GetAccWirePort<T>(t : T) : Port where T <: HasPort {
-    t.ToPort()
-}
-/**
- * Get the port for an input or output wire in a ripple map.
- *
- * @param t The port-like object
- * @param index The index of the ripple iteration this port is for
- * @return The port for the accumulator wire
- */
-func GetOtherWirePort<T>(t : T, index : Int64) : Port where T <: HasPort {
-    let name = match(t.GetName()) {
-        case Some(s) => "${s}[${index}]"
-        case None => None<String>
-    }
-    Port(t.GetWidth(), name: name)
-}
-/**
- * Get the port array for either the inputs of outputs of a ripple map.
- *
- * @param accFirst
- *          Whether the accumulator wires come before the remaining wires
- * @param accPortsPerOp
- *          The number of wires that make up the accumulator bundle
- * @param totalWiresPerOp
- *          The total number of wires the make up the interface
- * @param getAccVertex
- *          Function (index, numberOfaccPorts, numberOfOtherWires) -> vertex
- *          that returns the indexth accumulator interface vertex of f
- * @param getOtherVertex
- *          Function (index, numberOfaccPorts, numberOfOtherWires) -> vertex
- *          that returns the indexth other vertex of f
- * @return An array of ports for the inputs or outputs of a ripple map
- */
-func GetRippleMapPorts<T, U>(
-    opPorts : Array<T>,
-    accFirst : Bool,
-    accBundleSize : Int64,
-    numberOfOperations : Int64
-) : Array<Port> where T <: HasPort, U <: HasPort {
-    let totalWiresPerOp = opPorts.size
-    let dataWireBundleSize = totalWiresPerOp - accBundleSize
-    let totalDataWires = dataWireBundleSize * numberOfOperations
-    let totalWires = totalDataWires + accBundleSize
-    map(
-        { i : Int64 =>
-            if(accFirst) {
-                if(i < accBundleSize) {
-                    let port = opPorts[i]
-                    GetAccWirePort(port)
-                } else {
-                    let dataWireIndex =
-                        ((i - accBundleSize) % dataWireBundleSize) +
-                            accBundleSize
-                    let port = opPorts[dataWireIndex]
-                    let iteration = (i - accBundleSize) / dataWireBundleSize
-                    GetOtherWirePort(port, iteration)
-                }
+func GetRippleMapOperationForSubcircuit<V, G>(
+    f : InterfacedHypergraph<V, G>, direction : Direction,
+    outputAccFirst : Bool, accBundleSize : Int64
+) : (Array<Wire<V, G>>, Array<Wire<V, G>>) ->
+        (Array<Wire<V, G>>, Array<Wire<V, G>>)
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    {
+        acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
+            let inputs = ConcatAccInputBundles(direction, acc, cur)
+            let subcircuit = UseSubcircuit(f, inputs)
+            let outputsSplitPoint = if(outputAccFirst) {
+                accBundleSize
             } else {
-                if(i < totalDataWires) {
-                    let port = opPorts[i % dataWireBundleSize]
-                    let iteration = i / dataWireBundleSize
-                    GetOtherWirePort(port, iteration)
-                } else {
-                    let accWireIndex =
-                        (i - totalDataWires) % accBundleSize +
-                            dataWireBundleSize
-                    let port = opPorts[accWireIndex]
-                    GetAccWirePort(port)
-                }
+                f.GetCoarity() - accBundleSize
             }
-        },
-        start: 0, end: totalWires
-    )
+            let (first, second) = subcircuit.partition(outputsSplitPoint)
+            if(outputAccFirst) {
+                (first, second)
+            } else {
+                (second, first)
+            }
+    }
 }
 /**
  * Make a circuit for a ripple map, an operation that starts with an accumulator
@@ -457,7 +486,7 @@ func GetRippleMapPorts<T, U>(
  */
 public func MakeRippleMap<V, G>(
     f : InterfacedHypergraph<V, G>,
-accBundleSize : Int64,
+    accBundleSize : Int64,
     numberOfOperations : Int64,
     name!: Option<String> = None<String>,
     direction!: Direction = TOP_TO_BOTTOM
@@ -468,29 +497,20 @@ accBundleSize : Int64,
     // Whether the accumulator wires should come first or last in the
     // input or output ports
     let (inputAccFirst, outputAccFirst) = GetRippleBundlePositions(direction)
-    let op = {
-        acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
-            let inputs = ConcatAccInputBundles(direction, acc, cur)
-            let subcircuit = UseSubcircuit(f, inputs)
-            let outputsSplitPoint = if(outputAccFirst) {
-                accBundleSize
-            } else {
-                f.GetCoarity() - accBundleSize
-            }
-            let (first, second) = subcircuit.partition(outputsSplitPoint)
-            if(outputAccFirst) {
-                (first, second)
-            } else {
-                (second, first)
-            }
-    }
+    let op = GetRippleMapOperationForSubcircuit(
+        f, direction, outputAccFirst, accBundleSize
+    )
     // Get ports describing the inputs to the ripple map subcircuit
     let inputPorts = GetRippleMapPorts(
-        f.GetInputs(), inputAccFirst, accBundleSize, numberOfOperations
+        f.GetInputs(), inputAccFirst, accBundleSize, numberOfOperations,
+        GetRippleMapAccPort<InterfaceVertex<V, G>>,
+        GetRippleMapOtherPort<InterfaceVertex<V, G>>
     )
     // Get ports describing the outputs to the ripple map subcircuit
     let outputPorts = GetRippleMapPorts(
-        f.GetOutputs(), outputAccFirst, accBundleSize, numberOfOperations
+        f.GetOutputs(), outputAccFirst, accBundleSize, numberOfOperations,
+        GetRippleMapAccPort<InterfaceVertex<V, G>>,
+        GetRippleMapOtherPort<InterfaceVertex<V, G>>
     )
     // Use the ports in the specification of the ripple map label
     let circuitLabel = match(name) {
