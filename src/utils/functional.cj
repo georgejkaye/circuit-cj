@@ -8,6 +8,7 @@
  */
 package utils
 from std import math.abs
+from std import collection.HashSet
 /**
  * Given some initial value init, a function (acc1, cur) -> (acc2, b), and an
  * collection xs, begin computing
@@ -26,18 +27,23 @@ public func fold_left_while<T, U>(
     start!: Int64 = 0, end!: Int64 = xs.size
 ) : U {
     var acc = initial
-    var done = false
-    let iter = xs.iterator()
-    for(_ in 0..start) {
-        iter.next()
-    }
-    for(_ in start..end){
-        let cur = iter.next().getOrThrow()
-        let (newAcc, newDone) = f(acc, cur)
-        acc = newAcc
-        done = newDone
-        if(done) {
-            return acc
+    if(xs.size > 0) {
+        AssertInRange(start, 0, xs.size)
+        AssertInRange(end, 0, xs.size+1)
+        AssertAtLeast(end, start)
+        var done = false
+        let iter = xs.iterator()
+        for(_ in 0..start) {
+            iter.next()
+        }
+        for(_ in start..end){
+            let cur = iter.next().getOrThrow()
+            let (newAcc, newDone) = f(acc, cur)
+            acc = newAcc
+            done = newDone
+            if(done) {
+                return acc
+            }
         }
     }
     acc
@@ -171,6 +177,19 @@ public func fold_right<T,U>(f : (U, T) -> U, initial : U,  xs : Array<T>) : U {
     }
     acc
 }
+public func fold_except<T,U>(
+    f : (U, T) -> U, initial : U, excluding: HashSet<Int64>, xs : Collection<T>
+) : U {
+    var acc = initial
+    let iter = xs.iterator()
+    for(i in 0..xs.size) {
+        let cur = iter.next().getOrThrow()
+        if(!excluding.contains(i)) {
+            acc = f(acc, cur)
+        }
+    }
+    acc
+}
 /**
  * Given a function f and an array xs, create the array ys in which
  * ys[i] = f(xs[i])
@@ -235,7 +254,8 @@ public func mapi<T, U>(f : (T, Int64) -> U, xs : Array<T>) : Array<U> {
  */
 public func map2<T, U, V>(
     f : (T, U) -> V, xs : Array<T>, ys : Array<U>
-) : Array<V> {
+) : Array<V> where T <: ToString, U <: ToString {
+    AssertSameLength<T, U>(xs, ys)
     Array<V>(xs.size, { i : Int64 => f(xs[i], ys[i]) })
 }
 /**

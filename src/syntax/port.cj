@@ -66,11 +66,15 @@ public func AssertBothSameWidth<T, U>(t : T, u : U) : Int64
  * @param xs
  * @return The width of the objects if they are all the same
  */
-public func AssertAllSameWidth<T>(xs : Collection<T>) : Int64
+public func AssertAllSameWidth<T>(
+    xs : Collection<T>, start!: Int64 = 0, end!: Int64 = xs.size,
+    excluding!: HashSet<Int64> = HashSet()
+) : Int64
     where T <: HasWidth & ToString
 {
     AssertCollectionHasSameParameter<T, Int64>(
-        xs, { t : T => t.GetWidth() }, Width
+        xs, { t : T => t.GetWidth() }, Width, start: start, end: end,
+        excluding: excluding
     )
 }
 /**
