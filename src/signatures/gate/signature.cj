@@ -6,7 +6,6 @@
 package signatures.gate
 from std import collection.ArrayList, collection.HashSet
 from std import math.log2, math.ceil
-import assertions.*
 /**
  * Enum of Belnap values (four valued logic)
  */

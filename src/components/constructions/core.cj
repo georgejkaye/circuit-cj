@@ -6,7 +6,6 @@ import syntax.*
 import utils.*
 import graphs.*
 import components.*
-import assertions.*
 
 /**
  * Given a function that transforms arrays of wires into a single wire,

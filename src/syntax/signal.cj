@@ -8,7 +8,6 @@
  * @since 0.2
  */
 package syntax
-import assertions.*
 /**
  * A signal is an array of values.
  */

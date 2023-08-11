@@ -75,8 +75,7 @@ public func concat<T, U>(xss : Array<Array<T>>, f : (T) -> U) : Array<U> {
                 }
                 j -= xs.size
             }
-            throw Exception("This shouldn't happen")
-
+            throw UnreachableCodeException()
     })
 }
 

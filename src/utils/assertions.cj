@@ -1,13 +1,11 @@
 /**
- * assertions/assertions.cj
+ * utils/assertions.cj
  *
  * @author George Kaye
  * @since 0.2
  */
-
-package assertions
-
-import utils.map, utils.mapCollection
+package utils
+from std import collection.HashSet
 /**
  * Types of paramaters to assert conditions about. Used to make debugging
  * messages clearer.
@@ -77,6 +75,13 @@ public func AssertAtMost(i : Int64, t : Int64) : Unit {
         throw OversufficientParameterException(i, t)
     }
 }
+public func AssertInRange(i : Int64, start : Int64, end : Int64) : Unit {
+    if(i < start || i >= end) {
+        throw IncompatibleParameterException(
+            i, "Expected ${i} to be in range ${start}..${end} but it is not"
+        )
+    }
+}
 /**
  * Assert a number is greater than or equal to zero.
  *
@@ -92,6 +97,14 @@ public func AssertNonNegative(x : Int64) : Unit {
  */
 public func AssertStrictlyPositive(x : Int64) : Unit {
     AssertAtLeast(x, 1)
+}
+public func AssertMultipleOf(x : Int64, n : Int64) : Int64 {
+    if(x % n != 0) {
+        throw IncompatibleParameterException(
+            x, "Expected ${x} to be a multiple of ${n} but it is not"
+        )
+    }
+    x / n
 }
 /**
  * Assert that an option is None.
@@ -190,7 +203,7 @@ public func AssertHasLength<T>(
  */
 public func AssertSameLength<T, U>(
     xs : Collection<T>, ys : Collection<U>
-) : Int64 where T <: ToString {
+) : Int64 where T <: ToString, U <: ToString {
     if(xs.size != ys.size) {
         throw IncompatibleLengthException<T>(xs, ys.size, true)
     }
@@ -204,20 +217,15 @@ public func AssertSameLength<T, U>(
  * @return The length of each element of the parent collection
  */
 public func AssertAllSameLength<T>(
-    xss : Collection<Array<T>>
+    xss : Collection<Array<T>>, start!: Int64 = 0, end!: Int64 = xss.size,
+    excluding!: HashSet<Int64> = HashSet()
 ) : Int64 where T <: ToString {
-    AssertNonEmpty(xss)
-    let iterator = xss.iterator()
-    let candidateSize = iterator.next().getOrThrow().size
-    for(i in 1..xss.size) {
-        let next = iterator.next().getOrThrow()
-        AssertHasLength(next, candidateSize)
-    }
-    candidateSize
+    AssertCollectionHasSameParameter<Array<T>, Int64>(
+        xss, { ts : Array<T> => ts.size }, Width, start: start, end: end,
+        excluding: excluding
+    )
 }
 /**
- * Assert a collection has a length greater than some minimum.
- *
  * @param collection
  * @param n The minimum length
  */
@@ -229,6 +237,18 @@ public func AssertMinimumLength<T>(
     }
 }
 /**
+ * @param collection
+ * @param n The multiple
+ */
+public func AssertLengthMultipleOf<T>(
+    xs : Collection<T>, n : Int64
+) : Int64 where T <: ToString {
+    if (xs.size % n != 0) {
+        throw IncompatibleLengthException<T>(xs, multiple: n)
+    }
+    xs.size / n
+}
+/**
  * Assert all elements of a collection have the same parameter.
  *
  * @param xs The collection
@@ -237,21 +257,37 @@ public func AssertMinimumLength<T>(
  * @return The parameter the elements all share, if such a parameter exists
  */
 public func AssertCollectionHasSameParameter<T, U>(
-    xs : Collection<T>, fn : (T) -> U, paramType : ParamType
+    xs : Collection<T>, fn : (T) -> U, paramType : ParamType,
+    start!: Int64 = 0, end!: Int64 = xs.size,
+    excluding!: HashSet<Int64> = HashSet()
 ) : U where T <: ToString, U <: ToString & Equatable<U> {
     AssertNonEmpty(xs)
     let iterator = xs.iterator()
-    let targetParam = fn(iterator.next().getOrThrow())
-    for(i in 1..xs.size) {
-        let current = iterator.next().getOrThrow()
-        let currentParam = fn(current)
-        if (targetParam != currentParam) {
-            throw IncompatibleParameterException2<T, U>(
-                paramType, current, currentParam, targetParam
-            )
+    var targetParamOpt = None<U>
+    for(i in 0..start) {
+        iterator.next()
+    }
+    for(i in start..end) {
+        if(!excluding.contains(i)) {
+            let current = iterator.next().getOrThrow()
+            let targetParam = match(targetParamOpt) {
+                case Some(p) => p
+                case None =>
+                    let currentParam = fn(current)
+                    targetParamOpt = Some(currentParam)
+                    currentParam
+            }
+            let currentParam = fn(current)
+            if (targetParam != currentParam) {
+                throw IncompatibleParameterException2<T, U>(
+                    paramType, current, currentParam, targetParam
+                )
+            }
+        } else {
+            iterator.next()
         }
     }
-    targetParam
+    targetParamOpt.getOrThrow()
 }
 /**
  * Given an array of desired parameters, assert that each corresponding
@@ -381,4 +417,7 @@ public func AssertElementInCollection<T>(
         }
     }
     throw ElementNotInCollectionException(t, xs)
+}
+public func AssertUnreachable() : Unit {
+    throw UnreachableCodeException()
 }

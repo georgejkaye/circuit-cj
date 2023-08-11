@@ -1,14 +1,13 @@
 /**
- * assertions/exceptions.cj
+ * utils/exceptions.cj
  *
  * General exceptions
  *
  * @author George Kaye
  * @since 0.2
  */
-package assertions
+package utils
 import debug.*
-import utils.collectionToString
 /**
  * Exception for when associated parameters of two objects are not equal.
  *
@@ -80,10 +79,13 @@ class IncompatibleParameterException2<T, V> <: Exception
  * @param <T> The type of the object in an Option
  */
 class IncompatibleParameterException<T> <: Exception where T <: ToString {
-    public init(paramType : ParamType, current : Option<T>){
+    public init(_ : ParamType, current : Option<T>){
         ErrorMsg(
             "When checking that ${current} is not None, found that it was None"
         )
+    }
+    public init(_ : T, msg : String) {
+        ErrorMsg(msg)
     }
 }
 /**
@@ -120,6 +122,13 @@ class IncompatibleLengthException<T> <: Exception where T <: ToString {
         ErrorMsg(
             "Expected an array of ${exactText}length ${n} but ${contents} is " +
             "of length ${xs.size}"
+        )
+    }
+    public init(xs : Collection<T>, multiple! : Int64) {
+        let contents = collectionToString(xs, { x => "${x}"})
+        ErrorMsg(
+            "Expected an array of length a multiple of ${multiple} but " +
+            "${contents} is of length ${xs.size}"
         )
     }
 }
@@ -177,5 +186,10 @@ public class IncompatibleVariantException<T> <: Exception where T <: ToString {
 class ElementNotInCollectionException<T> <: Exception where T <: ToString {
     public init(wanted : T, collection : Collection<T>) {
         ErrorMsg("Expected ${wanted} to be in collection but it isn't")
+    }
+}
+class UnreachableCodeException <: Exception {
+    public init() {
+        ErrorMsg("This code should be unreachable")
     }
 }

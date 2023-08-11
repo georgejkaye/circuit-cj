@@ -11,7 +11,6 @@ package rewrite
 import syntax.*
 import debug.*
 import graphs.*
-import assertions.*
 
 public struct InputOutput<V> <: ToString where V <: ValueSymbol<V> {
     public InputOutput(
