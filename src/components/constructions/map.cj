@@ -3,19 +3,21 @@ package components.constructions
  * Perform a map, an operation that applies an operation in parallel to
  * multiple bundles.
  *
- * @param f The operation to apply to each bundle
- * @param incomingWires
+ * @param f (in data bundle) -> (out data bundle)
+ * @param incomingWires wires for each operation concatenated together
+ *                          data[0] ++ data[1] ++ data[2] ++ ...
  * @param incomingBundleSize The number of wires in each incoming bundle
  * @return An array containing all of the outgoing bundles
  */
 public func Map<V, G>(
     f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
     incomingWires : Array<Wire<V, G>>,
-    incomingBundleSize : Int64
+    numberOfOperations : Int64
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let numberOfOperations = incomingWires.size / incomingBundleSize
+    let incomingBundleSize =
+        AssertLengthMultipleOf(incomingWires, numberOfOperations)
     let outputBundles =
         Array<Array<Wire<V, G>>>(numberOfOperations, {
             i =>
@@ -44,8 +46,7 @@ public func Map<V, G>(
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let outputWires = Map(
-        GeneraliseSingleOutputFunction(f), inputWires,
-        incomingBundleSize
+        { inp => [f(inp)] }, inputWires, incomingBundleSize
     )
     FlattenSingleWireOutputs(outputWires)
 }
