@@ -38,9 +38,26 @@ extend ParamType <: ToString {
         }
     }
 }
+class IncompatibleParameterException <: Exception {
+    public init(message : String) {
+        ErrorMsg(message)
+    }
+}
+class UnreachableCodeException <: Exception {
+    public init() {
+        ErrorMsg("This code should be unreachable")
+    }
+}
 /**
- * Assert that two objects of are equal.
+ * Format a string about a failed assertion.
  *
+ * @param msg
+ * @return the assertion string
+ */
+func AssertionFailedMessage(msg : String) : String {
+    "Assertion failed: ${msg}"
+}
+/**
  * @param t
  * @param u
  */
@@ -50,107 +67,149 @@ public func AssertEqual<T, U>(t : T, u : U) : Unit
         U <: ToString
 {
     if (t != u) {
-        throw IncompatibleParameterException2<T, U>(t, u)
-    }
-}
-/**
- * Assert that a number is at least some target number.
- *
- * @param i The number to check
- * @param t The target number
- */
-public func AssertAtLeast(i : Int64, t : Int64) : Unit {
-    if(i < t) {
-        throw InsufficientParameterException(i, t)
-    }
-}
-/**
- * Assert that a number is at least some target number.
- *
- * @param i The number to check
- * @param t The target number
- */
-public func AssertAtMost(i : Int64, t : Int64) : Unit {
-    if(i > t) {
-        throw OversufficientParameterException(i, t)
-    }
-}
-public func AssertInRange(i : Int64, start : Int64, end : Int64) : Unit {
-    if(i < start || i >= end) {
         throw IncompatibleParameterException(
-            i, "Expected ${i} to be in range ${start}..${end} but it is not"
+            AssertionFailedMessage(
+                "${t} must be equal to ${u}"
+            )
         )
     }
 }
 /**
- * Assert a number is greater than or equal to zero.
- *
+ * @param t
+ * @param u
+ */
+public func AssertNotEqual<T, U>(t : T, u : U) : Unit
+    where
+        T <: Equatable<U> & ToString,
+        U <: ToString
+{
+    if (t == u) {
+        throw IncompatibleParameterException(
+            AssertionFailedMessage(
+                "${t} must not be equal to ${u}"
+            )
+        )
+    }
+}
+/**
+ * @param x
+ * @param y
+ */
+public func AssertGreaterThanOrEqualTo(x : Int64, y : Int64) : Unit {
+    if(x < y) {
+        throw IncompatibleParameterException(
+            AssertionFailedMessage("${x} must be greater than or equal to ${y}")
+        )
+    }
+}
+/**
+ * @param x
+ * @param y
+ */
+public func AssertGreaterThan(x : Int64, y : Int64) : Unit {
+    if(x <= y) {
+        throw IncompatibleParameterException(
+            AssertionFailedMessage("${x} must be greater than ${y}")
+        )
+    }
+}
+/**
+ * @param x
+ * @param y
+ */
+public func AssertLessThanOrEqualTo(x : Int64, y : Int64) : Unit {
+    if(x > y) {
+        throw IncompatibleParameterException(
+            AssertionFailedMessage("${x} must be less than or equal to ${y}")
+        )
+    }
+}
+/**
+ * @param x The number to check
+ * @param t The target number
+ */
+public func AssertLessThan(x : Int64, t : Int64) : Unit {
+    if(x >= t) {
+        throw IncompatibleParameterException(
+            AssertionFailedMessage("${x} must be less than ${t}")
+        )
+    }
+}
+/**
+ * @param x
+ * @param start
+ * @param end
+ */
+public func AssertInRange(x : Int64, start : Int64, end : Int64) : Unit {
+    if(x < start || x >= end) {
+        throw IncompatibleParameterException(
+            AssertionFailedMessage("${x} must be in range ${start}..${end}")
+        )
+    }
+}
+/**
  * @param x
  */
 public func AssertNonNegative(x : Int64) : Unit {
-    AssertAtLeast(x, 0)
+    AssertGreaterThanOrEqualTo(x, 0)
 }
 /**
- * Assert a number is greater than zero.
- *
  * @param x
  */
 public func AssertStrictlyPositive(x : Int64) : Unit {
-    AssertAtLeast(x, 1)
-}
-public func AssertMultipleOf(x : Int64, n : Int64) : Int64 {
-    if(x % n != 0) {
-        throw IncompatibleParameterException(
-            x, "Expected ${x} to be a multiple of ${n} but it is not"
-        )
-    }
-    x / n
+    AssertGreaterThanOrEqualTo(x, 1)
 }
 /**
- * Assert that an option is None.
- *
- * @param opt
- * @param paramType
+ * @param x
+ * @param multiple
+ * @return The multiple
  */
-public func AssertIsNone<T>(opt : Option<T>, paramType : ParamType) : Unit
+public func AssertMultipleOf(x : Int64, multiple : Int64) : Int64 {
+    if(x % multiple != 0) {
+        throw IncompatibleParameterException(
+            AssertionFailedMessage(
+                "${x} must be multiple of ${multiple}"
+            )
+        )
+    }
+    x / multiple
+}
+/**
+ * @param opt
+ */
+public func AssertIsNone<T>(opt : Option<T>) : Unit
     where T <: ToString
 {
     match (opt) {
         case None => ()
         case Some(t) =>
-            throw IncompatibleParameterException2(
-                paramType, opt, t, None<T>
+            throw IncompatibleParameterException(
+                AssertionFailedMessage("${opt} must be None")
             )
     }
 }
 /**
- * Assert that an option is Some.
- *
  * @param opt
- * @param paramType
- * @return The paramType of the option
  */
-public func AssertIsNotNone<T>(opt : Option<T>, paramType : ParamType) : T
+public func AssertIsNotNone<T>(opt : Option<T>) : T
     where T <: ToString
 {
     match (opt) {
         case None =>
-            throw IncompatibleParameterException(paramType, opt)
-        case Some(t) =>
-            t
+            throw IncompatibleParameterException(
+                AssertionFailedMessage("${opt} must not be None")
+            )
+        case Some(t) => t
     }
 }
 /**
- * Assert that a collection is non-empty
- *
  * @param xs
- * @param paramType
  */
-public func AssertNonEmpty<T>(
-    xs : Collection<T>
-) : Unit {
+public func AssertNonEmpty<T>(xs : Collection<T>) : Unit {
     if(xs.size == 0) {
-        throw EmptyException()
+        throw IncompatibleParameterException(
+            AssertionFailedMessage("Collection must be non-empty")
+        )
     }
 }
 /**
@@ -158,40 +217,38 @@ public func AssertNonEmpty<T>(
  * is also non-empty.
  *
  * @param xss
- * @param paramType
  */
-public func AssertElementsNonEmpty<T>(
-    xss : Collection<Collection<T>>, paramType : ParamType
-) : Unit {
+public func AssertElementsNonEmpty<T>(xss : Collection<Collection<T>>) : Unit {
     AssertNonEmpty(xss)
     for(xs in xss) {
         AssertNonEmpty(xs)
     }
 }
 /**
- * Assert that a collection is empty.
- *
  * @param xs
- * @param paramType
  */
-public func AssertEmpty<T>(
-    xs : Collection<T>, paramType : ParamType
-) : Unit {
+public func AssertEmpty<T>(xs : Collection<T>) : Unit where T <: ToString {
     if(xs.size != 0) {
-        throw NonEmptyException(paramType)
+        throw IncompatibleParameterException(
+            AssertionFailedMessage(
+                "Collection ${collectionToString(xs)} must be empty"
+            )
+        )
     }
 }
 /**
- * Assert that a collection has a given length.
- *
  * @param xs
  * @param length
  */
-public func AssertHasLength<T>(
-    xs : Collection<T>, length : Int64
-) : Unit where T <: ToString {
+public func AssertHasLength<T>(xs : Collection<T>, length : Int64) : Unit
+    where T <: ToString
+{
     if(xs.size != length) {
-        throw IncompatibleLengthException<T>(xs, length, true)
+        throw IncompatibleParameterException(
+            AssertionFailedMessage(
+                "${collectionToString<T>(xs)} must have length ${length}"
+            )
+        )
     }
 }
 /**
@@ -205,7 +262,9 @@ public func AssertSameLength<T, U>(
     xs : Collection<T>, ys : Collection<U>
 ) : Int64 where T <: ToString, U <: ToString {
     if(xs.size != ys.size) {
-        throw IncompatibleLengthException<T>(xs, ys.size, true)
+        throw IncompatibleParameterException(
+            AssertionFailedMessage("Collections must have the same size")
+        )
     }
     xs.size
 }
@@ -226,27 +285,37 @@ public func AssertAllSameLength<T>(
     )
 }
 /**
- * @param collection
- * @param n The minimum length
+ * @param xs
+ * @param minimum
  */
-public func AssertMinimumLength<T>(
-    xs : Collection<T>, n : Int64
-) : Unit where T <: ToString {
-    if (xs.size < n) {
-        throw IncompatibleLengthException<T>(xs, n, false)
+public func AssertMinimumLength<T>(xs : Collection<T>, minimum : Int64) : Unit
+    where T <: ToString
+{
+    if (xs.size < minimum) {
+        throw IncompatibleParameterException(
+            AssertionFailedMessage(
+                "Collection ${collectionToString(xs)} " +
+                "must have minimum length ${minimum} (it has length ${xs.size})"
+            )
+        )
     }
 }
 /**
- * @param collection
- * @param n The multiple
+ * @param xs
+ * @param multiple
+ * @return The multiple
  */
 public func AssertLengthMultipleOf<T>(
-    xs : Collection<T>, n : Int64
+    xs : Collection<T>, multiple : Int64
 ) : Int64 where T <: ToString {
-    if (xs.size % n != 0) {
-        throw IncompatibleLengthException<T>(xs, multiple: n)
+    if (xs.size % multiple != 0) {
+        throw IncompatibleParameterException(
+            AssertionFailedMessage(
+                "Collection length must be multiple of ${multiple} " +
+                "(it has length ${xs.size})")
+        )
     }
-    xs.size / n
+    xs.size / multiple
 }
 /**
  * Assert all elements of a collection have the same parameter.
@@ -262,6 +331,10 @@ public func AssertCollectionHasSameParameter<T, U>(
     excluding!: HashSet<Int64> = HashSet()
 ) : U where T <: ToString, U <: ToString & Equatable<U> {
     AssertNonEmpty(xs)
+    AssertNotEqual(xs.size, excluding.size)
+    AssertGreaterThanOrEqualTo(start, 0)
+    AssertLessThanOrEqualTo(end, xs.size)
+    AssertLessThan(start, end)
     let iterator = xs.iterator()
     var targetParamOpt = None<U>
     for(i in 0..start) {
@@ -279,8 +352,12 @@ public func AssertCollectionHasSameParameter<T, U>(
             }
             let currentParam = fn(current)
             if (targetParam != currentParam) {
-                throw IncompatibleParameterException2<T, U>(
-                    paramType, current, currentParam, targetParam
+                throw IncompatibleParameterException(
+                    AssertionFailedMessage(
+                        "Collection elements must all have ${paramType} " +
+                        "${targetParam} (they have ${paramType} " +
+                        "${mapCollection<T, U>(fn, xs)})"
+                    )
                 )
             }
         } else {
@@ -315,9 +392,12 @@ public func AssertElementsHaveParameters<T, U, V>(
             let currentParam = fnt(current)
             let desiredParam = fnu(desired)
             if (desiredParam != currentParam) {
-                throw IncompatibleParameterException3<T, U, V>(
-                    paramType, xs, map(fnt, xs),
-                    desiredParams, map(fnu, desiredParams)
+                throw IncompatibleParameterException(
+                    AssertionFailedMessage(
+                        "Collection elements must have ${paramType} " +
+                        "${map(fnu, desiredParams)} (they have ${paramType} " +
+                        "${map(fnt, xs)})"
+                    )
                 )
             } else {
                 currentParam
@@ -334,13 +414,16 @@ public func AssertElementsHaveParameters<T, U, V>(
  * @param paramType
  */
 public func AssertElementsHaveParameter<T, V>(
-    xs : Collection<T>, desiredParam : V, fn : (T) -> V,paramType : ParamType
+    xs : Collection<T>, desiredParam : V, fn : (T) -> V, paramType : ParamType
 ) : Unit where T <: ToString, V <: ToString & Equatable<V> {
     for (x in xs){
         if (fn(x) != desiredParam){
             let desired = mapCollection({ t : T => desiredParam }, xs)
-            throw IncompatibleParameterException2<T, V>(
-                paramType, xs, mapCollection(fn, xs), desiredParam
+            throw IncompatibleParameterException(
+                AssertionFailedMessage(
+                    "Collection elements must have ${paramType} " +
+                    "${desiredParam} (they have ${mapCollection(fn, xs)})"
+                )
             )
         }
     }
@@ -360,8 +443,11 @@ public func AssertBothSameParameter<T, U, V>(
     let xParam = fnt(x)
     let yParam = fnu(y)
     if (xParam != yParam) {
-        throw IncompatibleParameterException3<T, U, V>(
-            paramType, x, xParam, y, yParam
+        throw IncompatibleParameterException(
+            AssertionFailedMessage(
+                "${x} and ${y} must have ${paramType} ${paramType}" +
+                "(they have ${fnt(x)} and ${fnu(y)} respectively)"
+            )
         )
     }
     xParam
@@ -379,8 +465,11 @@ public func AssertHasParameter<T,U>(
 ) : Unit where T <: ToString, U <: ToString & Equatable<U> {
     let param = fn(t)
     if (param != desired) {
-        throw IncompatibleParameterException2<T, U>(
-            paramType, t, param, desired
+        throw IncompatibleParameterException(
+            AssertionFailedMessage(
+                "${t} must have ${paramType} ${desired}" +
+                "(it has ${param})"
+            )
         )
     }
 }
@@ -397,8 +486,11 @@ public func AssertHasAtLeastParameter<T, U>(
 ) : Unit where T <: ToString, U <: ToString & Comparable<U> {
     let param = fn(t)
     if (param < desired) {
-        throw InsufficientParameterException2<T, U>(
-            paramType, t, param, desired
+        throw IncompatibleParameterException(
+            AssertionFailedMessage(
+                "${t} must have ${paramType} at least ${desired}" +
+                "(it has ${param})"
+            )
         )
     }
 }
@@ -416,8 +508,19 @@ public func AssertElementInCollection<T>(
             return
         }
     }
-    throw ElementNotInCollectionException(t, xs)
+    throw IncompatibleParameterException(
+        AssertionFailedMessage(
+            "${t} must be in ${collectionToString(xs)}"
+        )
+    )
 }
 public func AssertUnreachable() : Unit {
     throw UnreachableCodeException()
+}
+public class IncompatibleVariantException<T> <: Exception where T <: ToString {
+    public init(t : T, desired : String) {
+        AssertionFailedMessage(
+            "${t} must be variant ${desired}"
+        )
+    }
 }

@@ -18,9 +18,7 @@ func SortByBit<T>(
 func SortByBit<T>(
     inputs : Array<Array<T>>, start!: Int64 = 0, end!: Int64 = inputs.size
 ) : Array<T> where T <: ToString & HasWidth {
-    let bundleWidth = AssertAllSameLength<T>(
-        inputs, start: start, end: end
-    )
+    let bundleWidth = AssertAllSameLength<T>(inputs, start: start, end: end)
     let totalLength = Sum(inputs, { ts : Array<T> => ts.size })
     let wiresToSort = end - start
     let toSortLength = Sum(
@@ -70,8 +68,8 @@ public func BitwiseCombine<V, G>(
     end!: Int64 = inputWires.size
 ) : Array<Wire<V, G>> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
     let widthOfOutputWires = numberOfBundles
-    AssertAtLeast(start, 0)
-    AssertAtMost(end, inputWires.size)
+    AssertGreaterThanOrEqualTo(start, 0)
+    AssertLessThanOrEqualTo(end, inputWires.size)
     let numberOfOutputWires = AssertMultipleOf(end - start, numberOfBundles)
     let totalOutputWires = numberOfOutputWires + start + (inputWires.size - end)
     let startOutputIndex = start

@@ -219,8 +219,8 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
         for(ec in v.GetOutEdges()) {
             AssertNotOwnedBy(ec.GetEdge(), this)
         }
-        AssertEmpty(v.GetInterfacedInputs(), InEdge)
-        AssertEmpty(v.GetInterfacedOutputs(), OutEdges)
+        AssertEmpty(v.GetInterfacedInputs())
+        AssertEmpty(v.GetInterfacedOutputs())
         this.vertices.remove(v)
         this.RemoveVertexFromHypergraphData(v)
     }

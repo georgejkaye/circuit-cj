@@ -105,7 +105,7 @@ extend GateLevelValue
     ) : Signal<GateLevelValue> {
         AssertNonNegative(x)
         let required = Int64(ceil(log2(Float64(x+1))))
-        AssertAtLeast(w, required)
+        AssertGreaterThanOrEqualTo(w, required)
         // Set up the list
         let bin = Array<GateLevelValue>(w, {x : Int64 => FALSE})
         var num = x

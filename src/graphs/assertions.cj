@@ -15,7 +15,7 @@ package graphs
  * @param u
  * @return None if there is no in edge, and the single in edge if there is one
  */
-func AssertAtMostOneInEdge<V, G, T, U>(
+func AssertLessThanOneInEdge<V, G, T, U>(
     t : T, u : U
 ) : Option<EdgeConnection<V, G>>
     where
@@ -40,7 +40,7 @@ func AssertAtMostOneInEdge<V, G, T, U>(
  * @param ts The array of vertex-like objects
  * @return None if there is no in edge, and the single in edge if there is one
  */
-func AssertAtMostOneInEdge<V, G, T>(
+func AssertLessThanOneInEdge<V, G, T>(
     ts : Array<T>
 ) : Option<EdgeConnection<V, G>>
     where
@@ -72,7 +72,7 @@ public func AssertHasNoInEdge<V, G, T>(v : T) : Unit
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: ContainsVertex<V, G>
 {
-    AssertIsNone(v.GetVertex().GetInEdge(), InEdge)
+    AssertIsNone(v.GetVertex().GetInEdge())
 }
 /**
  * Assert a given vertex-like object has no out edges
@@ -85,7 +85,7 @@ public func AssertHasNoOutEdges<V, G, T>(v : T) : Unit
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: ContainsVertex<V, G>
 {
-    AssertEmpty(v.GetVertex().GetOutEdges(), OutEdges)
+    AssertEmpty(v.GetVertex().GetOutEdges())
 }
 /**
  * Given an array of vertices, assert that they do not have any in edges
@@ -169,43 +169,5 @@ public func AssertNotOwnedBy<V, G>(e : Edge<V, G>, f : Hypergraph<V, G>) : Unit
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    if(e.GetGraph() == f) {
-        throw BadOwnershipException(e, f, false)
-    }
-}
-/**
- * Exception for ownership issues
- */
-class BadOwnershipException<V, G> <: Exception
-    where
-        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    /**
-     * Create a BadOwnershipException for an edge
-     *
-     * @param e The edge
-     * @param f The hypergraph
-     */
-    public init(e : Edge<V, G>, f : Hypergraph<V, G>, isOwned : Bool) {
-        let isOwnedString = if(isOwned) {
-            "is"
-        } else {
-            "is not"
-        }
-        ErrorMsg("Required that ${e} ${isOwnedString} owned by ${f} but it is")
-    }
-    /**
-     * Create a BadOwnershipException for a vertex
-     *
-     * @param v The vertex
-     * @param f The hypergraph
-     */
-    public init(v : Vertex<V, G>, f : Hypergraph<V, G>, isOwned : Bool) {
-        let isOwnedString = if(isOwned) {
-            "is"
-        } else {
-            "is not"
-        }
-        ErrorMsg("Required that ${v} ${isOwnedString} owned by ${f} but it is")
-    }
+    AssertIsNone(e.GetGraph())
 }

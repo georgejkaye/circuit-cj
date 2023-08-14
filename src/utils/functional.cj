@@ -30,7 +30,7 @@ public func fold_left_while<T, U>(
     if(xs.size > 0) {
         AssertInRange(start, 0, xs.size)
         AssertInRange(end, 0, xs.size+1)
-        AssertAtLeast(end, start)
+        AssertGreaterThanOrEqualTo(end, start)
         var done = false
         let iter = xs.iterator()
         for(_ in 0..start) {

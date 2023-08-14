@@ -402,7 +402,7 @@ public class Vertex<V, G>
         // We can only merge in a vertex owned by the same graph
         this.GetGraph().MergeHypergraphs(v)
         // We cannot allow the merged vertex to have multiple in edge
-        AssertAtMostOneInEdge(this, v)
+        AssertLessThanOneInEdge(this, v)
         // Any edge connected to the merging vertex must be updated
         match(v.GetInEdge()) {
             case None => ()

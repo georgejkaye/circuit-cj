@@ -15,7 +15,7 @@ public func MakeRippleBinaryPrimitive<V, G>(
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertEqual(primitive.GetArity(), 2)
-    AssertAtLeast(inputs, 2)
+    AssertGreaterThanOrEqualTo(inputs, 2)
     let numberOfOperations = inputs - 1
     let op = {
         acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>

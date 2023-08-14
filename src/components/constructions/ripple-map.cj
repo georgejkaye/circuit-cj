@@ -493,7 +493,7 @@ public func MakeRippleMap<V, G>(
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    AssertAtMost(accBundleSize, f.GetArity())
+    AssertLessThanOrEqualTo(accBundleSize, f.GetArity())
     // Whether the accumulator wires should come first or last in the
     // input or output ports
     let (inputAccFirst, outputAccFirst) = GetRippleBundlePositions(direction)
