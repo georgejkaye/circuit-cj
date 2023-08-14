@@ -49,6 +49,7 @@ public class Wire<V, G>
     }
     /**
      * Get the least significant bit (bit 0) of a wire.
+     *
      * @param w The wire to get the lsb from
      * @return The least significant bit of the wire
      */
@@ -57,6 +58,7 @@ public class Wire<V, G>
     }
     /**
      * Get the most significant bits (not bit 0) of a wire.
+     *
      * @param w The wire to get the msbs from
      * @return The most significant bits of the wire
      */
@@ -65,6 +67,7 @@ public class Wire<V, G>
     }
     /**
      * Get the most significant bit (bit n-1) of a wire.
+     *
      * @param w The wire to get the msb from
      * @return The most significant bit of the wire
      */
@@ -73,6 +76,7 @@ public class Wire<V, G>
     }
     /**
      * Get the least significant bits (not bit n-1) of a wire.
+     *
      * @param w The wire to get the lsbs from
      * @return The leasts significant bits of the wire
      */
@@ -80,7 +84,8 @@ public class Wire<V, G>
         this.LsbsAndMsb()[0]
     }
     /**
-     * Split a wire so that its least significant bit is a separate wire
+     * Split a wire so that its least significant bit is a separate wire.
+     *
      * @param w The wire to split
      * @return A tuple (lsb, msbs)
      */
@@ -89,7 +94,8 @@ public class Wire<V, G>
         (splits[0], splits[1])
     }
     /**
-     * Split a wire so that its most significant bit is a separate wire
+     * Split a wire so that its most significant bit is a separate wire.
+     *
      * @param w The wire to split
      * @return A tuple (lsbs, msb)
      */
@@ -98,8 +104,10 @@ public class Wire<V, G>
         (splits[0], splits[1])
     }
     /**
-     * Extract a given bit from a wire by splitting it into its constituent bits and
-     * returning the appropriate one. Bits are numbered starting with the lsb as 0.
+     * Extract a given bit from a wire by splitting it into its constituent bits
+     * and returning the appropriate one. Bits are numbered starting with the
+     * lsb as 0.
+     *
      * @param w The wire to extract from
      * @param i The bit to extract
      * @return The specified bit of the wire
@@ -130,7 +138,8 @@ extend Wire<V, G> <: ContainsWire<V, G> {
     }
 }
 /**
- * Make a wire (and underlying vertex) of a given width
+ * Make a wire (and underlying vertex) of a given width.
+ *
  * @param width The width of the wire
  * @return The wire
  */
@@ -141,7 +150,8 @@ public func UseWire<V, G>(width : Int64) : Wire<V, G>
     Wire(vertex)
 }
 /**
- * Make an array of wires all of a given width
+ * Make an array of wires all of a given width.
+ *
  * @param n The number of wires to create
  * @param width The width of the wire
  * @return The array of wires
@@ -153,7 +163,8 @@ public func UseWires<V, G>(width : Int64, n : Int64) : Array<Wire<V, G>>
     Array<Wire<V, G>>(n, { i : Int64 => UseWire(width) })
 }
 /**
- * Make an array of wires of given widths
+ * Make an array of wires of given widths.
+ *
  * @param widths The array of widths for the wires
  * @return The array of wires
  */
@@ -184,7 +195,8 @@ extend Signature<V, G> <: WireUser<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {}
 /**
- * Make an edge and get the wires corresponding to its targets
+ * Make an edge and get the wires corresponding to its targets.
+ *
  * @param label The label to give this edge
  * @param sources The array of source vertices
  * @param targets The array of target vertices
@@ -204,7 +216,8 @@ func UseEdge<V, G>(
     map({ t => Wire(t.GetVertex()) }, newEdge.GetTargets())
 }
 /**
- * Make an edge with fresh targets, and get the wires corresponding to them
+ * Make an edge with fresh targets, and get the wires corresponding to them.
+ *
  * @param label The label to give this edge
  * @param sources The array of verted objects
  * @param targets The array of width objects
@@ -243,6 +256,7 @@ public func UseEdgeWithNewOutputs<V, G, T>(
 /**
  * Merge two vertices together, such that any edges that had either vertex
  * as a source or target is updated with the merged vertex
+ *
  * @param v The vertex to merge into
  * @param w The vertex to be merged and removed
  * @return A tuple (merged vertex, removed vertex)
@@ -258,6 +272,7 @@ public func MergeWires<V, G>(
 /**
  * Split a wire into multiple wires with given widths, using a bundler edge.
  * The new widths must sum to the width of the original wire.
+ *
  * @param t The wire object to split
  * @param vs The array of widths to split this wire into
  * @return The array of split wires
@@ -276,28 +291,43 @@ public func Split<V, G, T>(w : T, vs : Array<Int64>) : Array<Wire<V, G>>
     )
 }
 /**
- * Split a wire into two wires with given widths, using a bundler edge. The
- * two widths must sum to the width of the original wire.
+ * Split a wire into two wires at a given point using a bundler edge.
+ *
  * @param w The wire to split
  * @param l The width of the 'left' output wire
- * @param r The width of the 'right' output wire
  * @return The two output wires
  */
-public func Split<V, G, T>(w : T, l : Int64) : (Wire<V, G>, Wire<V, G>)
+public func SplitAt<V, G, T>(w : T, left: Int64) : (Wire<V, G>, Wire<V, G>)
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: ContainsWire<V, G> & ToString
 {
-    let r = w.GetWire().GetWidth() - l
-    let split = Split(w, [l, r])
+    let r = w.GetWire().GetWidth() - left
+    let split = Split(w, [left, r])
     (split[0], split[1])
 }
 /**
+ * Split a wire into a given number of wires of equal size using a bundler edge.
+ *
+ * @param w The wire to split
+ * @param into The number of equal sized wires to split into
+ * @return The array of split wires
+ */
+public func SplitInto<V, G, T>(w : T, into: Int64) : Array<Wire<V, G>>
+        where
+        V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
+        T <: ContainsWire<V, G> & ToString
+{
+    let width = AssertMultipleOf(w.GetWidth(), into)
+    Split(w, Array<Int64>(into, { _ => width }))
+}
+/**
  * Split a wire into its constituent bits, using a bundler edge.
+ *
  * @param w The wire to split
  * @return The array of split wires
  */
-public func Split<V, G, T>(w : T) : Array<Wire<V, G>>
+public func SplitAll<V, G, T>(w : T) : Array<Wire<V, G>>
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: ContainsWire<V, G> & ToString
@@ -311,6 +341,7 @@ public func Split<V, G, T>(w : T) : Array<Wire<V, G>>
 /**
  * Combine an array of wires into one wire with width the sum of the original
  * wires.
+ *
  * @param ws The array of wires to combine
  * @return The combined wire
  */
@@ -334,6 +365,7 @@ public func Combine<V, G, T>(ws : Array<T>) : Wire<V, G>
 }
 /**
  * Combine two wires into one wire with width the sum of the original two wires.
+ *
  * @param lhs The 'left' wire to combine
  * @param rhs The 'right' wire to combine
  * @return The combined wire
@@ -346,7 +378,8 @@ public func Combine<V, G, T>(lhs : T, rhs : T) : Wire<V, G>
     Combine<V, G, T>([lhs, rhs])
 }
 /**
- * Replicate a signal into a wire of a given width
+ * Replicate a signal into a wire of a given width.
+ *
  * @param a The input wire
  * @param w The number of times to replicate the signal
  * @return The replicated wire
@@ -407,7 +440,8 @@ public class InterfaceWire<V, G>
     }
 }
 /**
- * Create an array of named wires, given an array of wires and an array of names
+ * Create an array of named wires, given arrays of wires and names.
+ *
  * @param wires The array of wires
  * @param names The array of names
  * @return The array of interface wires
@@ -427,6 +461,7 @@ public func NameWires<V, G>(
 /**
  * Create an array of named wires, given an array of wires and a function from
  * indices to names.
+ *
  * @param wires The array of wires
  * @param f The function from wire indices to names
  * @return The array of interface wires
@@ -442,7 +477,6 @@ public func NameWires<V, G>(
         { i : Int64 => InterfaceWire(wires[i], f(i)) }
     )
 }
-
 extend Wire<V, G> <: Drawable<V, G> {
     public func WriteDotToFile(
         file : String, depth!: Int64 = 0,
