@@ -157,8 +157,8 @@ public func MakeRipple<V, G>(
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
+    AssertEqual(f.GetCoarity(), accBundleSize)
     MakeRippleMap(
-        f, accBundleSize, numberOfOperations, name: name,
-        direction: direction
+        f, accBundleSize, numberOfOperations, name: name, direction: direction
     )
 }

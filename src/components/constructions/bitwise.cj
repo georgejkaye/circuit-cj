@@ -26,8 +26,11 @@ func SortByBit<T>(
     )
     Array<T>(totalLength, {
         i =>
-            if(i < start || i >= start + toSortLength) {
+            if(i < start) {
                 inputs[i][0]
+            } else if (i >= start + toSortLength) {
+                let inputArrayIndex = end + i - (start + toSortLength)
+                inputs[inputArrayIndex][0]
             } else {
                 let inputNumber = ((i - start) % wiresToSort) + start
                 let bitIndex = (i - start) / wiresToSort
@@ -316,16 +319,18 @@ public func BitwiseRippleMap<V, G>(
     direction!: Direction = TOP_TO_BOTTOM,
     start!: Int64 = 0,
     end!: Int64 = numberOfOperations,
-    sharedIndices!: HashSet<Int64> = HashSet()
+    sharedIndices!: HashSet<Int64> = HashSet(), initial!: Bool = true
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let (inputAccStart, inputAccEnd) =
         GetInputAccumulatorIndices(direction, accBundleSize, inputWires.size)
-    let (splitStart, splitEnd) = if(inputAccStart == 0) {
-        (inputAccEnd, inputWires.size)
+    let (splitStart, splitEnd, splitInto) = if(!initial) {
+        (0, accBundleSize, numberOfOperations + 1)
+    } else if(inputAccStart == 0) {
+        (inputAccEnd, inputWires.size, numberOfOperations)
     } else {
-        (0, inputAccStart)
+        (0, inputAccStart, numberOfOperations)
     }
     let actualSharedIndices = HashSet<Int64>()
     for(index in sharedIndices){
@@ -334,7 +339,7 @@ public func BitwiseRippleMap<V, G>(
     let splitWires =
         BitwiseSplit(
             inputWires, sharedIndices: actualSharedIndices,
-            start: splitStart, end: splitEnd, splitInto: numberOfOperations
+            start: splitStart, end: splitEnd, splitInto: splitInto
         )
     let rippledWires = RippleMap(
         f, splitWires, accBundleSize, numberOfOperations,
@@ -363,7 +368,8 @@ func MakeBitwiseRippleMap<V, G, T, U>(
     label: Label<V, G>,
     direction!: Direction = TOP_TO_BOTTOM,
     start!: Int64 = 0,
-    end!: Int64 = numberOfOperations
+    end!: Int64 = numberOfOperations,
+    initial!: Bool = true
 ) : InterfacedHypergraph<V, G>
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
@@ -373,7 +379,8 @@ func MakeBitwiseRippleMap<V, G, T, U>(
         map({t : T => UseWire<V, G>(t.GetWidth())}, allIncomingPorts)
     let outputWires = BitwiseRippleMap(
         f, inputWires, accBundleSize, numberOfOperations,
-        outgoingBundleSize, direction: direction, start: start, end: end
+        outgoingBundleSize, direction: direction, start: start, end: end,
+        initial: initial
     )
     let inputInterfaceWires = map2(
         { w : Wire<V, G>, t : T => InterfaceWire(w, t.GetName())},
@@ -415,13 +422,29 @@ func GetBitwiseRippleMapPortsWithInitial<T>(
         }
     })
 }
+func GetBitwiseRippleMapInputsWithoutInitial<T>(
+    portsPerOperation : Array<T>, numberOfOperations : Int64
+) : Array<Port> where T <: HasPort {
+    let bundleSize = portsPerOperation.size / 2
+    for(i in 0..bundleSize){
+        AssertBothSameWidth(
+            portsPerOperation[i], portsPerOperation[i+bundleSize]
+        )
+    }
+    let numberOfInputWires = numberOfOperations - 1
+    Array<Port>(numberOfInputWires, { i =>
+        let widthPerWire = portsPerOperation[i].GetWidth()
+        let totalWidth = widthPerWire * (numberOfOperations + 1)
+        Port(totalWidth, name: portsPerOperation[i].GetName())
+    })
+}
 public func MakeBitwiseRippleMap<V, G, T>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) ->
             (Array<Wire<V, G>>, Array<Wire<V, G>>),
     accPorts : Array<T>, portsPerIncomingBundle : Array<T>,
     portsPerOutgoingBundle : Array<T>, numberOfOperations : Int64,
     name : String, direction!: Direction,
-    start!: Int64 = 0, end!: Int64 = numberOfOperations
+    start!: Int64 = 0, end!: Int64 = numberOfOperations, initial!: Bool = true
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>, T <: HasPort
 {
@@ -433,10 +456,17 @@ public func MakeBitwiseRippleMap<V, G, T>(
     } else {
         (portsPerIncomingBundle, accPorts)
     }
-    let allInputPorts = GetBitwiseRippleMapPortsWithInitial<T>(
-        concat(inputFirst, inputSecond), inputAccFirst, accPorts.size,
-        numberOfOperations
-    )
+    let inputPortsPerOperation = concat(inputFirst, inputSecond)
+    let allInputPorts = if(!initial) {
+        GetBitwiseRippleMapInputsWithoutInitial(
+            inputPortsPerOperation, numberOfOperations
+        )
+    } else {
+        GetBitwiseRippleMapPortsWithInitial<T>(
+            inputPortsPerOperation, inputAccFirst, accPorts.size,
+            numberOfOperations
+        )
+    }
     let (outputFirst, outputSecond) = if(outputAccFirst) {
         (accPorts, portsPerOutgoingBundle)
     } else {
@@ -451,13 +481,13 @@ public func MakeBitwiseRippleMap<V, G, T>(
     MakeBitwiseRippleMap(
         f, allInputPorts, allOutputPorts, accPorts.size,
         portsPerIncomingBundle.size, portsPerIncomingBundle.size, label,
-        direction: direction
+        direction: direction, initial: initial
     )
 }
 public func MakeBitwiseRippleMap<V, G>(
     f : InterfacedHypergraph<V, G>, accBundleSize : Int64,
-    inputDataWireWidth : Int64, name!: Option<String> = None<String>,
-    direction!: Direction = TOP_TO_BOTTOM
+    numberOfOperations : Int64, name!: Option<String> = None<String>,
+    direction!: Direction = TOP_TO_BOTTOM, initial!: Bool = true
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -465,12 +495,17 @@ public func MakeBitwiseRippleMap<V, G>(
     let op = GetRippleMapOperationForSubcircuit(
         f, direction, outputAccFirst, accBundleSize
     )
-    let numberOfOperations = inputDataWireWidth
-    let allInputPorts = GetBitwiseRippleMapPortsWithInitial(
-        f.GetInputs(), inputAccFirst, accBundleSize, inputDataWireWidth
-    )
+    let allInputPorts = if(!initial) {
+        GetBitwiseRippleMapInputsWithoutInitial(
+            f.GetInputs(), numberOfOperations
+        )
+    } else {
+        GetBitwiseRippleMapPortsWithInitial(
+            f.GetInputs(), inputAccFirst, accBundleSize, numberOfOperations
+        )
+    }
     let allOutputPorts = GetBitwiseRippleMapPortsWithInitial(
-        f.GetOutputs(), outputAccFirst, accBundleSize, inputDataWireWidth
+        f.GetOutputs(), outputAccFirst, accBundleSize, numberOfOperations
     )
     let circuitLabel = match(name) {
         case Some(s) => s
@@ -479,8 +514,9 @@ public func MakeBitwiseRippleMap<V, G>(
     let spec = Specification(circuitLabel, allInputPorts, allOutputPorts)
     let label = Label<V, G>.COMPOSITE(spec)
     MakeBitwiseRippleMap<V, G, Port, Port>(
-        op, allInputPorts, allOutputPorts, accBundleSize, inputDataWireWidth,
-        f.GetCoarity() - accBundleSize, label, direction: direction
+        op, allInputPorts, allOutputPorts, accBundleSize, numberOfOperations,
+        f.GetCoarity() - accBundleSize, label, direction: direction,
+        initial: initial
     )
 }
 public func MakeBitwiseRipple<V, G, T>(
@@ -488,7 +524,7 @@ public func MakeBitwiseRipple<V, G, T>(
             (Array<Wire<V, G>>, Array<Wire<V, G>>),
     accPorts : Array<T>, portsPerIncomingBundle : Array<T>,
     numberOfOperations : Int64, name : String, direction!: Direction,
-    start!: Int64 = 0, end!: Int64 = numberOfOperations
+    start!: Int64 = 0, end!: Int64 = numberOfOperations, initial!: Bool = true
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>, T <: HasPort
 {
@@ -498,18 +534,20 @@ public func MakeBitwiseRipple<V, G, T>(
     }
     MakeBitwiseRippleMap<V, G, T>(
         f, accPorts, portsPerIncomingBundle, Array<T>(),
-        numberOfOperations, name, direction: direction, start: start, end: end
+        numberOfOperations, name, direction: direction, start: start, end: end,
+        initial: initial
     )
 }
 public func MakeBitwiseRipple<V, G>(
     f : InterfacedHypergraph<V, G>, accBundleSize : Int64,
-    inputDataWireWidth : Int64, name!: Option<String> = None<String>,
-    direction!: Direction = TOP_TO_BOTTOM
+    numberOfOperations : Int64, name!: Option<String> = None<String>,
+    direction!: Direction = TOP_TO_BOTTOM, initial!: Bool = true
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertEqual(f.GetCoarity(), accBundleSize)
     MakeBitwiseRippleMap(
-        f, accBundleSize, inputDataWireWidth, name: name, direction: direction
+        f, accBundleSize, numberOfOperations, name: name, direction: direction,
+        initial: initial
     )
 }

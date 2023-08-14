@@ -108,7 +108,6 @@ public func UseBitwiseMapPrimitive<V, G>(
     if(width == 1) {
         UsePrimitive(primitive, inputWires, delay: delay)
     } else {
-        println("The width is ${width} and there are ${inputWires.size} wires to map")
         let bitwiseMap =
             MakeBitwiseMapPrimitive(
                 primitive, width: width, inputs: inputWires.size, delay: delay
@@ -135,11 +134,12 @@ public func MakeBitwiseRippleBinaryPrimitive<V, G>(
     let spec = Specification(
         "${primitive.GetName()}1_${width}", inputPorts, outputPorts
     )
-    MakeBitwise<V, G, Port, Port>(
-        { ws : Array<Wire<V, G>> =>
-            UseRippleBinaryPrimitive<V, G>(primitive, ws, delay: delay)
-        }, inputPorts, outputPorts, Label<V, G>.COMPOSITE(spec)
-    )
+    // MakeBitwise<V, G, Port, Port>(
+    //     { ws : Array<Wire<V, G>> =>
+    //         UseRippleBinaryPrimitive<V, G>(primitive, ws, delay: delay)
+    //     }, inputPorts, outputPorts, Label<V, G>.COMPOSITE(spec)
+    // )
+    throw Exception("todo")
 }
 /**
  * Use a circuit that splits an input wire into its bits and ripples a given
