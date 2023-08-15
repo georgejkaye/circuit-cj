@@ -27,7 +27,6 @@ public func Map<V, G>(
                 f(curInputWires)
         })
     concat(outputBundles)
-
 }
 /**
  * Perform a map, an operation that applies an operation in parallel to

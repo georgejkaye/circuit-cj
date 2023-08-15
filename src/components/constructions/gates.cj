@@ -45,7 +45,7 @@ public func UseRippleBinaryPrimitive<V, G>(
 {
     AssertEqual(primitive.GetArity(), 2)
     AssertLengthIsGreaterThanOrEqualTo(inputWires, 2)
-    let width = AssertAllSameWidth(inputWires)
+    let width = AssertAllElementsHaveSameWidth(inputWires)
     if(inputWires.size == 2) {
         UsePrimitive(primitive, inputWires, delay: delay)
     } else {
@@ -86,7 +86,8 @@ public func MakeBitwiseMapPrimitive<V, G>(
             UseRippleBinaryPrimitive(primitive, ws, delay: delay)
     }
     MakeBitwiseMap(
-        function, allInputPorts, allOutputPorts, Label<V, G>.COMPOSITE(spec)
+        function, allInputPorts, allOutputPorts, Label<V, G>.COMPOSITE(spec),
+        numberOfOperations: width
     )
 }
 /**
@@ -103,7 +104,7 @@ public func UseBitwiseMapPrimitive<V, G>(
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let width = AssertAllSameWidth(inputWires)
+    let width = AssertAllElementsHaveSameWidth(inputWires)
     AssertHasLength(inputWires, primitive.GetArity())
     if(width == 1) {
         UsePrimitive(primitive, inputWires, delay: delay)
@@ -134,12 +135,14 @@ public func MakeBitwiseRippleBinaryPrimitive<V, G>(
     let spec = Specification(
         "${primitive.GetName()}1_${width}", inputPorts, outputPorts
     )
-    // MakeBitwise<V, G, Port, Port>(
-    //     { ws : Array<Wire<V, G>> =>
-    //         UseRippleBinaryPrimitive<V, G>(primitive, ws, delay: delay)
-    //     }, inputPorts, outputPorts, Label<V, G>.COMPOSITE(spec)
-    // )
-    throw TodoException("todo")
+    let op = {
+        acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
+            UsePrimitive(primitive, [acc[0], cur[0]])
+    }
+    let name = "${primitive.GetName()}_1_${width}"
+    MakeBitwiseRipple<V, G, Port>(
+        op, [Port(1)], [Port(1)], width - 1, name, initial: false
+    )
 }
 /**
  * Use a circuit that splits an input wire into its bits and ripples a given
@@ -155,7 +158,7 @@ public func UseBitwiseRippleBinaryPrimitive<V, G>(
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let width = AssertAllSameWidth(inputWires)
+    let width = AssertAllElementsHaveSameWidth(inputWires)
     UseSubcircuit(
         MakeBitwiseRippleBinaryPrimitive(primitive, width: width, delay: delay),
         inputWires

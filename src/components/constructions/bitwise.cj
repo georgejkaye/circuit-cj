@@ -106,14 +106,15 @@ public func BitwiseCombine<V, G>(
  */
 public func BitwiseMap<V, G>(
     f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
-    inputWires : Array<Wire<V, G>>, sharedIndices!: HashSet<Int64> = HashSet()
+    inputWires : Array<Wire<V, G>>, numberOfOperations!: Int64,
+    sharedIndices!: HashSet<Int64> = HashSet()
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>,  G <: PrimitiveSymbol<V, G>
 {
-    // There is one operation for each bit of the split wires
-    let numberOfOperations =
-        AssertAllSameWidth(inputWires, excluding: sharedIndices)
-    let splitWires = BitwiseSplit(inputWires, sharedIndices: sharedIndices)
+
+    let splitWires = BitwiseSplit(
+        inputWires, sharedIndices: sharedIndices, splitInto: numberOfOperations
+    )
     let mappedWires = Map(f, splitWires, numberOfOperations)
     let combinedWires = BitwiseCombine(mappedWires, numberOfOperations)
     combinedWires
@@ -129,10 +130,15 @@ public func BitwiseMap<V, G>(
  */
 public func BitwiseMap<V, G>(
     f : (Array<Wire<V, G>>) -> Wire<V, G>,
-    inputWires : Array<Wire<V, G>>, sharedIndices!: HashSet<Int64>
+    inputWires : Array<Wire<V, G>>,
+    numberOfOperations!: Int64 = AssertAllElementsHaveSameWidth(inputWires),
+    sharedIndices!: HashSet<Int64>
 ) : Wire<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
     let fAdjusted = { inputs : Array<Wire<V, G>> => [f(inputs)] }
-    BitwiseMap<V, G>(fAdjusted, inputWires, sharedIndices: sharedIndices)[0]
+    BitwiseMap<V, G>(
+        fAdjusted, inputWires, numberOfOperations: numberOfOperations,
+        sharedIndices: sharedIndices
+    )[0]
 }
 /**
  * Perform a bitwise map: splitting input wires into one-bit wires, applying an
@@ -145,12 +151,15 @@ public func BitwiseMap<V, G>(
  */
 public func BitwiseMap<V, G>(
     f : (Wire<V, G>) -> Wire<V, G>, input : Wire<V, G>,
-    sharedIndices!: HashSet<Int64>
+    numberOfOperations!: Int64, sharedIndices!: HashSet<Int64>
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let fAdjusted = { inputs : Array<Wire<V, G>> => [f(inputs[0])] }
-    BitwiseMap(fAdjusted, [input], sharedIndices: sharedIndices)[0]
+    BitwiseMap(
+        fAdjusted, [input], numberOfOperations: numberOfOperations,
+        sharedIndices: sharedIndices
+    )[0]
 }
 /**
  * Make a bitwise map circuit: splitting input wires into one-bit wires,
@@ -165,15 +174,23 @@ public func BitwiseMap<V, G>(
 func MakeBitwiseMap<V, G, T, U>(
     f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
     allInputPorts : Array<T>, allOutputPorts : Array<U>,
-    label: Label<V, G>, sharedInputWires!: HashSet<Int64> = HashSet()
+    label: Label<V, G>,
+    numberOfOperations!: Int64,
+    sharedInputWires!: HashSet<Int64> = HashSet()
 ) : InterfacedHypergraph<V, G>
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: HasPort, U <: HasPort
 {
-    let width = AssertAllSameWidth(allInputPorts, excluding: sharedInputWires)
+    let width = AssertAllElementsMultiplesOf(
+        allInputPorts, numberOfOperations, { t => t.GetWidth() },
+        excluding: sharedInputWires
+    )
     let inputWires = map({t : T => UseWire<V, G>(t.GetWidth())}, allInputPorts)
-    let outputWires = BitwiseMap(f, inputWires, sharedIndices: sharedInputWires)
+    let outputWires = BitwiseMap(
+        f, inputWires, numberOfOperations: numberOfOperations,
+        sharedIndices: sharedInputWires
+    )
     let inputInterfaceWires = map2(
         { w : Wire<V, G>, t : T => InterfaceWire(w, t.GetName()) },
         inputWires, allInputPorts
@@ -232,6 +249,7 @@ public func MakeBitwiseMap<V, G, T, U>(
     let spec = Specification(name, totalInputPorts, totalOutputPorts)
     MakeBitwiseMap(
         f, totalInputPorts, totalOutputPorts, Label<V, G>.COMPOSITE(spec),
+        numberOfOperations: numberOfOperations,
         sharedInputWires: sharedInputWires
     )
 }
@@ -264,7 +282,7 @@ public func GetBitwiseMapPorts<V, G, T>(
  */
 public func MakeBitwiseMap<V, G>(
     f : InterfacedHypergraph<V, G>,
-    numberOfOperations : Int64,
+    numberOfOperations!: Int64,
     sharedInputWires!: HashSet<Int64> = HashSet()
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
@@ -285,7 +303,8 @@ public func MakeBitwiseMap<V, G>(
     MakeBitwiseMap(
         { ws : Array<Wire<V, G>> => UseSubcircuit(f, ws) },
         bitwiseMapInputPorts, bitwiseMapOutputPorts,
-        Label<V, G>.COMPOSITE(spec), sharedInputWires: sharedInputWires
+        Label<V, G>.COMPOSITE(spec), numberOfOperations: numberOfOperations,
+        sharedInputWires: sharedInputWires
     )
 }
 /**
@@ -300,13 +319,18 @@ public func MakeBitwiseMap<V, G>(
 public func UseBitwiseMap<V, G>(
     f : InterfacedHypergraph<V, G>,
     inputWires : Array<Wire<V, G>>,
+    numberOfOperations: Int64,
     sharedInputWires!: HashSet<Int64> = HashSet()
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let width = AssertAllSameWidth(inputWires, excluding: sharedInputWires)
-    let numberOfOperations = (inputWires.size - sharedInputWires.size) / width
-    UseSubcircuit(MakeBitwiseMap(f, width, sharedInputWires: sharedInputWires))
+    let width = AssertAllElementsHaveSameWidth(inputWires, excluding: sharedInputWires)
+    UseSubcircuit(
+        MakeBitwiseMap(
+            f, numberOfOperations: numberOfOperations,
+            sharedInputWires: sharedInputWires
+        )
+    )
 }
 
 public func BitwiseRippleMap<V, G>(
@@ -431,7 +455,7 @@ func GetBitwiseRippleMapInputsWithoutInitial<T>(
             portsPerOperation[i], portsPerOperation[i+bundleSize]
         )
     }
-    let numberOfInputWires = numberOfOperations - 1
+    let numberOfInputWires = bundleSize
     Array<Port>(numberOfInputWires, { i =>
         let widthPerWire = portsPerOperation[i].GetWidth()
         let totalWidth = widthPerWire * (numberOfOperations + 1)
@@ -480,7 +504,7 @@ public func MakeBitwiseRippleMap<V, G, T>(
     let label = Label<V, G>.COMPOSITE(spec)
     MakeBitwiseRippleMap(
         f, allInputPorts, allOutputPorts, accPorts.size,
-        portsPerIncomingBundle.size, portsPerIncomingBundle.size, label,
+        numberOfOperations, portsPerIncomingBundle.size, label,
         direction: direction, initial: initial
     )
 }
@@ -520,20 +544,20 @@ public func MakeBitwiseRippleMap<V, G>(
     )
 }
 public func MakeBitwiseRipple<V, G, T>(
-    f : (Array<Wire<V, G>>, Array<Wire<V, G>>) ->
-            (Array<Wire<V, G>>, Array<Wire<V, G>>),
+    f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> (Array<Wire<V, G>>),
     accPorts : Array<T>, portsPerIncomingBundle : Array<T>,
-    numberOfOperations : Int64, name : String, direction!: Direction,
-    start!: Int64 = 0, end!: Int64 = numberOfOperations, initial!: Bool = true
+    numberOfOperations : Int64, name : String,
+    direction!: Direction = TOP_TO_BOTTOM, start!: Int64 = 0,
+    end!: Int64 = numberOfOperations, initial!: Bool = true
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>, T <: HasPort
 {
     let op = {
         acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
-            (Array<Wire<V, G>>(), f(acc, cur))
+            (f(acc, cur), Array<Wire<V, G>>())
     }
     MakeBitwiseRippleMap<V, G, T>(
-        f, accPorts, portsPerIncomingBundle, Array<T>(),
+        op, accPorts, portsPerIncomingBundle, Array<T>(),
         numberOfOperations, name, direction: direction, start: start, end: end,
         initial: initial
     )
