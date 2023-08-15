@@ -339,7 +339,6 @@ public func BitwiseRippleMap<V, G>(
     inputWires : Array<Wire<V, G>>,
     accBundleSize: Int64,
     numberOfOperations : Int64,
-    outgoingBundleSize : Int64,
     direction!: Direction = TOP_TO_BOTTOM,
     start!: Int64 = 0,
     end!: Int64 = numberOfOperations,
@@ -366,10 +365,9 @@ public func BitwiseRippleMap<V, G>(
             start: splitStart, end: splitEnd, splitInto: splitInto
         )
     let rippledWires = RippleMap(
-        f, splitWires, accBundleSize, numberOfOperations,
-        outgoingBundleSize, direction: direction, start: start, end: end
+        f, splitWires, accBundleSize, numberOfOperations, direction: direction
     )
-    let (outputAccStart, outputAccEnd) =
+    let (outputAccStart, outputAccEnd, _) =
         GetOutputAccumulatorIndices(direction, accBundleSize, rippledWires.size)
     let (combineStart, combineEnd) = if(outputAccStart == 0) {
         (outputAccEnd, rippledWires.size)
@@ -381,6 +379,34 @@ public func BitwiseRippleMap<V, G>(
     )
     combinedWires
 }
+/**
+ * @return A tuple of accumulator wires and output wires
+ */
+public func BitwiseRippleMap<V, G>(
+    f : (Array<Wire<V, G>>, Array<Wire<V, G>>) ->
+            (Array<Wire<V, G>>, Array<Wire<V, G>>),
+    accWires : Array<Wire<V, G>>,
+    incomingWires : Array<Wire<V, G>>,
+    numberOfOperations!: Int64,
+    direction!: Direction = TOP_TO_BOTTOM,
+    sharedIndices!: HashSet<Int64> = HashSet(),
+    initial!: Bool = true
+) : (Array<Wire<V, G>>, Array<Wire<V, G>>)
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    let outputs = BitwiseRippleMap(
+        f, concat(accWires, incomingWires), accWires.size, numberOfOperations,
+        direction: direction
+    )
+    let (outputAccStart, outputAccEnd, partitionPoint) =
+        GetOutputAccumulatorIndices(direction, accWires.size, outputs.size)
+    let (first, second) = outputs.partition(partitionPoint)
+    if(outputAccStart == 0) {
+        (first, second)
+    } else {
+        (second, first)
+    }
+}
 func MakeBitwiseRippleMap<V, G, T, U>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) ->
             (Array<Wire<V, G>>, Array<Wire<V, G>>),
@@ -388,7 +414,6 @@ func MakeBitwiseRippleMap<V, G, T, U>(
     allOutgoingPorts : Array<U>,
     accBundleSize: Int64,
     numberOfOperations : Int64,
-    outgoingBundleSize : Int64,
     label: Label<V, G>,
     direction!: Direction = TOP_TO_BOTTOM,
     start!: Int64 = 0,
@@ -402,8 +427,7 @@ func MakeBitwiseRippleMap<V, G, T, U>(
     let inputWires =
         map({t : T => UseWire<V, G>(t.GetWidth())}, allIncomingPorts)
     let outputWires = BitwiseRippleMap(
-        f, inputWires, accBundleSize, numberOfOperations,
-        outgoingBundleSize, direction: direction, start: start, end: end,
+        f, inputWires, accBundleSize, numberOfOperations, direction: direction,
         initial: initial
     )
     let inputInterfaceWires = map2(
@@ -465,20 +489,21 @@ func GetBitwiseRippleMapInputsWithoutInitial<T>(
 public func MakeBitwiseRippleMap<V, G, T>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) ->
             (Array<Wire<V, G>>, Array<Wire<V, G>>),
-    accPorts : Array<T>, portsPerIncomingBundle : Array<T>,
-    portsPerOutgoingBundle : Array<T>, numberOfOperations : Int64,
-    name : String, direction!: Direction,
-    start!: Int64 = 0, end!: Int64 = numberOfOperations, initial!: Bool = true
+    inputAccPorts : Array<T>, inputDataPorts : Array<T>,
+    outputAccPorts : Array<T>, outputDataPorts : Array<T>,
+    numberOfOperations : Int64, name : String,
+    direction!: Direction = TOP_TO_BOTTOM, initial!: Bool = true
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>, T <: HasPort
 {
-    let totalInputPorts = accPorts.size + portsPerIncomingBundle.size
-    let totalOutputPorts = accPorts.size + portsPerOutgoingBundle.size
+    AssertElementsHaveSameWidths(inputAccPorts, outputAccPorts)
+    let totalInputPorts = inputAccPorts.size + inputDataPorts.size
+    let totalOutputPorts = inputAccPorts.size + outputDataPorts.size
     let (inputAccFirst, outputAccFirst) = GetRippleBundlePositions(direction)
     let (inputFirst, inputSecond) = if(inputAccFirst) {
-        (accPorts, portsPerIncomingBundle)
+        (inputAccPorts, inputDataPorts)
     } else {
-        (portsPerIncomingBundle, accPorts)
+        (inputDataPorts, inputAccPorts)
     }
     let inputPortsPerOperation = concat(inputFirst, inputSecond)
     let allInputPorts = if(!initial) {
@@ -487,25 +512,24 @@ public func MakeBitwiseRippleMap<V, G, T>(
         )
     } else {
         GetBitwiseRippleMapPortsWithInitial<T>(
-            inputPortsPerOperation, inputAccFirst, accPorts.size,
+            inputPortsPerOperation, inputAccFirst, inputAccPorts.size,
             numberOfOperations
         )
     }
     let (outputFirst, outputSecond) = if(outputAccFirst) {
-        (accPorts, portsPerOutgoingBundle)
+        (outputAccPorts, outputDataPorts)
     } else {
-        (portsPerOutgoingBundle, accPorts)
+        (outputDataPorts, outputAccPorts)
     }
     let allOutputPorts = GetBitwiseRippleMapPortsWithInitial<T>(
-        concat(outputFirst, outputSecond), outputAccFirst, accPorts.size,
+        concat(outputFirst, outputSecond), outputAccFirst, outputAccPorts.size,
         numberOfOperations
     )
     let spec = Specification(name, allInputPorts, allOutputPorts)
     let label = Label<V, G>.COMPOSITE(spec)
     MakeBitwiseRippleMap(
-        f, allInputPorts, allOutputPorts, accPorts.size,
-        numberOfOperations, portsPerIncomingBundle.size, label,
-        direction: direction, initial: initial
+        f, allInputPorts, allOutputPorts, inputAccPorts.size,
+        numberOfOperations, label, direction: direction, initial: initial
     )
 }
 public func MakeBitwiseRippleMap<V, G>(
@@ -539,8 +563,7 @@ public func MakeBitwiseRippleMap<V, G>(
     let label = Label<V, G>.COMPOSITE(spec)
     MakeBitwiseRippleMap<V, G, Port, Port>(
         op, allInputPorts, allOutputPorts, accBundleSize, numberOfOperations,
-        f.GetCoarity() - accBundleSize, label, direction: direction,
-        initial: initial
+        label, direction: direction, initial: initial
     )
 }
 public func MakeBitwiseRipple<V, G, T>(
@@ -557,9 +580,8 @@ public func MakeBitwiseRipple<V, G, T>(
             (f(acc, cur), Array<Wire<V, G>>())
     }
     MakeBitwiseRippleMap<V, G, T>(
-        op, accPorts, portsPerIncomingBundle, Array<T>(),
-        numberOfOperations, name, direction: direction, start: start, end: end,
-        initial: initial
+        op, accPorts, portsPerIncomingBundle, accPorts, Array<T>(),
+        numberOfOperations, name, direction: direction, initial: initial
     )
 }
 public func MakeBitwiseRipple<V, G>(

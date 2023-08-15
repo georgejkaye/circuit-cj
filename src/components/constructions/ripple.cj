@@ -18,9 +18,7 @@ public func Ripple<V, G>(
     inputWires : Array<Wire<V, G>>,
     accBundleSize: Int64,
     dataBundleSize: Int64,
-    direction!: Direction = TOP_TO_BOTTOM,
-    start!: Int64 = 0,
-    end!: Int64 = (inputWires.size - accBundleSize) / dataBundleSize
+    direction!: Direction = TOP_TO_BOTTOM
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -31,7 +29,7 @@ public func Ripple<V, G>(
         }
     RippleMap(
         function, inputWires, accBundleSize, dataBundleSize,
-        0, direction: direction, start: start, end: end
+        direction: direction
     )
 }
 /**
@@ -62,10 +60,7 @@ public func Ripple<V, G>(
             let curAcc = f(acc[0], cur)
             [curAcc]
         }
-    Ripple(
-        function, inputWires, 1, dataBundleSize,
-        direction: direction, start: start, end: end
-    )[0]
+    Ripple(function, inputWires, 1, dataBundleSize, direction: direction)[0]
 }
 /**
  * Make a ripple curcuit, an operation that starts with an accumulator bundle

@@ -62,7 +62,8 @@ func ConcatAccInputBundles<V, G>(
  * @param direction
  * @param accBundleSize
  * @param totalinputPorts
- * @return A tuple of start and end indices of the accumulator bundle
+ * @return A tuple of start and end indices of the accumulator bundle, and the
+                partition point between accumulator and outputs
  */
 func GetInputAccumulatorIndices(
     direction : Direction, accBundleSize : Int64, totalinputPorts : Int64
@@ -84,12 +85,15 @@ func GetInputAccumulatorIndices(
  */
 func GetOutputAccumulatorIndices(
     direction : Direction, accBundleSize : Int64, totalinputPorts : Int64
-) : (Int64, Int64) {
-    let start = match(direction) {
-        case TOP_TO_BOTTOM => totalinputPorts - accBundleSize
-        case BOTTOM_TO_TOP => 0
+) : (Int64, Int64, Int64) {
+    let (start, partition) = match(direction) {
+        case TOP_TO_BOTTOM =>
+            let startIndex = totalinputPorts - accBundleSize
+            (startIndex, startIndex)
+        case BOTTOM_TO_TOP =>
+            (0, accBundleSize)
     }
-    (start, start + accBundleSize)
+    (start, start + accBundleSize, partition)
 }
 /**
  * Get the start and end indices of the input bundle with a certin index in some
@@ -151,10 +155,7 @@ public func RippleMap<V, G>(
     inputWires : Array<Wire<V, G>>,
     accBundleSize : Int64,
     numberOfOperations : Int64,
-    outgoingBundleSize : Int64,
-    direction!: Direction = TOP_TO_BOTTOM,
-    start!: Int64 = 0,
-    end!: Int64 = numberOfOperations
+    direction!: Direction = TOP_TO_BOTTOM
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -170,12 +171,9 @@ public func RippleMap<V, G>(
         GetInputAccumulatorIndices(direction, accBundleSize, numberOfInputWires)
     // Initialise the accumulator with the wires from the inputs
     var curAcc = inputWires.sliceArray(start: accStart, end: accEnd)
-    let numberOfOutputWires =
-        (outgoingBundleSize * numberOfOperations) + accBundleSize
-    // Initialise the output wires with the correct length
-    let outputPorts = ArrayList<Wire<V, G>>(numberOfOutputWires)
+    let outputPorts = ArrayList<Wire<V, G>>()
     // Perform the ripple
-    for(i in start..end) {
+    for(i in 0..numberOfOperations) {
         // Identify where the current input bundle starts
         let (curInputStart, curInputEnd) =
             GetInputIndices(
@@ -212,9 +210,7 @@ public func RippleMap<V, G>(
 public func RippleMap<V, G>(
     f : (Wire<V, G>, Wire<V, G>) -> (Wire<V, G>, Wire<V, G>),
     inputPorts : Array<Wire<V, G>>,
-    direction!: Direction = TOP_TO_BOTTOM,
-    start!: Int64 = 0,
-    end!: Int64 = inputPorts.size - 1
+    direction!: Direction = TOP_TO_BOTTOM
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -223,10 +219,7 @@ public func RippleMap<V, G>(
             let (newOut, newCur) = f(acc[0], cur[0])
             ([newOut], [newCur])
         }
-    RippleMap(
-        fAdjusted, inputPorts, 1, 1, 1, direction: direction,
-        start: start, end: end
-    )
+    RippleMap(fAdjusted, inputPorts, 1, 1, direction: direction)
 }
 /**
  * Make a circuit for a ripple map, an operation that starts with an accumulator
@@ -268,8 +261,7 @@ func MakeRippleMap<V, G, T, U>(
     )
     // Perform the ripple map and get the actual output wires
     let rippleMapWires = RippleMap(
-        f, inputPorts, accBundleSize, numberOfOperations,
-        outputWireBundleSize, direction: direction
+        f, inputPorts, accBundleSize, numberOfOperations, direction: direction
     )
     // Add interface information to the input wires based on the input ports
     let inputInterfaceWires = map2(
