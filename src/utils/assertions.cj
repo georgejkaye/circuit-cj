@@ -38,14 +38,9 @@ extend ParamType <: ToString {
         }
     }
 }
-class IncompatibleParameterException <: Exception {
+public class IncompatibleParameterException <: Exception {
     public init(message : String) {
         ErrorMsg(message)
-    }
-}
-class UnreachableCodeException <: Exception {
-    public init() {
-        ErrorMsg("This code should be unreachable")
     }
 }
 /**
@@ -279,7 +274,7 @@ public func AssertAllSameLength<T>(
     xss : Collection<Array<T>>, start!: Int64 = 0, end!: Int64 = xss.size,
     excluding!: HashSet<Int64> = HashSet()
 ) : Int64 where T <: ToString {
-    AssertCollectionHasSameParameter<Array<T>, Int64>(
+    AssertAllElementsHaveSameParameter<Array<T>, Int64>(
         xss, { ts : Array<T> => ts.size }, Width, start: start, end: end,
         excluding: excluding
     )
@@ -288,7 +283,7 @@ public func AssertAllSameLength<T>(
  * @param xs
  * @param minimum
  */
-public func AssertMinimumLength<T>(xs : Collection<T>, minimum : Int64) : Unit
+public func AssertLengthIsGreaterThanOrEqualTo<T>(xs : Collection<T>, minimum : Int64) : Unit
     where T <: ToString
 {
     if (xs.size < minimum) {
@@ -325,7 +320,7 @@ public func AssertLengthMultipleOf<T>(
  * @param paramType
  * @return The parameter the elements all share, if such a parameter exists
  */
-public func AssertCollectionHasSameParameter<T, U>(
+public func AssertAllElementsHaveSameParameter<T, U>(
     xs : Collection<T>, fn : (T) -> U, paramType : ParamType,
     start!: Int64 = 0, end!: Int64 = xs.size,
     excluding!: HashSet<Int64> = HashSet()
@@ -413,7 +408,7 @@ public func AssertElementsHaveParameters<T, U, V>(
  * @param fn The function to translate from xs into a parameter
  * @param paramType
  */
-public func AssertElementsHaveParameter<T, V>(
+public func AssertAllElementsHaveParameter<T, V>(
     xs : Collection<T>, desiredParam : V, fn : (T) -> V, paramType : ParamType
 ) : Unit where T <: ToString, V <: ToString & Equatable<V> {
     for (x in xs){
@@ -481,7 +476,7 @@ public func AssertHasParameter<T,U>(
  * @param fn The function to translate from t into a parameter
  * @param paramType
  */
-public func AssertHasAtLeastParameter<T, U>(
+public func AssertHasParameterGreaterThanOrEqualTo<T, U>(
     t : T, desired : U, fn : (T) -> U, paramType : ParamType
 ) : Unit where T <: ToString, U <: ToString & Comparable<U> {
     let param = fn(t)
@@ -514,13 +509,29 @@ public func AssertElementInCollection<T>(
         )
     )
 }
-public func AssertUnreachable() : Unit {
-    throw UnreachableCodeException()
-}
+/**
+ * Exception to throw when expecting a particular variant of an enum.
+ */
 public class IncompatibleVariantException<T> <: Exception where T <: ToString {
     public init(t : T, desired : String) {
         AssertionFailedMessage(
             "${t} must be variant ${desired}"
         )
+    }
+}
+/**
+ * Exception to throw when code execution reaches a point it should not.
+ */
+class UnreachableCodeException <: Exception {
+    public init() {
+        ErrorMsg("This code should be unreachable")
+    }
+}
+/**
+ * Exception to throw when something is not implemented yet.
+ */
+public class TodoException <: Exception {
+    public init(msg : String){
+        TodoMessage(msg)
     }
 }

@@ -9,22 +9,6 @@
 package components
 import debug.*
 /**
- * Exception for things not implemented yet.
- */
-class TodoException <: Exception {
-    public init(msg : String){
-        TodoMessage(msg)
-    }
-}
-/**
- * Throw a TodoException with a certain message.
- *
- * @param msg
- */
-public func Todo(msg : String) : Unit {
-    throw TodoException(msg)
-}
-/**
  * Use a primitive gate
  *
  * @param prim The primitive to apply

@@ -52,28 +52,14 @@ func CheckTableMonotone<V>(
                 let result1 = table(input1)
                 let result2 = table(input2)
                 if(!lattice.LTE(result1, result2)){
-                    throw NonMonotoneFunctionException<V>(
-                        input1, input2, table
+                    throw IncompatibleParameterException(
+                        "Assertion failed: table must be monotone." +
+                        "${input1} is less than ${input2} but f(${input1}) = " +
+                        "${result1} is not less than f(${input2}) = ${result2}."
                     )
                 }
             }
         }
-    }
-}
-/**
- * Exception for throwing when encountering a non-monotone function in a
- * situation when one is expected.
- */
-class NonMonotoneFunctionException<T> <: Exception where T <: ToString {
-    public init(
-        l : Array<Array<T>>, r : Array<Array<T>>,
-        f : (Array<Array<T>>) -> Array<Array<T>>
-    ) {
-        ErrorMsg("Found an issue with ${l} and ${r}")
-        ErrorMsg(
-            "Expected function to be monotone, but f(${l}) = ${f(l)}" +
-            "is not less than f(${r}) = ${f(r)}"
-        )
     }
 }
 /**

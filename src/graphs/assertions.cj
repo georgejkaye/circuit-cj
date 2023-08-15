@@ -15,7 +15,7 @@ package graphs
  * @param u
  * @return None if there is no in edge, and the single in edge if there is one
  */
-func AssertLessThanOneInEdge<V, G, T, U>(
+func AssertElementsHaveAtMostOneInEdgeBetweenThem<V, G, T, U>(
     t : T, u : U
 ) : Option<EdgeConnection<V, G>>
     where
@@ -40,7 +40,7 @@ func AssertLessThanOneInEdge<V, G, T, U>(
  * @param ts The array of vertex-like objects
  * @return None if there is no in edge, and the single in edge if there is one
  */
-func AssertLessThanOneInEdge<V, G, T>(
+func AssertElementsHaveAtMostOneInEdgeBetweenThem<V, G, T>(
     ts : Array<T>
 ) : Option<EdgeConnection<V, G>>
     where
@@ -98,7 +98,7 @@ func AssertTargetsUnassigned<V, G, T>(targets : Array<T>) : Unit
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: ContainsVertex<V, G> & ToString
 {
-    AssertElementsHaveParameter<T, Option<EdgeConnection<V, G>>>(
+    AssertAllElementsHaveParameter<T, Option<EdgeConnection<V, G>>>(
         targets, None<EdgeConnection<V, G>>,
         { t => t.GetVertex().GetInEdge() }, InEdge
     )
@@ -111,8 +111,7 @@ func AssertTargetsUnassigned<V, G, T>(targets : Array<T>) : Unit
  * @param g
  */
 func AssertCompatibleInputOutput<V, G>(
-    f : InterfacedHypergraph<V, G>,
-    g : InterfacedHypergraph<V, G>
+    f : InterfacedHypergraph<V, G>, g : InterfacedHypergraph<V, G>
 ) : Unit
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
@@ -134,7 +133,7 @@ func AssertGraphHasMinimumInputs<V, G>(
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    AssertMinimumLength(f.GetInputPorts(), i)
+    AssertLengthIsGreaterThanOrEqualTo(f.GetInputPorts(), i)
 }
 /**
  * Given an interfaced hypergraph, assert that it has at least a certain
@@ -148,16 +147,20 @@ func AssertGraphHasMinimumOutputs<V, G>(
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    AssertMinimumLength(f.GetOutputPorts(), i)
+    AssertLengthIsGreaterThanOrEqualTo(f.GetOutputPorts(), i)
 }
-public func AssertAllOwnedBySame<V, G, T>(
+/**
+ * @param elems
+ * @return The owner of all the elements, if one exists
+ */
+public func AssertElementsAllHaveSameOwner<V, G, T>(
     elems : Collection<T>
 ) : Hypergraph<V, G>
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: GraphElement<V, G> & ToString
 {
-    AssertCollectionHasSameParameter(elems, { t : T => t.GetGraph() }, Owner)
+    AssertAllElementsHaveSameParameter(elems, { t : T => t.GetGraph() }, Owner)
 }
 /**
  * Given an edge, assert that it is not owned by a particular hypergraph.
@@ -169,5 +172,5 @@ public func AssertNotOwnedBy<V, G>(e : Edge<V, G>, f : Hypergraph<V, G>) : Unit
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    AssertIsNone(e.GetGraph())
+    AssertNotEqual(e.GetGraph(), f)
 }

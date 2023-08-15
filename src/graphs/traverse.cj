@@ -179,7 +179,8 @@ public func Traverse<V, G>(
 ) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let graph = AssertAllOwnedBySame<V, G, TraversalElement<V, G>>(elements)
+    let graph =
+        AssertElementsAllHaveSameOwner<V, G, TraversalElement<V, G>>(elements)
     let frontier = HashSet<TraversalElement<V, G>>(elements)
     let traversalData = TraversalData(
         frontier, HashSet<TraversalElement<V, G>>(),

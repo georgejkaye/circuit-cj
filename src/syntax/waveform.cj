@@ -75,7 +75,7 @@ public struct Waveform<V>
         this.signals
     }
     public func GetSignalAtTick(i : Int64) : Signal<V> {
-        AssertMinimumLength(signals, i+1)
+        AssertLengthIsGreaterThanOrEqualTo(signals, i+1)
         this.signals[i]
     }
     public func GetLength() : Int64 {

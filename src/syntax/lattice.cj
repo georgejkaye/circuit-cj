@@ -133,7 +133,7 @@ func ComputeOrderIntersectionOp<V>(
                     lhsElements.removeIf({ t : V => !rhsElements.contains(t) })
                     // If there are no common elements, then there is no
                     // intersection: this poset is not a lattice
-                    AssertMinimumLength<V>(lhsElements, 1)
+                    AssertLengthIsGreaterThanOrEqualTo<V>(lhsElements, 1)
                     // Find the 'best' candidate (i.e. greatest/lowest)
                     fold_left<V>(rankFn, lhsElements)
                 }
@@ -153,7 +153,7 @@ func ComputeOrderIntersectionOp<V>(
 func ComputeBottom<V>(elements : HashSet<V>) : V
     where V <: LessOrEqual<V> & Hashable & Equatable<V> & ToString
 {
-    AssertMinimumLength(elements, 1)
+    AssertLengthIsGreaterThanOrEqualTo(elements, 1)
     fold_left<V>({ acc, cur => min(acc, cur) }, elements)
 }
 /**
@@ -166,7 +166,7 @@ func ComputeBottom<V>(elements : HashSet<V>) : V
 func ComputeTop<V>(elements : HashSet<V>) : V
     where V <: LessOrEqual<V> & Hashable & Equatable<V> & ToString
 {
-    AssertMinimumLength(elements, 1)
+    AssertLengthIsGreaterThanOrEqualTo(elements, 1)
     fold_left<V>({ acc, cur => max(acc, cur) }, elements)
 }
 /**

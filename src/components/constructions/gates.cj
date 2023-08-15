@@ -44,7 +44,7 @@ public func UseRippleBinaryPrimitive<V, G>(
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertEqual(primitive.GetArity(), 2)
-    AssertMinimumLength(inputWires, 2)
+    AssertLengthIsGreaterThanOrEqualTo(inputWires, 2)
     let width = AssertAllSameWidth(inputWires)
     if(inputWires.size == 2) {
         UsePrimitive(primitive, inputWires, delay: delay)
@@ -139,7 +139,7 @@ public func MakeBitwiseRippleBinaryPrimitive<V, G>(
     //         UseRippleBinaryPrimitive<V, G>(primitive, ws, delay: delay)
     //     }, inputPorts, outputPorts, Label<V, G>.COMPOSITE(spec)
     // )
-    throw Exception("todo")
+    throw TodoException("todo")
 }
 /**
  * Use a circuit that splits an input wire into its bits and ripples a given

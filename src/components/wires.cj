@@ -350,7 +350,7 @@ public func Combine<V, G, T>(ws : Array<T>) : Wire<V, G>
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
         T <: ContainsWire<V, G> & ToString
 {
-    AssertMinimumLength(ws, 1)
+    AssertLengthIsGreaterThanOrEqualTo(ws, 1)
     if(ws.size == 1) {
         ws[0].GetWire()
     } else {
