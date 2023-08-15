@@ -26,7 +26,7 @@ public func MakeRippleBinaryPrimitive<V, G>(
     let gateInputPorts = [Port(width)]
     MakeRipple<V, G, Port>(
         op, gateAccPorts, gateInputPorts, numberOfOperations,
-        "${primitive.GetName()}${inputs}"
+        "${primitive.GetName()}${inputs}_${width}"
     )
 }
 /**
@@ -79,7 +79,8 @@ public func MakeBitwiseMapPrimitive<V, G>(
         primitive.GetCoarity(), { i => Port(width) }
     )
     let spec = Specification(
-        "${primitive.GetName()}_1_${width}", allInputPorts, allOutputPorts
+        "${primitive.GetName()}${inputs}_${width}", allInputPorts,
+        allOutputPorts
     )
     let function = {
         ws : Array<Wire<V, G>> =>

@@ -150,20 +150,20 @@ public func RippleMap<V, G>(
             (Array<Wire<V, G>>, Array<Wire<V, G>>),
     inputWires : Array<Wire<V, G>>,
     accBundleSize : Int64,
-    numberOfIncomingBundles : Int64,
+    numberOfOperations : Int64,
     outgoingBundleSize : Int64,
     direction!: Direction = TOP_TO_BOTTOM,
     start!: Int64 = 0,
-    end!: Int64 = numberOfIncomingBundles
+    end!: Int64 = numberOfOperations
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     // Check that the input wires are of the form [acc, input, ... , input]
     let incomingBundleSize =
-        (inputWires.size - accBundleSize) / numberOfIncomingBundles
+        (inputWires.size - accBundleSize) / numberOfOperations
     AssertHasLength(
         inputWires,
-        accBundleSize + (incomingBundleSize * numberOfIncomingBundles)
+        accBundleSize + (incomingBundleSize * numberOfOperations)
     )
     let numberOfInputWires = inputWires.size
     let (accStart, accEnd) =
@@ -171,7 +171,7 @@ public func RippleMap<V, G>(
     // Initialise the accumulator with the wires from the inputs
     var curAcc = inputWires.sliceArray(start: accStart, end: accEnd)
     let numberOfOutputWires =
-        (outgoingBundleSize * numberOfIncomingBundles) + accBundleSize
+        (outgoingBundleSize * numberOfOperations) + accBundleSize
     // Initialise the output wires with the correct length
     let outputPorts = ArrayList<Wire<V, G>>(numberOfOutputWires)
     // Perform the ripple
@@ -251,7 +251,7 @@ func MakeRippleMap<V, G, T, U>(
     allInputPorts : Array<T>,
     allOutputPorts : Array<U>,
     accBundleSize : Int64,
-    incomingBundleSize : Int64,
+    numberOfOperations : Int64,
     outputWireBundleSize : Int64,
     label : Label<V, G>,
     direction!: Direction = TOP_TO_BOTTOM
@@ -268,7 +268,7 @@ func MakeRippleMap<V, G, T, U>(
     )
     // Perform the ripple map and get the actual output wires
     let rippleMapWires = RippleMap(
-        f, inputPorts, accBundleSize, incomingBundleSize,
+        f, inputPorts, accBundleSize, numberOfOperations,
         outputWireBundleSize, direction: direction
     )
     // Add interface information to the input wires based on the input ports
@@ -402,8 +402,8 @@ public func MakeRippleMap<V, G, T>(
     let spec = Specification(name, allInputPorts, allOutputPorts)
     let label = Label<V, G>.COMPOSITE(spec)
     MakeRippleMap(
-        f, allInputPorts, allOutputPorts, accPorts.size, incomingPorts.size,
-        outgoingPorts.size, label, direction: direction
+        f, allInputPorts, allOutputPorts, accPorts.size,
+        numberOfOperations, outgoingPorts.size, label, direction: direction
     )
 }
 /**
