@@ -52,6 +52,17 @@ public class IncompatibleParameterException <: Exception {
 func AssertionFailedMessage(msg : String) : String {
     "Assertion failed: ${msg}"
 }
+public func AssertForAllElements<T>(
+    xs : Collection<T>, fn : (T) -> Unit, excluding!: HashSet<Int64> = HashSet()
+) : Unit {
+    let iter = xs.iterator()
+    for(i in 0..xs.size) {
+        let cur = iter.next().getOrThrow()
+        if(!excluding.contains(i)) {
+            fn(cur)
+        }
+    }
+}
 /**
  * @param t
  * @param u
@@ -168,6 +179,19 @@ public func AssertMultipleOf(x : Int64, multiple : Int64) : Int64 {
         )
     }
     x / multiple
+}
+/**
+ * @param xs
+ * @param multiple
+ * @param fn function from elements to numbers
+ */
+public func AssertAllElementsMultiplesOf<T>(
+    xs : Collection<T>, multiple : Int64, fn : (T) -> Int64,
+    excluding!: HashSet<Int64> = HashSet()
+) : Unit {
+    AssertForAllElements(
+        xs, { t => AssertMultipleOf(fn(t), multiple)}, excluding: excluding
+    )
 }
 /**
  * @param opt

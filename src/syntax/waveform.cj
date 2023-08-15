@@ -20,12 +20,12 @@ public struct Waveform<V>
     let signals : Array<Signal<V>>
     let width : Int64
     public init(signals : Array<Signal<V>>) {
-        this.width = AssertAllSameWidth(signals)
+        this.width = AssertAllElementsHaveSameWidth(signals)
         this.signals = signals
     }
     public init(length : Int64, fn : (Int64) -> Signal<V>) {
         this.signals = Array(length, { i => fn(i) })
-        this.width = AssertAllSameWidth(this.signals)
+        this.width = AssertAllElementsHaveSameWidth(this.signals)
     }
     public init(signals : Array<V>) {
         this.signals = map({ v : V => Signal(v) }, signals)

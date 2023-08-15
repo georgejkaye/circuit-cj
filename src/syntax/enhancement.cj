@@ -83,8 +83,8 @@ class CannotRipplePrimitiveException<V, G> <: Exception
 public func AssertSuitableToBitwiseMap<V, G>(primitive : G) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    AssertAllSameWidth(primitive.GetInputPorts())
-    AssertAllSameWidth(primitive.GetOutputPorts())
+    AssertAllElementsHaveSameWidth(primitive.GetInputPorts())
+    AssertAllElementsHaveSameWidth(primitive.GetOutputPorts())
 }
 /**
  * Exception for when AssertSuitableToBitwiseMap fails
