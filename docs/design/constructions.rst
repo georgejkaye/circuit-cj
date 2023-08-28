@@ -87,7 +87,7 @@ illustrates when one may want to share wires rather than split them.
     // Use a bitwise multiplexer
     let selector = sig.UseWire(1)
     let inputs = sig.UseWires(2, width: 4)
-    let mux = UseMux(selector: selector, inputs: inputs)
+    UseMux(selector: selector, inputs: inputs)
 
 .. image:: imgs/constructions/mux2-4.svg
 

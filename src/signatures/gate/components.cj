@@ -441,3 +441,13 @@ public func UseMux(inputs: Array<BelnapWire>) : BelnapWire {
         MakeMux(inputs: choices, width: width), inputs
     )
 }
+public func UseMux(
+    selectors!: Array<BelnapWire>, inputs!: Array<BelnapWire>
+) : BelnapWire {
+    UseMux(concat(selectors, inputs))
+}
+public func UseMux(
+    selector!: BelnapWire, inputs!: Array<BelnapWire>
+) : BelnapWire {
+    UseMux(selectors: [selector], inputs: inputs)
+}
