@@ -48,21 +48,8 @@ func MultibitFullAdder(width : Int64) {
     let b = sig.UseWire(width)
     let c = sig.UseWire(1)
     // A full adder is a bitwise ripple with the carry as the initial value
-    let (sum, carry) = BitwiseRippleMap(
-        { acc : Wire_, cur : Array<Wire_> =>
-            UseSubcircuit_2(
-                MakeFullAdder(),
-                [cur[0], cur[1], acc]
-            )
-        }, c, [a, b]
-    )
-    // Final subcircuit
-    MakeSubcircuit([
-            InterfaceWire(a, "A"), InterfaceWire(b, "B"), InterfaceWire(c, "C")
-        ], [
-            InterfaceWire(sum, "S"), InterfaceWire(carry, "C")
-        ],
-        "+_${a.GetWidth()}"
+    MakeBitwiseRippleMap(
+        MakeFullAdder(), 1, width, name: "+_${width}"
     )
 }
 /**
@@ -70,14 +57,14 @@ func MultibitFullAdder(width : Int64) {
  * @param w The width of the inputs
  * @return The add/sub subcircuit
  */
-public func AddSub(width : Int64) {
+func AddSub(width : Int64) {
     // Input wires
     let a = sig.UseWire(width)
     let b = sig.UseWire(width)
     let c = sig.UseWire(1)
     // To allow subtraction
     let xorGates = UseXor(b, Replicate(c, width))
-    let (sum, carry) = UseSubcircuit_2(MultibitFullAdder(width), [a, b, c])
+    let (sum, carry) = UseSubcircuit_2(MultibitFullAdder(width), [c, a, b])
     let finalBitA = a.Msb()
     let finalBitB = xorGates.Msb()
     let finalBitSum = sum.Msb()
@@ -112,8 +99,8 @@ public func ALU(w : Int64){
     let or = UseOr(a, b)
     let (sum, overflow, carry) = UseSubcircuit_3(AddSub(w), [a, b, c0])
     // Use the multiplexers to decide which computation to return
-    let mux1 = Mux2(sel: c1, a: and, b: or)
-    let mux2 = Mux2(sel: c1, a: mux1, b: sum)
+    let mux1 = UseMux2(s0: c1, i0: and, i1: or)
+    let mux2 = UseMux2(s0: c1, i0: mux1, i1: sum)
     // Compute the outputs appropriately
     let result = mux2
     let notzero = UseOr(result)
