@@ -14,7 +14,7 @@ package examples.gate
  * @param width The width of the wires
  * @param w1 The first wire to sort
  * @param w2 The second wire to sort
- * @return The two output wires of the comparator
+ * @return (small, large)
  */
 func SortingComparator(width : Int64, w1 : Wire_, w2 : Wire_) : (Wire_, Wire_) {
     let bb = belnapSignature.AddBlackbox(
@@ -42,6 +42,11 @@ public func SortingNetwork(width : Int64, inputs : Int64) : Circuit_ {
         // A sorting network on one wire is just the identity
         if(inputs == 1){
             inputWires
+        } else if(inputs == 2) {
+            let (small, big) = SortingComparator(
+                width, inputWires[0], inputWires[1]
+            )
+            [small, big]
         } else {
             // Otherwise we recursively sort the first inputs-1 wires
             let smallerWires = Array<Wire_>(inputWires.size - 1){
@@ -52,17 +57,14 @@ public func SortingNetwork(width : Int64, inputs : Int64) : Circuit_ {
                 smallerWires
             )
             // Ripple the sorting comparators across the wires
-            let (output, final) = RippleMap(
-                { acc : Wire_, cur : Wire_ =>
-                    let (next, out) = SortingComparator(width, cur, acc)
-                    (out, next)
-                },
+            RippleMap(
+                { acc, cur => SortingComparator(width, cur, acc)},
                 inputWires[inputs - 1],
                 smallerNetwork,
-                direction : BOTTOM_TO_TOP
+                direction: BOTTOM_TO_TOP
             )
-            prepend(final, output)
         }
+    AssertHasLength(outputWires, inputs)
     MakeSubcircuit(
         NameWires(inputWires, { i : Int64 => "I${i}"}),
         NameWires(outputWires, { i : Int64 => "O${i}"}),
