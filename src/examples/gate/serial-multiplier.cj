@@ -17,7 +17,7 @@ package examples.gate
  * @return the partial product for this bit
  */
 func PartialProduct(a : Wire_, b0: Wire_) : Wire_ {
-    Mux2(sel: b0, a: sig.UseConstantZero(width: a.GetWidth()),  b: a, )
+    UseMux2(s0: b0, i0: sig.UseConstantZero(width: a.GetWidth()),  i1: a)
 }
 /**
  * Compute a running sum.
@@ -28,11 +28,15 @@ func PartialProduct(a : Wire_, b0: Wire_) : Wire_ {
  * @param b0
  */
 func RunningSum(first : Wire_, prev_sum: Wire_, a: Wire_, b0: Wire_) : Wire_ {
-    let lhs = Mux2(sel: first, a: prev_sum, b: sig.UseConstantZero(width: a.GetWidth()))
+    let lhs = UseMux2(
+        s0: first, i0: prev_sum, i1: sig.UseConstantZero(width: a.GetWidth())
+    )
     let rhs = PartialProduct(a, b0)
     let aExtended = UnsignedExtend(lhs)
     let bExtended = UnsignedExtend(rhs)
-    let (sum, carry) = UseRippleAdder(aExtended, bExtended, sig.UseConstantZero(width: 1))
+    let (sum, carry) = UseRippleAdder(
+        aExtended, bExtended, sig.UseConstantZero(width: 1)
+    )
     sum
 }
 /**
