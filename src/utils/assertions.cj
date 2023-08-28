@@ -316,11 +316,27 @@ public func AssertAllSameLength<T>(
         excluding: excluding
     )
 }
+public func AssertCollectionHasLength<T>(
+    xs : Collection<T>, length : Int64
+) : Unit
+    where T <: ToString
+{
+    if(xs.size != length) {
+        throw IncompatibleParameterException(
+            AssertionFailedMessage(
+                "Collection ${collectionToString(xs)} " +
+                "must have length ${length} (it has length ${xs.size})"
+            )
+        )
+    }
+}
 /**
  * @param xs
  * @param minimum
  */
-public func AssertLengthIsGreaterThanOrEqualTo<T>(xs : Collection<T>, minimum : Int64) : Unit
+public func AssertLengthIsGreaterThanOrEqualTo<T>(
+    xs : Collection<T>, minimum : Int64
+) : Unit
     where T <: ToString
 {
     if (xs.size < minimum) {
