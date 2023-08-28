@@ -96,7 +96,17 @@ Ripple
 
 Starting with some initial value, apply an operation to each input wire and
 the result of the previous computation in sequence.
-This corresponds to the functional construction ``fold``.
+This corresponds to the functional construction *fold*.
+
+.. code-block:: scala
+
+    // Create a blackbox with an accumulator input (1) and data input (2) that
+    // outputs the new accumulator output (0)
+    let bb = sig.AddBlackbox("f", [Port(1), Port(2)], [Port(1)])
+    let f = MakeBlackbox(bb)
+    let ripple = MakeRipple(f, numberOfOperations: 3)
+
+.. image:: imgs/constructions/ripple.svg
 
 Ripple logic gates
 ******************
@@ -108,26 +118,39 @@ purpose, which can be specified by providing an *array* of input wires.
 
 .. code-block:: scala
 
-    // Create a ripple AND gate
-    let a = MakeWire(1)
-    let b = MakeWire(1)
-    let c = MakeWire(1)
+    // Use a ripple AND gate
+    let a = sig.UseWire(1)
+    let b = sig.UseWire(1)
+    let c = sig.UseWire(1)
     // AND(AND(a, b), c)
-    And([a, b, c])
+    UseAnd([a, b, c])
 
 As with bitwise gates, this is displayed as a single operation on a high level:
 
-.. image:: imgs/constructions/ripple-and-1.svg
+.. image:: imgs/constructions/ripple-and-0.svg
 
 ...but we can look inside it and find out what's going on:
 
-.. image:: imgs/constructions/ripple-and-2.svg
+.. image:: imgs/constructions/ripple-and-1.svg
 
-Bitwise gates can also be rippled, so a ripple gate that processes arbitrary
-width wires are also definable.
+Of course, this is not limited to logic gates with single-bit inputs; we can
+combine the ripple construction with the bitwise map construction above.
 
-.. warning::
-    Again, make sure that the inputs are still the same width.
+.. code-block:: scala
+
+    // Use a ripple bitwise map AND gate
+    let a = sig.UseWire(2)
+    let b = sig.UseWire(2)
+    let c = sig.UseWire(2)
+    // AND(AND(a, b), c)
+    UseAnd([a, b, c])
+
+.. image:: imgs/constructions/ripple-bitwise-and-0.svg
+
+.. image:: imgs/constructions/ripple-bitwise-and-1.svg
+
+.. image:: imgs/constructions/ripple-bitwise-and-2.svg
+
 
 Bitwise ripple
 ---------------
@@ -137,15 +160,10 @@ but rather than using multiple arrays of input wires, we want to perform it over
 the bits in the wires themselves.
 This is known as a *bitwise ripple*.
 
-.. code-block:: scala
 
-    func BitwiseRipple(
-        // (acc, cur) -> acc
-        f :  (Array<Wire>, Array<Wire) -> Array<Wire>
-        ws : Array<Wire>
-    ) : Array<Wire>
 
-Internal ripple logic gates
+
+Bitwise ripple logic gates
 ***************************
 
 This construction has an interpretation is Belnap logic gates:
