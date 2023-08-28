@@ -295,7 +295,10 @@ public func AssertSameLength<T, U>(
 ) : Int64 where T <: ToString, U <: ToString {
     if(xs.size != ys.size) {
         throw IncompatibleParameterException(
-            AssertionFailedMessage("Collections must have the same size")
+            AssertionFailedMessage("Collections must have the same size (" +
+                "${collectionToString(xs)} has size ${xs.size} whereas " +
+                "${collectionToString(ys)} has size ${ys.size})"
+            )
         )
     }
     xs.size
