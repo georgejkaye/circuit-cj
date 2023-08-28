@@ -22,7 +22,7 @@ public func CyclicCombinational(delays!: Bool) {
     // Wire from feedback
     let feedback = sig.UseWire(1)
     // Top half of the circuit
-    let muxa = Mux2(sel: c, a: x, b: feedback)
+    let muxa = UseMux2(s0: c, i0: x, i1: feedback)
     let muxaWire = if(delays) {
         UseDelay(muxa)
     } else {
@@ -31,7 +31,7 @@ public func CyclicCombinational(delays!: Bool) {
     let fbb = belnapSignature.AddBlackbox("F", [Port(1, "A")], [Port(1, "Z")])
     let f = UseBlackbox(fbb, [muxaWire])[0]
     // Bottom half of the circuit
-    let muxb = Mux2(sel: c, a: f, b: x)
+    let muxb = UseMux2(s0: c, i0: f, i1: x)
     let muxbWire = if(delays) {
         UseDelay(muxb)
     } else {
@@ -41,7 +41,7 @@ public func CyclicCombinational(delays!: Bool) {
     let g = UseBlackbox(gbb, [muxbWire])[0]
     Feedback(g, feedback)
     // Final multiplexer
-    let muxc = Mux2(sel: c, a: g, b: f)
+    let muxc = UseMux2(s0: c, i0: g, i1: f)
     let muxcWire = if(delays) {
         UseDelay(muxc)
     } else {
