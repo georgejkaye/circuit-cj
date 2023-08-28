@@ -146,7 +146,7 @@ public func UseSubcircuit<V, G>(
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    AssertElementsHaveSameWidths(inputs, childCircuit.GetInputPorts())
+    AssertElementsHaveSameWidths(childCircuit.GetInputPorts(), inputs)
     let potentialOwner = MergeHypergraphs(inputs)
     let actualOwner = match(potentialOwner) {
         case None    => Hypergraph<V, G>()
