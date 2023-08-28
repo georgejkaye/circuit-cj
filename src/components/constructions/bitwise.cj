@@ -283,7 +283,8 @@ public func GetBitwiseMapPorts<V, G, T>(
 public func MakeBitwiseMap<V, G>(
     f : InterfacedHypergraph<V, G>,
     numberOfOperations!: Int64,
-    sharedInputWires!: HashSet<Int64> = HashSet()
+    sharedInputWires!: HashSet<Int64> = HashSet(),
+    name!: Option<String> = None<String>
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -296,9 +297,12 @@ public func MakeBitwiseMap<V, G>(
         GetBitwiseMapPorts<V, G, InterfaceVertex<V, G>>(
             f.GetOutputs(), numberOfOperations
         )
+    let specName = match(name) {
+        case None => "${f.GetName()}_${numberOfOperations}"
+        case Some(s) => s
+    }
     let spec = Specification(
-        "${f.GetName()}_${numberOfOperations}",
-        bitwiseMapInputPorts, bitwiseMapOutputPorts
+        specName, bitwiseMapInputPorts, bitwiseMapOutputPorts
     )
     MakeBitwiseMap(
         { ws : Array<Wire<V, G>> => UseSubcircuit(f, ws) },
