@@ -115,7 +115,7 @@ public func BitwiseMap<V, G>(
     let splitWires = BitwiseSplit(
         inputWires, sharedIndices: sharedIndices, splitInto: numberOfOperations
     )
-    let mappedWires = Map(f, splitWires, numberOfOperations)
+    let mappedWires = Map(f, splitWires, numberOfOperations: numberOfOperations)
     let combinedWires = BitwiseCombine(mappedWires, numberOfOperations)
     combinedWires
 }
@@ -283,7 +283,7 @@ public func GetBitwiseMapPorts<V, G, T>(
 public func MakeBitwiseMap<V, G>(
     f : InterfacedHypergraph<V, G>,
     numberOfOperations!: Int64,
-    sharedInputWires!: HashSet<Int64> = HashSet(),
+    sharedInputWires!: HashSet<Int64>,
     name!: Option<String> = None<String>
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
@@ -309,6 +309,19 @@ public func MakeBitwiseMap<V, G>(
         bitwiseMapInputPorts, bitwiseMapOutputPorts,
         Label<V, G>.COMPOSITE(spec), numberOfOperations: numberOfOperations,
         sharedInputWires: sharedInputWires
+    )
+}
+public func MakeBitwiseMap<V, G>(
+    f : InterfacedHypergraph<V, G>,
+    numberOfOperations!: Int64,
+    sharedInputWires!: Array<Int64> = Array(),
+    name!: Option<String> = None<String>
+) : InterfacedHypergraph<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    MakeBitwiseMap(
+        f, numberOfOperations: numberOfOperations,
+        sharedInputWires: HashSet(sharedInputWires), name: name
     )
 }
 /**
