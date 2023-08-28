@@ -177,14 +177,8 @@ public func MakeHalfAdder() : BelnapInterfacedCircuit {
     let s = UseXor(a, b)
     let c = UseAnd(a, b)
     MakeSubcircuit(
-        [
-            InterfaceWire(a, "A"),
-            InterfaceWire(b, "B")
-        ],
-        [
-            InterfaceWire(s, "S"),
-            InterfaceWire(c, "C")
-        ],
+        [InterfaceWire(a, "A"), InterfaceWire(b, "B")],
+        [InterfaceWire(s, "S"), InterfaceWire(c, "C")],
         "half_adder"
     )
 }
@@ -195,9 +189,9 @@ public func MakeHalfAdder() : BelnapInterfacedCircuit {
  * @param b Input B (1)
  * @return (Output S (1), Output C (1))
  */
-public func HalfAdder(
-    a : BelnapWire,
-    b : BelnapWire
+public func UseHalfAdder(
+    a!: BelnapWire,
+    b!: BelnapWire
 ) : (BelnapWire, BelnapWire) {
     UseSubcircuit_2(MakeHalfAdder(), [a, b])
 }
@@ -219,9 +213,9 @@ public func MakeFullAdder() : BelnapInterfacedCircuit {
     let carryOr = UseOr(carryAnd, inputAnd)
     MakeSubcircuit(
         [
+            InterfaceWire(cin, "Cin"),
             InterfaceWire(a, "A"),
-            InterfaceWire(b, "B"),
-            InterfaceWire(cin, "Cin")
+            InterfaceWire(b, "B")
         ],
         [
             InterfaceWire(carryXor, "S"),
@@ -237,10 +231,10 @@ public func MakeFullAdder() : BelnapInterfacedCircuit {
  * @param c Input Cin (1)
  * @return (Output S (1), Output Cout (1))
  */
-public func FullAdder(
-    a : BelnapWire, b : BelnapWire, c : BelnapWire
+public func UseFullAdder(
+    cin! : BelnapWire, a! : BelnapWire, b! : BelnapWire
 ) : (BelnapWire, BelnapWire) {
-    UseSubcircuit_2(MakeFullAdder(), [a, b, c])
+    UseSubcircuit_2(MakeFullAdder(), [cin, a, b])
 }
 /**
  * Create a ripple adder subcircuit for a given width: a circuit that
@@ -251,25 +245,10 @@ public func FullAdder(
  * @return A ripple adder subcircuit
  */
 public func MakeRippleAdder(width : Int64) : BelnapInterfacedCircuit {
+    let cin = belnapSignature.UseWire(1)
     let a = belnapSignature.UseWire(width)
     let b = belnapSignature.UseWire(width)
-    let c = belnapSignature.UseWire(1)
-    let (sum, carry) = BitwiseRippleMap(
-        { acc : BelnapWire, cur : Array<BelnapWire> =>
-            let (sum, carry) = FullAdder(cur[0], cur[1], acc)
-            (sum, carry)
-        }, c, [a, b]
-    )
-    MakeSubcircuit(
-        [
-            InterfaceWire(a, "A"),InterfaceWire(b, "B"), InterfaceWire(c, "Cin")
-        ],
-        [
-            InterfaceWire(sum, "S"),
-            InterfaceWire(carry, "Cout")
-        ],
-        "ripple_adder"
-    )
+    MakeBitwiseRippleMap(MakeFullAdder(), 1, width, name: "ripple_adder")
 }
 /**
  * Apply a ripple adder. The width is determined from
