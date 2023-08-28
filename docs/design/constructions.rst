@@ -10,11 +10,6 @@ Fortunately, CircuitCJ provides some higher-orer constructions that can be used
 to build such subcircuits.
 The functional programmer may recognise them!
 
-.. note::
-    Operations have *types*: the widths of their input and output wires.
-    For example, a 4-bit ripple adder has type ``[4,4] -> [4,1]``.
-    We write ``[n^x]`` for a list of length ``x`` containing only ``n``.
-
 Map
 ---
 
@@ -24,7 +19,8 @@ Apply multiple copies of an operation in parallel.
 
     let bb = sig.AddBlackbox("f", [Port(2), Port(4)], [Port(1), Port(3)])
     let f = MakeBlackbox(bb)
-    let bmapf = MakeMap(f, 3)
+    // Map the blackbox three times
+    MakeMap(f, numberOfOperations: 3)
 
 
 .. image:: imgs/constructions/map.svg
@@ -33,18 +29,30 @@ Apply multiple copies of an operation in parallel.
 Bitwise map
 -----------
 
-Apply multiple copies of an operation in parallel for each bit of a wire.
-This corresponds to the functional construction ``fold`` (also known as
-``reduce``).
+Apply ``n`` copies of an operation in parallel, where the ``i`` th input of each
+operation makes up ``1\n`` the width of the ``i`` th input wire of the circuit.
 
 .. code-block:: scala
 
     let bb = sig.AddBlackbox("f", [Port(1), Port(1)], [Port(1)])
     let f = MakeBlackbox(bb)
-    let bmapf = MakeBitwiseMap(f, 3)
+    // Map the blackbox three times
+    MakeBitwiseMap(f, numberOfOperations: 3)
 
 
-.. image:: imgs/constructions/bitwise-map.svg
+.. image:: imgs/constructions/bitwise-map-0.svg
+
+It is also possible to only split some of the input wires bitwise.
+For example, this can be useful if a control wire is shared between all the
+operations.
+
+.. code-block:: scala
+
+    // Map the blackbox three times, but share the 0th input wire
+    MakeBitwiseMap(f, numberOfOperations: 3, sharedInputWires: [0])
+
+
+.. image:: imgs/constructions/bitwise-map-1.svg
 
 
 
@@ -57,7 +65,7 @@ easy to define them.
 
 .. code-block:: scala
 
-    // Create a bitwise AND gate
+    // Use a bitwise AND gate
     let a = sig.UseWire(2)
     let b = sig.UseWire(2)
     // AND(a[0], b[0]) ++ AND(a[1], b[1])
@@ -71,9 +79,17 @@ If we open up the ``AND2_2`` box we can see what's going on inside:
 
 .. image:: imgs/constructions/bitwise-and-1.svg
 
-.. warning::
-    Although the inputs to bitwise logic gates can be of any width, each input
-    wire must still be the *same* width!
+Another frequent bitwise construction is that of a *multiplexer*, which
+illustrates when one may want to share wires rather than split them.
+
+.. code-block:: scala
+
+    // Use a bitwise multiplexer
+    let selector = sig.UseWire(1)
+    let inputs = sig.UseWires(2, width: 4)
+    let mux = UseMux(selector: selector, inputs: inputs)
+
+.. image:: imgs/constructions/mux2-4.svg
 
 Ripple
 ------
