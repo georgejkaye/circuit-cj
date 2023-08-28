@@ -37,9 +37,9 @@ func ALU() {
     let rep1 = Replicate(not1, 8)
     let inv1 = UseXor(b, Replicate(s3, 8))
     let and1 = UseAnd(rep1, inv1)
-    let (sum, carry) = UseRippleAdder(a, and1, s2)
+    let (sum, carry) = UseRippleAdder(a: a, b: and1, cin: s2)
     let and2 = UseAnd(a, b)
-    let mux = Mux4(s1, s0, sum, and2, a, b)
+    let mux = UseMux4(s1: s1, s0: s0, i0: sum, i1: and2, i2: a, i3: b)
     // Final subcircuit
     MakeSubcircuit(
         [
@@ -156,7 +156,7 @@ func RAM(cpu_do: Wire_, addr: Wire_, ram_we: Wire_, clk: Wire_) {
  */
 public func Register(w: Int64): Circuit_ {
     if (w != 1 && w % 2 == 1){
-        Todo("Off bit registers not implemented")
+        TodoException("Off bit registers not implemented")
     }
     let d = sig.UseWire(w)
     let clr = sig.UseWire(1)
@@ -166,7 +166,7 @@ public func Register(w: Int64): Circuit_ {
         FDCE(d, ce, clk, clr)
     } else {
         let splitWidth = w / 2
-        let (l, r) = Split(d, splitWidth)
+        let (l, r) = SplitAt(d, splitWidth)
         let lhs = UseSubcircuit_1(Register(splitWidth), [l, clr, ce, clk])
         let rhs = UseSubcircuit_1(Register(splitWidth), [r, clr, ce, clk])
         Combine(lhs, rhs)
@@ -238,7 +238,7 @@ func InstructionDecoder() {
     // Input wire
     let a = sig.UseWire(8)
     // Split the wire into eight bits for separate processing
-    let bits = Split(a)
+    let bits = SplitAll(a)
     // Determing the instruction from the bits
     let input = UseAnd([bits[7], UseNot(bits[6]), bits[5], UseNot(bits[4])])
     let output = UseAnd([bits[7], bits[6], bits[5], UseNot(bits[4])])
@@ -323,7 +323,7 @@ func Decoder_SequenceGenerator(
     let reg = UseSubcircuit_1(
         Register(2), [Combine(carry, zero), clk, en_st, clr]
     )
-    let (carry_reg, zero_reg) = Split(reg, 1)
+    let (carry_reg, zero_reg) = SplitAt(reg, 1)
     // Output wires
     (fetch, decode, execute, increment, carry_reg, zero_reg)
 }
@@ -438,7 +438,7 @@ public func SimpleCPU() {
     let instruction = sig.UseWire(16)
     let en_in = sig.UseWire(1)
     let ir = UseSubcircuit_1(Register(16), [instruction, clk, en_in, clr])
-    let (ir_muxi, ir_decoder) = Split(ir, 8)
+    let (ir_muxi, ir_decoder) = SplitAt(ir, 8)
     // Program counter
     let en_pc = sig.UseWire(1)
     let counter_d = sig.UseWire(8)
@@ -462,13 +462,13 @@ public func SimpleCPU() {
     let alu_s3 = decoder[10]
     let alu_s4 = decoder[11]
     // Mux_I
-    let muxi = Mux2(sel: muxa, a: ir_muxi, b: pc)
+    let muxi = UseMux2(s0: muxa, i0: ir_muxi, i1: pc)
     // Mux_D
-    let (instruction_muxd, _) = Split(instruction, 8)
+    let (instruction_muxd, _) = SplitAt(instruction, 8)
     let acc_fb = sig.UseWire(8)
-    let muxd = Mux2(sel: muxb, a: instruction_muxd, b: acc_fb)
+    let muxd = UseMux2(s0: muxb, i0: instruction_muxd, i1: acc_fb)
     // Mux_A
-    let addr = Mux2(sel: muxc, a: pc, b: ir_muxi)
+    let addr = UseMux2(s0: muxc, i0: pc, i1: ir_muxi)
     // ALU
     let (alu_z, alu_cout) = UseSubcircuit_2(
         ALU(), [muxi, muxd, alu_s0, alu_s1, alu_s2, alu_s3, alu_s4]
