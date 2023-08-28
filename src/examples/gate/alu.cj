@@ -45,7 +45,8 @@ func FullAdder() {
 func MultibitFullAdder(width : Int64) {
     // A full adder is a bitwise ripple with the carry as the initial value
     MakeBitwiseRippleMap(
-        FullAdder(), 1, width, name: "+_${width}"
+        FullAdder(), accBundleSize: 1, numberOfOperations: width,
+        name: "+_${width}"
     )
 }
 /**

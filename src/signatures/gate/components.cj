@@ -249,7 +249,10 @@ public func MakeRippleAdder(width : Int64) : BelnapInterfacedCircuit {
     let cin = belnapSignature.UseWire(1)
     let a = belnapSignature.UseWire(width)
     let b = belnapSignature.UseWire(width)
-    MakeBitwiseRippleMap(MakeFullAdder(), 1, width, name: "ripple_adder")
+    MakeBitwiseRippleMap(
+        MakeFullAdder(), accBundleSize: 1, numberOfOperations: width,
+        name: "ripple_adder"
+    )
 }
 /**
  * Apply a ripple adder. The width is determined from

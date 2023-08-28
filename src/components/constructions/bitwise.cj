@@ -551,8 +551,8 @@ public func MakeBitwiseRippleMap<V, G, T>(
     )
 }
 public func MakeBitwiseRippleMap<V, G>(
-    f : InterfacedHypergraph<V, G>, accBundleSize : Int64,
-    numberOfOperations : Int64, name!: Option<String> = None<String>,
+    f : InterfacedHypergraph<V, G>, accBundleSize!: Int64,
+    numberOfOperations!: Int64, name!: Option<String> = None<String>,
     direction!: Direction = TOP_TO_BOTTOM, initial!: Bool = true
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
@@ -603,15 +603,15 @@ public func MakeBitwiseRipple<V, G, T>(
     )
 }
 public func MakeBitwiseRipple<V, G>(
-    f : InterfacedHypergraph<V, G>, accBundleSize : Int64,
-    numberOfOperations : Int64, name!: Option<String> = None<String>,
+    f : InterfacedHypergraph<V, G>, numberOfOperations!: Int64,
+    name!: Option<String> = None<String>,
     direction!: Direction = TOP_TO_BOTTOM, initial!: Bool = true
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    AssertEqual(f.GetCoarity(), accBundleSize)
     MakeBitwiseRippleMap(
-        f, accBundleSize, numberOfOperations, name: name, direction: direction,
-        initial: initial
+        f, accBundleSize: f.GetCoarity(),
+        numberOfOperations: numberOfOperations, name: name,
+        direction: direction, initial: initial
     )
 }
