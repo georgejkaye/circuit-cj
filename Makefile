@@ -1,3 +1,5 @@
+SHELL = /bin/bash
+
 CJC = cjc
 CPM = cjpm
 
@@ -17,7 +19,7 @@ CPM_FLAGS = --verbose --incremental
 MODULE_RESOLVE_JSON = module-resolve.json
 
 # All the dot files in dot/
-DOTS = $(shell if [ -d "$(DOT_DIR)" ]; then find $(DOT_DIR)/*.dot; fi)
+DOTS = $(shell if [ -d "$(DOT_DIR)" ]; then find dot/*.dot 2> /dev/null ; fi)
 # Dot svgs
 DOTS_SVGS = $(foreach dot, $(DOTS), $(dot).svg)
 # Dot pngs
