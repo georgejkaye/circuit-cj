@@ -9,7 +9,7 @@ DEVELOP_BRANCH=dev
 DOCS_MAKE_TARGET=docs
 DOCS_BUILD=docs/_build
 
-DATE=$(date +"%Y-%m-%dT%T")
+DATE=$(date +"%Y-%m-%d %T")
 TEMP_DIR=$DATE
 
 # Make temp dir
