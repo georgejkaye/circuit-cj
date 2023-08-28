@@ -149,7 +149,7 @@ func AddNextBundle<V, G>(
  * @param end
  * @return outputPorts
  */
-public func RippleMap<V, G>(
+func RippleMap<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) ->
             (Array<Wire<V, G>>, Array<Wire<V, G>>),
     inputWires : Array<Wire<V, G>>,
@@ -219,7 +219,23 @@ public func RippleMap<V, G>(
             let (newOut, newCur) = f(acc[0], cur[0])
             ([newOut], [newCur])
         }
-    RippleMap(fAdjusted, inputPorts, 1, 1, direction: direction)
+    RippleMap(
+        fAdjusted, inputPorts, 1, inputPorts.size - 1, direction: direction
+    )
+}
+public func RippleMap<V, G>(
+    f : (Wire<V, G>, Wire<V, G>) -> (Wire<V, G>, Wire<V, G>),
+    accPort : Wire<V, G>,
+    dataPorts : Array<Wire<V, G>>,
+    direction!: Direction = TOP_TO_BOTTOM
+) : Array<Wire<V, G>>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    let inputPorts = match(direction) {
+        case TOP_TO_BOTTOM => prepend(accPort, dataPorts)
+        case BOTTOM_TO_TOP => append(dataPorts, accPort)
+    }
+    RippleMap(f, inputPorts, direction: direction)
 }
 /**
  * Make a circuit for a ripple map, an operation that starts with an accumulator
