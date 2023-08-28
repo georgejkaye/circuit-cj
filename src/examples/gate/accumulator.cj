@@ -13,7 +13,7 @@ public func Accumulator(width!: Int64, initial!: Int64) : Circuit_ {
     // Initialise a constant zero to use as the initial carry
     let zero = sig.UseConstantZero(width: 1)
     // Combine the wires into a ripple adder
-    let (sum, carry) = UseRippleAdder(prev, input, zero)
+    let (sum, carry) = UseRippleAdder(a: prev, b: input, cin: zero)
     // Feedback the output of the adder to the previous sum, guarded by
     // register with the initial value in
     RegisterGuardedFeedback(initial, width, false, sum, prev)

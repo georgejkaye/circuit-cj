@@ -22,11 +22,7 @@ public func Fibonacci(n : Int64, width : Int64) : Circuit_ {
     } else {
         let fiba = UseSubcircuit_1(Fibonacci(n - 2, width), Array<Wire_>())
         let fibb = UseSubcircuit_1(Fibonacci(n - 1, width), Array<Wire_>())
-        UseRippleAdder(
-            fiba,
-            fibb,
-            sig.UseInstantZero(width: 1)
-        )[0]
+        UseRippleAdder(a: fiba, b: fibb, cin: sig.UseInstantZero(width: 1))[0]
     }
     MakeSubcircuit(
         Array<InterfaceWire_>(),

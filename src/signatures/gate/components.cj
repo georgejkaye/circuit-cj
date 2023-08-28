@@ -261,12 +261,13 @@ public func MakeRippleAdder(width : Int64) : BelnapInterfacedCircuit {
  * @return (Output S (w), Output Cout (1))
  */
 public func UseRippleAdder(
-    a : BelnapWire,
-    b : BelnapWire,
-    c : BelnapWire
+    a!: BelnapWire,
+    b!: BelnapWire,
+    cin!: BelnapWire
 ) : (BelnapWire, BelnapWire) {
     let width = AssertBothSameWidth(a, b)
-    UseSubcircuit_2(MakeRippleAdder(width), [a, b, c])
+    AssertHasWidth(cin, 1)
+    UseSubcircuit_2(MakeRippleAdder(width), [cin, a, b])
 }
 /**
  * Create a 2-multiplexer subcircuit for inputs of one bit.
