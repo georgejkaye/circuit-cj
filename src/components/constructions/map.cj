@@ -11,8 +11,7 @@ package components.constructions
  */
 public func Map<V, G>(
     f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
-    incomingWires : Array<Wire<V, G>>,
-    numberOfOperations : Int64
+    incomingWires : Array<Wire<V, G>>, numberOfOperations!: Int64
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -40,12 +39,12 @@ public func Map<V, G>(
 public func Map<V, G>(
     f : (Array<Wire<V, G>>) -> Wire<V, G>,
     inputWires : Array<Wire<V, G>>,
-    incomingBundleSize : Int64
+    numberOfOperations!: Int64, sharedInputWires!: HashSet<Int64> = HashSet()
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let outputWires = Map(
-        { inp => [f(inp)] }, inputWires, incomingBundleSize
+        { inp => [f(inp)] }, inputWires, numberOfOperations: numberOfOperations
     )
     FlattenSingleWireOutputs(outputWires)
 }
@@ -63,7 +62,7 @@ public func Map<V, G>(
 public func MakeMap<V, G, T, U>(
     f : (Array<Wire<V, G>>) -> Array<Wire<V, G>>,
     incomingBundlePorts : Array<T>, outgoingBundlePorts : Array<U>,
-    numberOfOperations: Int64, label : Label<V, G>
+    numberOfOperations!: Int64, label!: Label<V, G>
 ) : InterfacedHypergraph<V, G>
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
@@ -74,7 +73,7 @@ public func MakeMap<V, G, T, U>(
     )
     let inputBundleWidth = incomingBundlePorts.size / numberOfOperations
     let outputBundleWidth = outgoingBundlePorts.size / numberOfOperations
-    let outputWires = Map(f, inputWires, inputBundleWidth)
+    let outputWires = Map(f, inputWires, numberOfOperations: numberOfOperations)
     let subcircuitInputs = map2(
         { w : Wire<V, G>, t : T => InterfaceWire(w, t.GetName()) },
         inputWires, incomingBundlePorts
@@ -97,8 +96,10 @@ func GetMapPorts<V, G, T>(
 ) : Array<Port>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>, T <: HasPort
 {
-    Array<Port>(portDetails.size * numberOfOperations, { i =>
-        let portVertex = portDetails[i % numberOfOperations]
+    let bundleSize = portDetails.size
+    let totalPorts = bundleSize * numberOfOperations
+    Array<Port>(totalPorts, { i =>
+        let portVertex = portDetails[i % bundleSize]
         Port(portVertex.GetWidth(), name: portVertex.GetName())
     })
 }
@@ -112,7 +113,7 @@ func GetMapPorts<V, G, T>(
  */
 public func MakeMap<V, G>(
     f : InterfacedHypergraph<V, G>,
-    numberOfOperations : Int64
+    numberOfOperations!: Int64
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -127,6 +128,7 @@ public func MakeMap<V, G>(
     )
     MakeMap(
         { ws : Array<Wire<V, G>> => UseSubcircuit(f, ws)}, inputPorts,
-        outputPorts, numberOfOperations, Label<V, G>.COMPOSITE(spec)
+        outputPorts, numberOfOperations: numberOfOperations,
+        label: Label<V, G>.COMPOSITE(spec)
     )
 }
