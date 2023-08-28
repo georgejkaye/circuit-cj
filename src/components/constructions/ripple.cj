@@ -16,8 +16,8 @@ package components.constructions
 public func Ripple<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> Array<Wire<V, G>>,
     inputWires : Array<Wire<V, G>>,
-    accBundleSize: Int64,
-    dataBundleSize: Int64,
+    accBundleSize!: Int64,
+    numberOfOperations!: Int64,
     direction!: Direction = TOP_TO_BOTTOM
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
@@ -28,8 +28,8 @@ public func Ripple<V, G>(
             (Array<Wire<V, G>>(), curAcc)
         }
     RippleMap(
-        function, inputWires, accBundleSize, dataBundleSize,
-        direction: direction
+        function, inputWires, accBundleSize: accBundleSize,
+        numberOfOperations: numberOfOperations, direction: direction
     )
 }
 /**
@@ -48,10 +48,8 @@ public func Ripple<V, G>(
 public func Ripple<V, G>(
     f : (Wire<V, G>, Array<Wire<V, G>>) -> Wire<V, G>,
     inputWires : Array<Wire<V, G>>,
-    dataBundleSize: Int64,
-    direction!: Direction = TOP_TO_BOTTOM,
-    start!: Int64 = 0,
-    end!: Int64 = (inputWires.size - 1) / dataBundleSize
+    numberOfOperations!: Int64,
+    direction!: Direction = TOP_TO_BOTTOM
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -60,7 +58,10 @@ public func Ripple<V, G>(
             let curAcc = f(acc[0], cur)
             [curAcc]
         }
-    Ripple(function, inputWires, 1, dataBundleSize, direction: direction)[0]
+    Ripple(
+        function, inputWires, accBundleSize: 1,
+        numberOfOperations: numberOfOperations, direction: direction
+    )[0]
 }
 /**
  * Make a ripple curcuit, an operation that starts with an accumulator bundle
@@ -81,9 +82,9 @@ func MakeRipple<V, G, T, U>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> Array<Wire<V, G>>,
     allInputPorts : Array<T>,
     allOutputPorts : Array<U>,
-    accBundleSize : Int64,
-    incomingBundleSize : Int64,
-    label : Label<V, G>,
+    accBundleSize!: Int64,
+    numberOfOperations!: Int64,
+    label!: Label<V, G>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : InterfacedHypergraph<V, G>
     where
@@ -95,8 +96,9 @@ func MakeRipple<V, G, T, U>(
             (Array<Wire<V, G>>(), f(acc, cur))
     }
     MakeRippleMap<V, G, T, U>(
-        function, allInputPorts, allOutputPorts, accBundleSize,
-        incomingBundleSize, accBundleSize, label, direction: direction
+        function, allInputPorts, allOutputPorts, accBundleSize: accBundleSize,
+        numberOfOperations: numberOfOperations, label: label,
+        direction: direction
     )
 }
 /**
@@ -128,8 +130,8 @@ public func MakeRipple<V, G, T>(
             (f(acc, cur), Array<Wire<V, G>>())
     }
     MakeRippleMap<V, G, T>(
-        op, accPorts, incomingPorts, Array<T>(), numberOfOperations,
-        name, direction: direction
+        op, accPorts, incomingPorts, Array<T>(),
+        numberOfOperations: numberOfOperations, name: name, direction: direction
     )
 }
 /**
@@ -145,15 +147,14 @@ public func MakeRipple<V, G, T>(
  */
 public func MakeRipple<V, G>(
     f : InterfacedHypergraph<V, G>,
-    accBundleSize : Int64,
-    numberOfOperations : Int64,
+    numberOfOperations!: Int64,
     name!: Option<String> = None<String>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    AssertEqual(f.GetCoarity(), accBundleSize)
     MakeRippleMap(
-        f, accBundleSize, numberOfOperations, name: name, direction: direction
+        f, accBundleSize: f.GetCoarity(),
+        numberOfOperations: numberOfOperations, name: name, direction: direction
     )
 }

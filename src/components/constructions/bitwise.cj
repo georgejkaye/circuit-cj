@@ -382,7 +382,8 @@ public func BitwiseRippleMap<V, G>(
             start: splitStart, end: splitEnd, splitInto: splitInto
         )
     let rippledWires = RippleMap(
-        f, splitWires, accBundleSize, numberOfOperations, direction: direction
+        f, splitWires, accBundleSize: accBundleSize,
+        numberOfOperations: numberOfOperations, direction: direction
     )
     let (outputAccStart, outputAccEnd, _) =
         GetOutputAccumulatorIndices(direction, accBundleSize, rippledWires.size)

@@ -153,8 +153,8 @@ func RippleMap<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) ->
             (Array<Wire<V, G>>, Array<Wire<V, G>>),
     inputWires : Array<Wire<V, G>>,
-    accBundleSize : Int64,
-    numberOfOperations : Int64,
+    accBundleSize!: Int64,
+    numberOfOperations!: Int64,
     direction!: Direction = TOP_TO_BOTTOM
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
@@ -220,7 +220,8 @@ public func RippleMap<V, G>(
             ([newOut], [newCur])
         }
     RippleMap(
-        fAdjusted, inputPorts, 1, inputPorts.size - 1, direction: direction
+        fAdjusted, inputPorts, accBundleSize: 1,
+        numberOfOperations: inputPorts.size - 1, direction: direction
     )
 }
 public func RippleMap<V, G>(
@@ -259,10 +260,9 @@ func MakeRippleMap<V, G, T, U>(
             (Array<Wire<V, G>>, Array<Wire<V, G>>),
     allInputPorts : Array<T>,
     allOutputPorts : Array<U>,
-    accBundleSize : Int64,
-    numberOfOperations : Int64,
-    outputWireBundleSize : Int64,
-    label : Label<V, G>,
+    accBundleSize!: Int64,
+    numberOfOperations!: Int64,
+    label!: Label<V, G>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : InterfacedHypergraph<V, G>
     where
@@ -277,7 +277,8 @@ func MakeRippleMap<V, G, T, U>(
     )
     // Perform the ripple map and get the actual output wires
     let rippleMapWires = RippleMap(
-        f, inputPorts, accBundleSize, numberOfOperations, direction: direction
+        f, inputPorts, accBundleSize: accBundleSize,
+        numberOfOperations: numberOfOperations, direction: direction
     )
     // Add interface information to the input wires based on the input ports
     let inputInterfaceWires = map2(
@@ -379,8 +380,8 @@ public func MakeRippleMap<V, G, T>(
     accPorts : Array<T>,
     incomingPorts : Array<T>,
     outgoingPorts : Array<T>,
-    numberOfOperations : Int64,
-    name: String,
+    numberOfOperations!: Int64,
+    name!: String,
     direction!: Direction = TOP_TO_BOTTOM
 ) : InterfacedHypergraph<V, G>
     where
@@ -410,8 +411,8 @@ public func MakeRippleMap<V, G, T>(
     let spec = Specification(name, allInputPorts, allOutputPorts)
     let label = Label<V, G>.COMPOSITE(spec)
     MakeRippleMap(
-        f, allInputPorts, allOutputPorts, accPorts.size,
-        numberOfOperations, outgoingPorts.size, label, direction: direction
+        f, allInputPorts, allOutputPorts, accBundleSize: accPorts.size,
+        numberOfOperations: numberOfOperations, label: label, direction: direction
     )
 }
 /**
@@ -494,8 +495,8 @@ func GetRippleMapOperationForSubcircuit<V, G>(
  */
 public func MakeRippleMap<V, G>(
     f : InterfacedHypergraph<V, G>,
-    accBundleSize : Int64,
-    numberOfOperations : Int64,
+    accBundleSize!: Int64,
+    numberOfOperations!: Int64,
     name!: Option<String> = None<String>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : InterfacedHypergraph<V, G>
@@ -528,8 +529,8 @@ public func MakeRippleMap<V, G>(
     // Create the label specification for the ripple map subcircuit
     let spec = Specification(circuitLabel, inputPorts, outputPorts)
     MakeRippleMap(
-        op, inputPorts, outputPorts, accBundleSize,
-        f.GetArity() - accBundleSize, f.GetCoarity() - accBundleSize,
-        Label<V, G>.COMPOSITE(spec), direction: direction
+        op, inputPorts, outputPorts, accBundleSize: accBundleSize,
+        numberOfOperations: numberOfOperations,
+        label: Label<V, G>.COMPOSITE(spec), direction: direction
     )
 }
