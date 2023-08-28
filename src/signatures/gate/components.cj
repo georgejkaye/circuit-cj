@@ -10,6 +10,7 @@ package signatures.gate
 import graphs.*
 import components.*
 import components.constructions.*
+from std import math.{floor, log}
 public func UseBufGate(
     a : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
@@ -268,10 +269,9 @@ public func UseRippleAdder(
     UseSubcircuit_2(MakeRippleAdder(width), [a, b, c])
 }
 /**
- * Create a 2-multiplexer subcircuit for inputs of one bit: a circuit
- * that produces one of two outputs depending on a control signal.
+ * Create a 2-multiplexer subcircuit for inputs of one bit.
  */
-func Mux2_1_1() : BelnapInterfacedCircuit {
+func MakeMux2_1() : BelnapInterfacedCircuit {
     let a = belnapSignature.UseWire(1)
     let b = belnapSignature.UseWire(1)
     let c = belnapSignature.UseWire(1)
@@ -281,40 +281,32 @@ func Mux2_1_1() : BelnapInterfacedCircuit {
     )
     MakeSubcircuit(
         [
-            InterfaceWire(c, "SEL"), InterfaceWire(a, "A"),
-            InterfaceWire(b, "B")
+            InterfaceWire(c, "S0"), InterfaceWire(a, "I0"),
+            InterfaceWire(b, "I1")
         ],
         [
             InterfaceWire(z, "Z")
         ],
-        "mux2_1_1"
+        "MUX2_1"
     )
 }
 /**
- * Create a 2-multiplexer subcircuit for inputs of arbitrary width:
- * a circuit that produces one of two outputs depending on a control signal.
+ * Create a 2-multiplexer subcircuit for inputs of arbitrary widths.
  *
  * @param width
+ * @return The multiplexer
  */
-public func Mux2_1_W(width : Int64) : BelnapInterfacedCircuit {
-    let sel = belnapSignature.UseWire(1)
-    let a = belnapSignature.UseWire(width)
-    let b = belnapSignature.UseWire(width)
-    let ctls = Replicate(sel, width)
-    let output = BitwiseMap(
-        { ws : Array<BelnapWire> => UseSubcircuit(Mux2_1_1(), ws) },
-        [ctls, a, b]
-    )[0]
-    MakeSubcircuit(
-        [
-            InterfaceWire(sel, "SEL"), InterfaceWire(a, "A"),
-            InterfaceWire(b, "B")
-        ],
-        [
-            InterfaceWire(output, "Z")
-        ],
-        "MUX2_1_${width}"
-    )
+public func MakeMux2(width!: Int64) : BelnapInterfacedCircuit {
+    AssertStrictlyPositive(width)
+    if(width == 1) {
+        MakeMux2_1()
+    } else {
+        MakeBitwiseMap(
+           MakeMux2(width: 1), numberOfOperations: width,
+           sharedInputWires: HashSet(0), name: "MUX2_${width}"
+        )
+    }
+
 }
 /**
  * Apply a 2-multiplexer. The width is determined from the input wires.
@@ -324,12 +316,11 @@ public func Mux2_1_W(width : Int64) : BelnapInterfacedCircuit {
  * @param b Input B (w)
  * @return Output Z (w)
  */
-public func Mux2(sel!: BelnapWire, a!: BelnapWire, b!: BelnapWire) : BelnapWire {
-    let width = AssertBothSameWidth(a, b)
-    UseSubcircuit_1(
-        Mux2_1_W(width),
-        [sel, a, b]
-    )
+public func UseMux2(
+    s0!: BelnapWire, i0!: BelnapWire, i1!: BelnapWire
+) : BelnapWire {
+    let width = AssertBothSameWidth(i0, i1)
+    UseSubcircuit_1(MakeMux2(width: width), [s0, i0, i1])
 }
 /**
  * Create a 4-multiplexer subcircuit for inputs of arbitrary width:
@@ -337,25 +328,16 @@ public func Mux2(sel!: BelnapWire, a!: BelnapWire, b!: BelnapWire) : BelnapWire 
  *
  * @param width
  */
-func Mux4_1_W(width: Int64) : BelnapInterfacedCircuit {
+func MakeMux4(width!: Int64) : BelnapInterfacedCircuit {
     let a  = belnapSignature.UseWire(width)
     let b  = belnapSignature.UseWire(width)
     let c  = belnapSignature.UseWire(width)
     let d  = belnapSignature.UseWire(width)
     let s0 = belnapSignature.UseWire(1)
     let s1 = belnapSignature.UseWire(1)
-    let m1 = UseSubcircuit_1(
-        Mux2_1_W(width),
-        [s0, a, b]
-    )
-    let m2 = UseSubcircuit_1(
-        Mux2_1_W(width),
-        [s0, c, d]
-    )
-    let m3 = UseSubcircuit_1(
-        Mux2_1_W(width),
-        [s1, m1, m2]
-    )
+    let m1 = UseMux2(s0: s0, i0: a, i1: b)
+    let m2 = UseMux2(s0: s0, i0: c, i1: d)
+    let m3 = UseMux2(s0: s1, i0: m1, i1: m2)
     MakeSubcircuit(
         [
             InterfaceWire(s0, "SEL0"), InterfaceWire(s1, "SEL1"),
@@ -379,15 +361,82 @@ func Mux4_1_W(width: Int64) : BelnapInterfacedCircuit {
  * @param d Input D (w)
  * @return Output Z (w)
  */
-public func Mux4(
-    s0: BelnapWire, s1: BelnapWire,
-    a: BelnapWire, b: BelnapWire, c: BelnapWire, d: BelnapWire
+public func UseMux4(
+    s0!: BelnapWire, s1!: BelnapWire,
+    i0!: BelnapWire, i1!: BelnapWire, i2!: BelnapWire, i3!: BelnapWire
 ) : BelnapWire {
-    let width = AssertBothSameWidth(a, b)
-    AssertBothSameWidth(b, c)
-    AssertBothSameWidth(c, d)
-    UseSubcircuit_1(
-        Mux4_1_W(width),
-        [s0, s1, a, b, c, d]
+    let width = AssertBothSameWidth(i0, i1)
+    AssertBothSameWidth(i1, i2)
+    AssertBothSameWidth(i2, i3)
+    UseSubcircuit_1(MakeMux4(width: width), [s0, s1, i0, i1, i2, i3])
+}
+public func MakeMux(
+    inputs!: Int64, width!: Int64
+) : BelnapInterfacedCircuit {
+    if(inputs == 2) {
+        MakeMux2(width: width)
+    } else {
+        // The number of control wires is the solution of inputs = 2^x
+        let numberOfControlWires = AssertPowerOf(inputs, 2)
+        // All but one of these control wires is used in the recursive subcall
+        let numberOfControlWiresPerSubcall = numberOfControlWires - 1
+        let numberOfDataWiresPerSubcall = inputs / 2
+        let numberOfInputWiresPerSubcall =
+            numberOfControlWiresPerSubcall + numberOfDataWiresPerSubcall
+        let controlWires = Array<BelnapWire>(numberOfControlWires, {i =>
+            UseWire<GateLevelValue, GateLevelPrimitive>(1)
+        })
+        let getSubcallInputs = { =>
+            Array<BelnapWire>(numberOfInputWiresPerSubcall, { i =>
+                if(i < numberOfControlWiresPerSubcall) {
+                    controlWires[i + 1]
+                } else {
+                    UseWire<GateLevelValue, GateLevelPrimitive>(width)
+                }
+            })
+        }
+        let topInputs = getSubcallInputs()
+        let botInputs = getSubcallInputs()
+        let topHalf = UseMux(topInputs)
+        let botHalf = UseMux(botInputs)
+        // We select between the two submuxes with a final mux2
+        let finalMux = UseMux2(s0: controlWires[0], i0: topHalf, i1: botHalf)
+        // The final input wires are [zero, subcontrols, data]
+        let totalNumberOfInputWires = numberOfControlWires + inputs
+        let totalInputs = Array<BelnapInterfaceWire>(
+            totalNumberOfInputWires, { i =>
+                if(i < numberOfControlWires) {
+                    let controlWireName = "S${i}"
+                    InterfaceWire(controlWires[i], controlWireName)
+                } else {
+                    let dataIndex = i - numberOfControlWires
+                    let dataWireName = "I${dataIndex}"
+                    if(i < numberOfControlWires + numberOfDataWiresPerSubcall) {
+                        let inputIndex =
+                            dataIndex + numberOfControlWiresPerSubcall
+                        InterfaceWire(
+                            topInputs[inputIndex], dataWireName
+                        )
+                    } else {
+                        let inputIndex =
+                            dataIndex - numberOfDataWiresPerSubcall +
+                                numberOfControlWiresPerSubcall
+                        let choiceIndex = i - numberOfControlWires
+                        InterfaceWire(botInputs[inputIndex], dataWireName)
+                    }
+                }
+        })
+        MakeSubcircuit(
+            totalInputs, [BelnapInterfaceWire(finalMux, "Z")],
+            "MUX${inputs}_${width}"
+        )
+    }
+}
+public func UseMux(inputs: Array<BelnapWire>) : BelnapWire {
+    let exponent = Int64(floor(log(Float64(inputs.size)) / log(2.0)))
+    let choices = inputs.size - exponent
+    let width = AssertAllElementsHaveSameWidth(inputs, start: exponent)
+    UseSubcircuit_1<GateLevelValue, GateLevelPrimitive>(
+        MakeMux(inputs: choices, width: width), inputs
     )
 }
