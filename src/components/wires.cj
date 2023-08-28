@@ -156,7 +156,7 @@ public func UseWire<V, G>(width : Int64) : Wire<V, G>
  * @param width The width of the wire
  * @return The array of wires
  */
-public func UseWires<V, G>(width : Int64, n : Int64) : Array<Wire<V, G>>
+public func UseWires<V, G>(n : Int64, width!: Int64) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertStrictlyPositive(n)
@@ -184,8 +184,8 @@ public interface WireUser<V, G>
     func UseWire(width : Int64) : Wire<V, G> {
         UseWire<V, G>(width)
     }
-    func UseWires(width : Int64, n : Int64) : Array<Wire<V, G>> {
-        UseWires<V, G>(width, n)
+    func UseWires(n : Int64, width!: Int64) : Array<Wire<V, G>> {
+        UseWires<V, G>(n, width: width)
     }
     func UseWires(widths : Array<Int64>) : Array<Wire<V, G>> {
         UseWires<V, G>(widths)
