@@ -43,13 +43,9 @@ func FullAdder() {
  * @return A multibit full adder subcircuit
  */
 func MultibitFullAdder(width : Int64) {
-    // Input wires
-    let a = sig.UseWire(width)
-    let b = sig.UseWire(width)
-    let c = sig.UseWire(1)
     // A full adder is a bitwise ripple with the carry as the initial value
     MakeBitwiseRippleMap(
-        MakeFullAdder(), 1, width, name: "+_${width}"
+        FullAdder(), 1, width, name: "+_${width}"
     )
 }
 /**
