@@ -101,7 +101,8 @@ public func AssertAllElementsHaveWidth<T>(xs : Array<T>, i : Int64) : Unit
  * @return The array of widths, if they match up
  */
 public func AssertElementsHaveSameWidths<T, U>(
-    xs : Array<T>, ys : Array<U>
+    xs : Array<T>, ys : Array<U>, excluding!: HashSet<Int64> = HashSet(),
+    start!: Int64 = 0, end!: Int64 = xs.size
 ) : Array<Int64>
     where T <: HasWidth & ToString, U <: HasWidth & ToString
 {
