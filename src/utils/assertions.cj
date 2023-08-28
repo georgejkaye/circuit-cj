@@ -6,6 +6,7 @@
  */
 package utils
 from std import collection.HashSet
+from std import math.{log, floor}
 /**
  * Types of paramaters to assert conditions about. Used to make debugging
  * messages clearer.
@@ -179,6 +180,18 @@ public func AssertMultipleOf(x : Int64, multiple : Int64) : Int64 {
         )
     }
     x / multiple
+}
+public func AssertPowerOf(x : Int64, power : Int64) : Int64 {
+    let exponent = log(Float64(x)) / log(Float64(power))
+    let floored = floor(exponent)
+    if(exponent != floored){
+        throw IncompatibleParameterException(
+            AssertionFailedMessage(
+                "${x} must be a power of ${power}"
+            )
+        )
+    }
+    Int64(floored)
 }
 /**
  * @param xs
