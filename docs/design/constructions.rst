@@ -160,30 +160,52 @@ but rather than using multiple arrays of input wires, we want to perform it over
 the bits in the wires themselves.
 This is known as a *bitwise ripple*.
 
+There are two 'modes' that a bitwise ripple can operate in.
+The first is to only split the 'data' wires and leave the accumulator wires as
+is.
+
+.. code-block:: scala
+
+    let bb = sig.AddBlackbox("f", [Port(2), Port(3), Port(2), Port(1)], [Port(2), Port(3)])
+    let f = MakeBlackbox(bb)
+    MakeBitwiseRipple(f, numberOfOperations: 3)
+
+.. image:: imgs/constructions/bitwise-ripple.svg
+
+The second mode is to include the initial accumulator as one of the split wires.
+This requires the data inputs of the rippled block to be the same form as the
+accumulator inputs.
+
+.. code-block:: scala
+
+    let bb = sig.AddBlackbox("f", [Port(2), Port(3), Port(2), Port(3)], [Port(2), Port(3)])
+    let f = MakeBlackbox(bb)
+    MakeBitwiseRipple(f, numberOfOperations: 3, initial: true)
 
 
+.. image:: imgs/constructions/bitwise-ripple-no-initial.svg
 
 Bitwise ripple logic gates
 ***************************
 
-This construction has an interpretation is Belnap logic gates:
+The bitwise ripple construction also has a natural use for logic gates:
+applying a logic gate to the bits of a wire in sequence.
 
 .. code-block:: scala
 
-    let a = MakeWire(3)
+    let a = sig.UseWire(3)
     // AND(AND(a[0], a[1]), a[2])
-    And(a)
+    UseAnd(a)
 
-.. image:: imgs/constructions/internal-ripple-and-1.svg
+.. image:: imgs/constructions/bitwise-ripple-and-0.svg
 
-.. image:: imgs/constructions/internal-ripple-and-2.svg
+.. image:: imgs/constructions/bitwise-ripple-and-1.svg
 
 Ripple map
 ----------
 
 The ``Map`` and ``Ripple`` constructions are actually generalisations of a
 construction called a ``RippleMap``.
-
 
 It is sometimes useful to extend the ``Ripple`` construction so that each
 iteration of the circuit can produce an output in addition to the threaded
