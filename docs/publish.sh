@@ -9,15 +9,15 @@ DEVELOP_BRANCH=dev
 DOCS_MAKE_TARGET=docs
 DOCS_BUILD=docs/_build
 
-DATE=$(date +"%Y-%m-%d %T")
-TEMP_DIR=$DATE
+DATE=$(date +"%Y-%m-%d-%T")
+TEMP_DIR="/tmp/$DATE"
 
 # Make temp dir
 mkdir $TEMP_DIR
 cd $TEMP_DIR
 
 # Copy the repo to avoid messing up current working directory
-cp -r $REPO_DIR .
+cp -r $REPO_DIR $TEMP_DIR
 cd "${REPO_DIR##*/}"
 
 # Reset to head
