@@ -204,17 +204,49 @@ applying a logic gate to the bits of a wire in sequence.
 Ripple map
 ----------
 
-The ``Map`` and ``Ripple`` constructions are actually generalisations of a
-construction called a ``RippleMap``.
-
 It is sometimes useful to extend the ``Ripple`` construction so that each
 iteration of the circuit can produce an output in addition to the threaded
 accumulator.
-One such example is a ripple adder.
-In a ``BitwiseRipple``, these outputs will be collected and combined into a
-single wire for output.
+
+.. code-block:: scala
+
+    let bb = sig.AddBlackbox(
+        "f", [Port(1), Port(2), Port(3)], [Port(4), Port(1), Port(2)]
+    )
+    let f = MakeBlackbox(bb)
+    // acc: 2 - There are two accumulator wires
+    // ops: 3 - We want to ripple three times
+    let rippleMap = MakeRippleMap(f, acc: 2, ops: 3)
 
 .. image:: imgs/constructions/ripple-map.svg
+
+The bitwise ripple can also be extended in this way.
+
+.. code-block:: scala
+
+    let bb = sig.AddBlackbox(
+        "f", [Port(1), Port(2), Port(3)], [Port(4), Port(1), Port(2)]
+    )
+    let f = MakeBlackbox(bb)
+    // acc: 2 - There are two accumulator wires
+    // ops: 3 - We want to ripple three times
+    let bitwiseRippleMap = MakeBitwiseRippleMap(f, acc: 2, ops: 3)
+
+.. image:: imgs/constructions/bitwise-ripple-map.svg
+
+As with the bitwise ripple, the accumulator can be initialised with the first
+bit of each split wire.
+
+.. code-block:: scala
+
+    let bb = sig.AddBlackbox
+        ("f", [Port(1), Port(2), Port(1), Port(2)], [Port(4), Port(1), Port(2)]
+    )
+    let f = MakeBlackbox(bb)
+    let circ = MakeBitwiseRippleMap(f, acc: 2, ops: 3, initial: false)
+    let bitwiseRippleMap = MakeBitwiseRippleMap(f, acc: 2, ops: 3, initial: false)
+
+.. image:: imgs/constructions/bitwise-ripple-map-no-init.svg
 
 Ripple map logic gates
 ***********************
