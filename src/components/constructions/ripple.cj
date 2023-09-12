@@ -154,7 +154,7 @@ public func MakeRipple<V, G>(
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     MakeRippleMap(
-        f, accBundleSize: f.GetCoarity(),
-        numberOfOperations: numberOfOperations, name: name, direction: direction
+        f, acc: f.GetCoarity(),
+        ops: numberOfOperations, name: name, direction: direction
     )
 }

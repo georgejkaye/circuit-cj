@@ -495,42 +495,42 @@ func GetRippleMapOperationForSubcircuit<V, G>(
  */
 public func MakeRippleMap<V, G>(
     f : InterfacedHypergraph<V, G>,
-    accBundleSize!: Int64,
-    numberOfOperations!: Int64,
+    acc!: Int64,
+    ops!: Int64,
     name!: Option<String> = None<String>,
     direction!: Direction = TOP_TO_BOTTOM
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    AssertLessThanOrEqualTo(accBundleSize, f.GetArity())
+    AssertLessThanOrEqualTo(acc, f.GetArity())
     // Whether the accumulator wires should come first or last in the
     // input or output ports
     let (inputAccFirst, outputAccFirst) = GetRippleBundlePositions(direction)
     let op = GetRippleMapOperationForSubcircuit(
-        f, direction, outputAccFirst, accBundleSize
+        f, direction, outputAccFirst, acc
     )
     // Get ports describing the inputs to the ripple map subcircuit
     let inputPorts = GetRippleMapPorts(
-        f.GetInputs(), inputAccFirst, accBundleSize, numberOfOperations,
+        f.GetInputs(), inputAccFirst, acc, ops,
         GetRippleMapAccPort<InterfaceVertex<V, G>>,
         GetRippleMapOtherPort<InterfaceVertex<V, G>>
     )
     // Get ports describing the outputs to the ripple map subcircuit
     let outputPorts = GetRippleMapPorts(
-        f.GetOutputs(), outputAccFirst, accBundleSize, numberOfOperations,
+        f.GetOutputs(), outputAccFirst, acc, ops,
         GetRippleMapAccPort<InterfaceVertex<V, G>>,
         GetRippleMapOtherPort<InterfaceVertex<V, G>>
     )
     // Use the ports in the specification of the ripple map label
     let circuitLabel = match(name) {
         case Some(s) => s
-        case None => "${f.GetName()}^${numberOfOperations}"
+        case None => "${f.GetName()}^${ops}"
     }
     // Create the label specification for the ripple map subcircuit
     let spec = Specification(circuitLabel, inputPorts, outputPorts)
     MakeRippleMap(
-        op, inputPorts, outputPorts, accBundleSize: accBundleSize,
-        numberOfOperations: numberOfOperations,
+        op, inputPorts, outputPorts, accBundleSize: acc,
+        numberOfOperations: ops,
         label: Label<V, G>.COMPOSITE(spec), direction: direction
     )
 }

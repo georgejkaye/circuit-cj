@@ -551,27 +551,41 @@ public func MakeBitwiseRippleMap<V, G, T>(
     )
 }
 public func MakeBitwiseRippleMap<V, G>(
-    f : InterfacedHypergraph<V, G>, accBundleSize!: Int64,
-    numberOfOperations!: Int64, name!: Option<String> = None<String>,
+    f : InterfacedHypergraph<V, G>, acc!: Int64,
+    ops!: Int64, name!: Option<String> = None<String>,
     direction!: Direction = TOP_TO_BOTTOM, initial!: Bool = true
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
+    // Find out where the accumulator is in the bundles
     let (inputAccFirst, outputAccFirst) = GetRippleBundlePositions(direction)
+    // Check the types work for the accumulator
+    for(i in 0..acc) {
+        let accVertex = f.GetInput(i)
+        if(!initial) {
+            AssertBothSameWidth(accVertex, f.GetInput(i + acc))
+        }
+        let outputAccIndex = if(outputAccFirst) {
+            i
+        } else {
+            f.GetCoarity() - acc + i
+        }
+        AssertBothSameWidth(accVertex, f.GetOutput(outputAccIndex))
+    }
     let op = GetRippleMapOperationForSubcircuit(
-        f, direction, outputAccFirst, accBundleSize
+        f, direction, outputAccFirst, acc
     )
     let allInputPorts = if(!initial) {
         GetBitwiseRippleMapInputsWithoutInitial(
-            f.GetInputs(), numberOfOperations
+            f.GetInputs(), ops
         )
     } else {
         GetBitwiseRippleMapPortsWithInitial(
-            f.GetInputs(), inputAccFirst, accBundleSize, numberOfOperations
+            f.GetInputs(), inputAccFirst, acc, ops
         )
     }
     let allOutputPorts = GetBitwiseRippleMapPortsWithInitial(
-        f.GetOutputs(), outputAccFirst, accBundleSize, numberOfOperations
+        f.GetOutputs(), outputAccFirst, acc, ops
     )
     let circuitLabel = match(name) {
         case Some(s) => s
@@ -580,7 +594,7 @@ public func MakeBitwiseRippleMap<V, G>(
     let spec = Specification(circuitLabel, allInputPorts, allOutputPorts)
     let label = Label<V, G>.COMPOSITE(spec)
     MakeBitwiseRippleMap<V, G, Port, Port>(
-        op, allInputPorts, allOutputPorts, accBundleSize, numberOfOperations,
+        op, allInputPorts, allOutputPorts, acc, ops,
         label, direction: direction, initial: initial
     )
 }
@@ -603,15 +617,15 @@ public func MakeBitwiseRipple<V, G, T>(
     )
 }
 public func MakeBitwiseRipple<V, G>(
-    f : InterfacedHypergraph<V, G>, numberOfOperations!: Int64,
+    f : InterfacedHypergraph<V, G>, ops!: Int64,
     name!: Option<String> = None<String>,
     direction!: Direction = TOP_TO_BOTTOM, initial!: Bool = true
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     MakeBitwiseRippleMap(
-        f, accBundleSize: f.GetCoarity(),
-        numberOfOperations: numberOfOperations, name: name,
+        f, acc: f.GetCoarity(),
+        ops: ops, name: name,
         direction: direction, initial: initial
     )
 }
