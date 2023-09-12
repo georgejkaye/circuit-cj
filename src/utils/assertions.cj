@@ -496,7 +496,7 @@ public func AssertBothSameParameter<T, U, V>(
     if (xParam != yParam) {
         throw IncompatibleParameterException(
             AssertionFailedMessage(
-                "${x} and ${y} must have ${paramType} ${paramType}" +
+                "${x} and ${y} must have ${paramType} ${xParam} " +
                 "(they have ${fnt(x)} and ${fnu(y)} respectively)"
             )
         )
