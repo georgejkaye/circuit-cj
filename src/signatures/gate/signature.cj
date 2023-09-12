@@ -247,10 +247,10 @@ public enum GateLevelPrimitive {
 /**
  * Internal package type aliases
  */
-type BelnapWire = Wire<GateLevelValue, GateLevelPrimitive>
-type BelnapInterfaceWire = InterfaceWire<GateLevelValue, GateLevelPrimitive>
-type BelnapCircuit = Hypergraph<GateLevelValue, GateLevelPrimitive>
-type BelnapInterfacedCircuit =
+public type BelnapWire = Wire<GateLevelValue, GateLevelPrimitive>
+public type BelnapInterfaceWire = InterfaceWire<GateLevelValue, GateLevelPrimitive>
+public type BelnapCircuit = Hypergraph<GateLevelValue, GateLevelPrimitive>
+public type BelnapInterfacedCircuit =
     InterfacedHypergraph<GateLevelValue, GateLevelPrimitive>
 /**
  * Instantiate GateLevelPrimitive as a type of gate symbols
