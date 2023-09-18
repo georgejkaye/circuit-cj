@@ -8,6 +8,6 @@ Designing circuits
    wires
    primitives
    subcircuits
-   constructions
    drawing
+   constructions
    state

@@ -55,7 +55,6 @@ operations.
 .. image:: imgs/constructions/bitwise-map-1.svg
 
 
-
 Bitwise logic gates
 *******************
 
@@ -248,16 +247,18 @@ bit of each split wire.
 
 .. image:: imgs/constructions/bitwise-ripple-map-no-init.svg
 
-Ripple map logic gates
-***********************
+Bitwise ripple map logic gates
+******************************
 
-A classic example of a ripple map circuit is a *ripple adder*.
+A classic example of a bitwise ripple map circuit is a *ripple adder*.
+Here, the accumulator is a carry that is threaded through a full adder for each
+bit of the input wires.
 
 .. code-block:: scala
 
     let fullAdder = MakeFullAdder()
     // The outputs of the full adder are (sum (output), carry (acc))
-    let rippleAdder = MakeRippleMap(fullAdder, 1, 4)
+    let rippleAdder = MakeRippleMap(fullAdder, acc: 1, ops: 4)
 
 .. image:: imgs/constructions/ripple-map-adder-0.svg
 
