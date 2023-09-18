@@ -447,7 +447,7 @@ public class InterfacedHypergraph<V, G>
     public func Clone() : InterfacedHypergraph<V, G> {
         let (newGraph, newInputs, newOutputs, vertexMap, edgeMap) =
             this.CloneGraph()
-        InterfacedHypergraph(newGraph, newInputs, newOutputs, this.GetName())
+        InterfacedHypergraph(newGraph, newInputs, newOutputs, this.GetLabel())
     }
     /**
      * Given arrays of inputs and outputs, collapse a subgraph of this graph
