@@ -364,6 +364,18 @@ extend Label<V, G>
         }
     }
     /**
+     * @return the waveform of this label:
+     *  throws exception if not a waveform
+     */
+    public func GetMaybeWaveform() : Option<Waveform<V>> {
+        match(this) {
+            case OPEN_WAVEFORM(wf) => Some(wf)
+            case CLOSED_WAVEFORM(wf) => Some(wf)
+            case INFINITE_WAVEFORM(wf) => Some(wf)
+            case _ => None
+        }
+    }
+    /**
      * @return if this is a register label
      */
     public func IsRegister() : Bool {
@@ -404,6 +416,23 @@ extend Label<V, G>
         match(this) {
             case BLACKBOX(_) => true
             case _ => false
+        }
+    }
+    public func GetVariant() : String {
+        match(this) {
+            case VALUE(_) => "VALUE"
+            case SIGNAL(spec) => "SIGNAL"
+            case REGISTER(signal) => "REGISTER"
+            case OPEN_WAVEFORM(wf) => "OPEN_WAVEFORM"
+            case CLOSED_WAVEFORM(wf) => "CLOSED_WAVEFORM"
+            case INFINITE_WAVEFORM(wf) => "INFINITE_WAVEFORM"
+            case BUNDLER(ms, _) => "BUNDLER"
+            case JOIN(w) => "JOIN"
+            case PRIMITIVE(prim) => "PRIMITIVE"
+            case ENHANCED_PRIMITIVE(eprim) => "ENHANCED_PRIMITIVE"
+            case COMPOSITE(spec) => "COMPOSITE"
+            case BLACKBOX(spec) => "BLACKBOX"
+            case DELAY(w) => "DELAY"
         }
     }
 }

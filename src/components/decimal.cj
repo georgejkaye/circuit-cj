@@ -357,37 +357,49 @@ public interface DecimalDrawable {
      * @param debug Whether to print debug info on the graph
      */
     func WriteDotToFile(
-        file : String, depth!: Int64, signed!: Bool, debug!: Bool
+        file : String, depth!: Int64, signed!: Bool, debug!: Bool,
+        expandSignals!: Bool
     ) : Unit
 }
+extend Label<V, G>
+    where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    public func GetDecimalName(signed!: Bool) : String {
+        match(this){
+            case VALUE(v) =>
+                Signal([v]).GetDecimalName(signed: signed)
+            case SIGNAL(s) =>
+                s.GetDecimalName(signed: signed)
+            case REGISTER(s) =>
+                "${s.GetDecimalName(signed: signed)} ::"
+            case CLOSED_WAVEFORM(wf) =>
+                wf.GetDecimalName(signed: signed)
+            case OPEN_WAVEFORM(wf) =>
+                "${wf.GetDecimalName(signed: signed)} ::"
+            case INFINITE_WAVEFORM(wf) =>
+                "${wf.GetDecimalName(signed: signed)}^\u{03C9}"
+            case _ =>
+                this.GetName()
+        }
+    }
+}
+
 public func GetDecimalLabelFn<V, G>(signed : Bool) : (Label<V, G>) -> String
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    { label : Label<V, G> =>
-        match(label.GetMaybeSignal()) {
-            case None => label.GetName()
-            case Some(s) => match(V.SignalToDec(s, signed)) {
-                case None => label.GetName()
-                case Some(n) => match(label) {
-                    case VALUE(_) => "${n}"
-                    case SIGNAL(_) => "${n}"
-                    case REGISTER(_) => ":: ${n}"
-                    case _ => ""
-                }
-            }
-        }
-    }
+    { label : Label<V, G> => label.GetDecimalName(signed: signed) }
 }
 
 extend Hypergraph<V, G> <: DecimalDrawable
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public func WriteDotToFile(
-        file : String, depth!: Int64 = 0, signed!: Bool, debug!: Bool = false
+        file : String, depth!: Int64 = 0, signed!: Bool, debug!: Bool = false,
+        expandSignals!: Bool = false
     ) : Unit {
         WriteDotToFile(
             file, depth: depth, edgeLabelFn: GetDecimalLabelFn(signed),
-            debug: debug
+            debug: debug, expandSignals: expandSignals
         )
     }
 }
@@ -395,11 +407,34 @@ extend InterfacedHypergraph<V, G> <: DecimalDrawable
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public func WriteDotToFile(
-        file : String, depth!: Int64 = 0, signed!: Bool, debug!: Bool = false
+        file : String, depth!: Int64 = 0, signed!: Bool, debug!: Bool = false,
+        expandSignals!: Bool = false
     ) : Unit {
         WriteDotToFile(
             file, depth: depth, edgeLabelFn: GetDecimalLabelFn(signed),
-            debug: debug
+            debug: debug, expandSignals: expandSignals
+        )
+    }
+}
+
+extend Signal<V> where V <: Decimal<V> & ValueSymbol<V> {
+    public func GetDecimalName(signed!: Bool) : String {
+        match(V.SignalToDec(this, signed)){
+            case Some(n) => "${n}"
+            case None => this.GetName()
+        }
+    }
+}
+
+extend Waveform<V> where V <: Decimal<V> & ValueSymbol<V> {
+    public func GetDecimalName(signed!: Bool) : String {
+        arrayToString(
+            this.GetSignals(),
+            { s : Signal<V> => match(V.SignalToDec(s, signed)){
+                case Some(n) => "${n}"
+                case None => s.GetName()
+            }},
+            openingBracket: "", closingBracket: "", delimiter: "::"
         )
     }
 }

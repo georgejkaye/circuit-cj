@@ -489,3 +489,14 @@ extend Wire<V, G> <: Drawable<V, G> {
         )
     }
 }
+extend Wire<V, G> <: DecimalDrawable where V <: Decimal<V> {
+    public func WriteDotToFile(
+        file : String, depth!: Int64 = 0, signed!: Bool, debug!: Bool = false,
+        expandSignals!: Bool = false
+    ) : Unit {
+        this.GetGraph().WriteDotToFile(
+            file, depth: depth, signed: signed, debug: debug,
+            expandSignals: expandSignals
+        )
+    }
+}

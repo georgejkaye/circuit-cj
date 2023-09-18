@@ -510,7 +510,8 @@ extend Evaluator<V, G> <: DecimalDrawable
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public func WriteDotToFile(
-        file : String, depth!: Int64 = 0, signed!: Bool, debug!: Bool = false
+        file : String, depth!: Int64 = 0, signed!: Bool, debug!: Bool = false,
+        expandSignals!: Bool = false
     ) : Unit {
         WriteDotToFile(
             file, depth: depth, edgeLabelFn: GetDecimalLabelFn(signed), debug: debug

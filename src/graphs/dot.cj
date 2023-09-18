@@ -824,7 +824,7 @@ func DrawInterfacedHypergraph<V, G>(
 {
     let id = f.GetId()
     let label = f.GetLabel()
-    DrawOpeningContent(f.GetLabel().toString(), parent, elementContent, debug)
+    DrawOpeningContent(edgeLabelFn(label), parent, elementContent, debug)
     // The connections of this graph are kept within this graph
     let connectionContent = ArrayList<DotLine>()
     // Draw the content of the graph
