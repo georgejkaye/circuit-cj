@@ -86,9 +86,12 @@ When using the Belnap signature, we can ``Use`` values directly from decimal num
 
 .. image:: imgs/state/signed-value-2.svg
 
+
+
 A single wire of the appropriate width will be returned.
 
-**Warning:** Make sure your number can fit into the specified width! If it can't, you will get an error.
+.. warning::
+    Make sure your number can fit into the specified width! If it can't, you will get an error.
 
 Delay
 -----
@@ -97,10 +100,13 @@ Operations in ciruits do not all happen instantaneously.
 Indeed, we may wish to hold some value to the next tick of the clock.
 This is usually done with a *register*.
 
-In CircuitCJ, the simplest form of a register is a *delay block*.
-Delay blocks are almost the converse of value blocks: their initial value is the
-disconnected constant, and in the following cycles they will produce the input
-from the previous cycle.
+In CircuitCJ, the notion of delay is abstracted into a *delay block*.
+At a high level, one can view a delay block as some register; at a low level,
+the delay block could model the capacitance in wires.
+
+Delay blocks can be seen as the converse of value blocks: their initial value is
+the disconnected constant, and in the following cycles they will produce the
+input from the previous cycle.
 
 .. code-block:: scala
 
@@ -175,6 +181,19 @@ are output before the rest of our circuit.
 .. image:: imgs/state/open-waveform-1.svg
 
 .. image:: imgs/state/open-waveform-2.svg
+
+Again, if operating in a signature in which signals model decimal numbers, we
+can specify them with integers.
+
+.. code-block:: scala
+
+    sig.UseOpenWaveformFromInt([0,1,2,3], width: 2, signed: false)
+
+.. image:: imgs/state/waveform-from-int-0.svg
+
+.. image:: imgs/state/waveform-from-int-1.svg
+
+.. image:: imgs/state/waveform-from-int-2.svg
 
 Feedback
 --------
