@@ -122,10 +122,11 @@ public class Evaluator<V, G> <: Drawable<V, G>
         file : String,
         depth!: Int64 = 0,
         edgeLabelFn!: (Label<V, G>) -> String = { l => l.GetName()},
-        debug!: Bool = false
+        debug!: Bool = false, expandSignals!: Bool = false
     ) : Unit {
         this.GetGraph().WriteDotToFile(
-            file, depth: depth, edgeLabelFn: edgeLabelFn, debug: debug
+            file, depth: depth, edgeLabelFn: edgeLabelFn, debug: debug,
+            expandSignals: expandSignals
         )
     }
     /**

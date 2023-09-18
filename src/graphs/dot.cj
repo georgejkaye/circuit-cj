@@ -593,12 +593,12 @@ func DrawSubgraphInterfaceConnections<V, G>(
 func DrawEdge<V, G>(
     e : Edge<V, G>, depth : Int64, omittedEdges : HashSet<Int64>,
     elementContent : ArrayList<DotLine>, connectionContent : ArrayList<DotLine>,
-    edgeLabelFn : (Label<V, G>) -> String, debug : Bool
+    edgeLabelFn : (Label<V, G>) -> String, debug : Bool, expandSignals : Bool
 ) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let label = e.GetLabel()
-    if (depth != 0 && label.IsExpandable()) {
+    if (depth != 0 && label.IsExpandable(expandSignals: expandSignals)) {
         match (e.GetSubgraph()) {
             case None => DrawEdgeNode(
                 e, elementContent, connectionContent, edgeLabelFn, debug
@@ -607,7 +607,7 @@ func DrawEdge<V, G>(
                 omittedEdges.put(e.GetId())
                 DrawInterfacedHypergraph(
                     g, e, depth - 1, omittedEdges, elementContent, edgeLabelFn,
-                    debug
+                    debug, expandSignals
                 )
                 DrawSubgraphInterfaceConnections(
                     e, g, e.GetSources(), SOURCE, connectionContent
@@ -818,7 +818,7 @@ func DrawInterfacedHypergraph<V, G>(
     omittedEdges : HashSet<Int64>,
     elementContent : ArrayList<DotLine>,
     edgeLabelFn : (Label<V, G>) -> String,
-    debug : Bool
+    debug : Bool, expandSignals : Bool
 ) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -830,7 +830,7 @@ func DrawInterfacedHypergraph<V, G>(
     // Draw the content of the graph
     DrawHypergraph(
         f.GetGraph(), depth, omittedEdges, elementContent,
-        connectionContent, edgeLabelFn, debug
+        connectionContent, edgeLabelFn, debug, expandSignals
     )
     // Draw the interfaces of this graph
     DrawInterfaces(f, elementContent, connectionContent, debug)
@@ -855,7 +855,7 @@ public func DrawHypergraph<V, G>(
     elementContent : ArrayList<DotLine>,
     connectionContent : ArrayList<DotLine>,
     edgeLabelFn : (Label<V, G>) -> String,
-    debug : Bool
+    debug : Bool, expandSignals: Bool
 ) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -865,7 +865,9 @@ public func DrawHypergraph<V, G>(
         DrawVertex(v, elementContent, debug)
         func ShouldDrawConnection(ec : EdgeConnection<V, G>) : Bool {
             depth == 0 || !ec.GetEdge().HasSubgraph() ||
-                !ec.GetEdge().GetLabel().IsExpandable()
+                !ec.GetEdge().GetLabel().IsExpandable(
+                    expandSignals: expandSignals
+                )
         }
         func GetEdgeText(ec : EdgeConnection<V, G>) : String {
             let portText = match(ec.GetVertexType()) {
@@ -898,7 +900,7 @@ public func DrawHypergraph<V, G>(
     for (e in f.GetEdges()){
         DrawEdge(
             e, depth, omittedEdges, elementContent, connectionContent,
-            edgeLabelFn, debug
+            edgeLabelFn, debug, expandSignals
         )
     }
 }
@@ -908,10 +910,13 @@ public func DrawHypergraph<V, G>(
  * than this will be drawn as single edges.
  * @param f The interfaced hypergraph
  * @param depth The maximum depth of subgraphs to expand
+ * @param debug Whether to draw debug style
+ * @param expandSignals Whether to expand signal and waveform subgraphs
+ * @return The dot string for this graph
  */
 public func GenerateDotGraph<V, G>(
     f : InterfacedHypergraph<V, G>, depth : Int64,
-    edgeLabelFn : (Label<V, G>) -> String, debug : Bool
+    edgeLabelFn : (Label<V, G>) -> String, debug : Bool, expandSignals : Bool
 ) : String
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -919,7 +924,7 @@ public func GenerateDotGraph<V, G>(
     Debug("Drawing hypergraph for ${f.GetName()}")
     DrawInterfacedHypergraph(
         f, None<Edge<V, G>>, depth, HashSet<Int64>(), elementContent,
-        edgeLabelFn, debug
+        edgeLabelFn, debug, expandSignals
     )
     // Generate the final string
     ConvertStringIndentListToString(elementContent)
@@ -941,14 +946,16 @@ public interface Drawable<V, G>
 {
     /**
      * Write the dot graph for a graph to a file with a given name.
+     *
      * @param file The file name to write to
      * @param depth The maximum depth of subgraphs to draw
      * @param edgeLabelFn the function to determine the strings on edges
      * @param debug Whether to print debug info on the graph
+     * @param expandSignals Whether to expand signal and waveform subgraphs
      */
     func WriteDotToFile(
         file : String, depth!: Int64, edgeLabelFn!: (Label<V, G>) -> String,
-        debug!: Bool
+        debug!: Bool, expandSignals!: Bool
     ) : Unit
 }
 extend InterfacedHypergraph<V, G> <: Drawable<V, G> {
@@ -956,11 +963,12 @@ extend InterfacedHypergraph<V, G> <: Drawable<V, G> {
         file : String,
         depth!: Int64 = 0,
         edgeLabelFn!: (Label<V, G>) -> String = { l => l.GetName() },
-        debug!: Bool = false
+        debug!: Bool = false, expandSignals!: Bool = false
     ) : Unit {
         let dotLines = ArrayList<DotLine>()
         DrawInterfacedHypergraph(
-            this, None, depth, HashSet(), dotLines, edgeLabelFn, debug
+            this, None, depth, HashSet(), dotLines, edgeLabelFn, debug,
+            expandSignals
         )
         WriteDotFile(file, dotLines)
     }
@@ -970,14 +978,14 @@ extend Hypergraph<V, G> <: Drawable<V, G> {
         file : String,
         depth!: Int64 = 0,
         edgeLabelFn!: (Label<V, G>) -> String = { l => l.GetName() },
-        debug!: Bool = false
+        debug!: Bool = false, expandSignals!: Bool = false
     ) : Unit {
         let dotLines = ArrayList<DotLine>()
         let connectionContent = ArrayList<DotLine>()
         DrawOpeningContent("", None<Edge<V, G>>, dotLines, debug)
         DrawHypergraph(
             this, depth, HashSet(), dotLines, connectionContent, edgeLabelFn,
-            debug
+            debug, expandSignals
         )
         dotLines.appendAll(connectionContent)
         DrawClosingContent(dotLines)

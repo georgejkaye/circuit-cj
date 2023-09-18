@@ -377,10 +377,14 @@ extend Label<V, G>
      *          enough to look into. This is currently set so that values are
      *          not expanded as they clutter up the graph
      */
-    public func IsExpandable() : Bool {
+    public func IsExpandable(expandSignals!: Bool = false) : Bool {
         match(this) {
             case COMPOSITE(_)          => true
             case ENHANCED_PRIMITIVE(_) => true
+            case SIGNAL(_)             => expandSignals
+            case CLOSED_WAVEFORM(_)    => expandSignals
+            case OPEN_WAVEFORM(_)      => expandSignals
+            case INFINITE_WAVEFORM(_)  => expandSignals
             case _                     => false
         }
     }
