@@ -357,13 +357,13 @@ public func UseSimpleRegister<V, G>(
  * @param incoming The wire to connect the feedback to
  */
 public func RegisterGuardedFeedback<V, G>(
-    initial : Int64, width : Int64, signed : Bool,
-    input : Wire<V, G>, incoming : Wire<V, G>
+    input : Wire<V, G>, incoming: Wire<V, G>,
+    initial!: Int64, signed!: Bool
 ) : Wire<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
-    let signal = V.DecToSignal(initial, width, signed)
-    RegisterGuardedFeedback(signal, input, incoming)
+    let signal = V.DecToSignal(initial, input.GetWidth(), signed)
+    RegisterGuardedFeedback(input, incoming, initial: signal)
 }
 
 public interface DecimalDrawable {

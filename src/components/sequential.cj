@@ -204,7 +204,7 @@ public func DelayGuardedFeedback<V, G>(
  * @param initial The initial signal of the register
  */
 public func RegisterGuardedFeedback<V, G>(
-    initial : Signal<V>, outgoing : Wire<V, G>, incoming: Wire<V, G>
+    outgoing : Wire<V, G>, incoming: Wire<V, G>, initial!: Signal<V>
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>{
     let register = UseSimpleRegister(initial: initial, input: outgoing)
@@ -358,11 +358,14 @@ func MakeInfiniteWaveform<V, G>(
 public interface SignalUser<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
+    func UseValue(v : V) : Wire<V, G> {
+        UseValue<V, G>(v)
+    }
     func UseSignal(v : V) : Wire<V, G> {
         UseValue<V, G>(v)
     }
-    func UseSignal(spec : Signal<V>) : Wire<V, G> {
-        UseSignal<V, G>(spec)
+    func UseSignal(values : Signal<V>) : Wire<V, G> {
+        UseSignal<V, G>(values)
     }
     func UseSignal(v : V, i : Int64) : Wire<V, G> {
         UseSignal<V, G>(v, i)

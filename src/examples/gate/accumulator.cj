@@ -16,7 +16,7 @@ public func Accumulator(width!: Int64, initial!: Int64) : Circuit_ {
     let (sum, carry) = UseRippleAdder(a: prev, b: input, cin: zero)
     // Feedback the output of the adder to the previous sum, guarded by
     // register with the initial value in
-    RegisterGuardedFeedback(initial, width, false, sum, prev)
+    RegisterGuardedFeedback(sum, prev, initial: initial, signed: false)
     // Put everything together in a subcircuit
     MakeSubcircuit(
         [InterfaceWire(input, "A")], [InterfaceWire(sum, "S")], "accumulator"
