@@ -11,3 +11,4 @@ Designing circuits
    drawing
    constructions
    state
+   decimal
