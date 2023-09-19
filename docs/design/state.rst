@@ -34,10 +34,11 @@ To ``Use`` a value, the signature provides the following function:
 .. code-block:: scala
 
     let v = sig.UseValue(TRUE)
+    v.WriteDotToFile("value")
 
 .. image:: imgs/state/value.svg
 
-In the default signature we can also ``Use`` values directly:
+In the ``Belnap`` signature we can also ``Use`` values directly:
 
 .. code-block:: scala
 
@@ -57,55 +58,46 @@ significant bit.
 
 .. code-block:: scala
 
-    let s = sig.UseSignal([TRUE, FALSE, TRUE, FALSE]) // bin 0101 = dec 9
+    let s = sig.UseSignal(Signal([TRUE, FALSE, TRUE, FALSE])) // bin 0101 = dec 9
 
 At the highest level, a signal is just represented by a single block.
 
+.. code-block:: scala
+
+    s.WriteDotToFile("signal-0")
+
 .. image:: imgs/state/signal-1.svg
 
-But as always we can look inside it and see the individual values.
+When drawing graphs with greater depths, signals are not expanded by default in
+order to reduce clutter.
+They can be forced to expand with the ``expandSignals`` flag.
+
+.. code-block:: scala
+
+    s.WriteDotToFile("signal-1", depth: 1, expandSignals: true)
 
 .. image:: imgs/state/signal-2.svg
-
-Often in circuit design, the signals represent numbers.
-When using the Belnap signature, we can ``Use`` values directly from decimal numbers without having to convert them.
-
-.. code-block:: scala
-
-    let n1 = UseUnsignedValueFromInt(10, width: 4)
-
-.. image:: imgs/state/unsigned-value-1.svg
-
-.. image:: imgs/state/unsigned-value-2.svg
-
-.. code-block:: scala
-
-    let n2 = UseSignedValueFromInt(-10, width: 4)
-
-.. image:: imgs/state/signed-value-1.svg
-
-.. image:: imgs/state/signed-value-2.svg
-
-
-
-A single wire of the appropriate width will be returned.
-
-.. warning::
-    Make sure your number can fit into the specified width! If it can't, you will get an error.
 
 Delay
 -----
 
 Operations in ciruits do not all happen instantaneously.
-Indeed, we may wish to hold some value to the next tick of the clock.
-This is usually done with a *register*.
+Indeed, we may wish to *delay* signals for a certain period of time.
 
-In CircuitCJ, the notion of delay is abstracted into a *delay block*.
-At a high level, one can view a delay block as some register; at a low level,
-the delay block could model the capacitance in wires.
+In CircuitCJ, the notion of delay is modelled relative to ticks of a *clock* in
+the background.
+A *delay block* delays its input for one tick of this clock.
+
+The exact nature of the clock and a delay may differ depending on what one is
+modelling.
+If one is concerned with modelling high level logical operations, each tick
+could represent a new cycle and a delay block as a register that delays a signal
+to the next cycle.
+At a lower level abstraction, each tick could be a unit of time and a delay
+some natural capacitance of wires.
 
 Delay blocks can be seen as the converse of value blocks: their initial value is
-the disconnected constant, and in the following cycles they will produce the
+the disconnected value, and in the following ticks they will produce the
 input from the previous cycle.
 
 .. code-block:: scala
@@ -113,17 +105,22 @@ input from the previous cycle.
     let a = sig.UseWire(8)
     let d = UseDelay(a)
 
-In circuit diagrams, the delay is represented as a yellow box:
+In circuit diagrams, the delay is represented as a yellow box.
 
 .. image:: imgs/state/delay.svg
 
-On the first tick of the clock, this circuit will produce the disconnected wire.
+On the first tick of the clock, this circuit will produce the disconnected
+value.
 On each subsequent tick of the clock, it will produce the input from the
 previous tick.
 
+
+Register
+--------
+
 It is often the case that there will be some 'initial value' stored in a
 register: we don't always want to produce the disconnected value straight away!
-The simplest register in CircuitCJ is the join of a signal and a delay as above.
+The simplest register in CircuitCJ is the join of a signal and a delay.
 
 .. code-block:: scala
 
@@ -131,24 +128,68 @@ The simplest register in CircuitCJ is the join of a signal and a delay as above.
     let signal = Signal([TRUE, FALSE, TRUE, FALSE])
     let d = UseSimpleRegister(a, signal)
 
-If using a signature where the signals can be interpreted as numbers, it is
-possible to eliminate the stage of creating the signal.
+.. note::
+    The register created here is a logical abstraction; real-world latches and
+    flipflops hold state by using feedback loops and the delay in wires.
+
+At the highest level of drawing, registers are contained within their own block.
 
 .. code-block:: scala
 
-    let a = sig.UseWire(4)
-    let d = UseSimpleRegister(initial: 5, signed: false, input: signal)
+    d.WriteDotToFile("register-0")
 
-Both result in the same thing:
+.. image:: imgs/state/register-0.svg
 
-.. image:: imgs/state/simple-register.svg
+Like signals, registers do not normally get expanded in drawn graphs.
+
+.. code-block:: scala
+
+    d.WriteDotToFile("register-1", depth: 1, expandSignals: true)
+
+.. image:: imgs/state/register-1.svg
 
 Waveforms
 ---------
 
 By combining value blocks and delay blocks we can define *waveforms*: sequences
-of values over time.
-A *closed* waveform is capped off so it does not need any inputs:
+of signals over time.
+These are implemented by connecting simple registers together one after the
+other.
+
+.. code-block:: scala
+
+    import syntax.{Signal, Waveform}
+
+    let a = sig.UseWire(2)
+    let v1 = Signal([TRUE, FALSE])
+    let v2 = Signal([FALSE, TRUE])
+    let wf = UseOpenWaveform(waveform: Waveform([v1, v2]), input: a)
+
+At the highest depth, waveforms are drawn as a single block.
+
+.. code-block:: scala
+
+    wf.WriteDotToFile("open-waveform-0")
+
+.. image:: imgs/state/open-waveform-0.svg
+
+Descending a level shows us the registers used to construct it.
+
+.. code-block:: scala
+
+    wf.WriteDotToFile("open-waveform-1", depth: 1, expandSignals: true)
+
+.. image:: imgs/state/open-waveform-1.svg
+
+Descending again lets us peek into the registers.
+
+.. code-block:: scala
+
+    wf.WriteDotToFile("open-waveform-2", depth: 2, expandSignals: true)
+
+.. image:: imgs/state/open-waveform-2.svg
+
+A waveform can also be *closed* by capping off its inputs.
 
 .. code-block:: scala
 
@@ -157,43 +198,23 @@ A *closed* waveform is capped off so it does not need any inputs:
     let v3 = Signal([FALSE, FALSE])
     let wf = sig.UseClosedWaveform([v1, v2, v3])
 
-We can view waveforms at all sorts of levels of abstraction!
-
-.. image:: imgs/state/waveform-1.svg
-
-.. image:: imgs/state/waveform-2.svg
-
-.. image:: imgs/state/waveform-3.svg
-
-We can also define *open* waveforms, so we can specify some initial values that
-are output before the rest of our circuit.
+This is
 
 .. code-block:: scala
 
-    let a = sig.UseWire(2)
-    let b = sig.UseWire(2)
-    let c = sig.UseWire(1)
-    let add = UseRippleAdder(a, b, c)
-    let v1 = Signal([TRUE, FALSE])
-    let v2 = Signal([FALSE, TRUE])
-    let wf = sig.UseOpenWaveform([v1, v2], add)
+    wf.WriteDotToFile("closed-waveform-0")
 
-.. image:: imgs/state/open-waveform-1.svg
+.. image:: imgs/state/closed-waveform-0.svg
 
-.. image:: imgs/state/open-waveform-2.svg
-
-Again, if operating in a signature in which signals model decimal numbers, we
-can specify them with integers.
+By expanding this block we can se how the closed waveform is constructed by
+applying a disconnected value to an open waveform.
 
 .. code-block:: scala
 
-    sig.UseOpenWaveformFromInt([0,1,2,3], width: 2, signed: false)
+    wf.WriteDotToFile("closed-waveform-1", depth: 0, expandSignals: true)
 
-.. image:: imgs/state/waveform-from-int-0.svg
+.. image:: imgs/state/closed-waveform-1.svg
 
-.. image:: imgs/state/waveform-from-int-1.svg
-
-.. image:: imgs/state/waveform-from-int-2.svg
 
 Feedback
 --------
@@ -203,11 +224,12 @@ earlier in the circuit, normally in the next cycle of execution.
 
 .. code-block:: scala
 
-    let a = MakeWire(8)
-    let b = MakeWire(8)
-    let and = And(a, b)
+    let a = sig.UseWire(8)
+    let b = sig.UseWire(8)
+    let and = UseAnd(a, b)
     // Connect the output of the and gate to the a wire
     Feedback(and, a)
+    and.WriteDotToFile("feedback")
 
 .. image:: imgs/state/feedback.svg
 
@@ -216,22 +238,41 @@ earlier in the circuit, normally in the next cycle of execution.
     ``UseWire``: if you try to feed back to a vertex obtained as the output of a
     gate an exception will be thrown.
 
-Often more than just a direct feedback loop is required.
-Usually it is desirable that feedback is *delay-guarded*.
+Note that in the drawn graph the feedback loop is drawn in red.
+This is because this feedback loop may have created a *combinational loop*, a
+feedback loop which does not pass through a memory element.
+This is usually not desirable; we would prefer that all feedback is
+*delay-guarded*.
 This can be done manually by combining the ``Delay`` functions above with the
 ``Feedback`` function, but functions are also provided to do this in one step.
 
 .. code-block:: scala
 
+    let a = sig.UseWire(8)
+    let b = sig.UseWire(8)
+    let and = UseAnd(a, b)
+    // Connect the output of the and gate to the a wire
     DelayGuardedFeedback(and, a)
+    and.WriteDotToFile("delay-guarded-feedback")
 
 .. image:: imgs/state/delay-guarded-feedback.svg
 
 .. code-block:: scala
 
-    RegisterGuardedFeedback(and, Signal([TRUE, FALSE, TRUE, FALSE]), a)
+    let a = sig.UseWire(2)
+    let b = sig.UseWire(2)
+    let and = UseAnd(a, b)
+    // Connect the output of the and gate to the a wire
+    RegisterGuardedFeedback(and, a, initial: Signal([TRUE, FALSE]))
+    and.WriteDotToFile("register-guarded-feedback")
 
 .. image:: imgs/state/register-guarded-feedback.svg
+
+.. note::
+    Graphviz really struggles to render feedback loops, as can be seen in the
+    generated graphs. The dream is to integrate CircuitCJ with ``sd-visualiser``
+    (https://github.com/sdvisualiser/sd-visualiser) for very pretty graphs, but
+    this is unimplemented and might require a bit of effort.
 
 Infinite waveforms
 ------------------
@@ -242,8 +283,25 @@ By combining feedback with waveforms, we can create *infinite* waveforms.
 
     let v1 = Signal([TRUE, FALSE])
     let v2 = Signal([FALSE, TRUE])
-    let wf = sig.UseInfiniteWaveform([v1, v2])
+    let wf = sig.UseInfiniteWaveform(waveform: Waveform([v1, v2]))
+    wf.WriteDotToFile("infinite-waveform-0")
+
+.. image:: imgs/state/infinite-waveform-0.svg
+
+.. code-block:: scala
+
+    wf.WriteDotToFile("infinite-waveform-1", depth: 1, expandSignals: true)
 
 .. image:: imgs/state/infinite-waveform-1.svg
 
+.. code-block:: scala
+
+    wf.WriteDotToFile("infinite-waveform-2", depth: 2, expandSignals: true)
+
 .. image:: imgs/state/infinite-waveform-2.svg
+
+.. code-block:: scala
+
+    wf.WriteDotToFile("infinite-waveform-3", depth: 3, expandSignals: true)
+
+.. image:: imgs/state/infinite-waveform-3.svg
