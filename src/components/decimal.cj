@@ -399,7 +399,7 @@ extend Label<V, G>
     public func GetDecimalName(signed!: Bool) : String {
         match(this){
             case VALUE(v) =>
-                Signal([v]).GetDecimalName(signed: signed)
+                "${v}"
             case SIGNAL(s) =>
                 s.GetDecimalName(signed: signed)
             case REGISTER(s) =>
