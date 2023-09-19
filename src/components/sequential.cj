@@ -48,7 +48,7 @@ public func MakeSignal<V, G>(
 * @param v The value to use
 * @return The output of the value
 */
-public func UseValue<V, G>(v : V) : Wire<V, G>
+func UseValue<V, G>(v : V) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     UseEdgeWithNewOutputs<V, G, Vertex<V, G>>(
@@ -64,7 +64,7 @@ public func UseValue<V, G>(v : V) : Wire<V, G>
 * @param spec The signal to use
 * @return The output of the signal circuit
 */
-public func UseSignal<V, G>(
+func UseSignal<V, G>(
     spec : Signal<V>
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
@@ -91,27 +91,6 @@ public func UseSignal<V, G>(v : V, i : Int64) : Wire<V, G>
     let array : Array<V> = Array<V>(i, {i : Int64 => v})
     UseSignal(Signal(array))
 }
-/**
- * Interface for acccessing signal making functions without
- * needing to specify the generics, since these can't be
- * determined from the arguments
- */
-public interface SignalUser<V, G>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    func UseSignal(v : V) : Wire<V, G> {
-        UseValue<V, G>(v)
-    }
-    func UseSignal(spec : Signal<V>) : Wire<V, G> {
-        UseSignal<V, G>(spec)
-    }
-    func UseSignal(v : V, i : Int64) : Wire<V, G> {
-        UseSignal<V, G>(v, i)
-    }
-}
-extend Signature<V, G> <: SignalUser<V, G>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{}
 /**
  * Use a delay component for a given duration
  *
@@ -159,7 +138,7 @@ public func UseDelays<V, G>(
  * @return The output wire of the register
  */
 public func UseSimpleRegister<V, G>(
-    initial : Signal<V>, input : Wire<V, G>
+    initial!: Signal<V>, input!: Wire<V, G>
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -228,7 +207,7 @@ public func RegisterGuardedFeedback<V, G>(
     initial : Signal<V>, outgoing : Wire<V, G>, incoming: Wire<V, G>
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>{
-    let register = UseSimpleRegister(initial, outgoing)
+    let register = UseSimpleRegister(initial: initial, input: outgoing)
     PerformFeedback(register, incoming, false)
     register
 }
@@ -239,12 +218,12 @@ public func RegisterGuardedFeedback<V, G>(
  * @param input The input to the waveform
  * @return The output wire of the waveform
  */
-public func UseOpenWaveform<V, G>(
-    waveform : Waveform<V>, input : Wire<V, G>
+func UseOpenWaveform<V, G>(
+    waveform!: Waveform<V>, input!: Wire<V, G>
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    UseSubcircuit_1(MakeOpenWaveform(waveform), [input])
+    UseSubcircuit_1(MakeOpenWaveform(waveform: waveform), [input])
 }
 /**
  * Use a waveform
@@ -253,13 +232,12 @@ public func UseOpenWaveform<V, G>(
  * @param input The input to the waveform
  * @return The output wire of the waveform
  */
-public func UseOpenWaveform<V, G>(
-    signal : Signal<V>,
-    input : Wire<V, G>
+func UseOpenWaveform<V, G>(
+    signal!: Signal<V>, input!: Wire<V, G>
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    UseOpenWaveform(Waveform(signal), input)
+    UseOpenWaveform(waveform: Waveform([signal]), input: input)
 }
 /**
  * Use a closed waveform
@@ -267,10 +245,10 @@ public func UseOpenWaveform<V, G>(
  * @param signals The signals that make up the waveform
  * @return The output wire of the waveform
  */
-public func UseClosedWaveform<V, G>(waveform : Waveform<V>) : Wire<V, G>
+func UseClosedWaveform<V, G>(waveform!: Waveform<V>) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    UseSubcircuit_1(MakeClosedWaveform(waveform))
+    UseSubcircuit_1(MakeClosedWaveform(waveform: waveform))
 }
 /**
  * Use an infinite waveform
@@ -278,10 +256,10 @@ public func UseClosedWaveform<V, G>(waveform : Waveform<V>) : Wire<V, G>
  * @param signals The signals that make up the waveform
  * @return The output wire of the waveform
  */
-public func UseInfiniteWaveform<V, G>(waveform : Waveform<V>) : Wire<V, G>
+func UseInfiniteWaveform<V, G>(waveform!: Waveform<V>) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    UseSubcircuit_1(MakeInfiniteWaveform(waveform))
+    UseSubcircuit_1(MakeInfiniteWaveform(waveform: waveform))
 }
 /**
  * Make a simple register component
@@ -311,8 +289,8 @@ public func MakeSimpleRegister<V, G>(
 * @param signals The signals that make up the waveform
 * @return The circuit containing the waveform
 */
-public func MakeOpenWaveform<V, G>(
-    waveform : Waveform<V>
+func MakeOpenWaveform<V, G>(
+    waveform!: Waveform<V>
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -323,7 +301,9 @@ public func MakeOpenWaveform<V, G>(
         // Construct the waveform from back to front
         let j = waveformLength - i - 1
         let register =
-            UseSimpleRegister(waveform.GetSignalAtTick(j), currentWire)
+            UseSimpleRegister(
+                initial: waveform.GetSignalAtTick(j), input:currentWire
+            )
         currentWire = register
     }
     MakeSubcircuit(
@@ -338,14 +318,14 @@ public func MakeOpenWaveform<V, G>(
  * @param signals The signals that make up the waveform
  * @return The circuit containing the closed waveform
  */
-public func MakeClosedWaveform<V, G>(
-    waveform : Waveform<V>
+func MakeClosedWaveform<V, G>(
+    waveform!: Waveform<V>
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let waveformCircuit = Hypergraph<V, G>()
     let bottomWire = UseSignal<V, G>(V.GetDisconnected(), waveform.GetWidth())
-    let waveformWire = UseOpenWaveform(waveform, bottomWire)
+    let waveformWire = UseOpenWaveform(waveform: waveform, input: bottomWire)
     MakeSubcircuit(
         [InterfaceWire(waveformWire)],
         Label<V, G>.CLOSED_WAVEFORM(waveform)
@@ -357,19 +337,51 @@ public func MakeClosedWaveform<V, G>(
  * @param signals The signals that make up the waveform
  * @return The circuit containing the infinite waveform
  */
-public func MakeInfiniteWaveform<V, G>(
-    waveform : Waveform<V>
+func MakeInfiniteWaveform<V, G>(
+    waveform!: Waveform<V>
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let inputWire = UseWire<V, G>(waveform.GetWidth())
-    let waveformWire = UseOpenWaveform(waveform, inputWire)
+    let waveformWire = UseOpenWaveform(waveform: waveform, input: inputWire)
     PerformFeedback(waveformWire, inputWire, false)
     MakeSubcircuit(
         [InterfaceWire(waveformWire)],
         Label<V, G>.INFINITE_WAVEFORM(waveform)
     )
 }
+/**
+ * Interface for acccessing signal making functions without
+ * needing to specify the generics, since these can't be
+ * determined from the arguments
+ */
+public interface SignalUser<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    func UseSignal(v : V) : Wire<V, G> {
+        UseValue<V, G>(v)
+    }
+    func UseSignal(spec : Signal<V>) : Wire<V, G> {
+        UseSignal<V, G>(spec)
+    }
+    func UseSignal(v : V, i : Int64) : Wire<V, G> {
+        UseSignal<V, G>(v, i)
+    }
+    func UseOpenWaveform(
+        waveform!: Waveform<V>, input!: Wire<V, G>
+    ) : Wire<V, G> {
+        UseOpenWaveform<V, G>(waveform: waveform, input: input)
+    }
+    func UseClosedWaveform(waveform!: Waveform<V>) : Wire<V, G> {
+        UseClosedWaveform<V, G>(waveform: waveform)
+    }
+    func UseInfiniteWaveform(waveform!: Waveform<V>) : Wire<V, G> {
+        UseInfiniteWaveform<V, G>(waveform: waveform)
+    }
+}
+extend Signature<V, G> <: SignalUser<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{}
 /**
  * Given a root vertex, check if it is the root of a simple register: a join
  * of a signal on the left and a delay on the right. If it is, return the signal
