@@ -157,7 +157,7 @@ extend GateLevelValue
     public static func SignedDecToSignal(
         x : Int64, w : Int64
     ) : Signal<GateLevelValue> {
-        let bin = UnsignedDecToSignal(abs(x), w).values
+        let bin = UnsignedDecToSignal(abs(x), width: width).GetValues()
         if(x < 0) {
             Invert(bin)
             AddOne(bin)

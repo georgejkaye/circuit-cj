@@ -70,7 +70,7 @@ func UseSignal<V, G>(
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     if(spec.GetWidth() == 1) {
-        UseValue(spec.values[0])
+        UseValue(spec.GetBit(0))
     } else {
         UseSubcircuit_1(
             MakeSignal<V, G>(spec),

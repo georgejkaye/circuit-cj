@@ -16,7 +16,7 @@ public struct Signal<V>
     where V <: ValueSymbol<V>
 {
     public Signal(
-        public let values : Array<V>
+        let values : Array<V>
     ){
         AssertNonEmpty(values)
     }
