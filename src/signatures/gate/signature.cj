@@ -101,18 +101,18 @@ extend GateLevelValue
      * @param x The decimal number to convert
      */
     public static func UnsignedDecToSignal(
-        x : Int64, w : Int64
+        x : Int64, width!: Int64
     ) : Signal<GateLevelValue> {
         AssertNonNegative(x)
-        let required = Int64(ceil(log2(Float64(x+1))))
-        AssertGreaterThanOrEqualTo(w, required)
+        let required = Int64(ceil(log2(Float64(x + 1))))
+        AssertGreaterThanOrEqualTo(width, required)
         // Set up the list
-        let bin = Array<GateLevelValue>(w, {x : Int64 => FALSE})
+        let bin = Array<GateLevelValue>(width, {x : Int64 => FALSE})
         var num = x
         // Divide by two w times, setting the remainder to the ith bit of the
         // list. If we run out of w before we run out of list, the msbs will be
         // ignored
-        for(i in 0..w){
+        for(i in 0..width){
             let rem = if(num % 2 == 1){ TRUE } else { FALSE }
             bin.set(i, rem)
             num = num / 2
@@ -145,44 +145,24 @@ extend GateLevelValue
             x[i] = x[i].Negate()
         }
     }
-    /**
-     * Convert a decimal number to a list of truth values in two's complement
-     * The list is ordered with the lsb first
-     * e.g. 10 => [0, 1, 0, 1, 0, ...]
-     *
-     * @param x The number to convert
-     * @param w The width of the bitstring
-     * @return The corresponding bitstring
-     */
     public static func SignedDecToSignal(
-        x : Int64, w : Int64
+        x : Int64, width!: Int64
     ) : Signal<GateLevelValue> {
+        let required = if(x < 0) {
+            Int64(ceil(log2(Float64(abs(x))))) + 1
+        } else {
+            Int64(ceil(log2(Float64(x + 1)))) + 1
+        }
+        AssertGreaterThanOrEqualTo(width, required)
         let bin = UnsignedDecToSignal(abs(x), width: width).GetValues()
         if(x < 0) {
             Invert(bin)
             AddOne(bin)
         }
-        Signal(bin)
-    }
-    /**
-     * Convert a decimal number to a list of truth values
-     * The list is ordered with the lsb first
-     * e.g. 10 => [0, 1, 0, 1, 0, ...]
-     * If signed, the number is represented in two's complement.
-     *
-     * @param x The number to convert
-     * @param w The width of the bitstring
-     * @param signed
-     * @return The corresponding bitstring
-     */
-    public static func DecToSignal(
-        x : Int64, w : Int64, signed : Bool
-    ) : Signal<GateLevelValue> {
-        if(signed) {
-            GateLevelValue.SignedDecToSignal(x, w)
-        } else {
-            GateLevelValue.UnsignedDecToSignal(x, w)
+        if(x < 0) {
+
         }
+        Signal(bin)
     }
     public static func UnsignedSignalToDec(
         signal : Signal<GateLevelValue>
@@ -226,15 +206,6 @@ extend GateLevelValue
                 } else {
                     -v
                 }
-        }
-    }
-    public static func SignalToDec(
-        signal : Signal<GateLevelValue>, signed : Bool
-    ) : Option<Int64> {
-        if(signed) {
-            SignedSignalToDec(signal)
-        } else {
-            UnsignedSignalToDec(signal)
         }
     }
 }

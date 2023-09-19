@@ -21,7 +21,7 @@ public interface Decimal<V>
      * @param width
      * @return The corresponding signal
      */
-    static func UnsignedDecToSignal(x : Int64, width : Int64) : Signal<V>
+    static func UnsignedDecToSignal(x : Int64, width!: Int64) : Signal<V>
     /**
      * Convert a number to an signed signal of values of a given width.
      *
@@ -29,7 +29,7 @@ public interface Decimal<V>
      * @param width
      * @return The corresponding signal
      */
-    static func SignedDecToSignal(x : Int64, width : Int64) : Signal<V>
+    static func SignedDecToSignal(x : Int64, width!: Int64) : Signal<V>
     /**
      * Convert a number to an signal of values of a given width.
      *
@@ -39,8 +39,14 @@ public interface Decimal<V>
      * @return The corresponding signal
      */
     static func DecToSignal(
-        x  : Int64, width : Int64, signed : Bool
-    ) : Signal<V>
+        x  : Int64, width!: Int64, signed!: Bool
+    ) : Signal<V> {
+        if(signed) {
+            SignedDecToSignal(x, width: width)
+        } else {
+            UnsignedDecToSignal(x, width: width)
+        }
+    }
     /**
      * Attempt to convert an unsigned signal to a decimal number. Returns None
      * if this is not possible for the given signal.
@@ -65,7 +71,13 @@ public interface Decimal<V>
      * @param signed Whether to interpret the signal as signed
      * @return The corresponding number if possible, or None if not
      */
-    static func SignalToDec(signal : Signal<V>, signed : Bool) : Option<Int64>
+    static func SignalToDec(signal : Signal<V>, signed!: Bool) : Option<Int64> {
+        if(signed) {
+            SignedSignalToDec(signal)
+        } else {
+            UnsignedSignalToDec(signal)
+        }
+    }
 }
 /**
  * Given a signal, attempt to convert it to decimal and return it as a string;
@@ -75,12 +87,10 @@ public interface Decimal<V>
  * @param signed
  * @return The string representing the signal, in decimal if possible
  */
-public func MaybeDecimalToString<V>(
-    signal : Signal<V>, signed: Bool
-) : String
+public func MaybeDecimalToString<V>(signal : Signal<V>, signed: Bool) : String
     where V <: Decimal<V>
 {
-    match(V.SignalToDec(signal, signed)) {
+    match(V.SignalToDec(signal, signed: signed)) {
         case None => signal.GetName()
         case Some(n) => "${n}"
     }
@@ -112,7 +122,7 @@ func MakeSignalFromInt<V, G>(
         V <: ValueSymbol<V> & Decimal<V>,
         G <: PrimitiveSymbol<V, G>
 {
-    let signal = V.DecToSignal(x, width, signed)
+    let signal = V.DecToSignal(x, width: width, signed: signed)
     MakeSignal(signal)
 }
 /**
@@ -131,7 +141,10 @@ func MakeDecimalWaveform<V>(
         V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> & Decimal<V>
 {
     let actualSignals =
-        map({ v : Int64 => V.DecToSignal(v, width, signed)}, signals)
+        map(
+            { v : Int64 => V.DecToSignal(v, width: width, signed: signed)},
+            signals
+        )
     Waveform(actualSignals)
 }
 /**
@@ -203,7 +216,7 @@ func UseSignalFromInt<V, G>(
 ) : Wire<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
-    let signal = V.DecToSignal(x, width, signed)
+    let signal = V.DecToSignal(x, width: width, signed: signed)
     UseSignal(signal)
 }
 /**
@@ -343,7 +356,7 @@ public func UseSimpleRegister<V, G>(
 ) : Wire<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
-    let signal = V.DecToSignal(initial, width, signed)
+    let signal = V.DecToSignal(initial, width: width, signed: signed)
     UseSimpleRegister(initial: signal, input: input)
 }
 /**
@@ -362,7 +375,7 @@ public func RegisterGuardedFeedback<V, G>(
 ) : Wire<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
-    let signal = V.DecToSignal(initial, input.GetWidth(), signed)
+    let signal = V.DecToSignal(initial, width: input.GetWidth(), signed: signed)
     RegisterGuardedFeedback(input, incoming, initial: signal)
 }
 
@@ -438,7 +451,7 @@ extend InterfacedHypergraph<V, G> <: DecimalDrawable
 
 extend Signal<V> where V <: Decimal<V> & ValueSymbol<V> {
     public func GetDecimalName(signed!: Bool) : String {
-        match(V.SignalToDec(this, signed)){
+        match(V.SignalToDec(this, signed: signed)){
             case Some(n) => "${n}"
             case None => this.GetName()
         }
@@ -449,7 +462,7 @@ extend Waveform<V> where V <: Decimal<V> & ValueSymbol<V> {
     public func GetDecimalName(signed!: Bool) : String {
         arrayToString(
             this.GetSignals(),
-            { s : Signal<V> => match(V.SignalToDec(s, signed)){
+            { s : Signal<V> => match(V.SignalToDec(s, signed: signed)){
                 case Some(n) => "${n}"
                 case None => s.GetName()
             }},

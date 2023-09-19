@@ -499,7 +499,9 @@ extend Evaluator<V, G> where V <: Decimal<V> {
     public func PerformCycle(inputs : Array<Int64>, signed!: Bool) : Unit {
         let inputSignals = mapi(
             { v : Int64, i : Int64 =>
-                V.DecToSignal(v, this.graph.GetInput(i).GetWidth(), signed)
+                V.DecToSignal(
+                    v, width: this.graph.GetInput(i).GetWidth(), signed: signed
+                )
             },
             inputs
         )

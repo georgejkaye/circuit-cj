@@ -342,7 +342,7 @@ func OptionalDecSignalDisplayFn<V>(
         match(sopt) {
             case None => ""
             case Some(s) =>
-                match(V.SignalToDec(s, signed)){
+                match(V.SignalToDec(s, signed: signed)){
                     case None => s.GetName()
                     case Some(n) => "${n}"
                 }
