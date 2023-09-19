@@ -397,6 +397,7 @@ extend Label<V, G>
             case CLOSED_WAVEFORM(_)    => expandSignals
             case OPEN_WAVEFORM(_)      => expandSignals
             case INFINITE_WAVEFORM(_)  => expandSignals
+            case REGISTER(_)           => expandSignals
             case _                     => false
         }
     }
