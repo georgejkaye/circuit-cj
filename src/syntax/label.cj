@@ -385,9 +385,13 @@ extend Label<V, G>
         }
     }
     /**
-     * @return if this label is expandable, i.e. its contents are interesting
-     *          enough to look into. This is currently set so that values are
-     *          not expanded as they clutter up the graph
+     * Check if a subgraph should be expanded based on its label.
+     *
+     * @param expandSignals
+                Whether to expand subgraphs for signals and associated
+                constructs, which are not normally interesting enough to show
+     * @return If this label is expandable, i.e. its contents are interesting
+     *          enough to look into.
      */
     public func IsExpandable(expandSignals!: Bool = false) : Bool {
         match(this) {
