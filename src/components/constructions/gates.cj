@@ -83,8 +83,7 @@ public func MakeBitwiseMapPrimitive<V, G>(
         allOutputPorts
     )
     let function = {
-        ws : Array<Wire<V, G>> =>
-            UseRippleBinaryPrimitive(primitive, ws, delay: delay)
+        ws : Array<Wire<V, G>> => UsePrimitive(primitive, ws, delay: delay)
     }
     MakeBitwiseMap(
         function, allInputPorts, allOutputPorts, Label<V, G>.COMPOSITE(spec),
