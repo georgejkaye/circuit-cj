@@ -115,7 +115,7 @@ public func GetOutputString<V>(
  * @param signed
  * @return The interfaced hypergraph containing the circuit
  */
-func MakeSignalFromInt<V, G>(
+func MakeSignal<V, G>(
     x : Int64, width!: Int64, signed!: Bool
 ) : InterfacedHypergraph<V, G>
     where
@@ -155,7 +155,7 @@ func MakeDecimalWaveform<V>(
  * @param signed
  * @return The circuit containing the open waveform
  */
-func MakeOpenWaveformFromInt<V, G>(
+func MakeOpenWaveform<V, G>(
     signals!: Array<Int64>, width!: Int64, signed!: Bool
 ) : InterfacedHypergraph<V, G>
     where
@@ -175,7 +175,7 @@ func MakeOpenWaveformFromInt<V, G>(
  * @param signed
  * @return The circuit containing the closed waveform
  */
-func MakeClosedWaveformFromInt<V, G>(
+func MakeClosedWaveform<V, G>(
     signals!: Array<Int64>, width!: Int64, signed!: Bool
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
@@ -193,7 +193,7 @@ func MakeClosedWaveformFromInt<V, G>(
  * @param signed
  * @return The circuit containing the infinite waveform
  */
-func MakeInfiniteWaveformFromInt<V, G>(
+func MakeInfiniteWaveform<V, G>(
     signals!: Array<Int64>, width!: Int64, signed!: Bool
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
@@ -211,7 +211,7 @@ func MakeInfiniteWaveformFromInt<V, G>(
  * @param signed
  * @return The output wire of the signal
  */
-func UseSignalFromInt<V, G>(
+func UseSignal<V, G>(
     x : Int64, width!: Int64, signed!: Bool
 ) : Wire<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
@@ -228,7 +228,7 @@ func UseSignalFromInt<V, G>(
 func UseInstantZero<V, G>(width!: Int64) : Wire<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
-    UseSignalFromInt(0, width: width, signed: false)
+    UseSignal(0, width: width, signed: false)
 }
 /**
  * Use an open waveform circuit corresponding to an array of numbers.
@@ -239,7 +239,7 @@ func UseInstantZero<V, G>(width!: Int64) : Wire<V, G>
  * @param signed
  * @return The output wire of the waveform
  */
-func UseOpenWaveformFromInt<V, G>(
+func UseOpenWaveform<V, G>(
     signals!: Array<Int64>, input!: Wire<V, G>, width!: Int64, signed!: Bool
 ) : Wire<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
@@ -257,7 +257,7 @@ func UseOpenWaveformFromInt<V, G>(
  * @param signed
  * @return The output wire of the waveform
  */
-func UseClosedWaveformFromInt<V, G>(
+func UseClosedWaveform<V, G>(
     signals!: Array<Int64>, width!: Int64, signed!: Bool
 ) : Wire<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
@@ -275,7 +275,7 @@ func UseClosedWaveformFromInt<V, G>(
  * @param signed
  * @return The output wire of the waveform
  */
-func UseInfiniteWaveformFromInt<V, G>(
+func UseInfiniteWaveform<V, G>(
     signals!: Array<Int64>, width!: Int64, signed!: Bool
 ) : Wire<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
@@ -294,7 +294,7 @@ func UseInfiniteWaveformFromInt<V, G>(
 public func UseConstantZero<V, G>(width!: Int64) : Wire<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
-    UseInfiniteWaveformFromInt(signals: [0], width: width, signed: false)
+    UseInfiniteWaveform(signals: [0], width: width, signed: false)
 }
 /**
  * Interface containing functions for using signals and waveforms converted
@@ -303,10 +303,10 @@ public func UseConstantZero<V, G>(width!: Int64) : Wire<V, G>
 public interface DecimalSignalUser<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
-    func UseSignalFromInt(
+    func UseSignal(
         x : Int64, width!: Int64, signed!: Bool
     ) : Wire<V, G> {
-        UseSignalFromInt<V, G>(x, width: width, signed: signed)
+        UseSignal<V, G>(x, width: width, signed: signed)
     }
     func UseInstantZero(width!: Int64) : Wire<V, G> {
         UseInstantZero<V, G>(width: width)
@@ -314,24 +314,24 @@ public interface DecimalSignalUser<V, G>
     func UseConstantZero(width!: Int64) : Wire<V, G> {
         UseConstantZero<V, G>(width: width)
     }
-    func UseOpenWaveformFromInt(
+    func UseOpenWaveform(
         signals!: Array<Int64>, input!: Wire<V, G>, width!: Int64, signed!: Bool
     ) : Wire<V, G> {
-        UseOpenWaveformFromInt<V, G>(
+        UseOpenWaveform<V, G>(
             signals: signals, input: input, width: width, signed: signed
         )
     }
-    func UseClosedWaveformFromInt(
+    func UseClosedWaveform(
         signals!: Array<Int64>, width!: Int64, signed!: Bool
     ) : Wire<V, G> {
-        UseClosedWaveformFromInt<V, G>(
+        UseClosedWaveform<V, G>(
             signals: signals, width: width, signed: signed
         )
     }
-    func UseInfiniteWaveformFromInt(
+    func UseInfiniteWaveform(
         signals!: Array<Int64>, width!: Int64, signed!: Bool
     ) : Wire<V, G> {
-        UseInfiniteWaveformFromInt<V, G>(
+        UseInfiniteWaveform<V, G>(
             signals: signals, width: width, signed: signed
         )
     }
