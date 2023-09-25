@@ -904,82 +904,93 @@ public func DrawHypergraph<V, G>(
         )
     }
 }
-/**
- * Generate a string of dot code corresponding to an interfaced hypergraph.
- * The maximum depth of subgraphs drawn can be specified: any subgraphs deeper
- * than this will be drawn as single edges.
- * @param f The interfaced hypergraph
- * @param depth The maximum depth of subgraphs to expand
- * @param debug Whether to draw debug style
- * @param expandSignals Whether to expand signal and waveform subgraphs
- * @return The dot string for this graph
- */
-public func GenerateDotGraph<V, G>(
-    f : InterfacedHypergraph<V, G>, depth : Int64,
-    edgeLabelFn : (Label<V, G>) -> String, debug : Bool, expandSignals : Bool
-) : String
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    let elementContent = ArrayList<DotLine>()
-    Debug("Drawing hypergraph for ${f.GetName()}")
-    DrawInterfacedHypergraph(
-        f, None<Edge<V, G>>, depth, HashSet<Int64>(), elementContent,
-        edgeLabelFn, debug, expandSignals
-    )
-    // Generate the final string
-    ConvertStringIndentListToString(elementContent)
-}
 func WriteDotFile(
-    filename : String, dotLines : ArrayList<DotLine>
+    fileName : String, dotString : String
 ) : Unit {
-    let fs = File("${filename}.dot", CreateOrTruncate(false))
-    let dotString = ConvertStringIndentListToString(dotLines)
-    Info("Writing dot file ${filename}.dot")
+    let fs = File("${fileName}.dot", CreateOrTruncate(false))
+    Info("Writing dot file ${fileName}.dot")
     fs.write(dotString.toUtf8Array())
     fs.close()
 }
 /**
- * Interface to extend signatures with ability to draw dot graphs
+ * Interface for things that can generate dot code.
  */
-public interface Drawable<V, G>
+public interface HasDot<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    /**
-     * Write the dot graph for a graph to a file with a given name.
-     *
-     * @param file The file name to write to
-     * @param depth The maximum depth of subgraphs to draw
-     * @param edgeLabelFn the function to determine the strings on edges
-     * @param debug Whether to print debug info on the graph
-     * @param expandSignals Whether to expand signal and waveform subgraphs
-     */
-    func WriteDotToFile(
-        file : String, depth!: Int64, edgeLabelFn!: (Label<V, G>) -> String,
-        debug!: Bool, expandSignals!: Bool
-    ) : Unit
+    func GetDotString(
+        depth: Int64, edgeLabelFn: (Label<V, G>) -> String,
+        debug: Bool, expandSignals: Bool
+    ) : String
 }
-extend InterfacedHypergraph<V, G> <: Drawable<V, G> {
-    public func WriteDotToFile(
-        file : String,
-        depth!: Int64 = 0,
-        edgeLabelFn!: (Label<V, G>) -> String = { l => l.GetName() },
-        debug!: Bool = false, expandSignals!: Bool = false
-    ) : Unit {
-        let dotLines = ArrayList<DotLine>()
-        DrawInterfacedHypergraph(
-            this, None, depth, HashSet(), dotLines, edgeLabelFn, debug,
-            expandSignals
-        )
-        WriteDotFile(file, dotLines)
-    }
+/**
+ * Write an object's dot code to a file.
+ *
+ * @param f The drawer
+ * @param fileName
+ * @param edgeLabelFn
+ * @param debug
+ * @param expandSignals
+ */
+func WriteDotToFile<V, G, T>(
+    f : T, fileName: String, depth: Int64,
+    edgeLabelFn : (Label<V, G>) -> String, debug: Bool,
+    expandSignals: Bool
+) : Unit
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>, T <: HasDot<V, G>
+{
+    let dotString = f.GetDotString(depth, edgeLabelFn, debug, expandSignals)
+    WriteDotFile(fileName, dotString)
 }
-extend Hypergraph<V, G> <: Drawable<V, G> {
-    public func WriteDotToFile(
-        file : String,
-        depth!: Int64 = 0,
-        edgeLabelFn!: (Label<V, G>) -> String = { l => l.GetName() },
-        debug!: Bool = false, expandSignals!: Bool = false
-    ) : Unit {
+/**
+ * Write an object's dot code to a file, labelling edges with their label names.
+ *
+ * @param f The drawer
+ * @param fileName
+ * @param depth
+ * @param debug
+ * @param expandSignals
+ */
+ func WriteDotToFile<V, G, T>(
+    f : T, fileName: String, depth: Int64, debug: Bool,
+    expandSignals: Bool
+) : Unit
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>, T <: HasDot<V, G>
+{
+    WriteDotToFile(
+        f, fileName, depth, { l => l.GetName() }, debug, expandSignals
+    )
+}
+/**
+ * Write an object's dot code to a file, labelling signal edges with their
+ * decimal representations.
+ *
+ * @param f The drawer
+ * @param fileName
+ * @param depth
+ * @param signed
+ * @param debug
+ * @param expandSignals
+ */
+func WriteDotToFile<V, G, T>(
+    f : T, fileName: String, depth: Int64, signed: Bool,
+    debug: Bool, expandSignals: Bool
+) : Unit
+    where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>,
+            T <: HasDot<V, G>
+{
+    WriteDotToFile(
+        f, fileName, depth, { l => l.GetDecimalName(signed: signed) },
+        debug, expandSignals
+    )
+}
+extend Hypergraph<V, G> <: HasDot<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    public func GetDotString(
+        depth: Int64, edgeLabelFn: (Label<V, G>) -> String,
+        debug: Bool, expandSignals: Bool
+    ) : String {
         let dotLines = ArrayList<DotLine>()
         let connectionContent = ArrayList<DotLine>()
         DrawOpeningContent("", None<Edge<V, G>>, dotLines, debug)
@@ -989,6 +1000,97 @@ extend Hypergraph<V, G> <: Drawable<V, G> {
         )
         dotLines.appendAll(connectionContent)
         DrawClosingContent(dotLines)
-        WriteDotFile(file, dotLines)
+        ConvertStringIndentListToString(dotLines)
+    }
+}
+extend InterfacedHypergraph<V, G> <: HasDot<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    public func GetDotString(
+        depth: Int64, edgeLabelFn: (Label<V, G>) -> String,
+        debug: Bool, expandSignals: Bool
+    ) : String {
+        let elementContent = ArrayList<DotLine>()
+        DrawInterfacedHypergraph(
+            this, None<Edge<V, G>>, depth, HashSet<Int64>(), elementContent,
+            edgeLabelFn, debug, expandSignals
+        )
+        ConvertStringIndentListToString(elementContent)
+    }
+}
+/**
+ * Interface for things that can be drawn as dot graphs
+ */
+public interface Drawable<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    /**
+     * Write the dot graph for a graph to a file with a given name.
+     *
+     * @param file The file name to write to
+     * @param depth The maximum depth of subgraphs to draw
+     * @param debug Whether to print debug info on the graph
+     * @param expandSignals Whether to expand signal and waveform subgraphs
+     */
+    func WriteDotToFile(
+        file : String, depth!: Int64, debug!: Bool, expandSignals!: Bool
+    ) : Unit
+}
+extend InterfacedHypergraph<V, G> <: Drawable<V, G> {
+    public func WriteDotToFile(
+        file: String, depth!: Int64 = 0, debug!: Bool = false,
+        expandSignals!: Bool = false
+    ) : Unit {
+        WriteDotToFile(this, file, depth, debug, expandSignals)
+    }
+}
+extend Hypergraph<V, G> <: Drawable<V, G> {
+    public func WriteDotToFile(
+        file: String, depth!: Int64 = 0, debug!: Bool = false,
+        expandSignals!: Bool = false
+    ) : Unit {
+        WriteDotToFile(this, file, depth, debug, expandSignals)
+    }
+}
+/**
+ * Interface for things that have corresponding dot graphs and can be
+ * represented in decimal.
+ */
+public interface DecimalDrawable {
+    /**
+     * Write the dot graph for a graph to a file with a given name, with the
+     * option to toggle representing signals as decimal numbers.
+     * @param depth The maximum depth of subgraphs to draw
+     * @param file The file name to write to
+     * @param signed Whether to interpret signals as signed or not
+     * @param debug Whether to print debug info on the graph
+     */
+    func WriteDotToFile(
+        file : String, depth!: Int64, signed!: Bool, debug!: Bool,
+        expandSignals!: Bool
+    ) : Unit
+}
+extend Hypergraph<V, G> <: DecimalDrawable
+    where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    public func WriteDotToFile(
+        file : String, depth!: Int64 = 0, signed!: Bool, debug!: Bool = false,
+        expandSignals!: Bool = false
+    ) : Unit {
+        WriteDotToFile(
+            this, file, depth, signed, debug, expandSignals
+        )
+    }
+}
+extend InterfacedHypergraph<V, G> <: DecimalDrawable
+    where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    public func WriteDotToFile(
+        file : String, depth!: Int64 = 0, signed!: Bool, debug!: Bool = false,
+        expandSignals!: Bool = false
+    ) : Unit {
+        WriteDotToFile(
+            this, file, depth, signed, debug, expandSignals
+        )
     }
 }

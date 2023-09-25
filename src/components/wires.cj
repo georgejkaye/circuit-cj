@@ -480,12 +480,10 @@ public func NameWires<V, G>(
 extend Wire<V, G> <: Drawable<V, G> where V <: Decimal<V> {
     public func WriteDotToFile(
         file : String, depth!: Int64 = 0,
-        edgeLabelFn!: (Label<V, G>) -> String = { l => l.GetName() },
         debug!: Bool = false, expandSignals!: Bool = false
     ) : Unit {
         this.GetGraph().WriteDotToFile(
-            file, depth: depth, edgeLabelFn: edgeLabelFn, debug: debug,
-            expandSignals: expandSignals
+            file, depth: depth, debug: debug, expandSignals: expandSignals
         )
     }
 }

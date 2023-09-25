@@ -481,14 +481,11 @@ extend Evaluator<V, G> <: Drawable<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public func WriteDotToFile(
-        file : String,
-        depth!: Int64 = 0,
-        edgeLabelFn!: (Label<V, G>) -> String = { l => l.GetName()},
+        file : String, depth!: Int64 = 0,
         debug!: Bool = false, expandSignals!: Bool = false
     ) : Unit {
         this.GetGraph().WriteDotToFile(
-            file, depth: depth, edgeLabelFn: edgeLabelFn, debug: debug,
-            expandSignals: expandSignals
+            file, depth: depth, debug: debug, expandSignals: expandSignals
         )
     }
 }
