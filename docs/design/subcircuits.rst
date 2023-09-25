@@ -1,13 +1,13 @@
 Subcircuits
 ===========
 
-A key concept when designing circuits is that of *subcircuits*.
-Subcircuits are a collection of gates or even other subcircuits, together with
-an interface.
+We can now create components and connect them together.
+However, creating circuits in this way is slow and repetitive, as it is often
+the case that the same structures will be used over and over again.
+In CircuitCJ, *subcircuits* are a collection of gates or even other subcircuits,
+together with an interface.
 They abstract away from the implementation of particular components, such as
 adders, so that one can concentrate on the bigger picture.
-In fact, the composite logic gates in the previous section were defined as
-subcircuits.
 
 Making a subcircuit
 -------------------
@@ -15,32 +15,9 @@ Making a subcircuit
 First one must *make* a subcircuit.
 This consists of designing a circuit and specifying its interface.
 
-The ports on a circuit can optionally be named.
-This is achieved using an ``InterfaceWire``:
-
 .. code-block:: scala
 
-    struct InterfaceWire {
-        wire : Wire,
-        name : Option<Name>
-    }
-
-
-A subcircuit is then made by providing arrays of ``InterfaceWire`` objects for
-the inputs and outputs, along with a name for the circuit.
-
-.. code-block:: scala
-
-    func MakeSubcircuit(
-        inputs  : Array<InterfaceWire>,
-        outputs : Array<InterfaceWire>,
-        name    : String
-    ) : InterfacedHypergraph
-
-For example:
-
-.. code-block:: scala
-
+    import signatures.gate.{UseAnd, UseOr}
     import components.{MakeSubcircuit, InterfaceWire}
 
     let a = sig.UseWire(2)
@@ -72,16 +49,6 @@ To use a subcircuit, its input wires must be provided.
 
 .. code-block:: scala
 
-    func UseSubcircuit(
-        circuit : InterfacedHypergraph,
-        inputs  : Array<Wire>
-    ) : Array<Wire>
-
-
-For example:
-
-.. code-block:: scala
-
     // other code creating wires a, b, c...
 
     let outputs = UseSubcircuit(
@@ -110,4 +77,3 @@ destructuring to be used on the output wires.
     ) : (Wire, Wire, Wire)
 
 Subcircuits can be provided as part of a signature.
-In particular, several useful constructs are defined in the Belnap signature.

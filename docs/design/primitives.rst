@@ -58,19 +58,27 @@ Black boxes
 
 A final component we may wish to use in our circuits is a *black box*.
 A black box is a component that we know nothing about except its interface.
+First we must add a blackbox to our signature; this ensures we do not
+accidentally shadow our blackbox with a later one!
 
 .. code-block:: scala
 
     import syntax.Port
+
+    let bb = sig.AddBlackbox(
+        "blackbox",
+        [Port(2, name: "A"), Port(1, name: "B")],
+        [Port(2, name: "Z")]
+    )
+
+This blackbox can now be used like a normal primitive.
+
+.. code-block:: scala
+
     import components.UseBlackbox
 
     let a = sig.UseWire(2)
     let b = sig.UseWire(1)
-    let bb = UseBlackbox(
-        "blackbox",
-        [Port(2), Port(1)],
-        [Port(2)],
-        [a, b]
-    )
+    let bb = UseBlackbox(bb, [a, b])
 
 .. image:: imgs/primitives/blackbox.svg

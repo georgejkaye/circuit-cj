@@ -55,3 +55,39 @@ circuit at, by choosing the depth of subcircuits to peek into.
 
 
 .. image:: imgs/subcircuits/ripple-adder-3.svg
+
+Drawing wires
+-------------
+
+Whenever you have a handle on a wire you can draw a graph showing the current
+structure of the circuit.
+Note that this graph will not have any interfaces as these haven't been
+specified yet!
+
+.. code-block:: scala
+
+    let a = sig.UseWire(1)
+    let b = sig.UseWire(1)
+    let or = UseOr(a, b)
+
+    or.WriteDotToFile("dot/after-or")
+
+.. image:: imgs/drawing/after-or.svg
+
+.. code-block:: scala
+
+    let and = UseAnd(b, or)
+    and.WriteDotToFile("dot/after-and")
+
+.. image:: imgs/drawing/after-and.svg
+
+Unlike the graphs in subcircuits, the underlying graphs in wires are
+mutable.
+This means that the graph for a wire might look different after performing some
+operations!
+
+.. code-block:: scala
+
+    or.WriteDotToFile("dot/after-or-2)
+
+.. image:: imgs/drawing/after-or-2.svg
