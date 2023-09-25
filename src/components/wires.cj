@@ -17,7 +17,7 @@ import graphs.*
  */
 public class Wire<V, G>
     <: Identifiable<Wire<V, G>> & ToString & ContainsVertex<V, G> &
-        HasWidth & HasOptionalName & GraphElement<V, G>
+        HasWidth & HasOptionalName & HasGraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let id : Int64 = GetNextId()
@@ -396,12 +396,12 @@ public func Replicate<V, G>(a : Wire<V, G>, w : Int64) : Wire<V, G>
  */
 public class InterfaceWire<V, G>
     <: ContainsWire<V, G> & ToString & ContainsVertex<V, G> &
-        HasPort & GraphElement<V, G>
+        HasPort & HasGraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public InterfaceWire(
         let wire : Wire<V, G>,
-        let name: Option<String>
+        let name : Option<String>
     ){}
     public init(
         w : Wire<V, G>,
@@ -477,7 +477,7 @@ public func NameWires<V, G>(
         { i : Int64 => InterfaceWire(wires[i], f(i)) }
     )
 }
-extend Wire<V, G> <: Drawable<V, G> {
+extend Wire<V, G> <: Drawable<V, G> where V <: Decimal<V> {
     public func WriteDotToFile(
         file : String, depth!: Int64 = 0,
         edgeLabelFn!: (Label<V, G>) -> String = { l => l.GetName() },

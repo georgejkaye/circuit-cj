@@ -47,7 +47,7 @@ func CheckSpecCompatibility<V, G>(
  */
 public class Edge<V, G>
     <: Specifiable & Identifiable<Edge<V, G>> &
-        ToString & GraphElement<V, G>
+        ToString & HasGraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let id : Int64 = GetNextId()

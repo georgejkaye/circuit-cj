@@ -542,3 +542,22 @@ public class InterfacedHypergraph<V, G>
         (mergedVertices, newEdge, newGraph)
     }
 }
+public interface HasInterfacedGraph<V, G> <: HasGraph<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    func GetInterfacedGraph() : InterfacedHypergraph<V, G>
+    func GetGraph() : Hypergraph<V, G> {
+        this.GetInterfacedGraph().GetGraph()
+    }
+    func GetInput(i : Int64) : InterfaceVertex<V, G> {
+        this.GetInterfacedGraph().GetInput(i)
+    }
+    func GetOutput(i : Int64) : InterfaceVertex<V, G> {
+        this.GetInterfacedGraph().GetOutput(i)
+    }
+}
+extend InterfacedHypergraph<V, G> <: HasInterfacedGraph<V, G> {
+    public func GetInterfacedGraph() : InterfacedHypergraph<V, G> {
+        this
+    }
+}

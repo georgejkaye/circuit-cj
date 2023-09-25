@@ -739,14 +739,14 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
      *
      * @param b The other graph element
      */
-    public func MergeHypergraphs(b : GraphElement<V, G>) : Unit {
+    public func MergeHypergraphs(b : HasGraph<V, G>) : Unit {
         this.MergeHypergraphs(b.GetGraph())
     }
 }
 /**
  * Interface for elements belonging to a graph
  */
-public interface GraphElement<V, G>
+public interface HasGraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     /**
@@ -763,8 +763,7 @@ public interface GraphElement<V, G>
  */
 public func MergeHypergraphs<V, G, T, U>(a : T, b : U) : Hypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
-        T <: GraphElement<V, G>,
-        U <: GraphElement<V, G>
+            T <: HasGraph<V, G>, U <: HasGraph<V, G>
 {
     let primary = a.GetGraph()
     primary.MergeHypergraphs(b)
@@ -783,7 +782,7 @@ public func MergeHypergraphs<V, G, T>(
     initial!: Option<Hypergraph<V, G>> = None
 ) : Option<Hypergraph<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
-        T <: GraphElement<V, G>
+        T <: HasGraph<V, G>
 {
     if(elems.size == 0) {
         initial

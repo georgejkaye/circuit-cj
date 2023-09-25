@@ -158,7 +158,7 @@ public func AssertElementsAllHaveSameOwner<V, G, T>(
 ) : Hypergraph<V, G>
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
-        T <: GraphElement<V, G> & ToString
+        T <: HasGraph<V, G> & ToString
 {
     AssertAllElementsHaveSameParameter(elems, { t : T => t.GetGraph() }, Owner)
 }

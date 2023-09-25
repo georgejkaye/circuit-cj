@@ -30,7 +30,7 @@ extend InputOutput<V> where V <: Decimal<V> {
 /**
  * Class for evaluating circuits given inputs at each tick of the clock
  */
-public class Evaluator<V, G> <: Drawable<V, G>
+public class Evaluator<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     var currentCycle = 0
@@ -100,15 +100,6 @@ public class Evaluator<V, G> <: Drawable<V, G>
         this.outputSignalHistory =
             Array(this.graph.GetCoarity()){ i => ArrayList<Option<Signal<V>>>()}
     }
-    public func GetGraph() : InterfacedHypergraph<V, G> {
-        this.graph
-    }
-    public func GetInput(i : Int64) : InterfaceVertex<V, G> {
-        this.graph.GetInput(i)
-    }
-    public func GetOutput(i : Int64) : InterfaceVertex<V, G> {
-        this.graph.GetOutput(i)
-    }
     public func GetInputSignalHistory() : Array<ArrayList<Signal<V>>> {
         this.inputSignalHistory
     }
@@ -117,17 +108,6 @@ public class Evaluator<V, G> <: Drawable<V, G>
     }
     public func GetInputOutputHistory() : ArrayList<InputOutput<V>> {
         this.inputOutputHistory
-    }
-    public func WriteDotToFile(
-        file : String,
-        depth!: Int64 = 0,
-        edgeLabelFn!: (Label<V, G>) -> String = { l => l.GetName()},
-        debug!: Bool = false, expandSignals!: Bool = false
-    ) : Unit {
-        this.GetGraph().WriteDotToFile(
-            file, depth: depth, edgeLabelFn: edgeLabelFn, debug: debug,
-            expandSignals: expandSignals
-        )
     }
     /**
      * Perform a cycle using this evaluator for some given input signals
@@ -492,6 +472,26 @@ func GetOutputSignals<V, G>(
         }
     }, signalVertices)
 }
+extend Evaluator<V, G> <: HasInterfacedGraph<V, G> {
+    public func GetInterfacedGraph() : InterfacedHypergraph<V, G> {
+        this.graph
+    }
+}
+extend Evaluator<V, G> <: Drawable<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    public func WriteDotToFile(
+        file : String,
+        depth!: Int64 = 0,
+        edgeLabelFn!: (Label<V, G>) -> String = { l => l.GetName()},
+        debug!: Bool = false, expandSignals!: Bool = false
+    ) : Unit {
+        this.GetGraph().WriteDotToFile(
+            file, depth: depth, edgeLabelFn: edgeLabelFn, debug: debug,
+            expandSignals: expandSignals
+        )
+    }
+}
 /**
  * Allow evaluation using decimal values
  */
@@ -515,8 +515,8 @@ extend Evaluator<V, G> <: DecimalDrawable
         file : String, depth!: Int64 = 0, signed!: Bool, debug!: Bool = false,
         expandSignals!: Bool = false
     ) : Unit {
-        WriteDotToFile(
-            file, depth: depth, edgeLabelFn: GetDecimalLabelFn(signed), debug: debug
+        this.GetGraph().WriteDotToFile(
+            file, depth: depth, signed: signed, debug: debug
         )
     }
 }

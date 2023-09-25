@@ -27,7 +27,7 @@ extend VertexType <: ToString {
  */
 public struct EdgeConnection<V, G>
     <: ToString & Equatable<EdgeConnection<V, G>> &
-        Hashable & GraphElement<V, G>
+        Hashable & HasGraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public EdgeConnection(
@@ -180,7 +180,7 @@ public enum TentacleType<V, G>
  */
 public class Vertex<V, G>
     <: Identifiable<Vertex<V, G>> & ToString & HasWidth &
-            HasPort & HasOptionalName & GraphElement<V, G>
+            HasPort & HasOptionalName & HasGraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let width : Int64
@@ -465,7 +465,7 @@ public class Vertex<V, G>
 /**
  * Interface for structures that have vertex-like properties
  */
-public interface ContainsVertex<V, G> <: GraphElement<V, G>
+public interface ContainsVertex<V, G> <: HasGraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     func GetVertex() : Vertex<V, G>

@@ -27,7 +27,7 @@ public enum TraversalElement<V, G>
 }
 extend TraversalElement<V, G>
     <: Hashable & Equatable<TraversalElement<V, G>> &
-            ToString & GraphElement<V, G>
+            ToString & HasGraph<V, G>
 {
     public func hashCode() : Int64 {
         match(this) {
