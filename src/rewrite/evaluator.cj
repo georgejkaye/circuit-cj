@@ -389,6 +389,8 @@ func EliminateInstantFeedback<V, G>(
             Array(feedbackConnections),
             "PreMealyCore(${f.GetName()})"
         )
+    // Feedback connections don't need to be treated as feedback any more
+    f.GetGraph().RemoveAllFeedback()
     // In the first iteration, the feedback wires are initialised as the
     // disconnected bottom value
     for(i in 0..feedbackWires) {
