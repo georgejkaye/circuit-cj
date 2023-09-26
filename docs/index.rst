@@ -7,6 +7,7 @@ Welcome to CircuitCJ's documentation!
 
    install
    design/index
+   simulation/index
    advanced/index
    examples/index
    background/index
