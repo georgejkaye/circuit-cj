@@ -8,6 +8,7 @@
  * @since 0.3
  */
 package components
+import syntax.BuildWaveform
 /**
  * Make a signal circuit for a signal converted from a decimal number.
  *
@@ -27,28 +28,6 @@ func MakeSignal<V, G>(
     MakeSignal(signal)
 }
 /**
- * Given an array of numbers, convert them into an array of corresponding
- * signals.
- *
- * @param vs The numbers
- * @param width
- * @param signed
- * @return The array of corresponding signals
- */
-func MakeDecimalWaveform<V>(
-    signals!: Array<Int64>, width!: Int64, signed!: Bool
-) : Waveform<V>
-    where
-        V <: ValueSymbol<V> & Equatable<V> & LessOrEqual<V> & Decimal<V>
-{
-    let actualSignals =
-        map(
-            { v : Int64 => V.DecToSignal(v, width: width, signed: signed)},
-            signals
-        )
-    Waveform(actualSignals)
-}
-/**
  * Convert an array of numbers into an open waveform of signals.
  *
  * @param xs
@@ -63,7 +42,7 @@ func MakeOpenWaveform<V, G>(
         V <: ValueSymbol<V> & Decimal<V>,
         G <: PrimitiveSymbol<V, G>
 {
-    let waveform = MakeDecimalWaveform<V>(
+    let waveform = BuildWaveform<V>(
         signals: signals, width: width, signed: signed
     )
     MakeOpenWaveform(waveform: waveform)
@@ -81,7 +60,7 @@ func MakeClosedWaveform<V, G>(
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
-    let waveform = MakeDecimalWaveform<V>(
+    let waveform = BuildWaveform<V>(
         signals: signals, width: width, signed: signed
     )
     MakeClosedWaveform(waveform: waveform)
@@ -99,7 +78,7 @@ func MakeInfiniteWaveform<V, G>(
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
-    let waveform = MakeDecimalWaveform<V>(
+    let waveform = BuildWaveform<V>(
         signals: signals, width: width, signed: signed
     )
     MakeInfiniteWaveform(waveform: waveform)
@@ -145,7 +124,7 @@ func UseOpenWaveform<V, G>(
 ) : Wire<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
-    let waveform = MakeDecimalWaveform<V>(
+    let waveform = BuildWaveform<V>(
         signals: signals, width: width, signed: signed
     )
     UseOpenWaveform(waveform: waveform, input: input)
@@ -163,7 +142,7 @@ func UseClosedWaveform<V, G>(
 ) : Wire<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
-    let waveform = MakeDecimalWaveform<V>(
+    let waveform = BuildWaveform<V>(
         signals: signals, width: width, signed: signed
     )
     UseClosedWaveform(waveform: waveform)
@@ -181,7 +160,7 @@ func UseInfiniteWaveform<V, G>(
 ) : Wire<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
-    let waveform = MakeDecimalWaveform<V>(
+    let waveform = BuildWaveform<V>(
         signals: signals, width: width, signed: signed
     )
     UseInfiniteWaveform(waveform: waveform)

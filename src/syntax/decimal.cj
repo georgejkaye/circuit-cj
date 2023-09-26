@@ -155,3 +155,33 @@ extend Label<V, G>
         }
     }
 }
+public func BuildWaveform<V> (
+    signals!: Array<Int64>, width!: Int64, signed!: Bool
+)
+    where V <: ValueSymbol<V> & Decimal<V>
+{
+    let actualSignals =
+    map(
+        { v : Int64 => V.DecToSignal(v, width: width, signed: signed)},
+        signals
+    )
+    Waveform(actualSignals)
+}
+extend Signature<V, G>
+    where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    /**
+     * Given an array of numbers, convert them into an array of corresponding
+     * signals.
+     *
+     * @param vs The numbers
+     * @param width
+     * @param signed
+     * @return The array of corresponding signals
+     */
+    public func BuildWaveform(
+        signals!: Array<Int64>, width!: Int64, signed!: Bool
+    ) : Waveform<V> {
+        BuildWaveform<V>(signals: signals, width: width, signed: signed)
+    }
+}
