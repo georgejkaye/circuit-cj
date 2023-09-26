@@ -587,6 +587,9 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
     ) : Unit {
         this.feedbackConnections.removeAll(ecs)
     }
+    public func RemoveAllFeedback() : Unit {
+        this.feedbackConnections.clear()
+    }
     public func RemoveSubgraphElements(f : InterfacedHypergraph<V, G>) : Unit {
         for(v in f.GetVertices()){
             this.RemoveVertex(v)

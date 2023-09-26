@@ -116,7 +116,7 @@ public class Evaluator<V, G>
      * @param signals The input signals at the current tick of the clock
      */
     public func PerformCycle(inputSignals : Array<Signal<V>>) : Unit {
-        AssertHasLength(inputSignals, this.graph.GetArity())
+        AssertHasInputs(this.graph, inputSignals.size)
         let rewriteStartingElements = HashSet<TraversalElement<V, G>>()
         let rewriteEndingElements = HashSet<TraversalElement<V, G>>()
         // Split the state vertices so we can insert the next state
