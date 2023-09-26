@@ -248,14 +248,6 @@ public class Evaluator<V, G>
         PerformCycles(ticks: inputTicks)
     }
 }
-extend Evaluator<V, G> where V <: Decimal<V> {
-    public func GetInputOutputHistoryString(signed!: Bool) : String {
-        arrayListToString(
-            this.inputOutputHistory,
-            { io => io.GetDecimalString(signed) }
-        )
-    }
-}
 /**
  * 'Burst' edges that have sequential subgraphs.
  * This is because all of the delays in the subgraph must be
@@ -484,7 +476,7 @@ extend Evaluator<V, G> <: Drawable<V, G>
         file : String, depth!: Int64 = 0,
         debug!: Bool = false, expandSignals!: Bool = false
     ) : Unit {
-        this.GetGraph().WriteDotToFile(
+        this.GetInterfacedGraph().WriteDotToFile(
             file, depth: depth, debug: debug, expandSignals: expandSignals
         )
     }
@@ -504,6 +496,16 @@ extend Evaluator<V, G> where V <: Decimal<V> {
         )
         this.PerformCycle(inputSignals)
     }
+    public func PerformCycle(input: Int64, signed!: Bool) : Unit {
+        AssertHasInputs(this.graph, 1)
+        this.PerformCycle([input], signed: signed)
+    }
+    public func GetInputOutputHistoryString(signed!: Bool) : String {
+        arrayListToString(
+            this.inputOutputHistory,
+            { io => io.GetDecimalString(signed) }
+        )
+    }
 }
 extend Evaluator<V, G> <: DecimalDrawable
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
@@ -512,7 +514,7 @@ extend Evaluator<V, G> <: DecimalDrawable
         file : String, depth!: Int64 = 0, signed!: Bool, debug!: Bool = false,
         expandSignals!: Bool = false
     ) : Unit {
-        this.GetGraph().WriteDotToFile(
+        this.GetInterfacedGraph().WriteDotToFile(
             file, depth: depth, signed: signed, debug: debug
         )
     }
