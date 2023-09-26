@@ -1,4 +1,3 @@
-
 /**
  * rewrite/waves.cj
  *
@@ -10,7 +9,7 @@
  */
 package rewrite
 // Components for drawing waveforms
-let componentLength = 2
+let componentLength = 6
 let offSignalString = "".padRight(componentLength, paddingChar: ' ')
 let onSignalString = "".padRight(componentLength, paddingChar: '─')
 let highToLowUpString = "┐".padRight(componentLength, paddingChar: ' ')
@@ -200,19 +199,10 @@ func DrawSignalOverview<V, T>(
             let text =
                 if(i == 0 || fn(ticks[i-1]) != maybeSignal) {
                     let signalDisplay = signalDisplayFn(maybeSignal)
-                    let signalLength = fold_left_while(
-                        { acc, next =>
-                            if(fn(next) == maybeSignal) {
-                                (acc + componentLength, false)
-                            } else {
-                                (acc, true)
-                            }
-                        }, componentLength, ticks, start: i+1
-                    )
-                    if(signalDisplay.size >= signalLength) {
-                        "|".padRight(signalLength, paddingChar: '*')
+                    if(signalDisplay.size >= componentLength) {
+                        "|".padRight(componentLength, paddingChar: '*')
                     } else {
-                        "|${signalDisplay}".padRight(signalLength)
+                        "|${signalDisplay}".padRight(componentLength)
                     }
                 } else {
                     ""
@@ -392,14 +382,16 @@ extend Evaluator<V,G> {
             { t => Some(t) },
             { i => this.GetInput(i).GetWidth() },
             { i => this.GetInput(i).GetNameString() },
-            labelLength: labelLength
+            labelLength: labelLength,
+            signalDisplayFn: signalDisplayFn
         )
         let outputWaves = DrawWaveformsForSignalArray<V, Option<Signal<V>>>(
             this.GetOutputSignalHistory(),
             { t => t },
             { i => this.GetOutput(i).GetWidth() },
             { i => this.GetOutput(i).GetNameString() },
-            labelLength: labelLength
+            labelLength: labelLength,
+            signalDisplayFn: signalDisplayFn
         )
         "${inputWaves}\n${outputWaves}"
     }
