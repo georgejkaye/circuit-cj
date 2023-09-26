@@ -561,3 +561,13 @@ extend InterfacedHypergraph<V, G> <: HasInterfacedGraph<V, G> {
         this
     }
 }
+public func AssertHasInputs<V, G>(
+    f : InterfacedHypergraph<V, G>, m : Int64
+) : Unit where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
+    AssertHasLength(f.GetInputs(), m)
+}
+public func AssertHasOutputs<V, G>(
+    f : InterfacedHypergraph<V, G>, n : Int64
+) : Unit where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
+    AssertHasLength(f.GetOutputs(), n)
+}
