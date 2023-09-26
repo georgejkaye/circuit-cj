@@ -247,6 +247,9 @@ public class Evaluator<V, G>
         let inputTicks = ArrayOfInputsToArrayOfTicks(waveforms)
         PerformCycles(ticks: inputTicks)
     }
+    public func PerformCycles(waveform!: Waveform<V>) : Unit {
+        PerformCycles(waveforms: [waveform])
+    }
 }
 /**
  * 'Burst' edges that have sequential subgraphs.
