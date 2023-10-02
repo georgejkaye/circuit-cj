@@ -107,7 +107,7 @@ extend Array<T> <: ExtraArrayUtils<T> {
  * @param delimiter
  */
 public func collectionToString<T>(
-    collection : Collection<T>, printFn : (T) -> String,
+    collection : Collection<T>, printFn : (T, Int64) -> String,
     openingBracket!: String = "{", closingBracket!: String = "}",
     delimiter!: String = ", "
 ) : String {
@@ -118,7 +118,7 @@ public func collectionToString<T>(
             } else {
                 ""
             }
-            "${acc}${printFn(cur)}${delimiter}"
+            "${acc}${printFn(cur, i)}${delimiter}"
 
         }, "", collection
     )
@@ -138,7 +138,7 @@ public func collectionToString<T>(
     closingBracket!: String = "}", delimiter!: String = ", "
 ) : String where T <: ToString {
     collectionToString(
-        collection, { t => "${t}" }, openingBracket: openingBracket,
+        collection, { t, i => "${t}" }, openingBracket: openingBracket,
         closingBracket: closingBracket, delimiter: delimiter
     )
 }
@@ -152,7 +152,7 @@ public func collectionToString<T>(
  * @param delimiter
  */
 public func arrayToString<T>(
-    array : Array<T>, printFn : (T) -> String,
+    array : Array<T>, printFn : (T, Int64) -> String,
     openingBracket!: String = "[", closingBracket!: String = "]",
     delimiter!: String = ", "
 ) : String {
@@ -171,7 +171,7 @@ public func arrayToString<T>(
  * @param delimiter
  */
 public func arrayListToString<T>(
-    list : ArrayList<T>, printFn : (T) -> String,
+    list : ArrayList<T>, printFn : (T, Int64) -> String,
     openingBracket!: String = "[", closingBracket!: String = "]",
     delimiter!: String = ", "
 ) : String {
@@ -201,10 +201,10 @@ public func unsafeGet<T,U>(map : HashMap<T,U>, key: T) : U
  * @return The concatenated string
  */
 public func concatStrings(
-    strings : Array<String>, delimiter!: String = ", "
+    strings : Collection<String>, delimiter!: String = ", "
 ) : String {
-    arrayToString<String>(
-        strings, {s => s}, openingBracket: "", closingBracket: "",
+    collectionToString<String>(
+        strings, {s, _ => s}, openingBracket: "", closingBracket: "",
         delimiter: delimiter
     )
 }

@@ -58,7 +58,7 @@ public struct Waveform<V>
     }
     public func GetName() : String {
         arrayToString(
-            signals, { s : Signal<V> => s.GetName() },
+            signals, { s : Signal<V>, _ => s.GetName() },
             openingBracket: "", closingBracket: "", delimiter: " :: "
         )
     }

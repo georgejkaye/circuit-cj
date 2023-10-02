@@ -143,7 +143,7 @@ public func AssertArrayArraysSameWidths<T>(xss : Array<Array<T>>) : Int64
  */
 public func PrintWidthArray<T>(array : Array<T>) : String where T <: HasWidth {
     arrayToString<T>(
-        array, { t : T => "${t.GetWidth()}" },
+        array, { t : T, _ : Int64 => "${t.GetWidth()}" },
         openingBracket: "[", closingBracket: "]", delimiter: ","
     )
 }

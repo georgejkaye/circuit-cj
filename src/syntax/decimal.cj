@@ -125,10 +125,12 @@ extend Waveform<V> where V <: Decimal<V> & ValueSymbol<V> {
     public func GetDecimalName(signed!: Bool) : String {
         arrayToString(
             this.GetSignals(),
-            { s : Signal<V> => match(V.SignalToDec(s, signed: signed)){
-                case Some(n) => "${n}"
-                case None => s.GetName()
-            }},
+            { s : Signal<V>, _ : Int64 =>
+                match(V.SignalToDec(s, signed: signed)){
+                    case Some(n) => "${n}"
+                    case None => s.GetName()
+                }
+            },
             openingBracket: "", closingBracket: "", delimiter: "::"
         )
     }

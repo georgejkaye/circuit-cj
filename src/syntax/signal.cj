@@ -97,7 +97,8 @@ public func GetArgumentString<V>(
     where V <: ValueSymbol<V>
 {
     arrayToString(
-        vs, printFn, openingBracket: "(", closingBracket: ")", delimiter: ", "
+        vs, { s, _ => printFn(s) }, openingBracket: "(", closingBracket: ")",
+        delimiter: ", "
     )
 }
 public func GetOutputString<V>(
@@ -107,7 +108,7 @@ public func GetOutputString<V>(
     where V <: ValueSymbol<V>
 {
     arrayToString(
-        vs, { opt =>
+        vs, { opt, _ =>
             match(opt){
                 case None => "?"
                 case Some(s) => printFn(s)
