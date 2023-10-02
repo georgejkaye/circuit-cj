@@ -9,21 +9,34 @@
  */
 package rewrite
 // Components for drawing waveforms
-let componentLength = 6
-let offSignalString = "".padRight(componentLength, paddingChar: ' ')
-let onSignalString = "".padRight(componentLength, paddingChar: '─')
-let highToLowUpString = "┐".padRight(componentLength, paddingChar: ' ')
-let highToLowDownString = "└".padRight(componentLength, paddingChar: '─')
-let lowToHighUpString = "┌".padRight(componentLength, paddingChar: '─')
-let lowToHighDownString = "┘".padRight(componentLength, paddingChar: ' ')
-let upDownString = "|".padRight(componentLength, paddingChar: ' ')
+let defaultComponentLength = 8
+let offSignalString = ("", ' ')
+let onSignalString = ("", '─')
+let highToLowUpString = ("┐", ' ')
+let highToLowDownString = ("└", '─')
+let lowToHighUpString = ("┌", '─')
+let lowToHighDownString = ("┘", ' ')
+let upDownString = ("|", ' ')
+/**
+ * Create a padded string given a tuple of a starting string and a padding
+ * character.
+ *
+ * @param symbols The tuple (starting string, padding char)
+ * @param length The length to pad to
+ * @return The padded string
+ */
+func GetAndPadWaveSymbol(symbols : (String, Char), length : Int64) : String {
+    let (firstChar, padChar) = symbols
+    firstChar.padRight(length, paddingChar: padChar)
+}
+
 /**
  * Attempt to get the waveform level at a given tick of the clock of a waveform
- * for a given bit of a signal
+ * for a given bit of a signal.
  *
  * @param ticks a list of elements that can be transformed into optional signals
  * @param bit The bit of the signal to consider
- * @param tick The tick of the clock to consider
+ * @param currentTick The tick of the clock to consider
  * @param fn The function to extract an optional signal
  * @return The level this waveform should be drawn at, or None if there is no
  *              associated level
@@ -43,14 +56,15 @@ func GetLevel<V, T>(
     }
 }
 /**
- * Get the string for a waveform level for a bit where the level is stable
- * i.e. the previous level was the same as the current one, or was not drawn.
+ * Get the start string and pad character for a waveform level for a bit where
+ * the level is stable i.e. the previous level was the same as the current one,
+ * or was not drawn.
  *
  * @param drawingLevel The level being drawn
  * @param activeLevel The level is currently powered on
  * @return The string for the level
  */
-func StableSignal(drawingLevel : Int64, activeLevel : Int64) : String {
+func StableSignal(drawingLevel : Int64, activeLevel : Int64) : (String, Char) {
     if(drawingLevel != activeLevel) {
         offSignalString
     } else {
@@ -58,8 +72,9 @@ func StableSignal(drawingLevel : Int64, activeLevel : Int64) : String {
     }
 }
 /**
- * Get the string for a waveform level for a bit where the level is going up
- * i.e. one where the previous level was lower than the current one.
+ * Get the start string and pad character for a waveform level for a bit where
+ * the level is going up i.e. one where the previous level was lower than the
+ * current one.
  *
  * @param drawingLevel The level being drawn
  * @param activeLevel The level is currently powered on
@@ -68,7 +83,7 @@ func StableSignal(drawingLevel : Int64, activeLevel : Int64) : String {
  */
 func GoingUpSignal(
     drawingLevel : Int64, activeLevel : Int64, previousActiveLevel : Int64
-) : String {
+) : (String, Char) {
     // The waveform needs to go up
     if(drawingLevel == previousActiveLevel) {
         lowToHighDownString
@@ -84,8 +99,9 @@ func GoingUpSignal(
     }
 }
 /**
- * Get the string for a waveform level for a bit where the level is going down
- * i.e. one where the previous level was higher than the current one.
+ * Get the start string and pad character for a waveform level for a bit where
+ * the level is going down i.e. one where the previous level was higher than the
+ * current one.
  *
  * @param drawingLevel The level being drawn
  * @param activeLevel The level is currently powered on
@@ -94,7 +110,7 @@ func GoingUpSignal(
  */
 func GoingDownSignal(
     drawingLevel : Int64, activeLevel : Int64, previousActiveLevel : Int64
-) : String {
+) : (String, Char) {
     // The waveform needs to go down
     if(drawingLevel == previousActiveLevel) {
         highToLowUpString
@@ -102,7 +118,9 @@ func GoingDownSignal(
     } else if (drawingLevel == activeLevel) {
         highToLowDownString
     // The waveform is going down
-    } else if(drawingLevel > activeLevel && drawingLevel < previousActiveLevel) {
+    } else if(
+        drawingLevel > activeLevel && drawingLevel < previousActiveLevel
+    ) {
         upDownString
     // The waveform is not present at this level
     } else {
@@ -125,7 +143,7 @@ func GoingDownSignal(
 func DrawWaveformLevel<V, T>(
     ticks : ArrayList<T>, currentBit : Int64, currentPhysicalDrawingLevel : Int64,
     currentLogicalDrawingLevel : Int64, fn : (T) -> Option<Signal<V>>,
-    waveformName : String, maxNameLength : Int64
+    waveformName : String, maxNameLength : Int64, componentLength : Int64
 ) : String
     where V <: ValueSymbol<V>
 {
@@ -144,7 +162,7 @@ func DrawWaveformLevel<V, T>(
         { acc, currentTick : Int64 =>
             let currentActiveLevelOpt =
                 GetLevel(ticks, currentBit, currentTick, fn)
-            let currentTickString = match(currentActiveLevelOpt) {
+            let currentTickChars = match(currentActiveLevelOpt) {
                 case None => offSignalString
                 case Some(currentActiveLevel) =>
                     let previousActiveLevelOpt =
@@ -185,29 +203,33 @@ func DrawWaveformLevel<V, T>(
                             }
                     }
             }
-            "${acc}${currentTickString}"
+            let paddedString =
+                GetAndPadWaveSymbol(currentTickChars, componentLength)
+            "${acc}${paddedString}"
     }, prefix, end: ticks.size)
 }
 func DrawSignalOverview<V, T>(
     ticks : ArrayList<T>, fn : (T) -> Option<Signal<V>>, width : Int64,
-    maxNameLength : Int64, signalDisplayFn : (Option<Signal<V>>) -> String
+    maxNameLength : Int64, signalDisplayFn : (Option<Signal<V>>) -> String,
+    componentLength : Int64
 ) : String where V <: ValueSymbol<V> {
     let prefix = "".padRight(maxNameLength)
     foldi_left(
         { acc, i, cur =>
             let maybeSignal = fn(cur)
-            let text =
+            let symbols =
                 if(i == 0 || fn(ticks[i-1]) != maybeSignal) {
                     let signalDisplay = signalDisplayFn(maybeSignal)
                     if(signalDisplay.size >= componentLength) {
-                        "|".padRight(componentLength, paddingChar: '*')
+                        ("|", '*')
                     } else {
-                        "|${signalDisplay}".padRight(componentLength)
+                        ("|${signalDisplay}", ' ')
                     }
                 } else {
-                    ""
+                    ("", ' ')
                 }
-            "${acc}${text}"
+            let paddedString = GetAndPadWaveSymbol(symbols, componentLength)
+            "${acc}${paddedString}"
         },
         "${prefix}",
         ticks
@@ -216,7 +238,7 @@ func DrawSignalOverview<V, T>(
 func DrawWaveformHeaderForSignal<V, T>(
     ticks : ArrayList<T>, fn : (T) -> Option<Signal<V>>, width : Int64,
     signalName : String, maxNameLength : Int64,
-    signalDisplayFn : (Option<Signal<V>>) -> String
+    signalDisplayFn : (Option<Signal<V>>) -> String,  componentLength : Int64
 ) : String where V <: ValueSymbol<V> {
     let actualSignalName =
         if(signalName == "") {
@@ -229,7 +251,7 @@ func DrawWaveformHeaderForSignal<V, T>(
     let firstLine =
         "${actualSignalName} ".padRight(lineLength, paddingChar: '─')
     let secondLine = DrawSignalOverview(
-        ticks, fn, width, maxNameLength, signalDisplayFn
+        ticks, fn, width, maxNameLength, signalDisplayFn, componentLength
     )
     let thirdLine = "".padRight(lineLength, paddingChar: '─')
     "${firstLine}\n${secondLine}\n${thirdLine}"
@@ -257,7 +279,8 @@ func DefaultSignalDisplayFn<V>() : (Option<Signal<V>>) -> String
 func DrawWaveformsForSignal<V, T>(
     ticks : ArrayList<T>, fn : (T) -> Option<Signal<V>>, width : Int64,
     signalName : String, maxNameLength : Int64,
-    signalDisplayFn!: (Option<Signal<V>>) -> String
+    signalDisplayFn!: (Option<Signal<V>>) -> String,
+    componentLength!: Int64 = defaultComponentLength
 ) : String
     where V <: ValueSymbol<V>
 {
@@ -266,7 +289,8 @@ func DrawWaveformsForSignal<V, T>(
     let waveformLength = ticks.size * componentLength
     let lineLength = maxNameLength + waveformLength
     let signalHeading = DrawWaveformHeaderForSignal(
-        ticks, fn, width, signalName, maxNameLength, signalDisplayFn
+        ticks, fn, width, signalName, maxNameLength, signalDisplayFn,
+        componentLength
     )
     let rows = fold_left(
         { acc, currentLine =>
@@ -280,7 +304,7 @@ func DrawWaveformsForSignal<V, T>(
                 DrawWaveformLevel(
                     ticks, currentBit, currentPhysicalDrawingLevel,
                     currentLogicalDrawingLevel, fn,
-                    "[${currentBit}]", maxNameLength
+                    "[${currentBit}]", maxNameLength, componentLength
                 )
             "${acc}\n${rowString}"
         }, "${signalHeading}", end: totalLines
@@ -300,6 +324,7 @@ public func DrawWaveformsForSignalArray<V, T>(
     signals : Array<ArrayList<T>>, fn : (T) -> Option<Signal<V>>,
     widthFn : (Int64) -> Int64, nameFn : (Int64) -> String,
     signalDisplayFn!: (Option<Signal<V>>) -> String = DefaultSignalDisplayFn(),
+    componentLength!: Int64 = defaultComponentLength,
     labelLength!: Int64 =
         max(
         signals,
@@ -316,7 +341,8 @@ public func DrawWaveformsForSignalArray<V, T>(
         { xs, i =>
             DrawWaveformsForSignal<V, T>(
                 xs, fn, widthFn(i), nameFn(i), labelLength,
-                signalDisplayFn: signalDisplayFn
+                signalDisplayFn: signalDisplayFn,
+                componentLength: componentLength
             )
         },
         signals
@@ -352,6 +378,7 @@ func OptionalDecSignalDisplayFn<V>(
 public func DrawWaveformsForSignalArray<V, T>(
     signals : Array<ArrayList<T>>, fn : (T) -> Option<Signal<V>>,
     widthFn : (Int64) -> Int64, nameFn : (Int64) -> String, signed!: Bool,
+    componentLength!: Int64 = defaultComponentLength,
     labelLength!: Int64 =
         max(
         signals,
@@ -367,14 +394,15 @@ public func DrawWaveformsForSignalArray<V, T>(
     let signalDisplayFn = OptionalDecSignalDisplayFn<V>(signed: signed)
     DrawWaveformsForSignalArray(
         signals, fn, widthFn, nameFn, signalDisplayFn: signalDisplayFn,
-        labelLength: labelLength
+        labelLength: labelLength, componentLength: componentLength
     )
 }
 
 extend Evaluator<V,G> {
     public func DrawWaveformDiagram(
         signalDisplayFn!: (Option<Signal<V>>) -> String =
-            DefaultSignalDisplayFn<V>()
+            DefaultSignalDisplayFn<V>(),
+            componentLength!: Int64 = defaultComponentLength
     ) : String {
         let labelLength = this.longestPortName + 4
         let inputWaves = DrawWaveformsForSignalArray<V, Signal<V>>(
@@ -383,7 +411,8 @@ extend Evaluator<V,G> {
             { i => this.GetInput(i).GetWidth() },
             { i => this.GetInput(i).GetNameString() },
             labelLength: labelLength,
-            signalDisplayFn: signalDisplayFn
+            signalDisplayFn: signalDisplayFn,
+            componentLength: componentLength
         )
         let outputWaves = DrawWaveformsForSignalArray<V, Option<Signal<V>>>(
             this.GetOutputSignalHistory(),
@@ -391,15 +420,19 @@ extend Evaluator<V,G> {
             { i => this.GetOutput(i).GetWidth() },
             { i => this.GetOutput(i).GetNameString() },
             labelLength: labelLength,
-            signalDisplayFn: signalDisplayFn
+            signalDisplayFn: signalDisplayFn,
+            componentLength: componentLength
         )
         "${inputWaves}\n\n${outputWaves}"
     }
 }
 extend Evaluator<V, G> where V <: Decimal<V> {
-    public func DrawWaveformDiagram(signed!: Bool) : String {
+    public func DrawWaveformDiagram(
+        signed!: Bool, componentLength!: Int64 = defaultComponentLength
+    ) : String {
         this.DrawWaveformDiagram(
-            signalDisplayFn: OptionalDecSignalDisplayFn<V>(signed: signed)
+            signalDisplayFn: OptionalDecSignalDisplayFn<V>(signed: signed),
+            componentLength: componentLength
         )
     }
 }
