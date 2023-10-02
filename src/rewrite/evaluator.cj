@@ -11,14 +11,21 @@ package rewrite
 import syntax.*
 import debug.*
 import graphs.*
+import utils.max
 
 public struct InputOutput<V> <: ToString where V <: ValueSymbol<V> {
     public InputOutput(
-        public let input : Array<Signal<V>>,
-        public let output : Array<Option<Signal<V>>>
+        let input : Array<Signal<V>>,
+        let output : Array<Option<Signal<V>>>
     ){}
     public func toString() : String {
         "${GetArgumentString(this.input)} -> ${GetOutputString(this.output)}"
+    }
+    public func GetInput() : Array<Signal<V>> {
+        this.input
+    }
+    public func GetOutput() : Array<Option<Signal<V>>> {
+        this.output
     }
 }
 extend InputOutput<V> where V <: Decimal<V> {
@@ -26,6 +33,45 @@ extend InputOutput<V> where V <: Decimal<V> {
         "${GetArgumentString(this.input, signed: signed)}" +
         " -> ${GetOutputString(this.output, signed: signed)}"
     }
+}
+func GetInputOutputString<V> (
+    ios : ArrayList<InputOutput<V>>,
+    inputFn : (Array<Signal<V>>) -> String,
+    outputFn : (Array<Option<Signal<V>>>) -> String
+) : String  where V <: ValueSymbol<V> {
+    let lines = ArrayList<String>()
+    let (longestInput, longestOutput) = fold_left(
+        { acc, cur =>
+            let inputLength = inputFn(cur.GetInput()).size
+            let outputLength = outputFn(cur.GetOutput()).size
+            let (input, output) = acc
+            (max(inputLength, input), max(outputLength, output))
+        },
+        (0, 0),
+        ios
+    )
+    let tickColumnLength = max("${ios.size}".size, 4) + 2
+    let inputColumnLength = longestInput + 4
+    let outputColumnLength = longestOutput + 4
+    let totalLength = tickColumnLength + inputColumnLength + outputColumnLength
+    let tickHeader = "Tick".padRight(tickColumnLength)
+    let inputHeader = "Input".padRight(inputColumnLength)
+    let outputHeader = "Output".padRight(outputColumnLength)
+    let headerLine = "${tickHeader} ${inputHeader} ${outputHeader}"
+    lines.append(headerLine)
+    let headerUnderline = "".padRight(totalLength, paddingChar: '=')
+    lines.append(headerUnderline)
+    for(i in 0..ios.size) {
+        let io = ios[i]
+        let tickField = "${i}".padRight(tickColumnLength)
+        let inputField =
+            "${inputFn(io.GetInput())}".padRight(inputColumnLength)
+        let outputField =
+            "${outputFn(io.GetOutput())}".padRight(outputColumnLength)
+        let row = "${tickField} ${inputField} ${outputField}"
+        lines.append(row)
+    }
+    concatStrings(lines, delimiter: "\n")
 }
 /**
  * Class for evaluating circuits given inputs at each tick of the clock
@@ -108,6 +154,13 @@ public class Evaluator<V, G>
     }
     public func GetInputOutputHistory() : ArrayList<InputOutput<V>> {
         this.inputOutputHistory
+    }
+    public func GetInputOutputHistoryString() : String {
+        GetInputOutputString(
+            this.inputOutputHistory,
+            { inputs => GetArgumentString(inputs) },
+            { outputs => GetOutputString(outputs) }
+        )
     }
     /**
      * Perform a cycle using this evaluator for some given input signals
@@ -506,9 +559,10 @@ extend Evaluator<V, G> where V <: Decimal<V> {
         this.PerformCycle([input], signed: signed)
     }
     public func GetInputOutputHistoryString(signed!: Bool) : String {
-        arrayListToString(
+        GetInputOutputString(
             this.inputOutputHistory,
-            { io => io.GetDecimalString(signed) }
+            { inputs => GetArgumentString(inputs, signed: signed) },
+            { outputs => GetOutputString(outputs, signed: signed) }
         )
     }
 }
