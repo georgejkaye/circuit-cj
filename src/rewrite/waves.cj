@@ -393,7 +393,7 @@ extend Evaluator<V,G> {
             labelLength: labelLength,
             signalDisplayFn: signalDisplayFn
         )
-        "${inputWaves}\n${outputWaves}"
+        "${inputWaves}\n\n${outputWaves}"
     }
 }
 extend Evaluator<V, G> where V <: Decimal<V> {
