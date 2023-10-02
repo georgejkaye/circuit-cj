@@ -3,7 +3,7 @@ Welcome to CircuitCJ's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Contents
 
    install
    design/index
@@ -11,8 +11,6 @@ Welcome to CircuitCJ's documentation!
    advanced/index
    examples/index
    background/index
-
-
 
 Indices and tables
 ==================
