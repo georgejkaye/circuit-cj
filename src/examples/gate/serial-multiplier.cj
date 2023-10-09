@@ -34,7 +34,7 @@ func RunningSum(first : Wire_, prev_sum: Wire_, a: Wire_, b0: Wire_) : Wire_ {
     let rhs = PartialProduct(a, b0)
     let aExtended = UnsignedExtend(lhs)
     let bExtended = UnsignedExtend(rhs)
-    let (sum, carry) = UseRippleAdder(
+    let (sum, _) = UseRippleAdder(
         a: aExtended, b: bExtended, cin: sig.UseConstantZero(width: 1)
     )
     sum
