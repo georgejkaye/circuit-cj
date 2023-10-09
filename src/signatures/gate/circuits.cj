@@ -1,5 +1,5 @@
 /**
- * signatures/gate/components
+ * signatures/gate/
  *
  * Primitives and composites for the belnap signature
  *
@@ -7,50 +7,6 @@
  * @since 0.3
  */
 package signatures.gate
-import graphs.*
-import components.*
-import components.constructions.*
-from std import math.{floor, log}
-public func UseBufGate(
-    a : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseUnaryPrimitive(BUF, a, delay: delay)[0]
-}
-public func UseNotGate(
-    a : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseUnaryPrimitive(NOT, a, delay: delay)[0]
-}
-public func UseAndGate(
-    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseBinaryPrimitive(AND, a, b, delay: delay)[0]
-}
-public func UseOrGate(
-    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseBinaryPrimitive(OR, a, b, delay: delay)[0]
-}
-public func UseNandGate(
-    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseBinaryPrimitive(NAND, a, b, delay: delay)[0]
-}
-public func UseNorGate(
-    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseBinaryPrimitive(NOR, a, b, delay: delay)[0]
-}
-public func UseXorGate(
-    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseBinaryPrimitive(XOR, a, b, delay: delay)[0]
-}
-public func UseXnorGate(
-    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseBinaryPrimitive(XNOR, a, b, delay: delay)[0]
-}
 /**
 * Perform an unsigned extension on a wire, i.e. add a false as its msb
 * @param w The input wire
@@ -61,109 +17,6 @@ public func UnsignedExtend(
 ) : BelnapWire {
     let waveform = belnapSignature.UseConstantZero(width: 1)
     Combine([waveform, w])
-}
-/**
- * Bitwise gate
- */
-public func UseBuf(
-    a : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseBitwiseMapPrimitive(BUF, [a], delay: delay)[0]
-}
-public func UseNot(
-    a : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseBitwiseMapPrimitive(NOT, [a], delay: delay)[0]
-}
-public func UseAnd(
-    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseBitwiseMapPrimitive(AND, [a, b], delay: delay)[0]
-}
-public func UseOr(
-    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseBitwiseMapPrimitive(OR, [a, b], delay: delay)[0]
-}
-public func UseNand(
-    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseBitwiseMapPrimitive(NAND, [a, b], delay: delay)[0]
-}
-public func UseNor(
-    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseBitwiseMapPrimitive(NOR, [a, b], delay: delay)[0]
-}
-public func UseXor(
-    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseBitwiseMapPrimitive(XOR, [a, b], delay: delay)[0]
-}
-public func UseXnor(
-    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseBitwiseMapPrimitive(XNOR, [a, b], delay: delay)[0]
-}
-public func UseAnd(
-    ws : Array<BelnapWire>, delay!: Int64 = 0
-) : BelnapWire {
-    UseRippleBinaryPrimitive(AND, ws, delay: delay)[0]
-}
-public func UseOr(
-    ws : Array<BelnapWire>, delay!: Int64 = 0
-) : BelnapWire {
-    UseRippleBinaryPrimitive(OR, ws, delay: delay)[0]
-}
-public func UseNand(
-    ws : Array<BelnapWire>, delay!: Int64 = 0
-) : BelnapWire {
-    UseRippleBinaryPrimitive(NAND, ws, delay: delay)[0]
-}
-public func UseNor(
-    ws : Array<BelnapWire>, delay!: Int64 = 0
-) : BelnapWire {
-    UseRippleBinaryPrimitive(NOR, ws, delay: delay)[0]
-}
-public func UseXor(
-    ws : Array<BelnapWire>, delay!: Int64 = 0
-) : BelnapWire {
-    UseRippleBinaryPrimitive(XOR, ws, delay: delay)[0]
-}
-public func UseXnor(
-    ws : Array<BelnapWire>, delay!: Int64 = 0
-) : BelnapWire {
-    UseRippleBinaryPrimitive(XNOR, ws, delay: delay)[0]
-}
-public func UseAnd(
-    w : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseBitwiseRippleBinaryPrimitive(AND, [w], delay: delay)
-}
-public func UseOr(
-    w : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseBitwiseRippleBinaryPrimitive(OR, [w], delay: delay)
-}
-public func UseNand(
-    w : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseBitwiseRippleBinaryPrimitive(NAND, [w], delay: delay)
-}
-public func UseNor(
-    w : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseBitwiseRippleBinaryPrimitive(NOR, [w], delay: delay)
-}
-public func UseXor(
-    w : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseBitwiseRippleBinaryPrimitive(XOR, [w], delay: delay)
-}
-public func UseXnor(
-    w : BelnapWire, delay!: Int64 = 0
-) : BelnapWire {
-    UseBitwiseRippleBinaryPrimitive(XNOR, [w], delay: delay)
 }
 /**
  * Create a half adder subcircuit.
@@ -246,9 +99,6 @@ public func UseFullAdder(
  * @return A ripple adder subcircuit
  */
 public func MakeRippleAdder(width : Int64) : BelnapInterfacedCircuit {
-    let cin = belnapSignature.UseWire(1)
-    let a = belnapSignature.UseWire(width)
-    let b = belnapSignature.UseWire(width)
     MakeBitwiseRippleMap(
         MakeFullAdder(), acc: 1, ops: width, name: "ripple_adder"
     )
@@ -386,7 +236,7 @@ public func MakeMux(
         let numberOfDataWiresPerSubcall = inputs / 2
         let numberOfInputWiresPerSubcall =
             numberOfControlWiresPerSubcall + numberOfDataWiresPerSubcall
-        let controlWires = Array<BelnapWire>(numberOfControlWires, {i =>
+        let controlWires = Array<BelnapWire>(numberOfControlWires, {_ =>
             UseWire<GateLevelValue, GateLevelPrimitive>(1)
         })
         let getSubcallInputs = { =>
@@ -435,7 +285,13 @@ public func MakeMux(
         )
     }
 }
-public func UseMux(inputs: Array<BelnapWire>) : BelnapWire {
+/**
+ * Use a multiplexer, the size of which is determined by an array of input wires
+ *
+ * @param inputs
+ * @return The multiplexer circuit
+ */
+func UseMux(inputs: Array<BelnapWire>) : BelnapWire {
     let exponent = Int64(floor(log(Float64(inputs.size)) / log(2.0)))
     let choices = inputs.size - exponent
     let width = AssertAllElementsHaveSameWidth(inputs, start: exponent)
@@ -443,11 +299,25 @@ public func UseMux(inputs: Array<BelnapWire>) : BelnapWire {
         MakeMux(inputs: choices, width: width), inputs
     )
 }
+/**
+ * Use a multiplexer, the size of which is determined by an array of input wires
+ *
+ * @param selectors
+ * @param inputs
+ * @return The multiplexer circuit
+ */
 public func UseMux(
     selectors!: Array<BelnapWire>, inputs!: Array<BelnapWire>
 ) : BelnapWire {
     UseMux(concat(selectors, inputs))
 }
+/**
+ * Use a multiplexer, the size of which is determined by an array of input wires
+ *
+ * @param selector
+ * @param inputs
+ * @return The multiplexer circuit
+ */
 public func UseMux(
     selector!: BelnapWire, inputs!: Array<BelnapWire>
 ) : BelnapWire {
