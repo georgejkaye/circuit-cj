@@ -17,7 +17,7 @@ import debug.*
  * Value <: ValueSymbol<Value>, but I don't know if this is possible.
  */
 public interface ValueSymbol<V>
-    <: Hashable & HasName & ToString & Equatable<V> & LessOrEqual<V>
+    <: Hashable & Equatable<V> & LessOrEqual<V> & HasName & ToString
 {
     static func GetDisconnected() : V
     static func GetHighestWaveformLevel() : Int64
@@ -25,11 +25,9 @@ public interface ValueSymbol<V>
 }
 
 public interface PrimitiveSymbol<V, G>
-    <: Specifiable & HasName & ToString & Hashable & Equatable<G>
+    <: Hashable & Equatable<G> & HasName & ToString & Specifiable
     where V <: ValueSymbol<V>
-{
-    func GetEnhancedName(n: Int64, w: Int64): String
-}
+{}
 /**
  * Check that a truth table is monotone with relation to the information order,
  * i.e. if v <= w then f(v) <= f(w).
@@ -40,7 +38,7 @@ public interface PrimitiveSymbol<V, G>
  * @param ports
  * @param table
  */
-func CheckTableMonotone<V>(
+func AssertTableMonotone<V>(
     lattice : FiniteLattice<V>,
     ports : Array<Port>,
     table : (Array<Array<V>>) -> (Array<Array<V>>)
@@ -295,8 +293,7 @@ public class Signature<V, G>
         let name : String,
         let latticeStructure: FiniteLattice<V>,
         let usedGates : HashSet<G>,
-        let gateInterpretation: (G) -> ((Array<Array<V>>) -> Array<Array<V>>),
-        let toDec: (Array<V>, Bool) -> Option<Int64>
+        let gateInterpretation: (G) -> ((Array<Array<V>>) -> Array<Array<V>>)
     ) {
         let annihilatorsList = ArrayList<Annihilator<V, G>>()
         let identitiesList = ArrayList<Identifier<V, G>>()
@@ -304,7 +301,7 @@ public class Signature<V, G>
         // is a valid monotone gate, and then get their annihilators and
         // identifiers if they are
         for(g in usedGates) {
-            CheckTableMonotone(
+            AssertTableMonotone(
                 this.latticeStructure, g.GetInputPorts(), gateInterpretation(g)
             )
             GetAnnihilatorAndIdentifierRules(
