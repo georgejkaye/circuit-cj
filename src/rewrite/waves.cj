@@ -284,7 +284,7 @@ func DrawWaveformsForSignal<V, T>(
 ) : String
     where V <: ValueSymbol<V>
 {
-    let linesPerValue = V.GetHighestWaveformLevel() + 1
+    let linesPerValue = V.GetWaveformHeight() + 1
     let totalLines = linesPerValue * width
     let waveformLength = ticks.size * componentLength
     let lineLength = maxNameLength + waveformLength

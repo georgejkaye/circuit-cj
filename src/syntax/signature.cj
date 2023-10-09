@@ -41,7 +41,7 @@ public interface ValueSymbol<V>
      *
      * @return The highest waveform level
      */
-    static func GetHighestWaveformLevel() : Int64
+    static func GetWaveformHeight() : Int64
 }
 
 public interface PrimitiveSymbol<V, G>

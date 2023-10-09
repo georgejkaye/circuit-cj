@@ -11,15 +11,15 @@ package signatures.gate
  * Enum of Belnap values (four valued logic)
  */
 public enum GateLevelValue {
-    | NONE | TRUE | FALSE | BOTH
+    | NONE | FALSE | TRUE | BOTH
 }
 let trueLevel = 1
 extend GateLevelValue <: Hashable {
     public func hashCode(): Int64 {
         match (this) {
             case NONE => 0
-            case TRUE => 1
-            case FALSE => 2
+            case FALSE => 1
+            case TRUE => 2
             case BOTH => 3
         }
     }
@@ -36,15 +36,15 @@ extend GateLevelValue <: LessOrEqual<GateLevelValue> {
     public operator func <=(rhs : GateLevelValue) : Bool {
         match(this) {
             case NONE => true
-            case TRUE => match(rhs) {
-                case FALSE => false
-                case NONE => false
-                case _   =>  true
-            }
             case FALSE => match(rhs) {
                 case TRUE => false
                 case NONE => false
                 case _   => true
+            }
+            case TRUE => match(rhs) {
+                case FALSE => false
+                case NONE => false
+                case _   =>  true
             }
             case BOTH => match(rhs) {
                 case BOTH => true
@@ -73,14 +73,15 @@ extend GateLevelValue <: ValueSymbol<GateLevelValue>
     public static func GetDisconnected() : GateLevelValue {
         NONE
     }
-    public static func GetHighestWaveformLevel() : Int64 {
+    public static func GetWaveformHeight() : Int64 {
         trueLevel
     }
+    public static func GetValues() : HashSet<V>
     public func GetWaveformLevel() : Option<Int64> {
         match(this) {
             case NONE => None
-            case TRUE => Some(trueLevel)
             case FALSE => Some(0)
+            case TRUE => Some(trueLevel)
             case BOTH => None
         }
     }
