@@ -197,3 +197,27 @@ Alternatively, the headings can be represented in decimal.
 .. note::
     Waveform visualisation was inspired by a similar tool developed as part of
     Hardcaml: https://github.com/janestreet/hardcaml_waveterm
+
+Customising waveform display
+****************************
+
+As a text string, each waveform is rendered as multiple horizontal slices known
+as *levels*.
+How levels are drawn is determined by two functions in the ``ValueSymbol``
+interface.
+
+.. code-block:: scala
+
+        func GetWaveformLevel() : Option<Int64>
+
+This function assigns each value to a(n optional) level that will represent
+that value in the waveform.
+The higher the number, the higher on the screen the value will be drawn.
+
+.. code-block:: scala
+
+        static func GetWaveformHeight() : Int64
+
+This function specifies how much space to allocate for drawing the waveform.
+Note that if this is smaller than a level returned by ``GetWaveformLevel``,
+then this level will not be rendered at all!

@@ -76,7 +76,6 @@ extend GateLevelValue <: ValueSymbol<GateLevelValue>
     public static func GetWaveformHeight() : Int64 {
         trueLevel
     }
-    public static func GetValues() : HashSet<V>
     public func GetWaveformLevel() : Option<Int64> {
         match(this) {
             case NONE => None
