@@ -19,9 +19,29 @@ import debug.*
 public interface ValueSymbol<V>
     <: Hashable & Equatable<V> & LessOrEqual<V> & HasName & ToString
 {
+    /**
+     * Get the distinguished value that marks the disconnected value.
+     *
+     * @return The disconnected value
+     */
     static func GetDisconnected() : V
-    static func GetHighestWaveformLevel() : Int64
+    /**
+     * Get the level at which this value should be drawn in waveform
+     * visualisation. The higher the number, the higher on the screen the value
+     * will be drawn. If None, the value will not be drawn in the waveform and
+     * the screen will be left blank (this value is not interesting for
+     * visualisation).
+     *
+     * @return The waveform level, or None
+     */
     func GetWaveformLevel() : Option<Int64>
+    /**
+     * Get the highest point at which a value can be drawn in waveform
+     * visualisation.
+     *
+     * @return The highest waveform level
+     */
+    static func GetHighestWaveformLevel() : Int64
 }
 
 public interface PrimitiveSymbol<V, G>
@@ -85,7 +105,7 @@ public struct Annihilator<V, G> <: ToString
             } else {
                 1
             }
-        for(i in this.index+1..afterEndIndex){
+        for(i in (this.index + 1)..afterEndIndex){
             string = "${string} -, "
         }
         "${string}-) = ${this.output}"
