@@ -181,6 +181,11 @@ public func AssertMultipleOf(x : Int64, multiple : Int64) : Int64 {
     }
     x / multiple
 }
+/**
+ * @param x
+ * @param power
+ * @return The power
+ */
 public func AssertPowerOf(x : Int64, power : Int64) : Int64 {
     let exponent = log(Float64(x)) / log(Float64(power))
     let floored = floor(exponent)
