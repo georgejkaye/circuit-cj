@@ -53,12 +53,24 @@ Signals
 It is very rare that we will only be dealing with single bit values.
 Rather than juggling multiple values, it is better to collect them together into
 arbitrary-width *signals*.
+
+.. code-block:: scala
+
+    // Create a signal for an array of values
+    Signal(values : Array<V>)
+    // Create a signal comprising n copies of a value v
+    Signal(v : V, n : Int64)
+    // Create a signal with just one value
+    Signal(v : V)
+
+
 Recall that the convention is that the value at position ``0`` is the least
 significant bit.
 
 .. code-block:: scala
 
-    let s = sig.UseSignal(Signal([TRUE, FALSE, TRUE, FALSE])) // bin 0101 = dec 9
+    // bin 0101 = dec 9
+    let s = sig.UseSignal(Signal([TRUE, FALSE, TRUE, FALSE]))
 
 At the highest level, a signal is just represented by a single block.
 
