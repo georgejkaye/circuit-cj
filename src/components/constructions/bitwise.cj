@@ -1,5 +1,32 @@
+/**
+ * components/constructions/bitwise.cj
+ *
+ * Functions for creating bitwise circuits
+ *
+ * @author George Kaye
+ * @since 0.2
+ */
 package components.constructions
 from std import collection.HashSet
+/**
+ * Given an array of inputs and a bundle width w such that so that the array is
+ * partitioned into n bundles of width w:
+ *
+ *    ws[0][0], ws[0][1], ..., ws[0][w-1], ..., ws[n-1][0], ..., ws[n-1][w-1]
+ *
+ * create a version of this array of the form
+ *
+ *    ws[0][0], ws[1][0], ..., ws[n-1][0], ..., ws[n-1][0], ..., ws[n-1][w-1]
+ *
+ * Optionally, this can have a start and end index; wires outside of this range
+ * will not be sorted.
+ *
+ * @param inputs
+ * @param bundleWidth
+ * @param start
+ * @param end
+ * @return The array of sorted wires
+ */
 func SortByBit<T>(
     inputs : Array<T>, bundleWidth : Int64,
     start!: Int64 = 0, end!: Int64 = inputs.size
@@ -15,6 +42,23 @@ func SortByBit<T>(
         }
     })
 }
+/**
+ * Given an array of arrays of inputs and a bundle width
+ *
+ *    [ws[0][0], ws[0][1], ..., ws[0][w-1]], ... ,[ws[n-1][w-1], ..., w[n-1][w-1]]
+ *
+ * create a flat array of the form
+ *
+ *    ws[0][0], ws[1][0], ..., ws[n-1][0], ws[0][1], ws[1][1], ..., ws[n-1][w-1]
+ *
+ * Optionally, this can have a start and end index; wires outside of this range
+ * will not be sorted.
+ *
+ * @param inputs
+ * @param start
+ * @param end
+ * @return The array of sorted wires
+ */
 func SortByBit<T>(
     inputs : Array<Array<T>>, start!: Int64 = 0, end!: Int64 = inputs.size
 ) : Array<T> where T <: ToString & HasWidth {
@@ -41,12 +85,18 @@ func SortByBit<T>(
 /**
  * Perform a bitwise split: split wires into their constituent bits and
  * output bundles of the 0th bit wires, the 1st bit wires, the 2nd bit wires
- * and so on. Optionally, indices of the wires *not* to split can be specified;
+ * and so on.
+ *
+ *  Optionally, indices of the wires *not* to split can be specified;
  * rather than being split, these wires will be forked so each bundle will
  * contain the *whole* wire rather than one of its bits.
  *
+ * A start and end index can also be specified; outside of this range,
+ * no splitting or forking will occur.
+ *
  * @param inputWires
- * @param sharedIndices
+ * @param sharedIndices The indices of wires to be forked rather than split
+ * @param splitInto The width of the split wires
  */
 func BitwiseSplit<V, G>(
     inputWires : Array<Wire<V, G>>, sharedIndices!: HashSet<Int64> = HashSet(),
@@ -66,28 +116,55 @@ func BitwiseSplit<V, G>(
         }, inputWires)
     SortByBit<Wire<V, G>>(splitInputs, start: start, end: end)
 }
+/**
+ * Perform a bitwise combine: given an array of input wires and a number of
+ * bundles n such that the array is of the form
+ *
+ *   ws[0][0], ws[0][1], ... , ws[0][w-1], ..., ws[n-1][0], ... ws[n-1][w-1]
+ *
+ * create an array of wires of the form
+ *
+ *   ws[0][0], ws[1][0], ... ws[n-1][0]
+ *
+ * Optionally there can be a start and end output wire; this means that all
+ * output wires before start and after end will not be the result of a combine.
+ *
+ * @param inputWires
+ * @param numberOfBundles
+ * @param start
+ * @param end
+ * @return Array of combined wires
+ */
 public func BitwiseCombine<V, G>(
     inputWires : Array<Wire<V, G>>, numberOfBundles : Int64, start!: Int64 = 0,
     end!: Int64 = inputWires.size
 ) : Array<Wire<V, G>> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
-    let widthOfOutputWires = numberOfBundles
     AssertGreaterThanOrEqualTo(start, 0)
     AssertLessThanOrEqualTo(end, inputWires.size)
+    let widthOfOutputWires = numberOfBundles
     let numberOfOutputWires = AssertMultipleOf(end - start, numberOfBundles)
     let totalOutputWires = numberOfOutputWires + start + (inputWires.size - end)
+    // The index of the first combined output wire
     let startOutputIndex = start
+    // The index of the last combined output wire
     let endOutputIndex = ((end - start) / numberOfBundles) + start
+    // Create the output wires
     Array<Wire<V, G>>(totalOutputWires, {
         currentOutputWire =>
+            // If wire is before the first index, just use it as is
             if(currentOutputWire < startOutputIndex) {
                 inputWires[currentOutputWire]
+            // If wire is after the last index, just use it as is
             } else if(currentOutputWire >= endOutputIndex) {
+                // Retrieve the appropriate input wire
                 let currentEndOutputWire = currentOutputWire - endOutputIndex
                 inputWires[end + currentEndOutputWire]
+            // Combine the wires into one wire
             } else {
                 let wiresToCombine = Array<Wire<V, G>>(
                     widthOfOutputWires, { currentBundle =>
-                        let bundleStart = (currentBundle * numberOfOutputWires) + start
+                        let bundleStart =
+                            (currentBundle * numberOfOutputWires) + start
                         let currentBit = currentOutputWire - start
                         inputWires[bundleStart + currentBit]
                     })
@@ -100,8 +177,13 @@ public func BitwiseCombine<V, G>(
  * operation to wires with the same index of each input, then combining the
  * wires again.
  *
+ * Optionally some wires can be 'shared': rather than being split they will be
+ * copied.
+ *
  * @param f (ingoing bundle) -> outgoing bundle
  * @param inputWires
+ * @param numberOfOperations
+ * @param sharedIndices
  * @return The array of combined wires
  */
 public func BitwiseMap<V, G>(
@@ -126,6 +208,7 @@ public func BitwiseMap<V, G>(
  *
  * @param f (ingoing bundle) -> outgoing wire
  * @param inputWires
+ * @param numberOfOperations
  * @return The array of combined wires
  */
 public func BitwiseMap<V, G>(
@@ -202,26 +285,6 @@ func MakeBitwiseMap<V, G, T, U>(
     MakeSubcircuit(inputInterfaceWires, outputInterfaceWires, label)
 }
 /**
- * Get the input or output ports for a bitwise map circuit.
- *
- * @param bundlePorts The port details for one bundle
- * @param numberOfOperations
- * @return An array of ports for the complete map circuit
- */
-func GetMapPorts<V, G, T>(
-    bundlePorts : Array<T>, numberOfOperations : Int64
-) : Array<Port>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>, T <: HasPort
-{
-    map(
-        { t : T =>
-            let width = t.GetWidth() * numberOfOperations
-            Port(width, name: t.GetName())
-        },
-        bundlePorts
-    )
-}
-/**
  * Make a bitwise map circuit: splitting input wires into one-bit wires,
  * applying an operation to wires with the same index of each input, then
  * combining the wires again.
@@ -243,9 +306,15 @@ public func MakeBitwiseMap<V, G, T, U>(
                 T <: HasPort, U <: HasPort
 {
     let totalInputPorts =
-        GetMapPorts<V, G, T>(incomingBundlePorts, numberOfOperations)
+        GetBitwiseMapPorts<V, G, T>(
+            incomingBundlePorts, numberOfOperations,
+            sharedInputWires: sharedInputWires
+        )
     let totalOutputPorts =
-        GetMapPorts<V, G, U>(outgoingBundlePorts, numberOfOperations)
+        GetBitwiseMapPorts<V, G, U>(
+            outgoingBundlePorts, numberOfOperations,
+            sharedInputWires: sharedInputWires
+        )
     let spec = Specification(name, totalInputPorts, totalOutputPorts)
     MakeBitwiseMap(
         f, totalInputPorts, totalOutputPorts, Label<V, G>.COMPOSITE(spec),
@@ -253,6 +322,16 @@ public func MakeBitwiseMap<V, G, T, U>(
         sharedInputWires: sharedInputWires
     )
 }
+/**
+ * Given the ports for an operation and the number of operations, get the
+ * ports for a bitwise map over this operation. Can take into account some
+ * wires being shared rather than split.
+ *
+ * @param ports
+ * @param numberOfOperations
+ * @param sharedInputWires
+ * @return The array of ports
+ */
 public func GetBitwiseMapPorts<V, G, T>(
     ports : Array<T>, numberOfOperations : Int64,
     sharedInputWires!: HashSet<Int64> = HashSet()
@@ -261,8 +340,10 @@ public func GetBitwiseMapPorts<V, G, T>(
 {
     mapi(
         { t : T, i : Int64 =>
+            // Shared wires are not split so use the base width
             let width = if(sharedInputWires.contains(i)){
                 t.GetWidth()
+            // Non shared wires are split equally between each operation
             } else {
                 numberOfOperations * t.GetWidth()
             }
@@ -278,6 +359,7 @@ public func GetBitwiseMapPorts<V, G, T>(
  *
  * @param f The circuit to bitwise map
  * @param numberOfOperations
+ * @param sharedInputWires
  * @return The bitwise map circuit
  */
 public func MakeBitwiseMap<V, G>(
@@ -310,7 +392,16 @@ public func MakeBitwiseMap<V, G>(
         Label<V, G>.COMPOSITE(spec), numberOfOperations: numberOfOperations,
         sharedInputWires: sharedInputWires
     )
-}
+}/**
+ * Make a bitwise map circuit: splitting input wires into one-bit wires,
+ * applying an operation to wires with the same index of each input, then
+ * combining the wires again.
+ *
+ * @param f The circuit to bitwise map
+ * @param numberOfOperations
+ * @param sharedInputWires
+ * @return The bitwise map circuit
+ */
 public func MakeBitwiseMap<V, G>(
     f : InterfacedHypergraph<V, G>,
     numberOfOperations!: Int64,
@@ -331,6 +422,8 @@ public func MakeBitwiseMap<V, G>(
  *
  * @param f The circuit to bitwise map
  * @param inputWires
+ * @param numberOfOperations
+ * @param sharedInputWires
  * @return The outputs of the bitwise map circuit
  */
 public func UseBitwiseMap<V, G>(
@@ -349,7 +442,24 @@ public func UseBitwiseMap<V, G>(
         )
     )
 }
+/**
+ * Perform a bitwise ripple map, in which (some of) the input data wires are
+ * split bitwise to create the input data bundles for the ripple.
 
+ * There are two choices regarding the initial accumulator wire:
+ * a) The initial wire can be an additional input
+ * b) The first bit of each of the data wires can be used as the initial wire
+ *
+ * Rather than being split, a wire can be shared.
+ *
+ * @param f The operation (acc, in) -> (acc, out)
+ * @param accBundleSize
+ * @param numberOfOperations
+ * @param direction
+ * @param sharedIndices
+ * @param initial true if option a) is picked above, false for option b)
+ * @return The output wires from the bitwise map
+ */
 public func BitwiseRippleMap<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) ->
             (Array<Wire<V, G>>, Array<Wire<V, G>>),
@@ -357,9 +467,8 @@ public func BitwiseRippleMap<V, G>(
     accBundleSize: Int64,
     numberOfOperations : Int64,
     direction!: Direction = TOP_TO_BOTTOM,
-    start!: Int64 = 0,
-    end!: Int64 = numberOfOperations,
-    sharedIndices!: HashSet<Int64> = HashSet(), initial!: Bool = true
+    sharedIndices!: HashSet<Int64> = HashSet(),
+    initial!: Bool = true
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -398,24 +507,40 @@ public func BitwiseRippleMap<V, G>(
     combinedWires
 }
 /**
- * @return A tuple of accumulator wires and output wires
+ * Perform a bitwise ripple map, in which (some of) the input data wires are
+ * split bitwise to create the input data bundles for the ripple.
+
+ * There are two choices regarding the initial accumulator wire:
+ * a) The initial wire can be an additional input
+ * b) The first bit of each of the data wires can be used as the initial wire
+ *
+ * Rather than being split, a wire can be shared.
+ *
+ * @param f The operation (acc, in) -> (acc, out)
+ * @param accWires Array of wires for accumulator
+ * @param dataWires Array of wires for data
+ * @param numberOfOperations
+ * @param direction
+ * @param sharedIndices
+ * @param initial true if option a) is picked above, false for option b)
+ * @return (acc wires, output wires)
  */
 public func BitwiseRippleMap<V, G>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) ->
             (Array<Wire<V, G>>, Array<Wire<V, G>>),
     accWires : Array<Wire<V, G>>,
-    incomingWires : Array<Wire<V, G>>,
+    dataWires : Array<Wire<V, G>>,
     numberOfOperations!: Int64,
     direction!: Direction = TOP_TO_BOTTOM,
-    sharedIndices!: HashSet<Int64> = HashSet(),
-    initial!: Bool = true
+    sharedIndices!: HashSet<Int64> = HashSet()
 ) : (Array<Wire<V, G>>, Array<Wire<V, G>>)
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let outputs = BitwiseRippleMap(
-        f, concat(accWires, incomingWires), accWires.size, numberOfOperations,
+        f, concat(accWires, dataWires), accWires.size, numberOfOperations,
         direction: direction
     )
+    // Split up the accumulator and the outputs
     let (outputAccStart, outputAccEnd, partitionPoint) =
         GetOutputAccumulatorIndices(direction, accWires.size, outputs.size)
     let (first, second) = outputs.partition(partitionPoint)
@@ -425,6 +550,26 @@ public func BitwiseRippleMap<V, G>(
         (second, first)
     }
 }
+/**
+ * Make a bitwise ripple map, in which (some of) the input data wires are
+ * split bitwise to create the input data bundles for the ripple.
+
+ * There are two choices regarding the initial accumulator wire:
+ * a) The initial wire can be an additional input
+ * b) The first bit of each of the data wires can be used as the initial wire
+ *
+ * Rather than being split, a wire can be shared.
+ *
+ * @param f The operation (acc, in) -> (acc, out)
+ * @param allIncomingPorts Array of ports for entire circuit inputs
+ * @param allOutgoingPorts Array of ports for entire circuit outputs
+ * @param accBundleSize
+ * @param numberOfOperations
+ * @param direction
+ * @param label
+ * @param initial true if option a) is picked above, false for option b)
+ * @return The bitwise ripple map circuit
+ */
 func MakeBitwiseRippleMap<V, G, T, U>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) ->
             (Array<Wire<V, G>>, Array<Wire<V, G>>),
@@ -434,8 +579,6 @@ func MakeBitwiseRippleMap<V, G, T, U>(
     numberOfOperations : Int64,
     label: Label<V, G>,
     direction!: Direction = TOP_TO_BOTTOM,
-    start!: Int64 = 0,
-    end!: Int64 = numberOfOperations,
     initial!: Bool = true
 ) : InterfacedHypergraph<V, G>
     where
@@ -458,14 +601,38 @@ func MakeBitwiseRippleMap<V, G, T, U>(
     )
     MakeSubcircuit(inputInterfaceWires, outputInterfaceWires, label)
 }
+/**
+ * Given a template port, get the corresponding port for a bitwise ripple map
+ * accumulator wire
+ *
+ * @param t
+ * @return The port for an accumulator wire
+ */
 func GetBitwiseRippleMapAccPort<T>(t : T) : Port where T <: HasPort {
     t.ToPort()
 }
+/**
+ * Given a template port, get the corresponding port for a bitwise ripple map
+ * data wire
+ *
+ * @param t
+ * @param numberOfOperations
+ * @return The port for a data wire
+ */
 func GetBitwiseRippleMapOtherPort<T>(t : T, numberOfOperations : Int64) : Port
     where T <: HasPort
 {
     Port(t.GetWidth() * numberOfOperations, name: t.GetName())
 }
+/**
+ * Get an array of ports for a bitwise ripple map with initial wires.
+ *
+ * @param portsPerOperation
+ * @param accFirst
+ * @param accBundleSize
+ * @param numberOfOperations
+ * @return The array of ports
+ */
 func GetBitwiseRippleMapPortsWithInitial<T>(
     portsPerOperation : Array<T>, accFirst : Bool, accBundleSize: Int64,
     numberOfOperations : Int64
@@ -488,6 +655,13 @@ func GetBitwiseRippleMapPortsWithInitial<T>(
         }
     })
 }
+/**
+ * Get an array of ports for a bitwise ripple map without initial wires.
+ *
+ * @param portsPerOperation
+ * @param numberOfOperations
+ * @return The array of ports
+ */
 func GetBitwiseRippleMapInputsWithoutInitial<T>(
     portsPerOperation : Array<T>, numberOfOperations : Int64
 ) : Array<Port> where T <: HasPort {
@@ -504,6 +678,27 @@ func GetBitwiseRippleMapInputsWithoutInitial<T>(
         Port(totalWidth, name: portsPerOperation[i].GetName())
     })
 }
+/**
+ * Make a bitwise ripple map, in which (some of) the input data wires are
+ * split bitwise to create the input data bundles for the ripple.
+
+ * There are two choices regarding the initial accumulator wire:
+ * a) The initial wire can be an additional input
+ * b) The first bit of each of the data wires can be used as the initial wire
+ *
+ * Rather than being split, a wire can be shared.
+ *
+ * @param f The operation (acc, in) -> (acc, out)
+ * @param inputAccPorts
+ * @param inputDataPorts ports for one input data bundle
+ * @param outputAccPorts
+ * @param outputDataPorts ports for one output data bundle
+ * @param numberOfOperations
+ * @param name
+ * @param direction
+ * @param initial true if option a) is picked above, false for option b)
+ * @return The bitwise ripple map circuit
+ */
 public func MakeBitwiseRippleMap<V, G, T>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) ->
             (Array<Wire<V, G>>, Array<Wire<V, G>>),
@@ -550,6 +745,24 @@ public func MakeBitwiseRippleMap<V, G, T>(
         numberOfOperations, label, direction: direction, initial: initial
     )
 }
+/**
+ * Make a bitwise ripple map, in which (some of) the input data wires are
+ * split bitwise to create the input data bundles for the ripple.
+
+ * There are two choices regarding the initial accumulator wire:
+ * a) The initial wire can be an additional input
+ * b) The first bit of each of the data wires can be used as the initial wire
+ *
+ * Rather than being split, a wire can be shared.
+ *
+ * @param f
+ * @param acc Number of accumulator wires in operation
+ * @param ops Number of operations
+ * @param name
+ * @param direction
+ * @param initial Whether to have an initial wire input (a) or not (b)
+ * @return The bitwise ripple map circuit
+ */
 public func MakeBitwiseRippleMap<V, G>(
     f : InterfacedHypergraph<V, G>, acc!: Int64,
     ops!: Int64, name!: Option<String> = None<String>,
@@ -598,12 +811,30 @@ public func MakeBitwiseRippleMap<V, G>(
         label, direction: direction, initial: initial
     )
 }
+/**
+ * Make a bitwise ripple, in which (some of) the input data wires are
+ * split bitwise to create the input data bundles for the ripple.
+
+ * There are two choices regarding the initial accumulator wire:
+ * a) The initial wire can be an additional input
+ * b) The first bit of each of the data wires can be used as the initial wire
+ *
+ * Rather than being split, a wire can be shared.
+ *
+ * @param f The operation (acc, in) -> (acc, out)
+ * @param accPorts
+ * @param portsPerIncomingBundle ports for one input data bundle
+ * @param numberOfOperations
+ * @param name
+ * @param direction
+ * @param initial true if option a) is picked above, false for option b)
+ * @return The bitwise ripple circuit
+ */
 public func MakeBitwiseRipple<V, G, T>(
     f : (Array<Wire<V, G>>, Array<Wire<V, G>>) -> (Array<Wire<V, G>>),
     accPorts : Array<T>, portsPerIncomingBundle : Array<T>,
     numberOfOperations : Int64, name : String,
-    direction!: Direction = TOP_TO_BOTTOM, start!: Int64 = 0,
-    end!: Int64 = numberOfOperations, initial!: Bool = true
+    direction!: Direction = TOP_TO_BOTTOM, initial!: Bool = true
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>, T <: HasPort
 {
@@ -616,6 +847,23 @@ public func MakeBitwiseRipple<V, G, T>(
         numberOfOperations, name, direction: direction, initial: initial
     )
 }
+/**
+ * Make a bitwise ripple, in which (some of) the input data wires are
+ * split bitwise to create the input data bundles for the ripple.
+
+ * There are two choices regarding the initial accumulator wire:
+ * a) The initial wire can be an additional input
+ * b) The first bit of each of the data wires can be used as the initial wire
+ *
+ * Rather than being split, a wire can be shared.
+ *
+ * @param f
+ * @param ops Number of operations
+ * @param name
+ * @param direction
+ * @param initial true if option a) is picked above, false for option b)
+ * @return The bitwise ripple circuit
+ */
 public func MakeBitwiseRipple<V, G>(
     f : InterfacedHypergraph<V, G>, ops!: Int64,
     name!: Option<String> = None<String>,
