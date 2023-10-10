@@ -193,9 +193,9 @@ public class Evaluator<V, G>
                     splitJoinVertices[i][0]
                 } else {
                     let signal = inputSignals[i - this.stateWires]
-                    let signalLabel = GetSignalLabel<V, G>(signal.GetValues())
+                    let signalLabel = GetSignalLabel<V, G>(signal)
                     let signalVertex = Vertex<V, G>(signal.GetWidth(), None)
-                    let signalSubgraph = if(signal.GetValues().size == 1) {
+                    let signalSubgraph = if(signal.GetWidth() == 1) {
                         None<InterfacedHypergraph<V, G>>
                     } else {
                         MakeSignal<V, G>(signal)

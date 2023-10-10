@@ -319,16 +319,15 @@ func GetArgs<V, G>(
  * @return the new edge
  */
 func MakeValueOrSignal<V, G>(
-    vs : Array<V>,
+    signal : Signal<V>,
     targets : Array<Vertex<V, G>>,
     owner : Hypergraph<V, G>
 ) : Edge<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let (label, graph) = if(vs.size == 1) {
-        (Label<V, G>.VALUE(vs[0]), None<InterfacedHypergraph<V, G>>)
+    let (label, graph) = if(signal.GetWidth() == 1) {
+        (Label<V, G>.VALUE(signal.GetBit(0)), None<InterfacedHypergraph<V, G>>)
     } else {
-        let signal = Signal(vs)
         (Label<V, G>.SIGNAL(signal), Some(MakeSignal<V, G>(signal)))
     }
     Edge(label, Array<Vertex<V, G>>(), targets, graph, owner)
@@ -346,7 +345,7 @@ func MakeValueOrSignal<V, G>(
  */
  func ReplaceGateWithOutputs<V, G>(
     signature : Signature<V, G>, f : InterfacedHypergraph<V, G>,
-    e : Edge<V, G>, args : Array<Option<Edge<V, G>>>, results : Array<Array<V>>
+    e : Edge<V, G>, args : Array<Option<Edge<V, G>>>, results : Array<Signal<V>>
 ) : HashSet<TraversalElement<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -369,7 +368,7 @@ func MakeValueOrSignal<V, G>(
         let signalLabel = GetSignalLabel<V, G>(result)
         // Get the subgraph corresponding to the signal, or None if it has
         // size 1 (it is a raw value)
-        let signalGraph = MakeSignal<V, G>(Signal(result))
+        let signalGraph = MakeSignal<V, G>(result)
         // Create the edge using the remaining target of the original edge
         let target = e.GetTarget(i)
         let newEdge = Edge(
@@ -398,7 +397,7 @@ func GetPrimitiveRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
                 let prim = e.GetLabel().GetPrimitive()
                 let function = signature.GetGate(prim)
                 GetApplyRule(
-                    signature, { vss : Array<Array<V>> => function(vss)}, e, f
+                    signature, { vss : Array<Signal<V>> => function(vss)}, e, f
                 )
         }
     )
@@ -454,15 +453,16 @@ func GetStubRule<V, G>() : RewriteRule<V, G>
 }
 func GetApplyRule<V, G>(
         signature : Signature<V, G>,
-        applyFn : (Array<Array<V>>) -> Array<Array<V>>,
+        applyFn : (Array<Signal<V>>) -> Array<Signal<V>>,
         e : Edge<V, G>, f : InterfacedHypergraph<V, G>
 ) : Option<HashSet<TraversalElement<V, G>>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let (argumentEdges, argumentSignals) = GetArgs(e)
     try {
-        let concreteSignals = map<Option<Array<V>>, Array<V>>(
-            { v : Option<Array<V>> => v.getOrThrow() }, argumentSignals
+        let concreteSignals = map<Option<Array<V>>, Signal<V>>(
+            { v : Option<Array<V>> => Signal(v.getOrThrow()) },
+            argumentSignals
         )
         let resultSignals = applyFn(concreteSignals)
         let nextEdges = ReplaceGateWithOutputs(
@@ -490,7 +490,7 @@ func GetJoinRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
                 GetApplyRule(
                     signature, {
-                        vss : Array<Array<V>> =>
+                        vss : Array<Signal<V>> =>
                             [signature.Join(vss[0], vss[1])]
                     }, e, f
                 )
@@ -795,11 +795,9 @@ func GetBottomRule<V, G>(signature : Signature<V, G>)
             } else {
                 let (argumentEdges, argumentValues) = GetArgs(e)
                 // Get appropriate width bottoms for each target of the edge
-                let bottoms = Array<Array<V>>(e.GetCoarity()){
+                let bottoms = Array<Signal<V>>(e.GetCoarity()){
                     i : Int64 =>
-                        Array<V>(e.GetTarget(i).GetWidth()){
-                            j : Int64 => signature.GetBottom()
-                        }
+                        Signal(signature.GetBottom(), e.GetTarget(i).GetWidth())
                 }
                 ReplaceGateWithOutputs<V, G>(
                     signature, f, e, argumentEdges, bottoms

@@ -61,7 +61,7 @@ public interface PrimitiveSymbol<V, G>
 func AssertTableMonotone<V>(
     lattice : FiniteLattice<V>,
     ports : Array<Port>,
-    table : (Array<Array<V>>) -> (Array<Array<V>>)
+    table : (Array<Signal<V>>) -> (Array<Signal<V>>)
 ) : Unit where V <: ValueSymbol<V> {
     let inputs = lattice.EnumerateInputs(ports)
     for(input1 in inputs) {
@@ -91,7 +91,7 @@ public struct Annihilator<V, G> <: ToString
         public let gate : G,
         public let input : Array<V>,
         public let index : Int64,
-        public let output : Array<Array<V>>
+        public let output : Array<Signal<V>>
     ){}
     public func toString() {
         var string = "${this.gate.GetName()}("
@@ -170,7 +170,7 @@ public struct Identifier<V, G> <: ToString
 func GetAnnihilatorAndIdentifierRules<V, G>(
     gate : G,
     latticeStructure : FiniteLattice<V>,
-    gateInterpretation : (Array<Array<V>>) -> Array<Array<V>>,
+    gateInterpretation : (Array<Signal<V>>) -> Array<Signal<V>>,
     annihilatorsList : ArrayList<Annihilator<V, G>>,
     identitiesList : ArrayList<Identifier<V, G>>
 ) : Unit
@@ -202,7 +202,7 @@ func GetAnnihilatorAndIdentifierRules<V, G>(
                  * @return Whether this is an identification
                  */
                 func CheckIfIdentifier(
-                    input : Array<Array<V>>, output : Array<Array<V>>
+                    input : Array<Signal<V>>, output : Array<Signal<V>>
                 ) {
                     foldi_left(
                         { acc, j, cur =>
@@ -313,7 +313,7 @@ public class Signature<V, G>
         let name : String,
         let latticeStructure: FiniteLattice<V>,
         let usedGates : HashSet<G>,
-        let gateInterpretation: (G) -> ((Array<Array<V>>) -> Array<Array<V>>)
+        let gateInterpretation: (G) -> ((Array<Signal<V>>) -> Array<Signal<V>>)
     ) {
         let annihilatorsList = ArrayList<Annihilator<V, G>>()
         let identitiesList = ArrayList<Identifier<V, G>>()
@@ -339,7 +339,7 @@ public class Signature<V, G>
      * @param gate
      * @return The interpretation of gate in this signature
      */
-    public func GetGate(gate : G) : ((Array<Array<V>>) -> Array<Array<V>>) {
+    public func GetGate(gate : G) : ((Array<Signal<V>>) -> Array<Signal<V>>) {
         this.gateInterpretation(gate)
     }
     /**
@@ -361,6 +361,16 @@ public class Signature<V, G>
      */
     public func Join(lhs: Array<V>, rhs: Array<V>): Array<V> {
         this.latticeStructure.Join(lhs, rhs)
+    }
+    /**
+     * Get the (pointwise) join in the lattice on powers (arrays) of elements
+     *
+     * @param lhs the first array
+     * @param rhs the second array
+     * @return The pointwise join of lhs and rhs
+     */
+    public func Join(lhs: Signal<V>, rhs: Signal<V>): Signal<V> {
+        Signal(this.Join(lhs.GetValues(), rhs.GetValues()))
     }
     /**
      * Check whether an element in the lattice is less than another

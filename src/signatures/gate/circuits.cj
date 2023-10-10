@@ -274,7 +274,6 @@ public func MakeMux(
                         let inputIndex =
                             dataIndex - numberOfDataWiresPerSubcall +
                                 numberOfControlWiresPerSubcall
-                        let choiceIndex = i - numberOfControlWires
                         InterfaceWire(botInputs[inputIndex], dataWireName)
                     }
                 }

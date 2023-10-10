@@ -467,12 +467,12 @@ public func GetSignalLabel<V, G>(v : V, w : Int64) : Label<V, G>
  * @param values
  * @return The corresponding label for these values
  */
-public func GetSignalLabel<V, G>(values : Array<V>) : Label<V, G>
+public func GetSignalLabel<V, G>(signal : Signal<V>) : Label<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    if(values.size == 1) {
-        VALUE(values[0])
+    if(signal.GetWidth() == 1) {
+        VALUE(signal.GetBit(0))
     } else {
-        SIGNAL(Signal(values))
+        SIGNAL(signal)
     }
 }

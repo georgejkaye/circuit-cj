@@ -168,20 +168,20 @@ func xor(lhs: GateLevelValue, rhs: GateLevelValue) {
  * @return The function representing the interpretation of the gate
  */
 func gateLevelInterpretation(g: GateLevelPrimitive) :
-    (Array<Array<GateLevelValue>>) -> Array<Array<GateLevelValue>>
+    (Array<Signal<GateLevelValue>>) -> Array<Signal<GateLevelValue>>
 {
     {
-        ws: Array<Array<GateLevelValue>> =>
+        ws: Array<Signal<GateLevelValue>> =>
             let output = match (g) {
-                case BUF => ws[0][0]
-                case NOT => not(ws[0][0])
-                case AND => and(ws[0][0], ws[1][0])
-                case OR => or(ws[0][0], ws[1][0])
-                case NAND => not(and(ws[0][0], ws[1][0]))
-                case NOR => not(or(ws[0][0], ws[1][0]))
-                case XOR => xor(ws[0][0], ws[1][0])
-                case XNOR => not(xor(ws[0][0], ws[1][0]))
+                case BUF => ws[0].GetBit(0)
+                case NOT => not(ws[0].GetBit(0))
+                case AND => and(ws[0].GetBit(0), ws[1].GetBit(0))
+                case OR => or(ws[0].GetBit(0), ws[1].GetBit(0))
+                case NAND => not(and(ws[0].GetBit(0), ws[1].GetBit(0)))
+                case NOR => not(or(ws[0].GetBit(0), ws[1].GetBit(0)))
+                case XOR => xor(ws[0].GetBit(0), ws[1].GetBit(0))
+                case XNOR => not(xor(ws[0].GetBit(0), ws[1].GetBit(0)))
             }
-            [[output]]
+            [Signal(output)]
     }
 }

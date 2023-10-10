@@ -215,8 +215,7 @@ public struct Port <: Equatable<Port> & HasPort {
 /**
  * Interface for things that can be specified by their input and output ports.
  */
-public interface Specifiable
-{
+public interface Specifiable {
     /**
      * @return the array of input ports
      */

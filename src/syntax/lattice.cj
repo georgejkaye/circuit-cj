@@ -209,7 +209,7 @@ func ComputeMeet<V>(elements : HashSet<V>) : HashMap<V, HashMap<V, V>>
  * See also https://en.wikipedia.org/wiki/Lattice_order
  */
 public struct FiniteLattice<V>
-    where V <: LessOrEqual<V> & Equatable<V> & Hashable & ToString
+    where V <: ValueSymbol<V>
 {
     let elements: HashSet<V>
     let join: HashMap<V, HashMap<V, V>>
@@ -260,7 +260,7 @@ public struct FiniteLattice<V>
     public func EnumerateInputs(
         ports : Array<Port>,
         fixed!: HashMap<Int64, Array<V>> = HashMap()
-    ) : Array<Array<Array<V>>> {
+    ) : Array<Array<Signal<V>>> {
         // First compute all the possible permutations for each input wire
         // inputPowers[i] is the array of possible signals along wire i
         let inputPowers = mapi(
@@ -287,9 +287,9 @@ public struct FiniteLattice<V>
         // The total combinations is also a big product
         let totalCombinations = Product(inputPowers, { ps => ps.size })
         // Now we can define the array of all permutations
-        Array<Array<Array<V>>>(totalCombinations){
+        Array<Array<Signal<V>>>(totalCombinations){
             i : Int64 =>
-                Array<Array<V>>(ports.size){
+                Array<Signal<V>>(ports.size){
                     j : Int64 =>
                         let possiblePowers = inputPowers[j]
                         let totalPerms = possiblePowers.size
@@ -298,7 +298,7 @@ public struct FiniteLattice<V>
                         } else {
                             (i / divisors[j]) % totalPerms
                         }
-                        possiblePowers[combinationIndex]
+                        Signal(possiblePowers[combinationIndex])
                 }
         }
     }
@@ -370,6 +370,16 @@ public struct FiniteLattice<V>
         fold_left2({ acc, lhs, rhs => acc && lhs <= rhs }, true, lhs, rhs)
     }
     /**
+     * Compute pointwise lhs <= rhs for two powers of elements in the lattice
+     *
+     * @param lhs
+     * @param rhs
+     * @return lhs <= rhs
+     */
+    public func LTE(lhs : Signal<V>, rhs: Signal<V>) : Bool {
+        this.LTE(lhs.GetValues(), rhs.GetValues())
+    }
+    /**
      * Compute pointwise lhs <= rhs for two powers of powers of
      * elements in the lattice
      *
@@ -377,7 +387,7 @@ public struct FiniteLattice<V>
      * @param rhs
      * @return lhs <= rhs
      */
-    public func LTE(lhs: Array<Array<V>>, rhs : Array<Array<V>>) : Bool {
+    public func LTE(lhs: Array<Signal<V>>, rhs : Array<Signal<V>>) : Bool {
         AssertSameLength(lhs, rhs)
         fold_left2(
             { acc, lhs, rhs => acc && this.LTE(lhs, rhs)}, true, lhs, rhs
