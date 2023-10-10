@@ -1,24 +1,31 @@
+/**
+ * components/constructions/ripple-map.cj
+ *
+ * Functions for making ripple maps
+ *
+ * @author George Kaye
+ * @since 0.3
+ */
 package components.constructions
-/*******************************************************************************
- * Ripple(map)s can be performed from TOP_TO_BOTTOM or BOTTOM_TO_TOP.          *
- * The conventions for the interfaces are as follows.                          *
- *                                                                             *
- * For TOP_TO_BOTTOM:                                                          *
- *                                                                             *
- *   operation (ACC, INPUT) -> (OUTPUT, ACC)                                   *
- *                                                                             *
- *   inputs  [ ACC, INPUT[0], INPUT[1], ... , INPUT[n-2], INPUT[n-1] ]         *
- *   outputs [ OUTPUT[0], OUTPUT[1], ... , OUTPUT[n-2], OUTPUT[n-1], ACC ]     *
- *                                                                             *
- * For BOTTOM_TO_TOP:                                                          *
- *                                                                             *
- *   operation (INPUT, ACC) -> (ACC, OUTPUT)                                   *
- *                                                                             *
- *   inputs [ INPUT[n-1], INPUT[n-2], ... , INPUT[1], INPUT[0], ACC ]          *
- *   outputs [ ACC, OUTPUT[n-1], OUTPUT[n-2], ... , OUTPUT[1], OUTPUT[0] ]     *
- *                                                                             *
- *                                                                             *
- ******************************************************************************/
+/**
+ * Ripple(map)s can be performed from TOP_TO_BOTTOM or BOTTOM_TO_TOP.
+ * The conventions for the interfaces are as follows.
+ *
+ * For TOP_TO_BOTTOM:
+ *
+ *   operation (ACC, INPUT) -> (OUTPUT, ACC)
+ *
+ *   inputs  [ ACC, INPUT[0], INPUT[1], ... , INPUT[n-2], INPUT[n-1] ]
+ *   outputs [ OUTPUT[0], OUTPUT[1], ... , OUTPUT[n-2], OUTPUT[n-1], ACC ]
+ *
+ * For BOTTOM_TO_TOP:
+ *
+ *   operation (INPUT, ACC) -> (ACC, OUTPUT)
+ *
+ *   inputs [ INPUT[n-1], INPUT[n-2], ... , INPUT[1], INPUT[0], ACC ]
+ *   outputs [ ACC, OUTPUT[n-1], OUTPUT[n-2], ... , OUTPUT[1], OUTPUT[0] ]
+ *
+ */
 public enum Direction {
     | TOP_TO_BOTTOM
     | BOTTOM_TO_TOP

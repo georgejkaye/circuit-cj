@@ -1,3 +1,9 @@
+/**
+ * components/constructions/map.cj
+ *
+ * @author George Kaye
+ * @since 0.3
+ */
 package components.constructions
 /**
  * Perform a map, an operation that applies an operation in parallel to

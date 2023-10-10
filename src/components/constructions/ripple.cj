@@ -1,3 +1,11 @@
+/**
+ * components/constructions/ripple.cj
+ *
+ * Functions for creating ripples
+ *
+ * @author George Kaye
+ * @since 0.3
+ */
 package components.constructions
 /**
  * Perform a ripple, an operation that starts with an accumulator bundle and

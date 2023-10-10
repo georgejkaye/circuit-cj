@@ -1,3 +1,11 @@
+/**
+ * components/constructions/primitives.cj
+ *
+ * Functions for making composite primitives by using constructions.
+ *
+ * @author George Kaye
+ * @since 0.3
+ */
 package components.constructions
 /**
  * Make a circuit that ripples a given primitive over some inputs, i.e. the

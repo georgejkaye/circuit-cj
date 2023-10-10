@@ -1,3 +1,8 @@
+/**
+ * components/constructions/index.cj
+ *
+ * Imports and shared functions for constructions package.
+ */
 package components.constructions
 
 from std import collection.ArrayList
