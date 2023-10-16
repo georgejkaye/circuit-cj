@@ -8,7 +8,6 @@
  * @since 0.3
  */
 package components
-import syntax.BuildWaveform
 /**
  * Make a signal circuit for a signal converted from a decimal number.
  *

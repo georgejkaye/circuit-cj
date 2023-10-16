@@ -7,7 +7,6 @@
  * @since 0.3
  */
 package components
-import debug.*
 /**
  * Use a primitive gate
  *

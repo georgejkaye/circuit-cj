@@ -7,8 +7,6 @@
  * @since 0.2
  */
 package components
-import utils.*
-
 /**
  * Make a subcircuit with some (optionally named) input and
  * output wires. This circuit can then be used in other subcircuits,

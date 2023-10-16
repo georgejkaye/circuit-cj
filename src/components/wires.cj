@@ -9,9 +9,6 @@
  * @since 0.2
  */
 package components
-from std import collection.HashSet
-import syntax.*
-import graphs.*
 /**
  * A wire has an id and a mutable vertex
  */
