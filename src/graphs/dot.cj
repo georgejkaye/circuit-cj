@@ -7,9 +7,6 @@
  * @since 0.1
  */
 package graphs
-import debug.*
-import utils.*
-from std import fs.*
 /**
  * Get the options for the entire graph. If debug is enabled then the graph
  * will have a grey background so the debug info can show up.

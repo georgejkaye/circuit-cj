@@ -6,7 +6,6 @@
  * @author George Kaye
  * @since 0.2
  */
-
 package graphs
 /**
  * Strategies for traversing a graph

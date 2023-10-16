@@ -7,8 +7,6 @@
  * @since 0.2
  */
 package graphs
-from std import collection.{ArrayList,HashMap}
-import syntax.*
 /**
  * Check that two arrays, for inputs and outputs, agree
  * with the input and outputs defined in a given specification
