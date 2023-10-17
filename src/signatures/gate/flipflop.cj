@@ -13,16 +13,18 @@ package signatures.gate
  * @param delay
  * @return The SR NAND latch
  */
-public func MakeSRLatch(delay!: Int64 = 0) : BelnapInterfacedCircuit {
+public func MakeSRLatch(
+    delay1!: Int64 = 0, delay2!: Int64 = 0
+) : BelnapInterfacedCircuit {
     let s = belnapSignature.UseWire(1)
     let r = belnapSignature.UseWire(1)
     let fb = belnapSignature.UseWire(1)
-    let topNand = UseNand(s, fb, delay: delay)
-    let botNand = UseNand(topNand, r, delay: delay)
+    let topNand = UseNand(s, fb, delay: delay1)
+    let botNand = UseNand(topNand, r, delay: delay2)
     Feedback(botNand, fb)
     MakeSubcircuit(
-        [InterfaceWire(s, "S\u{0305}"), InterfaceWire(r, "R\u{0305}")],
-        [InterfaceWire(topNand, "Q"), InterfaceWire(botNand, "Q\u{0305}")],
+        [InterfaceWire(s, "S'"), InterfaceWire(r, "R'")],
+        [InterfaceWire(topNand, "Q"), InterfaceWire(botNand, "Q'")],
         "sr_latch"
     )
 }
@@ -35,9 +37,9 @@ public func MakeSRLatch(delay!: Int64 = 0) : BelnapInterfacedCircuit {
  * @return (Q, ¬Q)
  */
 public func UseSRLatch(
-    s!: BelnapWire, r!: BelnapWire, delay!: Int64 = 0
+    s!: BelnapWire, r!: BelnapWire, delay1!: Int64 = 0, delay2!: Int64 = 0
 ) : (BelnapWire, BelnapWire) {
-    UseSubcircuit_2(MakeSRLatch(delay: delay), [s, r])
+    UseSubcircuit_2(MakeSRLatch(delay1: delay1, delay2: delay2), [s, r])
 }
 /**
  * Make a D flip flop, using SR NAND latches
@@ -50,17 +52,17 @@ public func MakeDFlipFlop(delay!: Int64 = 0) : BelnapInterfacedCircuit {
     let data = belnapSignature.UseWire(1)
     let fromBottom = belnapSignature.UseWire(1)
     let (_, topLatchQBar) = UseSubcircuit_2(
-        MakeSRLatch(delay: delay),
+        MakeSRLatch(),
         [fromBottom, clock],
     )
     let fromTop = UseNand(topLatchQBar, clock)
     let (botLatchQ, botLatchQBar) = UseSubcircuit_2(
-        MakeSRLatch(delay: delay),
+        MakeSRLatch(),
         [fromTop, data],
     )
     Feedback(botLatchQBar, fromBottom)
     let (rightLatchQ, rightLatchQBar) = UseSubcircuit_2(
-        MakeSRLatch(delay: delay),
+        MakeSRLatch(),
         [topLatchQBar, botLatchQ],
     )
     MakeSubcircuit([

@@ -17,7 +17,7 @@ package signatures.gate
 public func UseBuf(
     a : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseMapPrimitive(BUF, [a], delay: delay)[0]
+    UseBitwiseMapPrimitive(BUF, [a], delay: [delay])[0]
 }
 /**
  * Bitwise not
@@ -29,7 +29,7 @@ public func UseBuf(
 public func UseNot(
     a : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseMapPrimitive(NOT, [a], delay: delay)[0]
+    UseBitwiseMapPrimitive(NOT, [a], delay: [delay])[0]
 }
 /**
  * Bitwise and
@@ -42,7 +42,7 @@ public func UseNot(
 public func UseAnd(
     a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseMapPrimitive(AND, [a, b], delay: delay)[0]
+    UseBitwiseMapPrimitive(AND, [a, b], delay: [delay])[0]
 }
 /**
  * Bitwise or
@@ -55,7 +55,7 @@ public func UseAnd(
 public func UseOr(
     a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseMapPrimitive(OR, [a, b], delay: delay)[0]
+    UseBitwiseMapPrimitive(OR, [a, b], delay: [delay])[0]
 }
 /**
  * Bitwise nand
@@ -66,9 +66,9 @@ public func UseOr(
  * @return Output of bitwise nand
  */
 public func UseNand(
-    a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
+    a : BelnapWire, b : BelnapWire, delay!: Int64
 ) : BelnapWire {
-    UseBitwiseMapPrimitive(NAND, [a, b], delay: delay)[0]
+    UseBitwiseMapPrimitive(NAND, [a, b], delay: [delay])[0]
 }
 /**
  * Bitwise nor
@@ -81,7 +81,7 @@ public func UseNand(
 public func UseNor(
     a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseMapPrimitive(NOR, [a, b], delay: delay)[0]
+    UseBitwiseMapPrimitive(NOR, [a, b], delay: [delay])[0]
 }
 /**
  * Bitwise xor
@@ -94,7 +94,7 @@ public func UseNor(
 public func UseXor(
     a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseMapPrimitive(XOR, [a, b], delay: delay)[0]
+    UseBitwiseMapPrimitive(XOR, [a, b], delay: [delay])[0]
 }
 /**
  * Bitwise xnor
@@ -107,7 +107,7 @@ public func UseXor(
 public func UseXnor(
     a : BelnapWire, b : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseMapPrimitive(XNOR, [a, b], delay: delay)[0]
+    UseBitwiseMapPrimitive(XNOR, [a, b], delay: [delay])[0]
 }
 /**
  * Ripple and
@@ -119,7 +119,7 @@ public func UseXnor(
 public func UseAnd(
     ws : Array<BelnapWire>, delay!: Int64 = 0
 ) : BelnapWire {
-    UseRippleBinaryPrimitive(AND, ws, delay: delay)[0]
+    UseRippleBinaryPrimitive(AND, ws, delay: [delay])[0]
 }
 /**
  * Ripple or
@@ -131,7 +131,7 @@ public func UseAnd(
 public func UseOr(
     ws : Array<BelnapWire>, delay!: Int64 = 0
 ) : BelnapWire {
-    UseRippleBinaryPrimitive(OR, ws, delay: delay)[0]
+    UseRippleBinaryPrimitive(OR, ws, delay: [delay])[0]
 }
 /**
  * Ripple nand
@@ -143,7 +143,7 @@ public func UseOr(
 public func UseNand(
     ws : Array<BelnapWire>, delay!: Int64 = 0
 ) : BelnapWire {
-    UseRippleBinaryPrimitive(NAND, ws, delay: delay)[0]
+    UseRippleBinaryPrimitive(NAND, ws, delay: [delay])[0]
 }
 /**
  * Ripple nor
@@ -155,7 +155,7 @@ public func UseNand(
 public func UseNor(
     ws : Array<BelnapWire>, delay!: Int64 = 0
 ) : BelnapWire {
-    UseRippleBinaryPrimitive(NOR, ws, delay: delay)[0]
+    UseRippleBinaryPrimitive(NOR, ws, delay: [delay])[0]
 }
 /**
  * Ripple xor
@@ -167,7 +167,7 @@ public func UseNor(
 public func UseXor(
     ws : Array<BelnapWire>, delay!: Int64 = 0
 ) : BelnapWire {
-    UseRippleBinaryPrimitive(XOR, ws, delay: delay)[0]
+    UseRippleBinaryPrimitive(XOR, ws, delay: [delay])[0]
 }
 /**
  * Ripple xnor
@@ -179,7 +179,7 @@ public func UseXor(
 public func UseXnor(
     ws : Array<BelnapWire>, delay!: Int64 = 0
 ) : BelnapWire {
-    UseRippleBinaryPrimitive(XNOR, ws, delay: delay)[0]
+    UseRippleBinaryPrimitive(XNOR, ws, delay: [delay])[0]
 }
 /**
  * Bitwise ripple and
@@ -191,7 +191,7 @@ public func UseXnor(
 public func UseAnd(
     w : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseRippleBinaryPrimitive(AND, [w], delay: delay)
+    UseBitwiseRippleBinaryPrimitive(AND, [w], delay: [delay])
 }
 /**
  * Bitwise ripple or
@@ -203,7 +203,7 @@ public func UseAnd(
 public func UseOr(
     w : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseRippleBinaryPrimitive(OR, [w], delay: delay)
+    UseBitwiseRippleBinaryPrimitive(OR, [w], delay: [delay])
 }
 /**
  * Bitwise ripple nand
@@ -215,7 +215,7 @@ public func UseOr(
 public func UseNand(
     w : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseRippleBinaryPrimitive(NAND, [w], delay: delay)
+    UseBitwiseRippleBinaryPrimitive(NAND, [w], delay: [delay])
 }
 /**
  * Bitwise ripple nor
@@ -227,7 +227,7 @@ public func UseNand(
 public func UseNor(
     w : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseRippleBinaryPrimitive(NOR, [w], delay: delay)
+    UseBitwiseRippleBinaryPrimitive(NOR, [w], delay: [delay])
 }
 /**
  * Bitwise ripple xor
@@ -239,7 +239,7 @@ public func UseNor(
 public func UseXor(
     w : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseRippleBinaryPrimitive(XOR, [w], delay: delay)
+    UseBitwiseRippleBinaryPrimitive(XOR, [w], delay: [delay])
 }
 /**
  * Bitwise ripple xnor
@@ -251,5 +251,5 @@ public func UseXor(
 public func UseXnor(
     w : BelnapWire, delay!: Int64 = 0
 ) : BelnapWire {
-    UseBitwiseRippleBinaryPrimitive(XNOR, [w], delay: delay)
+    UseBitwiseRippleBinaryPrimitive(XNOR, [w], delay: [delay])
 }

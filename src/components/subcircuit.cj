@@ -140,7 +140,8 @@ public func MakeSubcircuit<V, G>(
  */
 public func UseSubcircuit<V, G>(
     childCircuit : InterfacedHypergraph<V, G>,
-    inputs : Array<Wire<V, G>>, delay!: Int64 = 0
+    inputs : Array<Wire<V, G>>,
+    delays!: Array<Int64> = Array<Int64>(childCircuit.GetCoarity(), { _ => 0 })
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -154,11 +155,7 @@ public func UseSubcircuit<V, G>(
     let subcircuitWires = UseEdgeWithNewOutputs(
         childCircuit.GetLabel(), inputs, newGraph, actualOwner
     )
-    if(delay > 0) {
-        UseDelays(subcircuitWires, duration: delay)
-    } else {
-        subcircuitWires
-    }
+    UseDelays(subcircuitWires, delays: delays)
 }
 /**
  * Get the output wires of a circuit with no inputs
@@ -167,12 +164,13 @@ public func UseSubcircuit<V, G>(
  * @return The array of output wires from the subcircuit
  */
 public func UseSubcircuit<V, G>(
-    childCircuit : InterfacedHypergraph<V, G>, delay!: Int64 = 0
+    childCircuit : InterfacedHypergraph<V, G>,
+    delays!: Array<Int64> = Array(childCircuit.GetCoarity(), { _ => 0 })
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertHasArity(childCircuit, 0)
-    UseSubcircuit(childCircuit, Array<Wire<V, G>>(), delay: delay)
+    UseSubcircuit(childCircuit, Array<Wire<V, G>>(), delays: delays)
 }
 /**
  * Connect a subcircuit to some inputs and get its outputs
@@ -183,12 +181,13 @@ public func UseSubcircuit<V, G>(
  */
 public func UseSubcircuit_1<V, G>(
     childCircuit : InterfacedHypergraph<V, G>,
-    inputs : Array<Wire<V, G>>, delay!: Int64 = 0
+    inputs : Array<Wire<V, G>>,
+    delays! : Array<Int64> = Array(childCircuit.GetCoarity(), { _ => 0 })
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertHasCoarity(childCircuit, 1)
-    UseSubcircuit(childCircuit, inputs, delay: delay)[0]
+    UseSubcircuit(childCircuit, inputs, delays: delays)[0]
 }
 /**
  * Get the output wire of a circuit with no inputs
@@ -197,12 +196,13 @@ public func UseSubcircuit_1<V, G>(
  * @return The output wire of the subcircuit
  */
 public func UseSubcircuit_1<V, G>(
-    childCircuit : InterfacedHypergraph<V, G>, delay!: Int64 = 0
+    childCircuit : InterfacedHypergraph<V, G>,
+    delays!: Array<Int64> = Array<Int64>(childCircuit.GetCoarity(), { _ => 0 })
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertHasArity(childCircuit, 0)
-    UseSubcircuit_1(childCircuit, Array<Wire<V, G>>(), delay: delay)
+    UseSubcircuit_1(childCircuit, Array<Wire<V, G>>(), delays: delays)
 }
 /**
  * Connect a subcircuit to some inputs and get its outputs
@@ -214,12 +214,12 @@ public func UseSubcircuit_1<V, G>(
 public func UseSubcircuit_2<V, G>(
     childCircuit : InterfacedHypergraph<V, G>,
     inputs : Array<Wire<V, G>>,
-    delay!: Int64 = 0
+    delays!: Array<Int64> = Array<Int64>(childCircuit.GetCoarity(), { _ => 0 })
 ) : (Wire<V, G>, Wire<V, G>)
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertHasCoarity(childCircuit, 2)
-    let outputs = UseSubcircuit(childCircuit, inputs, delay: delay)
+    let outputs = UseSubcircuit(childCircuit, inputs, delays: delays)
     (outputs[0], outputs[1])
 }
 /**
@@ -229,12 +229,13 @@ public func UseSubcircuit_2<V, G>(
  * @return The pair of output wire from the subcircuit
  */
 public func UseSubcircuit_2<V, G>(
-    childCircuit : InterfacedHypergraph<V, G>, delay!: Int64 = 0
+    childCircuit : InterfacedHypergraph<V, G>,
+    delays!: Array<Int64> = Array<Int64>(childCircuit.GetCoarity(), { _ => 0 })
 ) : (Wire<V, G>, Wire<V, G>)
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertHasArity(childCircuit, 0)
-    UseSubcircuit_2(childCircuit, Array<Wire<V, G>>(), delay: delay)
+    UseSubcircuit_2(childCircuit, Array<Wire<V, G>>(), delays: delays)
 }
 /**
  * Connect a subcircuit to some inputs and get its outputs
@@ -245,12 +246,13 @@ public func UseSubcircuit_2<V, G>(
  */
 public func UseSubcircuit_3<V, G>(
     childCircuit : InterfacedHypergraph<V, G>,
-    inputs : Array<Wire<V, G>>, delay!: Int64 = 0
+    inputs : Array<Wire<V, G>>,
+    delays!: Array<Int64> = Array<Int64>(childCircuit.GetCoarity(), { _ => 0 })
 ) : (Wire<V, G>, Wire<V, G>, Wire<V, G>)
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertHasCoarity(childCircuit, 3)
-    let outputs = UseSubcircuit(childCircuit, inputs, delay: delay)
+    let outputs = UseSubcircuit(childCircuit, inputs, delays: delays)
     (outputs[0], outputs[1], outputs[2])
 }
 /**
@@ -260,10 +262,11 @@ public func UseSubcircuit_3<V, G>(
  * @return The 3-tuple of output wires from the subcircuit
  */
 public func UseSubcircuit_3<V, G>(
-    childCircuit : InterfacedHypergraph<V, G>, delay!: Int64 = 0
+    childCircuit : InterfacedHypergraph<V, G>,
+    delays!: Array<Int64> = Array<Int64>(childCircuit.GetCoarity(), { _ => 0 })
 ) : (Wire<V, G>, Wire<V, G>, Wire<V, G>)
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertHasArity(childCircuit, 0)
-    UseSubcircuit_3(childCircuit, Array<Wire<V, G>>(), delay: delay)
+    UseSubcircuit_3(childCircuit, Array<Wire<V, G>>(), delays: delays)
 }

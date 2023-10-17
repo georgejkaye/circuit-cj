@@ -18,7 +18,8 @@ package components.constructions
  * @return The rippled primitive circuit
  */
 public func MakeRippleBinaryPrimitive<V, G>(
-    primitive : G, inputs!: Int64, width!: Int64, delay!: Int64 = 0
+    primitive : G, inputs!: Int64, width!: Int64,
+    delay!: Array<Int64> = Array(primitive.GetCoarity(), { _ => 0 })
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -47,7 +48,8 @@ public func MakeRippleBinaryPrimitive<V, G>(
  * @return The output wires of the rippled primitive
  */
 public func UseRippleBinaryPrimitive<V, G>(
-    primitive : G, inputWires : Array<Wire<V, G>>, delay!: Int64 = 0
+    primitive : G, inputWires : Array<Wire<V, G>>,
+    delay!: Array<Int64> = Array<Int64>(primitive.GetCoarity(), { _ => 0 })
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -76,7 +78,7 @@ public func UseRippleBinaryPrimitive<V, G>(
  */
 public func MakeBitwiseMapPrimitive<V, G>(
     primitive : G, width!: Int64, inputs!: Int64 = primitive.GetArity(),
-    delay!: Int64 = 0
+    delay!: Array<Int64> = Array<Int64>(primitive.GetCoarity(), { _ => 0 })
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -108,7 +110,8 @@ public func MakeBitwiseMapPrimitive<V, G>(
  * @return The output wires of the bitwise map gate
  */
 public func UseBitwiseMapPrimitive<V, G>(
-    primitive : G, inputWires : Array<Wire<V, G>>, delay!: Int64 = 0
+    primitive : G, inputWires : Array<Wire<V, G>>,
+    delay!: Array<Int64> = Array<Int64>(inputWires.size, { _ => 0 })
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -134,7 +137,8 @@ public func UseBitwiseMapPrimitive<V, G>(
  * @return The bitwise ripple gate circuit
  */
 public func MakeBitwiseRippleBinaryPrimitive<V, G>(
-    primitive : G, width!: Int64, delay!: Int64 = 0
+    primitive : G, width!: Int64,
+    delay!: Array<Int64> = Array<Int64>(primitive.GetCoarity(), { _ => 0 })
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -145,7 +149,7 @@ public func MakeBitwiseRippleBinaryPrimitive<V, G>(
     )
     let op = {
         acc : Array<Wire<V, G>>, cur : Array<Wire<V, G>> =>
-            UsePrimitive(primitive, [acc[0], cur[0]])
+            UsePrimitive(primitive, [acc[0], cur[0]], delay: delay)
     }
     let name = "${primitive.GetName()}_1_${width}"
     MakeBitwiseRipple<V, G, Port>(
@@ -162,7 +166,8 @@ public func MakeBitwiseRippleBinaryPrimitive<V, G>(
  * @return The output wire of the bitwise ripple gate circuit
  */
 public func UseBitwiseRippleBinaryPrimitive<V, G>(
-    primitive : G, inputWires : Array<Wire<V, G>>, delay!: Int64 = 0
+    primitive : G, inputWires : Array<Wire<V, G>>,
+    delay!: Array<Int64> = Array<Int64>(primitive.GetCoarity(), { _ => 0 })
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {

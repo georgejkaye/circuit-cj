@@ -103,18 +103,23 @@ public func UseDelay<V, G>(
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let width = input.GetWidth()
-    var inputWire = input
-    fold_left(
-        { prevWire, _ =>
-            UseEdgeWithNewOutputs(
-                Label<V, G>.DELAY(prevWire.GetWidth()),
-                [prevWire],
-                None<InterfacedHypergraph<V, G>>,
-                input.GetGraph()
-            )[0]
-        }, inputWire, start: 0, end: duration
-    )
+    AssertNonNegative(duration)
+    if(duration == 0) {
+        input
+    } else {
+        let width = input.GetWidth()
+        var inputWire = input
+        fold_left(
+            { prevWire, _ =>
+                UseEdgeWithNewOutputs(
+                    Label<V, G>.DELAY(prevWire.GetWidth()),
+                    [prevWire],
+                    None<InterfacedHypergraph<V, G>>,
+                    input.GetGraph()
+                )[0]
+            }, inputWire, start: 0, end: duration
+        )
+    }
 }
 /**
  * Use a delay component for multiple input wires for a given duration
@@ -124,11 +129,12 @@ public func UseDelay<V, G>(
  * @return The output of the delay
  */
 public func UseDelays<V, G>(
-    inputs : Array<Wire<V, G>>, duration!: Int64 = 1
+    inputs : Array<Wire<V, G>>,
+    delays!: Array<Int64> = Array(inputs.size, { _ => 1 })
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    map({ w : Wire<V, G> => UseDelay(w, duration: duration)}, inputs)
+    mapi({ w : Wire<V, G>, i => UseDelay(w, duration: delays[i])}, inputs)
 }
 /**
  * Use a simple register with an initial signal

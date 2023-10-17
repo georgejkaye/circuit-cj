@@ -15,17 +15,14 @@ package components
  * @return The output wire of the gate
  */
 func UseOperation<V, G>(
-    label : Label<V, G>, inputs: Array<Wire<V, G>>, delay!: Int64 = 0
+    label : Label<V, G>, inputs: Array<Wire<V, G>>,
+    delay!: Array<Int64> = Array(inputs.size, { _ => 0 })
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertEqual(inputs.size, label.GetInputPorts().size)
     let opWires = UseEdgeWithNewOutputs(label, inputs, None, None)
-    if(delay > 0) {
-        UseDelays(opWires, duration: delay)
-    } else {
-        opWires
-    }
+    UseDelays(opWires, delays: delay)
 }
 /**
  * Use a primitive gate
@@ -34,7 +31,8 @@ func UseOperation<V, G>(
  * @param inputs The input wires
  */
 public func UsePrimitive<V, G>(
-    primitive : G, inputs : Array<Wire<V, G>>, delay!: Int64 = 0
+    primitive : G, inputs : Array<Wire<V, G>>,
+    delay!: Array<Int64> = Array<Int64>(inputs.size, { _ => 0})
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -49,7 +47,8 @@ public func UsePrimitive<V, G>(
  * @return The output wire of the gate
  */
 public func UseUnaryPrimitive<V, G>(
-    primitive : G, a : Wire<V, G>, delay!: Int64 = 0
+    primitive : G, a : Wire<V, G>,
+    delay!: Array<Int64> = Array<Int64>(primitive.GetCoarity(), { _ => 0 })
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -64,7 +63,8 @@ public func UseUnaryPrimitive<V, G>(
  * @return The output wire of the gate
  */
 public func UseBinaryPrimitive<V, G>(
-    primitive : G, a : Wire<V, G>, b : Wire<V, G>, delay!: Int64 = 0
+    primitive : G, a : Wire<V, G>, b : Wire<V, G>,
+    delay!: Array<Int64> = Array<Int64>(primitive.GetCoarity(), { _ => 0 })
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
