@@ -105,11 +105,13 @@ extend Array<T> <: ExtraArrayUtils<T> {
  * @param openingBracket
  * @param closingBracket
  * @param delimiter
+ * @param start
+ * @param end
  */
 public func collectionToString<T>(
     collection : Collection<T>, printFn : (T, Int64) -> String,
     openingBracket!: String = "{", closingBracket!: String = "}",
-    delimiter!: String = ", "
+    delimiter!: String = ", ", start!: Int64 = 0, end!: Int64 = collection.size
 ) : String {
     let str = foldi_left(
         {acc : String, i : Int64, cur : T =>
@@ -120,7 +122,7 @@ public func collectionToString<T>(
             }
             "${acc}${printFn(cur, i)}${delimiter}"
 
-        }, "", collection
+        }, "", collection, start: start, end: end
     )
     "${openingBracket}${str}${closingBracket}"
 }
@@ -132,14 +134,18 @@ public func collectionToString<T>(
  * @param openingBracket
  * @param closingBracket
  * @param delimiter
+ * @param start
+ * @param end
  */
 public func collectionToString<T>(
     collection : Collection<T>, openingBracket!: String = "{",
-    closingBracket!: String = "}", delimiter!: String = ", "
+    closingBracket!: String = "}", delimiter!: String = ", ",
+    start!: Int64 = 0, end!: Int64 = collection.size
 ) : String where T <: ToString {
     collectionToString(
         collection, { t, i => "${t}" }, openingBracket: openingBracket,
-        closingBracket: closingBracket, delimiter: delimiter
+        closingBracket: closingBracket, delimiter: delimiter, start: start,
+        end: end
     )
 }
 /**
@@ -206,6 +212,68 @@ public func concatStrings(
     collectionToString<String>(
         strings, {s, _ => s}, openingBracket: "", closingBracket: "",
         delimiter: delimiter
+    )
+}
+/**
+ * Given an array of things and a way of getting strings out of them,
+ * concatenate these strings together with some delimiter.
+ *
+ * @param fn
+ * @param ts
+ * @param initial
+ * @param delimiter
+ * @param start
+ * @param end
+ * @return The concatenated string
+ */
+public func concatStrings<T>(
+    fn : (T) -> String, ts : Collection<T>, initial!: String = "",
+    delimiter!: String = "", start!: Int64 = 0, end!: Int64 = ts.size
+) : String {
+    fold_left(
+        { acc, cur => "${acc}${delimiter}${fn(cur)}"}, initial, ts,
+        start: start, end: end
+    )
+}
+/**
+ * Given an array of things and a way of getting strings out of them,
+ * concatenate these strings together with some delimiter.
+ *
+ * @param fn
+ * @param ts
+ * @param initial
+ * @param delimiter
+ * @param start
+ * @param end
+ * @return The concatenated string
+ */
+public func concatStrings<T>(
+    fn : (T, Int64) -> String, ts : Collection<T>, initial!: String = "",
+    delimiter!: String = "", start!: Int64 = 0, end!: Int64 = ts.size
+) : String {
+    foldi_left(
+        { acc, i, cur => "${acc}${delimiter}${fn(cur, i)}"}, initial, ts,
+        start: start, end: end
+    )
+}
+/**
+ * Given a way of translating numbers into strings, concatenate these strings
+ * over a range together with some delimiter.
+ *
+ * @param fn
+ * @param initial
+ * @param delimiter
+ * @param start
+ * @param end
+ * @return The concatenated string
+ */
+public func concatStrings(
+    fn : (Int64) -> String, initial!: String = "", delimiter!: String = "",
+    start!: Int64 = 0, end!: Int64
+) : String {
+    fold_left(
+        { acc, cur => "${acc}${delimiter}${fn(cur)}"}, initial,
+        start: start, end: end
     )
 }
 /**
