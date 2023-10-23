@@ -332,8 +332,9 @@ func DrawPortHeader<V, T>(
     ticks : ArrayList<T>, signalFn : (T) -> Option<Signal<V>>,
     portName : String, longestPortName : Int64,
     signalDisplayFn : (Option<Signal<V>>) -> String,  componentLength : Int64,
-    coloured!: Bool = false
+    coloured!: Bool = false, drawLabels!: Bool = true
 ) : String where V <: ValueSymbol<V> {
+    let newline = GetNewline(coloured)
     let actualSignalName =
         if(portName == "") {
             "_"
@@ -344,11 +345,16 @@ func DrawPortHeader<V, T>(
     let lineLength = longestPortName + waveformLength
     let firstLine =
         "${actualSignalName} ".padRight(lineLength, paddingChar: '─')
-    let secondLine = DrawPortOverview(
-        ticks, signalFn, longestPortName, signalDisplayFn, componentLength
-    )
-    let thirdLine = "".padRight(lineLength, paddingChar: '─')
-    "${firstLine}${GetNewline(coloured)}${secondLine}${GetNewline(coloured)}${thirdLine}"
+    let labelLines = if(!drawLabels) {
+        ""
+    } else {
+        let secondLine = DrawPortOverview(
+            ticks, signalFn, longestPortName, signalDisplayFn, componentLength
+        )
+        let thirdLine = "".padRight(lineLength, paddingChar: '─')
+        "${newline}${secondLine}${newline}${thirdLine}"
+    }
+    "${firstLine}${labelLines}"
 }
 /**
  * Draw the waveforms for a signal across a given list of ticks.
@@ -364,37 +370,43 @@ func DrawWaveformsForPort<V, T>(
     ticks : ArrayList<T>, fn : (T) -> Option<Signal<V>>, width : Int64,
     signalName : String, maxNameLength : Int64,
     signalDisplayFn!: (Option<Signal<V>>) -> String,
-    componentLength!: Int64 = defaultComponentLength, coloured!: Bool = false
+    componentLength!: Int64 = defaultComponentLength, coloured!: Bool = false,
+    drawWaves!: Bool = true, drawLabels!: Bool = true
 ) : String
     where V <: ValueSymbol<V>
 {
+    let newline = GetNewline(coloured)
     let linesPerValue = V.GetWaveformHeight() + 1
     let totalLines = linesPerValue * width
     let waveformLength = ticks.size * componentLength
     let lineLength = maxNameLength + waveformLength
     let signalHeading = DrawPortHeader(
         ticks, fn, signalName, maxNameLength, signalDisplayFn, componentLength,
-        coloured: coloured
+        coloured: coloured, drawLabels: drawLabels
     )
-    let rows = fold_left(
-        { acc, currentLine =>
-            // We want to draw the msb at the top and work down
-            let currentBit = width - (currentLine / linesPerValue) - 1
-            let currentPhysicalDrawingLevel = currentLine % linesPerValue
-            // The lowest level should be drawn at the bottom
-            let currentLogicalDrawingLevel =
-                linesPerValue - currentPhysicalDrawingLevel - 1
-            let rowString =
-                DrawWaveformLevel(
-                    ticks, currentBit, currentPhysicalDrawingLevel,
-                    currentLogicalDrawingLevel, fn,
-                    "[${currentBit}]", maxNameLength, componentLength,
-                    coloured: coloured
-                )
-            "${acc}${GetNewline(coloured)}${rowString}"
-        }, "${signalHeading}", end: totalLines
-    )
-    "${rows}${GetNewline(coloured)}${"".padRight(lineLength, paddingChar: '─')}"
+    if(!drawWaves) {
+        signalHeading
+    } else {
+        let rows = fold_left(
+            { acc, currentLine =>
+                // We want to draw the msb at the top and work down
+                let currentBit = width - (currentLine / linesPerValue) - 1
+                let currentPhysicalDrawingLevel = currentLine % linesPerValue
+                // The lowest level should be drawn at the bottom
+                let currentLogicalDrawingLevel =
+                    linesPerValue - currentPhysicalDrawingLevel - 1
+                let rowString =
+                    DrawWaveformLevel(
+                        ticks, currentBit, currentPhysicalDrawingLevel,
+                        currentLogicalDrawingLevel, fn,
+                        "[${currentBit}]", maxNameLength, componentLength,
+                        coloured: coloured
+                    )
+                "${acc}${newline}${rowString}"
+            }, "${signalHeading}", end: totalLines
+        )
+        "${rows}${newline}${"".padRight(lineLength, paddingChar: '─')}"
+    }
 }
 /**
  * @return
@@ -450,7 +462,7 @@ public func DrawWaveformsForPortArray<V, T>(
     componentLength!: Int64 = defaultComponentLength,
     labelLength!: Int64 =
         DefaultLabelLengthForPortArray(ports, nameFn, widthFn),
-    coloured!: Bool = false
+    coloured!: Bool = false, drawWaves!: Bool = true, drawLabels!: Bool = true
 ) : String
     where V <: ValueSymbol<V>
 {
@@ -459,12 +471,15 @@ public func DrawWaveformsForPortArray<V, T>(
             DrawWaveformsForPort<V, T>(
                 xs, fn, widthFn(i), nameFn(i), labelLength,
                 signalDisplayFn: signalDisplayFn,
-                componentLength: componentLength, coloured: coloured
+                componentLength: componentLength, coloured: coloured,
+                drawWaves: drawWaves, drawLabels: drawLabels
             )
         },
         ports
     )
-    concatStrings(waveforms, delimiter: "${GetNewline(coloured)}${GetNewline(coloured)}")
+    concatStrings(
+        waveforms, delimiter: "${GetNewline(coloured)}${GetNewline(coloured)}"
+    )
 }
 /**
  * Let evaluators draw waveform diagrams
@@ -480,7 +495,9 @@ extend Evaluator<V,G> {
         signalDisplayFn!: (Option<Signal<V>>) -> String =
             DefaultSignalDisplayFn<V>(),
             componentLength!: Int64 = defaultComponentLength,
-            coloured!: Bool = false
+            coloured!: Bool = false,
+            drawWaves!: Bool = true,
+            drawLabels!: Bool = true
     ) : String {
         let labelLength = this.longestPortName + 4
         let inputWaves = DrawWaveformsForPortArray(
@@ -491,7 +508,9 @@ extend Evaluator<V,G> {
             labelLength: labelLength,
             signalDisplayFn: signalDisplayFn,
             componentLength: componentLength,
-            coloured: coloured
+            coloured: coloured,
+            drawWaves: drawWaves,
+            drawLabels: drawLabels
         )
         let outputWaves = DrawWaveformsForPortArray(
             this.GetOutputHistoryPerPort(),
@@ -501,7 +520,9 @@ extend Evaluator<V,G> {
             labelLength: labelLength,
             signalDisplayFn: signalDisplayFn,
             componentLength: componentLength,
-            coloured: coloured
+            coloured: coloured,
+            drawWaves: drawWaves,
+            drawLabels: drawLabels
         )
         "${inputWaves}${GetNewline(coloured)}${GetNewline(coloured)}${outputWaves}"
     }
