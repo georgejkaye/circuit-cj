@@ -83,7 +83,7 @@ We can also perform multiple cycles at once.
 .. code-block:: scala
 
     let waveform = sig.BuildWaveform(signals: [3, 4], width: 4, signed: false)
-    eval.PerformCycle(waveform: waveform)
+    eval.PerformCycles(waveform)
     eval.WriteDotToFile("after-3-and-4", signed: false)
 
 .. image:: imgs/after-3-and-4.svg
@@ -130,7 +130,7 @@ with a *waveform diagram*.
 
 .. code-block:: scala
 
-    println(eval.GetInputOutputHistoryString())
+    println(eval.DrawWaveformDiagram())
 
 .. code-block:: bash
 
@@ -193,6 +193,71 @@ Alternatively, the headings can be represented in decimal.
     [0] ────────────────┐
                         └───────────────
     ────────────────────────────────────
+
+It is possible to customise the drawing of the waveform diagram using the
+``drawWaves`` (toggle drawing the actual waveform pictures) and ``drawLabels``
+(toggle writing the labels of signals when they change) options.
+
+.. code-block:: scala
+
+    println(eval.DrawWaveformDiagram(drawWaves: false))
+
+.. code-block:: bash
+
+    A ───────────────────────────────────
+        |0001   |0010   |0011   |0100
+    ─────────────────────────────────────
+
+    S ───────────────────────────────────
+        |0001   |0011   |0110   |1010
+    ─────────────────────────────────────
+
+.. code-block:: scala
+
+    println(eval.DrawWaveformDiagram(drawLabels: false))
+
+.. code-block:: bash
+
+    A ───────────────────────────────────
+    [3]
+         ────────────────────────────────
+    [2]                          ┌───────
+         ────────────────────────┘
+    [1]          ┌───────────────┐
+         ────────┘               └───────
+    [0]  ────────┐       ┌───────┐
+                 └───────┘       └───────
+    ─────────────────────────────────────
+
+    S ───────────────────────────────────
+    [3]                          ┌───────
+         ────────────────────────┘
+    [2]                  ┌───────┐
+         ────────────────┘       └───────
+    [1]          ┌───────────────────────
+         ────────┘
+    [0]  ────────────────┐
+                         └───────────────
+    ─────────────────────────────────────
+
+If these waveforms are being drawn in a (good) terminal, it is also possible to
+generate a string equipped with colour escape sequences for making the output
+a bit easier to read.
+
+.. code-block:: scala
+
+    println(eval.DrawWaveformDiagram(coloured: true))
+
+This will of course result in garbled output if just printed to stdout like
+this.
+Instead you will have to pass it to a program capable of rendering such escape
+sequences, such as ``echo`` with the ``-e`` option.
+
+.. code-block:: bash
+
+    echo -e "`./build/bin/main`"
+
+.. image:: imgs/waves.jpg
 
 .. note::
     Waveform visualisation was inspired by a similar tool developed as part of
