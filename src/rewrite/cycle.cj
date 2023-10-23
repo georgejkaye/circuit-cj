@@ -369,10 +369,10 @@ extend Evaluator<V, G> {
      * @param waveforms The array of waveforms for each input port
      */
     public func PerformCycles(
-        waveforms!: Waveform<V>, debug!: Bool = false
+        waveform: Waveform<V>, debug!: Bool = false
     ) : Unit {
         AssertHasInputs(this.graph, 1)
-        PerformCycles([waveforms])
+        PerformCycles([waveform])
     }
     /**
      * Perform several cycles using this evaluator, with the same inputs
