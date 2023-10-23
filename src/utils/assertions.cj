@@ -69,9 +69,7 @@ public func AssertForAllElements<T>(
  * @param u
  */
 public func AssertEqual<T, U>(t : T, u : U) : Unit
-    where
-        T <: Equatable<U> & ToString,
-        U <: ToString
+    where T <: Equatable<U> & ToString, U <: ToString
 {
     if (t != u) {
         throw IncompatibleParameterException(
@@ -86,9 +84,7 @@ public func AssertEqual<T, U>(t : T, u : U) : Unit
  * @param u
  */
 public func AssertNotEqual<T, U>(t : T, u : U) : Unit
-    where
-        T <: Equatable<U> & ToString,
-        U <: ToString
+    where T <: Equatable<U> & ToString, U <: ToString
 {
     if (t == u) {
         throw IncompatibleParameterException(
@@ -102,8 +98,9 @@ public func AssertNotEqual<T, U>(t : T, u : U) : Unit
  * @param x
  * @param y
  */
-public func AssertGreaterThanOrEqualTo(x : Int64, y : Int64) : Unit {
-    if(x < y) {
+public func AssertGreaterThanOrEqualTo<T, U>(x : T, y : U) : Unit
+    where T <: GreaterOrEqual<U> & ToString, U <: ToString {
+    if(!(x >= y)) {
         throw IncompatibleParameterException(
             AssertionFailedMessage("${x} must be greater than or equal to ${y}")
         )
@@ -113,8 +110,10 @@ public func AssertGreaterThanOrEqualTo(x : Int64, y : Int64) : Unit {
  * @param x
  * @param y
  */
-public func AssertGreaterThan(x : Int64, y : Int64) : Unit {
-    if(x <= y) {
+public func AssertGreaterThan<T, U>(x : T, y : U) : Unit
+    where T <: Greater<U> & ToString, U <: ToString
+{
+    if(!(x > y)) {
         throw IncompatibleParameterException(
             AssertionFailedMessage("${x} must be greater than ${y}")
         )
@@ -124,8 +123,10 @@ public func AssertGreaterThan(x : Int64, y : Int64) : Unit {
  * @param x
  * @param y
  */
-public func AssertLessThanOrEqualTo(x : Int64, y : Int64) : Unit {
-    if(x > y) {
+public func AssertLessThanOrEqualTo<T, U>(x : T, y : U) : Unit
+    where T <: LessOrEqual<U> & ToString, U <: ToString
+{
+    if(!(x <= y)) {
         throw IncompatibleParameterException(
             AssertionFailedMessage("${x} must be less than or equal to ${y}")
         )
@@ -135,8 +136,10 @@ public func AssertLessThanOrEqualTo(x : Int64, y : Int64) : Unit {
  * @param x The number to check
  * @param t The target number
  */
-public func AssertLessThan(x : Int64, t : Int64) : Unit {
-    if(x >= t) {
+public func AssertLessThan<T, U>(x : T, t : U) : Unit
+    where T <: Less<U> & ToString, U <: ToString
+{
+    if(!(x < t)) {
         throw IncompatibleParameterException(
             AssertionFailedMessage("${x} must be less than ${t}")
         )
