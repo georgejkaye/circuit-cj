@@ -18,6 +18,36 @@ let lowToHighUpString = ("┌", '─')
 let lowToHighDownString = ("┘", ' ')
 let upDownString = ("|", ' ')
 /**
+ * Get a colour code to be interpreted by a command that can understand and
+ * intepret the relevant escape sequences.
+ *
+ * @param value The sequence to inject into the colour escape sequence
+ * @return The colour generating escape sequence
+ */
+func GetColourCode(value : String) : String {
+    "\\033[0;${value}m"
+}
+let off = GetColourCode("")
+let cyan = GetColourCode("36")
+let green = GetColourCode("32")
+let yellow = GetColourCode("33")
+/**
+ * The colour to use for drawing the actual waveforms, to help distinguish them
+ * from the rest of the diagram
+ */
+let waveColour = green
+/**
+ * Get the new line character based on whether we want to escape it or not.
+ * Escaping is necessary when writing text to be passed to something that will
+ * then be printed later interpreting escape sequences, such as echo -e.
+ *
+ * @param escaped
+ * @return The appropriate newline character
+ */
+func GetNewline(escaped : Bool) : String {
+    if(escaped) { "\\n" } else { "\n" }
+}
+/**
  * Create a padded string given a tuple of a starting string and a padding
  * character.
  *
@@ -204,10 +234,11 @@ func DrawWaveformLevel<V, T>(
     ticks : ArrayList<T>, currentBit : Int64,
     currentPhysicalDrawingLevel : Int64,currentLogicalDrawingLevel : Int64,
     fn : (T) -> Option<Signal<V>>, waveformName : String, maxNameLength : Int64,
-    componentLength : Int64
+    componentLength : Int64, coloured!: Bool = false
 ) : String
     where V <: ValueSymbol<V>
 {
+    let colour = if(coloured) { waveColour } else { "" }
     let prefix = if(currentPhysicalDrawingLevel == 0) {
         if(waveformName.size > maxNameLength) {
             waveformName.substring(0, maxNameLength)
@@ -219,14 +250,15 @@ func DrawWaveformLevel<V, T>(
     } else {
         "".padRight(maxNameLength)
     }
-    concatStrings(
+    let line = concatStrings(
         { currentTick : Int64 =>
             DrawWaveformLevelTick(
                 ticks, fn, currentBit, currentLogicalDrawingLevel,
                 componentLength, currentTick
             )
-        }, initial: prefix, end: ticks.size
+        }, initial: "${prefix}${colour}", end: ticks.size
     )
+    if(coloured) { "${line}${off}" } else { line }
 }
 /**
  * Draw the port overview for a single tick.
@@ -299,7 +331,8 @@ func DrawPortOverview<V, T>(
 func DrawPortHeader<V, T>(
     ticks : ArrayList<T>, signalFn : (T) -> Option<Signal<V>>,
     portName : String, longestPortName : Int64,
-    signalDisplayFn : (Option<Signal<V>>) -> String,  componentLength : Int64
+    signalDisplayFn : (Option<Signal<V>>) -> String,  componentLength : Int64,
+    coloured!: Bool = false
 ) : String where V <: ValueSymbol<V> {
     let actualSignalName =
         if(portName == "") {
@@ -315,7 +348,7 @@ func DrawPortHeader<V, T>(
         ticks, signalFn, longestPortName, signalDisplayFn, componentLength
     )
     let thirdLine = "".padRight(lineLength, paddingChar: '─')
-    "${firstLine}\n${secondLine}\n${thirdLine}"
+    "${firstLine}${GetNewline(coloured)}${secondLine}${GetNewline(coloured)}${thirdLine}"
 }
 /**
  * Draw the waveforms for a signal across a given list of ticks.
@@ -331,7 +364,7 @@ func DrawWaveformsForPort<V, T>(
     ticks : ArrayList<T>, fn : (T) -> Option<Signal<V>>, width : Int64,
     signalName : String, maxNameLength : Int64,
     signalDisplayFn!: (Option<Signal<V>>) -> String,
-    componentLength!: Int64 = defaultComponentLength
+    componentLength!: Int64 = defaultComponentLength, coloured!: Bool = false
 ) : String
     where V <: ValueSymbol<V>
 {
@@ -340,7 +373,8 @@ func DrawWaveformsForPort<V, T>(
     let waveformLength = ticks.size * componentLength
     let lineLength = maxNameLength + waveformLength
     let signalHeading = DrawPortHeader(
-        ticks, fn, signalName, maxNameLength, signalDisplayFn, componentLength
+        ticks, fn, signalName, maxNameLength, signalDisplayFn, componentLength,
+        coloured: coloured
     )
     let rows = fold_left(
         { acc, currentLine =>
@@ -354,12 +388,13 @@ func DrawWaveformsForPort<V, T>(
                 DrawWaveformLevel(
                     ticks, currentBit, currentPhysicalDrawingLevel,
                     currentLogicalDrawingLevel, fn,
-                    "[${currentBit}]", maxNameLength, componentLength
+                    "[${currentBit}]", maxNameLength, componentLength,
+                    coloured: coloured
                 )
-            "${acc}\n${rowString}"
+            "${acc}${GetNewline(coloured)}${rowString}"
         }, "${signalHeading}", end: totalLines
     )
-    "${rows}\n${"".padRight(lineLength, paddingChar: '─')}"
+    "${rows}${GetNewline(coloured)}${"".padRight(lineLength, paddingChar: '─')}"
 }
 /**
  * @return
@@ -414,7 +449,8 @@ public func DrawWaveformsForPortArray<V, T>(
     signalDisplayFn!: (Option<Signal<V>>) -> String = DefaultSignalDisplayFn(),
     componentLength!: Int64 = defaultComponentLength,
     labelLength!: Int64 =
-        DefaultLabelLengthForPortArray(ports, nameFn, widthFn)
+        DefaultLabelLengthForPortArray(ports, nameFn, widthFn),
+    coloured!: Bool = false
 ) : String
     where V <: ValueSymbol<V>
 {
@@ -423,12 +459,12 @@ public func DrawWaveformsForPortArray<V, T>(
             DrawWaveformsForPort<V, T>(
                 xs, fn, widthFn(i), nameFn(i), labelLength,
                 signalDisplayFn: signalDisplayFn,
-                componentLength: componentLength
+                componentLength: componentLength, coloured: coloured
             )
         },
         ports
     )
-    concatStrings(waveforms, delimiter: "\n\n")
+    concatStrings(waveforms, delimiter: "${GetNewline(coloured)}${GetNewline(coloured)}")
 }
 /**
  * Let evaluators draw waveform diagrams
@@ -443,7 +479,8 @@ extend Evaluator<V,G> {
     public func DrawWaveformDiagram(
         signalDisplayFn!: (Option<Signal<V>>) -> String =
             DefaultSignalDisplayFn<V>(),
-            componentLength!: Int64 = defaultComponentLength
+            componentLength!: Int64 = defaultComponentLength,
+            coloured!: Bool = false
     ) : String {
         let labelLength = this.longestPortName + 4
         let inputWaves = DrawWaveformsForPortArray(
@@ -453,7 +490,8 @@ extend Evaluator<V,G> {
             { i => this.GetInput(i).GetNameString() },
             labelLength: labelLength,
             signalDisplayFn: signalDisplayFn,
-            componentLength: componentLength
+            componentLength: componentLength,
+            coloured: coloured
         )
         let outputWaves = DrawWaveformsForPortArray(
             this.GetOutputHistoryPerPort(),
@@ -462,9 +500,10 @@ extend Evaluator<V,G> {
             { i => this.GetOutput(i).GetNameString() },
             labelLength: labelLength,
             signalDisplayFn: signalDisplayFn,
-            componentLength: componentLength
+            componentLength: componentLength,
+            coloured: coloured
         )
-        "${inputWaves}\n\n${outputWaves}"
+        "${inputWaves}${GetNewline(coloured)}${GetNewline(coloured)}${outputWaves}"
     }
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -508,23 +547,25 @@ public func DrawWaveformsForPortArray<V, T>(
                 let width = "[${widthFn(i)}]"
                 name.size + width.size + 4
             }
-        )
+        ), coloured!: Bool = false
 ) : String
     where V <: ValueSymbol<V> & Decimal<V>
 {
     let signalDisplayFn = OptionalDecSignalDisplayFn<V>(signed: signed)
     DrawWaveformsForPortArray(
         signals, fn, widthFn, nameFn, signalDisplayFn: signalDisplayFn,
-        labelLength: labelLength, componentLength: componentLength
+        labelLength: labelLength, componentLength: componentLength,
+        coloured: coloured
     )
 }
 extend Evaluator<V, G> where V <: Decimal<V> {
     public func DrawWaveformDiagram(
-        signed!: Bool, componentLength!: Int64 = defaultComponentLength
+        signed!: Bool, componentLength!: Int64 = defaultComponentLength,
+        coloured!: Bool = false
     ) : String {
         this.DrawWaveformDiagram(
             signalDisplayFn: OptionalDecSignalDisplayFn<V>(signed: signed),
-            componentLength: componentLength
+            componentLength: componentLength, coloured: coloured
         )
     }
 }
