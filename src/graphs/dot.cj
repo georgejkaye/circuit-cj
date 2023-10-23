@@ -905,7 +905,7 @@ func WriteDotFile(
     fileName : String, dotString : String
 ) : Unit {
     let fs = File("${fileName}.dot", CreateOrTruncate(false))
-    Info("Writing dot file ${fileName}.dot")
+    Debug("Writing dot file ${fileName}.dot")
     fs.write(dotString.toUtf8Array())
     fs.close()
 }
