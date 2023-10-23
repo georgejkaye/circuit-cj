@@ -82,7 +82,14 @@ public struct Waveform<V>
         this.signals.size
     }
 }
-
+/**
+ * 'Transpose' an array of waveforms over time, producing an array of arrays
+ * of signals, in which each element of the array is the array of signals at
+ * a given tick of the clock.
+ *
+ * @param waveforms The array of waveforms
+ * @return The array in which each element is an array of signals at a tick
+ */
 public func ArrayOfInputsToArrayOfTicks<V, T>(
     waveforms : Array<Waveform<V>>
 ) : Array<Array<Signal<V>>>
@@ -102,14 +109,19 @@ public func ArrayOfInputsToArrayOfTicks<V, T>(
         })
     })
 }
+/**
+ * Generate a clock waveform:
+ */
 public func GenerateClock<V>(
-    rate!: Int64, cycles!: Int64, high!: V, low!: V
+    period!: Int64, duty!: Float64 = 0.5, cycles!: Int64, high!: V, low!: V
 ): Waveform<V>
     where V <: ValueSymbol<V>
 {
-    let length = 2 * rate * cycles
+    AssertLessThan(duty, 1.0)
+    let length = period * cycles
+    let highLength = Int64(Float64(period) * duty)
     let signals = Array<Signal<V>>(length, { i : Int64 =>
-        if(i % (rate * 2) < rate) {
+        if(i % period < highLength) {
             Signal(high)
         } else {
             Signal(low)
