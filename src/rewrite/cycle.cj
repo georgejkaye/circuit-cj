@@ -18,7 +18,7 @@ package rewrite
  *              lefts is the dangling vertices of the current state
  *              rights is the dangling vertices from the state registers
  */
-func SplitJoinVertices<V, G>(
+func SplitCurrentState<V, G>(
     coreEdge : Edge<V, G>,
     numberOfStateWires : Int64,
     rewriteStartingElements : HashSet<TraversalElement<V, G>>,
@@ -93,6 +93,35 @@ func GetCoreSourceVertices<V, G>(
         }
     )
 }
+func CreateOutputJoinEdges<V, G>(
+    graph : Hypergraph<V, G>,
+    latestDelayVertices : Array<Vertex<V, G>>,
+    latestInstantVertices : Array<Vertex<V, G>>,
+    rewriteEndingElements : HashSet<TraversalElement<V, G>>
+) : Array<Edge<V, G>> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
+    mapi(
+        { v : Vertex<V, G>, i : Int64 =>
+            // Split this vertex, as we are going to insert a register
+            let (leftVertex, rightVertex) = v.SplitVertex()
+            let outputWidth = v.GetWidth()
+            let delayTarget = Vertex<V, G>(outputWidth, Some(graph))
+            let delayEdge = Edge(
+                DELAY(outputWidth), [leftVertex], [delayTarget], None, graph
+            )
+            latestDelayVertices[i] = leftVertex
+            // Create the instant component for this register
+            let outputTarget = Vertex<V, G>(outputWidth, Some(graph))
+            latestInstantVertices[i] = outputTarget
+            // Create the join for this register
+            let joinEdge = Edge(
+                JOIN(outputWidth), [outputTarget, delayTarget],
+                [rightVertex], None, graph
+            )
+            rewriteEndingElements.put(VERTEX(outputTarget))
+            joinEdge
+        }, latestDelayVertices
+    )
+}
 /**
  * Get an array of vertices that will make up the targets of the cloned core for
  * reduction at this tick of the clock. In particular, this is the current
@@ -110,10 +139,8 @@ func GetCoreSourceVertices<V, G>(
 public func GetCoreTargetVertices<V, G>(
     coreEdge : Edge<V, G>,
     numberOfStateWires : Int64,
-    latestDelayVertices : Array<Vertex<V, G>>,
-    latestInstantVertices : Array<Vertex<V, G>>,
-    rewriteEndingElements : HashSet<TraversalElement<V, G>>,
-    splitStateVertices : Array<(Vertex<V, G>, Vertex<V, G>)>
+    splitStateVertices : Array<(Vertex<V, G>, Vertex<V, G>)>,
+    latestInstantVertices : Array<Vertex<V, G>>
 ) : Array<Vertex<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -129,35 +156,7 @@ public func GetCoreTargetVertices<V, G>(
             if(i < numberOfStateWires) {
                 splitStateVertices[i][1]
             } else {
-                // Get the corresponding output vertex; the source of the
-                // last delay in the output sequence, or the output of the
-                // graph if no cycles have been performed yet
-                let outputIndex = i - numberOfStateWires
-                let outputVertex = latestDelayVertices[outputIndex]
-                // Split this vertex, as we are going to insert a register
-                let (leftVertex, rightVertex) = outputVertex.SplitVertex()
-                let outputWidth = outputVertex.GetWidth()
-                // Create the delay component for this register
-                let delayTarget = Vertex<V, G>(
-                    outputWidth, Some(coreEdge.GetGraph())
-                )
-                let delayEdge = Edge(
-                    DELAY(outputWidth), [leftVertex], [delayTarget],
-                    None, coreEdge.GetGraph()
-                )
-                latestDelayVertices[outputIndex] = leftVertex
-                // Create the instant component for this register
-                let outputTarget = Vertex<V, G>(
-                    outputWidth, Some(coreEdge.GetGraph())
-                )
-                latestInstantVertices[outputIndex] = outputTarget
-                // Create the join for this register
-                let joinEdge = Edge(
-                    JOIN(outputWidth), [outputTarget, delayTarget],
-                    [rightVertex], None, coreEdge.GetGraph()
-                )
-                rewriteEndingElements.put(VERTEX(rightVertex))
-                outputTarget
+                latestInstantVertices[i]
             }
     }
 }
@@ -174,15 +173,17 @@ public func GetCoreTargetVertices<V, G>(
  */
 func GetOutputSignals<V, G>(
    signalVertices : Array<Vertex<V, G>>
-) : Array<Option<Signal<V>>>
+) : Array<Output<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    map({ v =>
-        match(v.GetInEdge()) {
-            case None => None
-            case Some(ec) => ec.GetEdge().GetLabel().GetMaybeSignal()
-        }
-    }, signalVertices)
+    map(GetOutputTerm<V, G>, signalVertices)
+}
+func GetOutputSignals<V, G>(
+    edges : Array<Edge<V, G>>, i : Int64
+) : Array<Output<V, G>>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    map({ e : Edge<V, G> => GetOutputTerm(e.GetSource(i)) }, edges)
 }
 /**
  * Update the various input-output history data structures with the latest
@@ -197,10 +198,10 @@ func GetOutputSignals<V, G>(
 func UpdateInputOutputHistory<V, G>(
     graph : InterfacedHypergraph<V, G>,
     inputSignals : Array<Signal<V>>,
-    latestInstantVertices : Array<Vertex<V, G>>,
-    history : InputOutputHistory<V>
+    joinEdges : Array<Edge<V, G>>,
+    history : InputOutputHistory<V, G>
 ) : Unit where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
-    let outputSignals = GetOutputSignals(latestInstantVertices)
+    let outputSignals = GetOutputSignals(joinEdges, 0)
     history.inputHistoryPerTick.append(inputSignals)
     history.outputHistoryPerTick.append(outputSignals)
     let inputOutput = InputOutput(inputSignals, outputSignals)
@@ -227,8 +228,8 @@ func PerformCycle<V, G>(
     graph : InterfacedHypergraph<V, G>, inputSignals : Array<Signal<V>>,
     signature : Signature<V, G>, coreEdge : Edge<V, G>,
     numberOfStateWires : Int64, latestInstantVertices : Array<Vertex<V, G>>,
-    latestDelayVertices : Array<Vertex<V, G>>, history : InputOutputHistory<V>,
-    debug : Bool
+    latestDelayVertices : Array<Vertex<V, G>>,
+    history : InputOutputHistory<V, G>, debug : Bool
 ) : Unit where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
     // Can only perform a cycle for the right number of inputs
     AssertHasInputs(graph, inputSignals.size)
@@ -236,9 +237,13 @@ func PerformCycle<V, G>(
     let rewriteStartingElements = HashSet<TraversalElement<V, G>>()
     let rewriteEndingElements = HashSet<TraversalElement<V, G>>()
     // Split the state vertices so we can insert the next state
-    let splitJoinVertices = SplitJoinVertices(
+    let splitJoinVertices = SplitCurrentState(
         coreEdge, numberOfStateWires,
         rewriteStartingElements, rewriteEndingElements
+    )
+    let currentJoinEdges = CreateOutputJoinEdges(
+        graph.GetGraph(), latestDelayVertices, latestInstantVertices,
+        rewriteEndingElements
     )
     // The next step is to clone the core so we can attach the current state
     // and input values to it and reduce appropriately.
@@ -249,8 +254,7 @@ func PerformCycle<V, G>(
         rewriteStartingElements
     )
     let coreCopyOutputs = GetCoreTargetVertices(
-        coreEdge, numberOfStateWires, latestDelayVertices,
-        latestInstantVertices, rewriteEndingElements, splitJoinVertices
+        coreEdge, numberOfStateWires, splitJoinVertices, latestInstantVertices
     )
     // Now we can actually clone the core edge and attach it to the inputs
     // and outputs we just made
@@ -268,7 +272,7 @@ func PerformCycle<V, G>(
     )
     // Look at what we've just done and update the input output history
     UpdateInputOutputHistory(
-        graph, inputSignals, latestInstantVertices, history
+        graph, inputSignals, currentJoinEdges, history
     )
 }
 extend Evaluator<V, G> {

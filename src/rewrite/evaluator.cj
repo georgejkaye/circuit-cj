@@ -29,7 +29,7 @@ public class Evaluator<V, G>
     // The longest name of a port in the graph, used for waveform diagrams
     let longestPortName : Int64
     // Struct containing various input-output history data structures
-    let history : InputOutputHistory<V>
+    let history : InputOutputHistory<V, G>
     public init(
         signature : Signature<V, G>, graph : InterfacedHypergraph<V, G>,
         debug!: Bool = false
