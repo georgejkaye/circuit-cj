@@ -157,17 +157,42 @@ extend Label<V, G>
         }
     }
 }
+/**
+ * Given an array of numbers, convert them into an array of corresponding
+ * signals.
+ *
+ * @param vs The numbers
+ * @param width
+ * @param signed
+ * @return The waveform
+ */
 public func BuildWaveform<V> (
     signals!: Array<Int64>, width!: Int64, signed!: Bool
-)
-    where V <: ValueSymbol<V> & Decimal<V>
-{
-    let actualSignals =
-    map(
+) : Waveform<V> where V <: ValueSymbol<V> & Decimal<V> {
+    let actualSignals = map(
         { v : Int64 => V.DecToSignal(v, width: width, signed: signed)},
         signals
     )
     Waveform(actualSignals)
+}
+/**
+ * Given an array of pairs of numbers and durations, convert them into a
+ * waveform comprising the corresponding signals.
+ *
+ * @param signals
+ * @param width
+ * @param signed
+ * @return The waveform
+ */
+public func BuildWaveform<V>(
+    signals: Array<(Int64, Int64)>, width!: Int64, signed!: Bool
+) : Waveform<V> where V <: ValueSymbol<V> & Decimal<V> {
+    let actualSignals = map(
+        { signal : (Int64, Int64) =>
+            (V.DecToSignal(signal[0], width: width, signed: signed), signal[1])
+        }, signals
+    )
+    BuildWaveform(actualSignals)
 }
 extend Signature<V, G>
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
@@ -179,11 +204,25 @@ extend Signature<V, G>
      * @param vs The numbers
      * @param width
      * @param signed
-     * @return The array of corresponding signals
+     * @return The waveform
      */
     public func BuildWaveform(
         signals!: Array<Int64>, width!: Int64, signed!: Bool
     ) : Waveform<V> {
         BuildWaveform<V>(signals: signals, width: width, signed: signed)
+    }
+    /**
+     * Given an array of pairs of numbers and durations, convert them into a
+     * waveform comprising the corresponding signals.
+     *
+     * @param signals
+     * @param width
+     * @param signed
+     * @return The waveform
+     */
+    public func BuildWaveform(
+        signals: Array<(Int64, Int64)>, width!: Int64, signed!: Bool
+    ) : Waveform<V> {
+        BuildWaveform<V>(signals, width: width, signed: signed)
     }
 }

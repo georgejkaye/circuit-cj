@@ -110,7 +110,13 @@ public func ArrayOfInputsToArrayOfTicks<V, T>(
     })
 }
 /**
- * Generate a clock waveform:
+ * Generate a clock waveform: a waveform that alternately pulses high and low
+ *
+ * @param period The length of time from the start of a high pulse to the next
+ * @param duty The proportion of the period that pulses high
+ * @param cycles How many cycles to include in this waveform
+ * @param high
+ * @param low
  */
 public func GenerateClock<V>(
     period!: Int64, duty!: Float64 = 0.5, cycles!: Int64, high!: V, low!: V
@@ -128,4 +134,39 @@ public func GenerateClock<V>(
         }
     })
     Waveform(signals)
+}
+/**
+ * Create a waveform from a list of pairs, containing a signal and the length
+ * of time to pulse it.
+ *
+ * @param signals
+ * @return The wavefom
+ */
+public func BuildWaveform<V>(
+    signals: Array<(Signal<V>, Int64)>
+) : Waveform<V> where V <: ValueSymbol<V> {
+    let totalLength = Sum(signals, { elem => elem[1] })
+    let signalList = ArrayList<Signal<V>>()
+    for((signal, i) in signals) {
+        for(j in 0..i) {
+            signalList.append(signal)
+        }
+    }
+    Waveform(signalList.toArray())
+}
+/**
+ * Create a waveform from a list of pairs, containing a value and the length
+ * of time to pulse it.
+ *
+ * @param signals
+ * @return The wavefom
+ */
+public func BuildWaveform<V>(
+    values: Array<(V, Int64)>
+) : Waveform<V> where V <: ValueSymbol<V> {
+    let signals = map(
+        { value : (V, Int64) => (Signal([value[0]]), value[1]) },
+        values
+    )
+    BuildWaveform(signals)
 }
