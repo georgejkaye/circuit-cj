@@ -93,6 +93,17 @@ func GetCoreSourceVertices<V, G>(
         }
     )
 }
+/**
+ * Create the new join and delay edges that will root the output of the circuit
+ * at this tick. The first source of the join is the output at this tick and the
+ * second source is the delay and the next outputs.
+ *
+ * @param graph
+ * @param latestDelayVertices
+ * @param latestInstantVertices
+ * @param rewriteEndingElements
+ * @return The array of join edges
+ */
 func CreateOutputJoinEdges<V, G>(
     graph : Hypergraph<V, G>,
     latestDelayVertices : Array<Vertex<V, G>>,

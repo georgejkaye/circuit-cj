@@ -7,6 +7,10 @@
  * @since 0.3
  */
 package rewrite
+/**
+ * Enum of function-like things that can be in the output after partial
+ * evaluation
+ */
 public enum Function<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -43,6 +47,9 @@ extend Function<V, G> <: Specifiable {
         }
     }
 }
+/**
+ * Enum of things that can be in the output after partial evaluation.
+ */
 public enum Output<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
     | BASE(Signal<V>)
     | JOIN(Output<V, G>, Output<V, G>)
@@ -94,14 +101,27 @@ extend Output<V, G> where V <: Decimal<V> {
         GetString(fn)
     }
 }
+/**
+ * Get the output term for a join edge
+ *
+ * @param ec
+ * @param computed The map of previously computed vertices and their terms
+ * @return The output from the join
+ */
 func MakeJoinOutput<V, G>(
     ec : EdgeConnection<V, G>, computed : HashMap<Vertex<V, G>, Output<V, G>>
-) : Output<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
+) : Output<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
     let leftOutput = GetOutputTerm(ec.GetEdge().GetSource(0), computed)
     let rightOutput = GetOutputTerm(ec.GetEdge().GetSource(1), computed)
     JOIN(leftOutput, rightOutput)
 }
+/**
+ * Get the output term for a function edge
+ *
+ * @param ec
+ * @param computed The map of previously computed vertices and their terms
+ * @return The output from the function
+ */
 func MakeFunctionOutput<V, G>(
     ec : EdgeConnection<V, G>, function : Function<V, G>,
     computed : HashMap<Vertex<V, G>, Output<V, G>>
@@ -112,6 +132,13 @@ func MakeFunctionOutput<V, G>(
     )
     FUNCTION(function, outputs, ec.GetIndex())
 }
+/**
+ * Get the output term for a bundler edge
+ *
+ * @param ec
+ * @param computed The map of previously computed vertices and their terms
+ * @return The output from the bundler
+ */
 func MakeBundlerOutput<V, G>(
     ec : EdgeConnection<V, G>, ns: Array<Int64>,
     computed : HashMap<Vertex<V, G>, Output<V, G>>
@@ -122,6 +149,13 @@ func MakeBundlerOutput<V, G>(
     )
     BUNDLE(outputs, ns, ec.GetIndex())
 }
+/**
+ * Given a root vertex, compute the output term that leads to it.
+ *
+ * @param rootVertex
+ * @param computed The map of previously computed vertices and their terms
+ * @return The output from the vertex
+ */
 func GetOutputTerm<V, G>(
     rootVertex : Vertex<V, G>, computed : HashMap<Vertex<V, G>, Output<V, G>>
 ) : Output<V, G>
@@ -158,24 +192,44 @@ func GetOutputTerm<V, G>(
             output
     }
 }
+/**
+ * Given a root vertex, compute the output term that leads to it.
+ *
+ * @param rootVertex
+ * @return The output from the vertex
+ */
 func GetOutputTerm<V, G>(
     rootVertex : Vertex<V, G>
 ) : Output<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
     GetOutputTerm(rootVertex, HashMap<Vertex<V, G>, Output<V, G>>())
 }
+/**
+ * Given an array of output terms, print their string as a comma-separated tuple
+ *
+ * @param outputs
+ * @return The output string
+ */
 func GetOutputString<V, G>(
-    output : Array<Output<V, G>>
+    outputs : Array<Output<V, G>>
 ) : String where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
     collectionToString(
-        output, { op : Output<V, G>, _ => op.GetString() },
+        outputs, { op : Output<V, G>, _ => op.GetString() },
         openingBracket: "(", closingBracket: ")", delimiter: ", "
     )
 }
+/**
+ * Given an array of output terms, print their string as a comma-separated tuple
+ * interpreting signals as decimal where appropriate
+ *
+ * @param outputs
+ * @param signed
+ * @return The output string
+ */
 func GetOutputString<V, G>(
-    output : Array<Output<V, G>>, signed!: Bool
+    outputs : Array<Output<V, G>>, signed!: Bool
 ) : String where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G> {
     collectionToString(
-        output, { op : Output<V, G>, _ => op.GetString(signed: signed) },
+        outputs, { op : Output<V, G>, _ => op.GetString(signed: signed) },
         openingBracket: "(", closingBracket: ")", delimiter: ", "
     )
 }
