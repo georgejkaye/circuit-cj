@@ -234,7 +234,9 @@ let gateLevelLatticeStructure = FiniteLattice(
  * @return The clock waveform
  */
 public func GenerateClock(
-    rate!: Int64, cycles!: Int64
+    period!: Int64, duty!: Float64 = 0.5, cycles!: Int64
 ) : Waveform<GateLevelValue> {
-    GenerateClock(rate: rate, cycles: cycles, high: TRUE, low: FALSE)
+    GenerateClock(
+        period: period, cycles: cycles, duty: duty, high: TRUE, low: FALSE
+    )
 }
