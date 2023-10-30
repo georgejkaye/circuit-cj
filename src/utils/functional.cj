@@ -278,3 +278,24 @@ public func fsts<T, U>(xs : Array<(T, U)>) : Array<T> {
 public func snds<T, U>(xs : Array<(T, U)>) : Array<U> {
     map({ pair : (T, U) => pair[1] }, xs)
 }
+/**
+ * Call a function for each element of a collection, but discard its output.
+ *
+ * @param f (element, index) -> output (discarded)
+ * @param xs
+ * @param start
+ * @param end
+ */
+public func forEach<T, U>(
+    f : (T, Int64) -> U, xs : Collection<T>,
+    start!: Int64 = 0, end!: Int64 = xs.size
+) : Unit {
+    let iter = xs.iterator()
+    for(i in 0..start){
+        iter.next()
+    }
+    for(i in start..end) {
+        let x = iter.next().getOrThrow()
+        f(x, i)
+    }
+}
