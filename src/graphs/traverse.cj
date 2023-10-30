@@ -178,28 +178,31 @@ public func Traverse<V, G>(
 ) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let graph =
-        AssertElementsAllHaveSameOwner<V, G, TraversalElement<V, G>>(elements)
-    let frontier = HashSet<TraversalElement<V, G>>(elements)
-    let traversalData = TraversalData(
-        frontier, HashSet<TraversalElement<V, G>>(),
-        actionAtVertex, actionAtEdge
-    )
-    while(traversalData.frontier.size != 0) {
-        let currentElement = frontier.iterator().next().getOrThrow()
-        frontier.remove(currentElement)
-        // Check that this element is actually still in the graph
-        // This might not be the case if an action removes elements
-        if(graph.ContainsElement(currentElement)){
-            Debug("Visiting ${currentElement}")
-            traversalData.visitedElements.put(currentElement)
-            let elementsToAdd = match(currentElement) {
-                case EDGE(e) => actionAtEdge(e, traversalData)
-                case VERTEX(v) => actionAtVertex(v, traversalData)
-            }
-            for(elem in elementsToAdd) {
-                if(revisit || !traversalData.visitedElements.contains(elem)) {
-                    traversalData.frontier.put(elem)
+    // Can only traverse if we have elements to traverse from
+    if(elements.size > 0) {
+        let graph =
+            AssertElementsAllHaveSameOwner<V, G, TraversalElement<V, G>>(elements)
+        let frontier = HashSet<TraversalElement<V, G>>(elements)
+        let traversalData = TraversalData(
+            frontier, HashSet<TraversalElement<V, G>>(),
+            actionAtVertex, actionAtEdge
+        )
+        while(traversalData.frontier.size != 0) {
+            let currentElement = frontier.iterator().next().getOrThrow()
+            frontier.remove(currentElement)
+            // Check that this element is actually still in the graph
+            // This might not be the case if an action removes elements
+            if(graph.ContainsElement(currentElement)){
+                Debug("Visiting ${currentElement}")
+                traversalData.visitedElements.put(currentElement)
+                let elementsToAdd = match(currentElement) {
+                    case EDGE(e) => actionAtEdge(e, traversalData)
+                    case VERTEX(v) => actionAtVertex(v, traversalData)
+                }
+                for(elem in elementsToAdd) {
+                    if(revisit || !traversalData.visitedElements.contains(elem)) {
+                        traversalData.frontier.put(elem)
+                    }
                 }
             }
         }
