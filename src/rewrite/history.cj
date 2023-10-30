@@ -335,7 +335,8 @@ func GetInputOutputString<V, G> (
     let headerLine = "${tickHeader} ${inputHeader} ${outputHeader}"
     lines.append(headerLine)
     // Write a dividing line between header and content
-    let headerUnderline = "".padRight(totalLength, paddingChar: '=')
+    let underlineLength = max(headerLine.size, totalLength)
+    let headerUnderline = "".padRight(underlineLength, paddingChar: '=')
     lines.append(headerUnderline)
     // Write the input output for each element in the collection
     let iter = ios.iterator()
