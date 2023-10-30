@@ -513,8 +513,8 @@ extend Evaluator<V,G> {
             drawLabels: drawLabels
         )
         let getSignalFromOutput = {
-            op : Output<V, G> =>
-                match(op) {
+            op : OutputData<V, G> =>
+                match(op.term) {
                     case BASE(s) => Some(s)
                     case _ => None<Signal<V>>
                 }
@@ -522,8 +522,8 @@ extend Evaluator<V,G> {
         let outputWaves = DrawWaveformsForPortArray(
             this.GetOutputHistoryPerPort(),
             getSignalFromOutput,
-            { i => this.GetOutput(i).GetWidth() },
-            { i => this.GetOutput(i).GetNameString() },
+            { i : Int64 => this.GetOutput(i).GetWidth() },
+            { i : Int64 => this.GetOutput(i).GetNameString() },
             labelLength: labelLength,
             signalDisplayFn: signalDisplayFn,
             componentLength: componentLength,

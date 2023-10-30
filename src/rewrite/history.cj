@@ -50,19 +50,19 @@ extend Function<V, G> <: Specifiable {
 /**
  * Enum of things that can be in the output after partial evaluation.
  */
-public enum Output<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
+public enum OutputTerm<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
     | BASE(Signal<V>)
-    | JOIN(Output<V, G>, Output<V, G>)
-    | FUNCTION(Function<V, G>, Array<Output<V, G>>, Int64)
-    | BUNDLE(Array<Output<V, G>>, Array<Int64>, Int64)
+    | JOIN(OutputTerm<V, G>, OutputTerm<V, G>)
+    | FUNCTION(Function<V, G>, Array<OutputTerm<V, G>>, Int64)
+    | BUNDLE(Array<OutputTerm<V, G>>, Array<Int64>, Int64)
 }
-extend Output<V, G> <: ToString {
+extend OutputTerm<V, G> <: ToString {
     func GetString(signalFn : (Signal<V>) -> String) : String {
         func GetMultiInputString(
-            op : String, inputs : Array<Output<V, G>>,
+            op : String, inputs : Array<OutputTerm<V, G>>,
             coarity : Int64, i : Int64
         ) : String {
-            let inputStrings = map({ op : Output<V, G> => "${op}" }, inputs)
+            let inputStrings = map({ op : OutputTerm<V, G> => "${op}" }, inputs)
             let indexScript = if(coarity > 1) {
                 "[${i}]"
             } else {
@@ -89,7 +89,7 @@ extend Output<V, G> <: ToString {
         GetString()
     }
 }
-extend Output<V, G> where V <: Decimal<V> {
+extend OutputTerm<V, G> where V <: Decimal<V> {
     public func GetString(signed!: Bool) : String {
         let fn = { s : Signal<V> =>
             let num = V.SignalToDec(s, signed: signed)
@@ -109,8 +109,8 @@ extend Output<V, G> where V <: Decimal<V> {
  * @return The output from the join
  */
 func MakeJoinOutput<V, G>(
-    ec : EdgeConnection<V, G>, computed : HashMap<Vertex<V, G>, Output<V, G>>
-) : Output<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
+    ec : EdgeConnection<V, G>, computed : HashMap<Vertex<V, G>, OutputTerm<V, G>>
+) : OutputTerm<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
     let leftOutput = GetOutputTerm(ec.GetEdge().GetSource(0), computed)
     let rightOutput = GetOutputTerm(ec.GetEdge().GetSource(1), computed)
     JOIN(leftOutput, rightOutput)
@@ -124,8 +124,8 @@ func MakeJoinOutput<V, G>(
  */
 func MakeFunctionOutput<V, G>(
     ec : EdgeConnection<V, G>, function : Function<V, G>,
-    computed : HashMap<Vertex<V, G>, Output<V, G>>
-) : Output<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
+    computed : HashMap<Vertex<V, G>, OutputTerm<V, G>>
+) : OutputTerm<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
     let sources = ec.GetEdge().GetSources()
     let outputs = map(
         { v : Vertex<V, G> => GetOutputTerm(v, computed) }, sources
@@ -141,8 +141,8 @@ func MakeFunctionOutput<V, G>(
  */
 func MakeBundlerOutput<V, G>(
     ec : EdgeConnection<V, G>, ns: Array<Int64>,
-    computed : HashMap<Vertex<V, G>, Output<V, G>>
-) : Output<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
+    computed : HashMap<Vertex<V, G>, OutputTerm<V, G>>
+) : OutputTerm<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
     let sources = ec.GetEdge().GetSources()
     let outputs = map(
         { v : Vertex<V, G> => GetOutputTerm(v, computed) }, sources
@@ -157,8 +157,8 @@ func MakeBundlerOutput<V, G>(
  * @return The output from the vertex
  */
 func GetOutputTerm<V, G>(
-    rootVertex : Vertex<V, G>, computed : HashMap<Vertex<V, G>, Output<V, G>>
-) : Output<V, G>
+    rootVertex : Vertex<V, G>, computed : HashMap<Vertex<V, G>, OutputTerm<V, G>>
+) : OutputTerm<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     match(computed.get(rootVertex)) {
@@ -200,8 +200,8 @@ func GetOutputTerm<V, G>(
  */
 func GetOutputTerm<V, G>(
     rootVertex : Vertex<V, G>
-) : Output<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
-    GetOutputTerm(rootVertex, HashMap<Vertex<V, G>, Output<V, G>>())
+) : OutputTerm<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
+    GetOutputTerm(rootVertex, HashMap<Vertex<V, G>, OutputTerm<V, G>>())
 }
 /**
  * Given an array of output terms, print their string as a comma-separated tuple
@@ -209,11 +209,11 @@ func GetOutputTerm<V, G>(
  * @param outputs
  * @return The output string
  */
-func GetOutputString<V, G>(
-    outputs : Array<Output<V, G>>
+func GetOutputTermString<V, G>(
+    outputs : Array<OutputData<V, G>>
 ) : String where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
     collectionToString(
-        outputs, { op : Output<V, G>, _ => op.GetString() },
+        outputs, { op : OutputData<V, G>, _ => op.term.GetString() },
         openingBracket: "(", closingBracket: ")", delimiter: ", "
     )
 }
@@ -225,13 +225,22 @@ func GetOutputString<V, G>(
  * @param signed
  * @return The output string
  */
-func GetOutputString<V, G>(
-    outputs : Array<Output<V, G>>, signed!: Bool
+func GetOutputTermString<V, G>(
+    outputs : Array<OutputData<V, G>>, signed!: Bool
 ) : String where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G> {
     collectionToString(
-        outputs, { op : Output<V, G>, _ => op.GetString(signed: signed) },
+        outputs,
+        { op : OutputData<V, G>, _ => op.term.GetString(signed: signed) },
         openingBracket: "(", closingBracket: ")", delimiter: ", "
     )
+}
+public struct OutputData<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    public OutputData(
+        public let term : OutputTerm<V, G>,
+        public let graph : InterfacedHypergraph<V, G>
+    ){}
 }
 /**
  * Struct for relating inputs and outputs in an evaluator.
@@ -241,15 +250,16 @@ public struct InputOutput<V, G> <: ToString
 {
     public InputOutput(
         let input : Array<Signal<V>>,
-        let output : Array<Output<V, G>>
+        let output : Array<OutputData<V, G>>
     ){}
     public func toString() : String {
-        "${GetArgumentString(this.input)} -> ${GetOutputString(this.output)}"
+        "${GetArgumentString(this.input)} -> " +
+            "${GetOutputTermString<V, G>(this.output)}"
     }
     public func GetInput() : Array<Signal<V>> {
         this.input
     }
-    public func GetOutput() : Array<Output<V, G>> {
+    public func GetOutput() : Array<OutputData<V, G>> {
         this.output
     }
 }
@@ -257,11 +267,11 @@ extend InputOutput<V, G> where V <: Decimal<V> {
     public func GetDecimalString(signed : Bool) : String {
         let outputString = collectionToString(
             this.output,
-            { op : Output<V, G>, _ => op.GetString(signed: signed) },
+            { op : OutputData<V, G>, _ => op.term.GetString(signed: signed) },
             openingBracket: "(", closingBracket: ")", delimiter: ", "
         )
         "${GetArgumentString(this.input, signed: signed)}" +
-        " -> ${GetOutputString(this.output, signed: signed)}"
+        " -> ${GetOutputTermString(this.output, signed: signed)}"
     }
 }
 /**
@@ -272,10 +282,10 @@ public struct InputOutputHistory<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public let inputHistoryPerTick : ArrayList<Array<Signal<V>>>
-    public let outputHistoryPerTick : ArrayList<Array<Output<V, G>>>
+    public let outputHistoryPerTick : ArrayList<Array<OutputData<V, G>>>
     public let inputOutputHistoryPerTick : ArrayList<InputOutput<V, G>>
     public let inputHistoryPerPort : Array<ArrayList<Signal<V>>>
-    public let outputHistoryPerPort : Array<ArrayList<Output<V, G>>>
+    public let outputHistoryPerPort : Array<ArrayList<OutputData<V, G>>>
     public init(inputs : Int64, outputs : Int64) {
         this.inputHistoryPerTick = ArrayList()
         this.outputHistoryPerTick = ArrayList()
@@ -283,7 +293,10 @@ public struct InputOutputHistory<V, G>
         this.inputHistoryPerPort =
             Array(inputs){ i => ArrayList<Signal<V>>() }
         this.outputHistoryPerPort =
-            Array(outputs){ i => ArrayList<Output<V, G>>() }
+            Array(outputs){ i => ArrayList<OutputData<V, G>>() }
+    }
+    public func GetNextTick() : Int64 {
+        return inputHistoryPerPort.size
     }
 }
 /**
@@ -297,7 +310,7 @@ public struct InputOutputHistory<V, G>
 func GetInputOutputString<V, G> (
     ios : Collection<InputOutput<V, G>>,
     inputFn : (Array<Signal<V>>) -> String,
-    outputFn : (Array<Output<V, G>>) -> String
+    outputFn : (Array<OutputData<V, G>>) -> String
 ) : String  where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
     let lines = ArrayList<String>()
     // Compute column widths
@@ -346,7 +359,7 @@ extend Evaluator<V, G> {
     public func GetInputHistoryPerPort() : Array<ArrayList<Signal<V>>> {
         this.history.inputHistoryPerPort
     }
-    public func GetOutputHistoryPerPort() : Array<ArrayList<Output<V, G>>> {
+    public func GetOutputHistoryPerPort() : Array<ArrayList<OutputData<V, G>>> {
         this.history.outputHistoryPerPort
     }
     public func GetInputOutputHistoryPerTick() : ArrayList<InputOutput<V, G>> {
@@ -356,7 +369,7 @@ extend Evaluator<V, G> {
         GetInputOutputString(
             this.history.inputOutputHistoryPerTick,
             { inputs => GetArgumentString(inputs) },
-            { outputs => GetOutputString(outputs) }
+            { outputs => GetOutputTermString(outputs) }
         )
     }
 }
@@ -368,7 +381,7 @@ extend Evaluator<V, G> where V <: Decimal<V> {
         GetInputOutputString(
             this.history.inputOutputHistoryPerTick,
             { inputs => GetArgumentString(inputs, signed: signed) },
-            { outputs => GetOutputString(outputs, signed: signed) }
+            { outputs => GetOutputTermString(outputs, signed: signed) }
         )
     }
 }

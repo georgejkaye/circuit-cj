@@ -172,29 +172,23 @@ public func GetCoreTargetVertices<V, G>(
     }
 }
 /**
- * Get the array of output signals of a graph at a given time. The elements of
- * the array will be None if the outputs cannot be successfully recovered, i.e.
- * if there is not a simple register at the desired tick of the clock.
+ * Get the array of outputs of a graph from a given source of some edge.
  *
- * @param currentVertices
- *             the array of vertices that are the targets of the output graph
- *             for each tick of the clock
- * @return An array in which each element is either a signal, or None if there
- *             is not a simple register at the desired tick for this output
+ * @param edges The array of join edges for the desired tick of the clock
+ * @param i The index of the source that the output feeds into
+ * @return An array of outputs
  */
-func GetOutputSignals<V, G>(
-   signalVertices : Array<Vertex<V, G>>
-) : Array<Output<V, G>>
+func GetOutputData<V, G>(
+    outputSubgraphs : Array<InterfacedHypergraph<V, G>>
+) : Array<OutputData<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    map(GetOutputTerm<V, G>, signalVertices)
-}
-func GetOutputSignals<V, G>(
-    edges : Array<Edge<V, G>>, i : Int64
-) : Array<Output<V, G>>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    map({ e : Edge<V, G> => GetOutputTerm(e.GetSource(i)) }, edges)
+    map(
+        { f =>
+            let term = GetOutputTerm(f.GetOutput(0).GetVertex())
+            OutputData<V, G>(term, f)
+        }, outputSubgraphs
+    )
 }
 /**
  * Update the various input-output history data structures with the latest
@@ -209,20 +203,47 @@ func GetOutputSignals<V, G>(
 func UpdateInputOutputHistory<V, G>(
     graph : InterfacedHypergraph<V, G>,
     inputSignals : Array<Signal<V>>,
-    joinEdges : Array<Edge<V, G>>,
+    outputSubgraphs : Array<InterfacedHypergraph<V, G>>,
     history : InputOutputHistory<V, G>
 ) : Unit where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
-    let outputSignals = GetOutputSignals(joinEdges, 0)
+    let outputData = GetOutputData(outputSubgraphs)
     history.inputHistoryPerTick.append(inputSignals)
-    history.outputHistoryPerTick.append(outputSignals)
-    let inputOutput = InputOutput(inputSignals, outputSignals)
+    history.outputHistoryPerTick.append(outputData)
+    let inputOutput = InputOutput(inputSignals, outputData)
     history.inputOutputHistoryPerTick.append(inputOutput)
     for(i in 0..graph.GetArity()) {
         history.inputHistoryPerPort[i].append(inputSignals[i])
     }
     for(i in 0..graph.GetCoarity()) {
-        history.outputHistoryPerPort[i].append(outputSignals[i])
+        history.outputHistoryPerPort[i].append(outputData[i])
     }
+}
+func CollapseSingleOutput<V, G>(
+    rootVertex : Vertex<V, G>,
+    circuitName : String,
+    tick : Int64, index : Int64
+) : InterfacedHypergraph<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    let (subgraph, _) = rootVertex.GetGraph().CollapseSubgraph(
+        Array<TentacleOrigin<V, G>>(),
+        [FROM_VERTEX(rootVertex)],
+        "${circuitName}[${index}] @ ${tick}"
+    )
+    subgraph
+}
+func CollapseOutputs<V, G>(
+    joinEdges : Array<Edge<V, G>>, circuitName : String,
+    tick : Int64
+) : Array<InterfacedHypergraph<V, G>>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    mapi(
+        { e : Edge<V, G>, i : Int64 =>
+            CollapseSingleOutput(e.GetSource(0), circuitName, tick, i)
+        },
+        joinEdges
+    )
 }
 /**
  * Perform a cycle of the circuit in evaluator form given some input signals.
@@ -281,9 +302,12 @@ func PerformCycle<V, G>(
         signature, graph, rewriteStartingElements, rewriteEndingElements,
         copyBlackBoxes: true, allInstantaneous: true, debug: debug
     )
+    let outputSubgraphs = CollapseOutputs(
+        currentJoinEdges, graph.GetName(), history.GetNextTick()
+    )
     // Look at what we've just done and update the input output history
     UpdateInputOutputHistory(
-        graph, inputSignals, currentJoinEdges, history
+        graph, inputSignals, outputSubgraphs, history
     )
 }
 extend Evaluator<V, G> {
