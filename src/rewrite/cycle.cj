@@ -227,7 +227,7 @@ func CollapseSingleOutput<V, G>(
 {
     let (subgraph, _) = rootVertex.GetGraph().CollapseSubgraph(
         Array<TentacleOrigin<V, G>>(),
-        [FROM_VERTEX(rootVertex)],
+        [FROM_EDGE(rootVertex.GetInEdge().getOrThrow())],
         "${circuitName}[${index}] @ ${tick}"
     )
     subgraph
@@ -303,7 +303,7 @@ func PerformCycle<V, G>(
         copyBlackBoxes: true, allInstantaneous: true, debug: debug
     )
     let outputSubgraphs = CollapseOutputs(
-        currentJoinEdges, graph.GetName(), history.GetNextTick()
+        currentJoinEdges, graph.GetName(), history.GetCurrentTick()
     )
     // Look at what we've just done and update the input output history
     UpdateInputOutputHistory(

@@ -249,8 +249,8 @@ public struct InputOutput<V, G> <: ToString
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public InputOutput(
-        let input : Array<Signal<V>>,
-        let output : Array<OutputData<V, G>>
+        public let input : Array<Signal<V>>,
+        public let output : Array<OutputData<V, G>>
     ){}
     public func toString() : String {
         "${GetArgumentString(this.input)} -> " +
@@ -295,8 +295,8 @@ public struct InputOutputHistory<V, G>
         this.outputHistoryPerPort =
             Array(outputs){ i => ArrayList<OutputData<V, G>>() }
     }
-    public func GetNextTick() : Int64 {
-        return inputHistoryPerPort.size
+    public func GetCurrentTick() : Int64 {
+        return inputOutputHistoryPerTick.size
     }
 }
 /**
