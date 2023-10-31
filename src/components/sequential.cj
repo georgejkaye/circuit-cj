@@ -435,24 +435,29 @@ public func IsSimpleRegister<V, G>(
             }
     }
 }
+func Apply<V, G>(danglingWire : Wire<V, G>, appliedWire : Wire<V, G>) : Unit
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    MergeWires(danglingWire, appliedWire, instant: false)
+}
 public func Apply<V, G>(w : Wire<V, G>, input : Signal<V>) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertBothSameWidth(w, input)
-    let signal = UseSignal<V, G>(input)
-    MergeWires(signal, w, instant: false)
+    let applyWire = UseSignal<V, G>(input)
+    Apply(w, applyWire)
 }
 public func Apply<V, G>(w : Wire<V, G>, input : V) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertHasWidth(w, 1)
-    let signal = UseValue<V, G>(input)
-    MergeWires(signal, w, instant: false)
+    let applyWire = UseValue<V, G>(input)
+    Apply(w, applyWire)
 }
 public func Apply<V, G>(w : Wire<V, G>, input : Waveform<V>) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertBothSameWidth(w, input)
-    let wave = UseClosedWaveform<V, G>(waveform: input)
-    MergeWires(wave, w, instant: false)
+    let applyWire = UseClosedWaveform<V, G>(waveform: input)
+    Apply(w, applyWire)
 }
