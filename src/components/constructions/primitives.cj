@@ -55,7 +55,7 @@ public func UseRippleBinaryPrimitive<V, G>(
 {
     AssertEqual(primitive.GetArity(), 2)
     AssertLengthIsGreaterThanOrEqualTo(inputWires, 2)
-    let width = AssertAllElementsHaveSameWidth(inputWires)
+    let width = AssertAllHaveSameWidth(inputWires)
     if(inputWires.size == 2) {
         UsePrimitive(primitive, inputWires, delay: delay)
     } else {
@@ -115,7 +115,7 @@ public func UseBitwiseMapPrimitive<V, G>(
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let width = AssertAllElementsHaveSameWidth(inputWires)
+    let width = AssertAllHaveSameWidth(inputWires)
     AssertHasLength(inputWires, primitive.GetArity())
     if(width == 1) {
         UsePrimitive(primitive, inputWires, delay: delay)
@@ -171,7 +171,7 @@ public func UseBitwiseRippleBinaryPrimitive<V, G>(
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let width = AssertAllElementsHaveSameWidth(inputWires)
+    let width = AssertAllHaveSameWidth(inputWires)
     UseSubcircuit(
         MakeBitwiseRippleBinaryPrimitive(primitive, width: width, delay: delay),
         inputWires

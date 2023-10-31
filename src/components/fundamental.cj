@@ -36,7 +36,7 @@ public func UsePrimitive<V, G>(
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    AssertAllElementsHaveWidth(inputs, 1)
+    AssertAllHaveWidth(inputs, 1)
     UseOperation(PRIMITIVE(primitive), inputs, delay: delay)
 }
 /**

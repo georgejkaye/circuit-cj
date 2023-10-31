@@ -71,7 +71,7 @@ public func AssertBothSameWidth<T, U>(t : T, u : U) : Int64
  * @param xs
  * @return The width of the objects if they are all the same
  */
-public func AssertAllElementsHaveSameWidth<T>(
+public func AssertAllHaveSameWidth<T>(
     xs : Collection<T>, start!: Int64 = 0, end!: Int64 = xs.size,
     excluding!: HashSet<Int64> = HashSet()
 ) : Int64
@@ -89,7 +89,7 @@ public func AssertAllElementsHaveSameWidth<T>(
  * @param xs
  * @param i The desired width
  */
-public func AssertAllElementsHaveWidth<T>(xs : Array<T>, i : Int64) : Unit
+public func AssertAllHaveWidth<T>(xs : Array<T>, i : Int64) : Unit
     where T <: HasWidth & ToString
 {
     AssertAllElementsHaveSameParameter<T, Int64>(
@@ -131,7 +131,7 @@ public func AssertArrayArraysSameWidths<T>(xss : Array<Array<T>>) : Int64
     if(parentSize > 0) {
         let childSize = AssertAllSameLength(xss)
         for(i in 0..childSize){
-            AssertAllElementsHaveSameWidth(
+            AssertAllHaveSameWidth(
                 Array(parentSize){ j : Int64 => xss[j][i] }
             )
         }

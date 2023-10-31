@@ -214,7 +214,7 @@ public func BitwiseMap<V, G>(
 public func BitwiseMap<V, G>(
     f : (Array<Wire<V, G>>) -> Wire<V, G>,
     inputWires : Array<Wire<V, G>>,
-    numberOfOperations!: Int64 = AssertAllElementsHaveSameWidth(inputWires),
+    numberOfOperations!: Int64 = AssertAllHaveSameWidth(inputWires),
     sharedIndices!: HashSet<Int64>
 ) : Wire<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
     let fAdjusted = { inputs : Array<Wire<V, G>> => [f(inputs)] }
@@ -434,7 +434,7 @@ public func UseBitwiseMap<V, G>(
 ) : Array<Wire<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let width = AssertAllElementsHaveSameWidth(inputWires, excluding: sharedInputWires)
+    let width = AssertAllHaveSameWidth(inputWires, excluding: sharedInputWires)
     UseSubcircuit(
         MakeBitwiseMap(
             f, numberOfOperations: numberOfOperations,

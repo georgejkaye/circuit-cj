@@ -293,7 +293,7 @@ public func MakeMux(
 func UseMux(inputs: Array<BelnapWire>) : BelnapWire {
     let exponent = Int64(floor(log(Float64(inputs.size)) / log(2.0)))
     let choices = inputs.size - exponent
-    let width = AssertAllElementsHaveSameWidth(inputs, start: exponent)
+    let width = AssertAllHaveSameWidth(inputs, start: exponent)
     UseSubcircuit_1<GateLevelValue, GateLevelPrimitive>(
         MakeMux(inputs: choices, width: width), inputs
     )
