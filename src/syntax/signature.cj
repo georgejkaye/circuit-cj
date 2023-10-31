@@ -43,7 +43,6 @@ public interface ValueSymbol<V>
      */
     static func GetWaveformHeight() : Int64
 }
-
 public interface PrimitiveSymbol<V, G>
     <: Hashable & Equatable<G> & HasName & ToString & Specifiable
     where V <: ValueSymbol<V>

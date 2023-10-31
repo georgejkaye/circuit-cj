@@ -141,3 +141,76 @@ public func GetOutputString<V>(
         }, openingBracket: "(", closingBracket: ")", delimiter: ","
     )
 }
+/**
+ * Enum of inputs that may be parially specified in some way
+ */
+public enum PartialInputType<V> where V <: ValueSymbol<V> {
+    | FIXED(Signal<V>)
+    | VARIABLE(Array<Signal<V>>)
+    | UNKNOWN
+}
+extend PartialInputType<V> <: Equatable<PartialInputType<V>> {
+    public operator func ==(rhs : PartialInputType<V>) {
+        match(this) {
+            case FIXED(s) => match(rhs) {
+                case FIXED(t) => s == t
+                case _ => false
+            }
+            case VARIABLE(ss) => match(rhs) {
+                case VARIABLE(tt) => ss == tt
+                case _ => false
+            }
+            case UNKNOWN => match(rhs) {
+                case UNKNOWN => true
+                case _ => false
+            }
+        }
+    }
+    public operator func !=(rhs : PartialInputType<V>) {
+        !(this == rhs)
+    }
+}
+public struct PartialInput<V> where V <: ValueSymbol<V> {
+    public PartialInput(
+        public let partialType : PartialInputType<V>,
+        public let width : Int64
+    ){
+        match(partialType) {
+            case FIXED(s) => AssertHasWidth(s, width)
+            case VARIABLE(ss) => AssertAllHaveWidth(ss, width)
+            case UNKNOWN => ()
+        }
+    }
+}
+extend PartialInput<V> <: ToString {
+    public func toString() : String {
+        match(this.partialType) {
+            case FIXED(v) => "Fixed ${v}"
+            case VARIABLE(vs) => "Variable ${arrayToString(vs)}"
+            case UNKNOWN => "Unknown"
+        }
+    }
+}
+extend PartialInput<V> <: HasName {
+    public func GetName() : String {
+        match(this.partialType) {
+            case FIXED(v) => "v"
+            case VARIABLE(vs) =>
+                arrayToString(vs, openingBracket: "{", closingBracket: "}")
+            case UNKNOWN => "?"
+        }
+    }
+}
+extend PartialInput<V> <: HasWidth {
+    public func GetWidth() : Int64 {
+        this.width
+    }
+}
+extend PartialInput<V> <: Equatable<PartialInput<V>> {
+    public operator func ==(rhs : PartialInput<V>) {
+        this.width == rhs.width && this.partialType == rhs.partialType
+    }
+    public operator func !=(rhs : PartialInput<V>) {
+        !(this == rhs)
+    }
+}

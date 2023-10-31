@@ -119,6 +119,18 @@ let signalStyle = [
     bgColour("green")
 ]
 /**
+ * The style for variable partial inputs
+ */
+let variableStyle = [
+    bgColour("orange")
+]
+/**
+ * The style for unknown partial inputs
+ */
+let unknownStyle = [
+    bgColour("crimson")
+]
+/**
  * The style for register boxes
  */
 let registerStyle = [
@@ -451,6 +463,21 @@ func DrawEdgeNode<V, G>(
                 bottomStyle
             } else {
                 signalStyle
+            }
+        case PARTIAL(p) =>
+            match(p.partialType) {
+                case FIXED(s) =>
+                    if(s.IsAll(V.GetDisconnected())) {
+                        bottomStyle
+                    } else if(s.GetWidth() == 1) {
+                        valueStyle
+                    } else {
+                        signalStyle
+                    }
+                case VARIABLE(ss) =>
+                    variableStyle
+                case UNKNOWN =>
+                    unknownStyle
             }
         case REGISTER(_) =>
             registerStyle

@@ -20,6 +20,8 @@ public enum Label<V, G>
     | VALUE(V)
     // A collection of values 0 -> n
     | SIGNAL(Signal<V>)
+    // A partially specified input
+    | PARTIAL(PartialInput<V>)
     // A join of a signal and a delay
     | REGISTER(Signal<V>)
     // A sequence of signals over time
@@ -56,7 +58,9 @@ extend Label<V, G>
         match(this) {
             case VALUE(_) =>
                 []
-            case SIGNAL(spec) =>
+            case SIGNAL(_) =>
+                []
+            case PARTIAL(_) =>
                 []
             case REGISTER(signal) =>
                 [Port(signal.GetWidth())]
@@ -88,6 +92,8 @@ extend Label<V, G>
                 [Port(1)]
             case SIGNAL(spec) =>
                 spec.GetOutputPorts()
+            case PARTIAL(w) =>
+                [Port(w.GetWidth())]
             case REGISTER(signal) =>
                 [Port(signal.GetWidth())]
             case OPEN_WAVEFORM(wf) =>
@@ -117,6 +123,8 @@ extend Label<V, G>
                 "${v}"
             case SIGNAL(spec) =>
                 spec.GetName()
+            case PARTIAL(p) =>
+                p.GetName()
             case REGISTER(signal) =>
                 "${signal.GetName()} ::"
             case OPEN_WAVEFORM(wf) =>
@@ -152,6 +160,10 @@ extend Label<V, G>
             }
             case SIGNAL(s) => match(rhs) {
                 case SIGNAL(t) => s == t
+                case _ => false
+            }
+            case PARTIAL(p) => match(rhs) {
+                case PARTIAL(q) => p == q
                 case _ => false
             }
             case REGISTER(s) => match(rhs) {
@@ -427,6 +439,7 @@ extend Label<V, G>
         match(this) {
             case VALUE(_) => "VALUE"
             case SIGNAL(spec) => "SIGNAL"
+            case PARTIAL(p) => "PARTIAL"
             case REGISTER(signal) => "REGISTER"
             case OPEN_WAVEFORM(wf) => "OPEN_WAVEFORM"
             case CLOSED_WAVEFORM(wf) => "CLOSED_WAVEFORM"
