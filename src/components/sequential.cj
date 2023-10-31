@@ -453,6 +453,6 @@ public func Apply<V, G>(w : Wire<V, G>, input : Waveform<V>) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertBothSameWidth(w, input)
-    let wave = UseWaveform<V, G>(input)
+    let wave = UseClosedWaveform<V, G>(waveform: input)
     MergeWires(wave, w, instant: false)
 }
