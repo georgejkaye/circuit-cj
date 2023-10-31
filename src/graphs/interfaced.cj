@@ -482,7 +482,7 @@ public class InterfacedHypergraph<V, G>
     /**
      * Given some edge connections, collapse a subgraph with inputs these
      * edge connections and the inputs of the graph, and outputs these edge
-     * connections adn the outputs of the graph.
+     * connections and the outputs of the graph.
      *
      * @param connections
      * @param label
@@ -497,32 +497,21 @@ public class InterfacedHypergraph<V, G>
     ) : (Array<Vertex<V, G>>, Edge<V, G>, InterfacedHypergraph<V, G>) {
         // Slice the relevant connections first so that the collapsing of
         // the subgraph does not interfere with their identities
-        let slicedVertices = map(
-            { ec : EdgeConnection<V, G> => ec.SliceTentacle() },
-            connections
-        )
+        let slicedVertices = map(SliceTentacle<V, G>, connections)
         let subgraphArity = connections.size + this.GetArity()
         let subgraphCoarity = connections.size + this.GetCoarity()
-        let subgraphInputs = Array<TentacleOrigin<V, G>>(subgraphArity){
-            i : Int64 =>
-                if(i < connections.size) {
-                    FROM_VERTEX(slicedVertices[i][1])
-                } else {
-                    FROM_VERTEX(
-                        this.GetInput(i - connections.size).GetVertex()
-                    )
-                }
-        }
-        let subgraphOutputs = Array<TentacleOrigin<V, G>>(subgraphCoarity){
-            i : Int64 =>
-                if(i < connections.size) {
-                    FROM_VERTEX(slicedVertices[i][0])
-                } else {
-                    FROM_VERTEX(
-                        this.GetOutput(i - connections.size).GetVertex()
-                    )
-                }
-        }
+        let subgraphInputs = concat(
+            slicedVertices,
+            { vv : (Vertex<V, G>, Vertex<V, G>) => FROM_VERTEX(vv[1]) },
+            this.GetInputs(),
+            { iv : InterfaceVertex<V, G> => FROM_VERTEX(iv.GetVertex()) }
+        )
+        let subgraphOutputs = concat(
+            slicedVertices,
+            { vv : (Vertex<V, G>, Vertex<V, G>) => FROM_VERTEX(vv[0]) },
+            this.GetOutputs(),
+            { iv : InterfaceVertex<V, G> => FROM_VERTEX(iv.GetVertex()) }
+        )
         let (newGraph, newEdge) = this.CollapseSubgraph(
             subgraphInputs, subgraphOutputs, label
         )
