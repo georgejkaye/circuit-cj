@@ -43,6 +43,18 @@ public func append<T>(xs : Array<T>, y : T) : Array<T> {
             }
     }
 }
+public func concat<T, U, V>(
+    xs : Array<T>, fx : (T) -> V, ys : Array<U>, fy : (U) -> V
+) : Array<V> {
+    Array<V>(xs.size + ys.size){
+        i : Int64 =>
+            if(i < xs.size) {
+                fx(xs[i])
+            } else {
+                fy(ys[i - xs.size])
+            }
+    }
+}
 /**
  * Given two arrays, create a new array with their concatenation.
  *
@@ -51,14 +63,7 @@ public func append<T>(xs : Array<T>, y : T) : Array<T> {
  * @return The concatenation of xs and ys
  */
 public func concat<T>(xs : Array<T>, ys : Array<T>) : Array<T> {
-    Array<T>(xs.size + ys.size){
-        i : Int64 =>
-            if(i < xs.size) {
-                xs[i]
-            } else {
-                ys[i - xs.size]
-            }
-    }
+    concat(xs, { t => t }, ys, { t => t})
 }
 public func concat<T>(xss : Array<Array<T>>) : Array<T> {
     concat(xss, { t => t })
