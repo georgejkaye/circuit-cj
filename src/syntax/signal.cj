@@ -182,13 +182,18 @@ public struct PartialInput<V> where V <: ValueSymbol<V> {
         }
     }
 }
-extend PartialInput<V> <: ToString {
+extend PartialInputType<V> <: ToString {
     public func toString() : String {
-        match(this.partialType) {
+        match(this) {
             case FIXED(v) => "Fixed ${v}"
             case VARIABLE(vs) => "Variable ${arrayToString(vs)}"
             case UNKNOWN => "Unknown"
         }
+    }
+}
+extend PartialInput<V> <: ToString {
+    public func toString() : String {
+        "${this.partialType} (${this.width})"
     }
 }
 extend PartialInput<V> <: HasName {
