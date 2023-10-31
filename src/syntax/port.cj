@@ -18,6 +18,11 @@ extend Int64 <: HasWidth {
         this
     }
 }
+
+public func GetWidth<T>(t : T) : Int64 where T <: HasWidth {
+    t.GetWidth()
+}
+
 /**
  * Assert something has a width of exactly some value.
  *
@@ -178,6 +183,14 @@ public interface HasPort <: HasWidth & HasOptionalName & ToString {
         Port(this.GetWidth(), name: this.GetName())
     }
 }
+
+public func ToBlankPort<T>(t : T) : Port where T <: HasWidth {
+    Port(t.GetWidth())
+}
+public func ToPort<T>(t : T) : Port where T <: HasWidth & HasOptionalName {
+    Port(t.GetWidth(), name: t.GetName())
+}
+
 /**
  * A port has a width and an optional name
  */
