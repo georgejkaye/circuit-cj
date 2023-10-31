@@ -173,6 +173,24 @@ public func arrayToString<T>(
     )
 }
 /**
+ * Get a bespokely printed string of an array.
+ *
+ * @param array
+ * @param printFn The function that generates a string for an element
+ * @param openingBracket
+ * @param closingBracket
+ * @param delimiter
+ */
+public func arrayToString<T>(
+    array : Array<T>, openingBracket!: String = "[",
+    closingBracket!: String = "]", delimiter!: String = ", "
+) : String where T <: ToString {
+    arrayToString(
+        array, { t, _ => "${t}" }, openingBracket: openingBracket,
+        closingBracket: closingBracket, delimiter: delimiter
+    )
+}
+/**
  * Get a bespokely printed string of an arraylist.
  *
  * @param array
