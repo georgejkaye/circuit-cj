@@ -26,8 +26,6 @@ extend VertexType <: ToString {
  * is a source or target of, and which index it is.
  */
 public struct EdgeConnection<V, G>
-    <: ToString & Equatable<EdgeConnection<V, G>> &
-        Hashable & HasGraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public EdgeConnection(
@@ -35,35 +33,6 @@ public struct EdgeConnection<V, G>
         public let index : Int64,
         public let vertexType : VertexType
     ) {}
-    public func toString() : String {
-        let initial = match(this.vertexType) {
-            case SOURCE => "s"
-            case TARGET => "t"
-        }
-        "${edge}.${initial}${index}"
-    }
-    public operator func ==(right: EdgeConnection<V, G>) : Bool {
-        this.edge == right.edge && this.index == right.index
-    }
-    public operator func !=(right : EdgeConnection<V, G>) : Bool {
-        !(this == right)
-    }
-    public func hashCode() : Int64 {
-        // This won't be unique if we have something with more than 100000
-        // sources or targets, but that's fairly unlikely
-        let code = edge.GetId() * 100000 + index
-        match(vertexType) {
-            case SOURCE => code
-            case TARGET => -code
-        }
-    }
-    public func GetWidth() : Int64 {
-        let t = match(vertexType) {
-            case SOURCE => edge.GetSource(index)
-            case TARGET => edge.GetTarget(index)
-        }
-        t.GetWidth()
-    }
     public func GetEdge() : Edge<V, G> {
         this.edge
     }
@@ -72,9 +41,6 @@ public struct EdgeConnection<V, G>
     }
     public func GetVertexType() : VertexType {
         this.vertexType
-    }
-    public func GetGraph() : Hypergraph<V, G> {
-        this.GetEdge().GetGraph()
     }
     /**
      * @return the vertex that this edge connection sprouts from.
@@ -109,6 +75,55 @@ public struct EdgeConnection<V, G>
         }
         (leftVertex, rightVertex)
     }
+}
+extend EdgeConnection<V, G> <: ToString {
+    public func toString() : String {
+        let initial = match(this.vertexType) {
+            case SOURCE => "s"
+            case TARGET => "t"
+        }
+        "${edge}.${initial}${index}"
+    }
+}
+extend EdgeConnection<V, G> <: Equatable<EdgeConnection<V, G>> {
+    public operator func ==(right: EdgeConnection<V, G>) : Bool {
+        this.edge == right.edge && this.index == right.index
+    }
+    public operator func !=(right : EdgeConnection<V, G>) : Bool {
+        !(this == right)
+    }
+}
+extend EdgeConnection<V, G> <: Hashable {
+    public func hashCode() : Int64 {
+        // This won't be unique if we have something with more than 100000
+        // sources or targets, but that's fairly unlikely
+        let code = edge.GetId() * 100000 + index
+        match(vertexType) {
+            case SOURCE => code
+            case TARGET => -code
+        }
+    }
+}
+extend EdgeConnection<V, G> <: HasWidth {
+    public func GetWidth() : Int64 {
+        let t = match(vertexType) {
+            case SOURCE => edge.GetSource(index)
+            case TARGET => edge.GetTarget(index)
+        }
+        t.GetWidth()
+    }
+}
+extend EdgeConnection<V, G> <: HasGraph<V, G> {
+    public func GetGraph() : Hypergraph<V, G> {
+        this.edge.GetGraph()
+    }
+}
+public func SliceTentacle<V, G>(
+    ec : EdgeConnection<V, G>
+) : (Vertex<V, G>, Vertex<V, G>)
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    ec.SliceTentacle()
 }
 /**
  * The two interfaces a vertex can be part of.
