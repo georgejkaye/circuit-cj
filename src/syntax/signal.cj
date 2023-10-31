@@ -11,14 +11,15 @@ package syntax
 /**
  * A signal is an array of values.
  */
-public struct Signal<V>
-    <: ToString & HasName & Specifiable & HasWidth & Equatable<Signal<V>>
-    where V <: ValueSymbol<V>
+public struct Signal<V> where V <: ValueSymbol<V>
 {
     public Signal(
         let values : Array<V>
     ){
         AssertNonEmpty(values)
+        // We enforce that signals are at most 256 bits long
+        // so that we can hash them; this should be plenty
+        AssertLengthIsLessThanOrEqualTo(values, 256)
     }
     /**
      * Create a signal with one value multiple times in parallel.
@@ -37,38 +38,11 @@ public struct Signal<V>
     public init(v : V) {
         this([v])
     }
-    public func GetName() : String {
-        fold_right({acc : String, v : V => "${acc}${v}"}, "", values)
-    }
     public func GetValues() : Array<V> {
         this.values
     }
     public func GetBit(i : Int64) : V {
         this.values[i]
-    }
-    public func toString() : String {
-        "${values}"
-    }
-    public func GetInputPorts() : Array<Port> {
-        []
-    }
-    public func GetArity() : Int64 {
-        0
-    }
-    public func GetOutputPorts() : Array<Port> {
-        [Port(values.size)]
-    }
-    public func GetCoarity() : Int64 {
-        1
-    }
-    public func GetWidth() : Int64 {
-        this.values.size
-    }
-    public operator func ==(rhs : Signal<V>) : Bool {
-        this.values == rhs.values
-    }
-    public operator func !=(rhs : Signal<V>) : Bool {
-        !(this == rhs)
     }
     /**
      * @param v a value
@@ -81,6 +55,57 @@ public struct Signal<V>
             }
         }
         true
+    }
+}
+extend Signal<V> <: ToString {
+    public func toString() : String {
+        "${values}"
+    }
+}
+extend Signal<V> <: Equatable<Signal<V>> {
+    public operator func ==(rhs : Signal<V>) : Bool {
+        this.values == rhs.values
+    }
+    public operator func !=(rhs : Signal<V>) : Bool {
+        !(this == rhs)
+    }
+}
+extend Signal<V> <: Hashable {
+    public func hashCode() : Int64 {
+        /**
+         * Kind of a hack, but it will probably work for everything anyone is
+         * going to make
+         */
+        let string =
+            arrayToString<V>(
+                this.values, { v : V, _ => "${v.hashCode()}" },
+                openingBracket: "", closingBracket: "", delimiter: " "
+            )
+        string.hashCode()
+    }
+}
+extend Signal<V> <: HasName {
+    public func GetName() : String {
+        fold_right({acc : String, v : V => "${acc}${v}"}, "", values)
+    }
+}
+extend Signal<V> <: HasWidth {
+    public func GetWidth() : Int64 {
+        this.values.size
+    }
+}
+extend Signal<V> <: Specifiable {
+    public func GetInputPorts() : Array<Port> {
+        []
+    }
+    public func GetArity() : Int64 {
+        0
+    }
+    public func GetOutputPorts() : Array<Port> {
+        [Port(values.size)]
+    }
+    public func GetCoarity() : Int64 {
+        1
     }
 }
 /**
