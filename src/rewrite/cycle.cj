@@ -218,29 +218,42 @@ func UpdateInputOutputHistory<V, G>(
         history.outputHistoryPerPort[i].append(outputData[i])
     }
 }
+/**
+ * Collapse the instantaneous component of a register join into a subgraph.
+ *
+ * @param rootVertex
+ * @param label
+ * @param tick The tick of the clock this output is for
+ * @param index The index of the graph outputs this is for
+ */
 func CollapseSingleOutput<V, G>(
-    rootVertex : Vertex<V, G>,
-    circuitName : String,
-    tick : Int64, index : Int64
+    rootVertex : Vertex<V, G>, label : Label<V, G>, tick : Int64, index : Int64
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let (subgraph, _) = rootVertex.GetGraph().CollapseSubgraph(
         Array<TentacleOrigin<V, G>>(),
         [FROM_EDGE(rootVertex.GetInEdge().getOrThrow())],
-        "${circuitName}[${index}] @ ${tick}"
+        "${label.GetName()}[${index}] @ ${tick}"
     )
     subgraph
 }
+/**
+ * Collapse the instantaneous component of an array of register joins into a
+ * subgraph.
+ *
+ * @param joinEdges
+ * @param label
+ * @param tick The tick of the clock this output is for
+ */
 func CollapseOutputs<V, G>(
-    joinEdges : Array<Edge<V, G>>, circuitName : String,
-    tick : Int64
+    joinEdges : Array<Edge<V, G>>, label : Label<V, G>, tick : Int64
 ) : Array<InterfacedHypergraph<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     mapi(
         { e : Edge<V, G>, i : Int64 =>
-            CollapseSingleOutput(e.GetSource(0), circuitName, tick, i)
+            CollapseSingleOutput(e.GetSource(0), label, tick, i)
         },
         joinEdges
     )
@@ -303,7 +316,7 @@ func PerformCycle<V, G>(
         copyBlackBoxes: true, allInstantaneous: true, debug: debug
     )
     let outputSubgraphs = CollapseOutputs(
-        currentJoinEdges, graph.GetName(), history.GetCurrentTick()
+        currentJoinEdges, graph.GetLabel(), history.GetCurrentTick()
     )
     // Look at what we've just done and update the input output history
     UpdateInputOutputHistory(
