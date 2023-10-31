@@ -168,5 +168,5 @@ public func BuildWaveform<V>(
         { value : (V, Int64) => (Signal([value[0]]), value[1]) },
         values
     )
-    BuildWaveform(signals)
+    BuildWaveform<V>(signals)
 }

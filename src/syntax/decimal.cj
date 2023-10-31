@@ -192,7 +192,7 @@ public func BuildWaveform<V>(
             (V.DecToSignal(signal[0], width: width, signed: signed), signal[1])
         }, signals
     )
-    BuildWaveform(actualSignals)
+    BuildWaveform<V>(actualSignals)
 }
 extend Signature<V, G>
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
