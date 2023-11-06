@@ -474,7 +474,7 @@ public func NameWires<V, G>(
         { i : Int64 => InterfaceWire(wires[i], f(i)) }
     )
 }
-extend Wire<V, G> <: Drawable<V, G> where V <: Decimal<V> {
+extend Wire<V, G> <: Drawable<V, G> {
     public func WriteDotToFile(
         file : String, depth!: Int64 = 0,
         debug!: Bool = false, expandSignals!: Bool = false
