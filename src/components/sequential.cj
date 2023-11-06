@@ -435,29 +435,158 @@ public func IsSimpleRegister<V, G>(
             }
     }
 }
-func Apply<V, G>(danglingWire : Wire<V, G>, appliedWire : Wire<V, G>) : Unit
+/**
+ * Left-compose some arguments to a circuit.
+ *
+ * @param f
+ * @param argInputs The inputs to the arguments, if they are open
+ * @param argOutputs The outputs to the arguments
+ * @param argStrings The strings describing each argument
+ * @return The circuit with the given arguments applied
+ */
+func Apply<V, G>(
+    f : InterfacedHypergraph<V, G>, argInputs : Array<Option<Wire<V, G>>>,
+    argOutputs : Array<Option<Wire<V, G>>>, argStrings : Array<Option<String>>
+) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    MergeWires(danglingWire, appliedWire, instant: false)
+    let graph = f.Clone()
+    let actualInputs = mapi({
+        ow : Option<Wire<V, G>>, i : Int64 =>
+            match(ow) {
+                case Some(w) => w
+                case None => UseWire<V, G>(f.GetInput(i).GetWidth())
+            }
+        }, argInputs
+    )
+    let actualOutputs = mapi({
+            ow : Option<Wire<V, G>>, i : Int64 =>
+                match(ow) {
+                    case Some(w) => w
+                    case None => actualInputs[i]
+                }
+        }, argOutputs
+    )
+    let outputs = UseSubcircuit(f, actualOutputs)
+    let inputInterfaces = ArrayList<InterfaceWire<V, G>>()
+    forEach({
+        ow : Option<Wire<V, G>>, i : Int64 =>
+            let wire = match(ow) {
+                case None => ()
+                case Some(w) =>
+                    let iw = InterfaceWire(w, f.GetInput(i).GetName())
+                    inputInterfaces.append(iw)
+            }
+        }, argInputs
+    )
+    let outputInterfaces = mapi({
+        w : Wire<V, G>, i : Int64 => InterfaceWire(w, f.GetOutput(i).GetName())
+    }, outputs)
+    let argPrinter = {
+        arg : Option<String> =>
+            match(arg) {
+                case Some(a) => a
+                case None => "-"
+            }
+    }
+    let argumentString = concatStrings(argPrinter, argStrings, delimiter: ", ")
+    MakeSubcircuit(
+        inputInterfaces.toArray(),
+        outputInterfaces,
+        "${f.GetName()}(${argumentString})"
+    )
 }
-public func Apply<V, G>(w : Wire<V, G>, input : Signal<V>) : Unit
+/**
+ * Left-compose some signals to a circuit.
+ *
+ * @param f
+ * @param signals
+ * @return The circuit with the given arguments applied
+ */
+public func Apply<V, G>(
+    f : InterfacedHypergraph<V, G>, signals : Array<Signal<V>>
+) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    AssertBothSameWidth(w, input)
-    let applyWire = UseSignal<V, G>(input)
-    Apply(w, applyWire)
+    let inputWires = map({ s : Signal<V> => Some(UseSignal<V, G>(s)) }, signals)
+    let inputStrings = map({ s : Signal<V> => Some(s.GetName()) }, signals)
+    Apply(
+        f, Array<Option<Wire<V, G>>>(f.GetArity(), { i => None<Wire<V, G>> }),
+        inputWires, inputStrings
+    )
 }
-public func Apply<V, G>(w : Wire<V, G>, input : V) : Unit
+/**
+ * Left-compose some values to a circuit.
+ *
+ * @param f
+ * @param values
+ * @return The circuit with the given arguments applied
+ */
+public func Apply<V, G>(
+    f : InterfacedHypergraph<V, G>, values : Array<V>
+) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    AssertHasWidth(w, 1)
-    let applyWire = UseValue<V, G>(input)
-    Apply(w, applyWire)
+    Apply(f, map({ v => Signal([v]) }, values))
 }
-public func Apply<V, G>(w : Wire<V, G>, input : Waveform<V>) : Unit
+/**
+ * Left-compose some waveforms to a circuit.
+ *
+ * @param f
+ * @param signals
+ * @return The circuit with the given arguments applied
+ */
+public func Apply<V, G>(
+    f : InterfacedHypergraph<V, G>, inputs : Array<Waveform<V>>,
+    wfType : WaveformType
+) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    AssertBothSameWidth(w, input)
-    let applyWire = UseClosedWaveform<V, G>(waveform: input)
-    Apply(w, applyWire)
+    let argInputs = map({
+        wf : Waveform<V> =>
+            match(wfType){
+                case OPEN => UseWire<V, G>(wf.GetWidth())
+                case _ => None<Wire<V, G>>
+            }
+        }, inputs
+    )
+    let argOutputs = mapi({
+        wf : Waveform<V>, i : Int64 =>
+            let wire = match(wfType) {
+                case OPEN => UseOpenWaveform<V, G>(
+                    waveform: wf, input: argInputs[i].getOrThrow()
+                )
+                case CLOSED => UseClosedWaveform<V, G>(waveform: wf)
+                case INFINITE => UseInfiniteWaveform<V, G>(waveform: wf)
+            }
+            Some(wire)
+        }, inputs
+    )
+    let argStrings = map({ wf : Waveform<V> => Some(wf.GetName()) }, inputs)
+    Apply<V, G>(f, argInputs, argOutputs, argStrings)
+}
+/**
+ * Left-compose some partially specified to a circuit.
+ *
+ * @param f
+ * @param inputs
+ * @return The circuit with the given arguments applied
+ */
+public func Apply<V, G>(
+    f : InterfacedHypergraph<V, G>, inputs : Array<PartialInput<V>>
+) : InterfacedHypergraph<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    AssertHasLength(inputs, f.GetArity())
+    let argInputs = Array<Option<Wire<V, G>>>(
+        inputs.size, { i => None<Wire<V, G>> }
+    )
+    let argOutputs = mapi({
+        pi : PartialInput<V>, i : Int64 =>
+            Some(UseEdgeWithNewOutputs(
+                PARTIAL(pi), Array<Vertex<V, G>>(), None, None
+            )[0])
+    }, inputs)
+    let argStrings = map({ pi : PartialInput<V> => Some(pi.GetName()) }, inputs)
+    Apply(f, argInputs, argOutputs, argStrings)
 }

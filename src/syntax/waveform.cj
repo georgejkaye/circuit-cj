@@ -7,6 +7,10 @@
  * @since 0.3
  */
 package syntax
+public enum WaveformType {
+    | OPEN | CLOSED | INFINITE
+}
+
 /**
  * A waveform is a sequence of signals over time.
  *

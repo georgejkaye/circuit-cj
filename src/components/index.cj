@@ -8,7 +8,7 @@
  */
 package components
 
-from std import collection.HashSet
+from std import collection.{HashSet, ArrayList}
 
 import syntax.*
 import graphs.*
