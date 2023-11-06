@@ -209,7 +209,7 @@ public func map<T, U>(f : (T) -> U, xs : Array<T>) : Array<U> {
  * @param range
  * @return The result of the map
  */
-public func map<T>(f : (Int64) -> T, start!: Int64, end!: Int64, step!: Int64 = 1) : Array<T> {
+public func map<T>(f : (Int64) -> T, start!: Int64 = 0, end!: Int64, step!: Int64 = 1) : Array<T> {
     let stepFunc = { i : Int64 => i * step }
     let elemFunc = { i : Int64 =>
         if(start < end) {
