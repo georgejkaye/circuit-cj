@@ -250,12 +250,18 @@ public func concatStrings(
  * @return The concatenated string
  */
 public func concatStrings<T>(
-    fn : (T) -> String, ts : Collection<T>, initial!: String = "",
+    fn : (T, Int64) -> String, ts : Collection<T>, initial!: String = "",
     delimiter!: String = "", start!: Int64 = 0, end!: Int64 = ts.size
 ) : String {
-    fold_left(
-        { acc, cur => "${acc}${delimiter}${fn(cur)}"}, initial, ts,
-        start: start, end: end
+    foldi_left(
+        { acc, i, cur =>
+            let str = fn(cur, i)
+            if(i == 0) {
+                str
+            } else {
+                "${acc}${delimiter}${str}"
+            }
+        }, initial, ts, start: start, end: end
     )
 }
 /**
@@ -271,12 +277,12 @@ public func concatStrings<T>(
  * @return The concatenated string
  */
 public func concatStrings<T>(
-    fn : (T, Int64) -> String, ts : Collection<T>, initial!: String = "",
+    fn : (T) -> String, ts : Collection<T>, initial!: String = "",
     delimiter!: String = "", start!: Int64 = 0, end!: Int64 = ts.size
 ) : String {
-    foldi_left(
-        { acc, i, cur => "${acc}${delimiter}${fn(cur, i)}"}, initial, ts,
-        start: start, end: end
+    concatStrings(
+        { t : T, _ : Int64 => fn(t) }, ts, initial: initial,
+        delimiter: delimiter, start: start, end: end
     )
 }
 /**
@@ -295,8 +301,14 @@ public func concatStrings(
     start!: Int64 = 0, end!: Int64
 ) : String {
     fold_left(
-        { acc, cur => "${acc}${delimiter}${fn(cur)}"}, initial,
-        start: start, end: end
+        { acc, i =>
+            let cur = fn(i)
+            if(i == 0) {
+                cur
+            } else {
+                "${acc}${delimiter}${cur}"
+            }
+        }, initial, start: start, end: end
     )
 }
 /**
