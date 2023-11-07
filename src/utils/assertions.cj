@@ -460,8 +460,7 @@ public func AssertAllElementsHaveSameParameter<T, U>(
 public func AssertElementsHaveParameters<T, U, V>(
     xs : Array<T>, desiredParams : Array<U>,
     fnt : (T) -> V, fnu : (U) -> V, paramType : ParamType
-) : Array<V>
-    where
+) : Unit where
         T <: ToString, U <: ToString,
         V <: ToString & Equatable<V>
 {
