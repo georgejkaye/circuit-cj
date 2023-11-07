@@ -286,8 +286,8 @@ public func snds<T, U>(xs : Array<(T, U)>) : Array<U> {
  * @param start
  * @param end
  */
-public func forEach<T, U>(
-    f : (T, Int64) -> U, xs : Collection<T>,
+public func forEach<T>(
+    f : (T, Int64) -> Unit, xs : Collection<T>,
     start!: Int64 = 0, end!: Int64 = xs.size
 ) : Unit {
     let iter = xs.iterator()
