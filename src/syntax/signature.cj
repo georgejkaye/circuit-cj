@@ -189,7 +189,7 @@ func GetAnnihilatorAndIdentifierRules<V, G>(
                 let possibleInputsOnAllWires =
                     latticeStructure.EnumerateInputs(
                         gate.GetInputPorts(),
-                        fixed: HashMap([(i, [fixedInput])])
+                        fixed: HashMap([(i, HashSet([fixedInput]))])
                     )
                 /**
                  * Given an array of inputs and outputs, check to see if
@@ -412,7 +412,8 @@ public class Signature<V, G>
      * @return An array of signals of given width
      */
     public func EnumerateInputs(
-        ports : Array<Port>, fixed!: HashMap<Int64, Array<Signal<V>>> = HashMap()
+        ports : Array<Port>,
+        fixed!: HashMap<Int64, HashSet<Signal<V>>> = HashMap()
     ) : Array<Array<Signal<V>>> {
         this.latticeStructure.EnumerateInputs(ports, fixed: fixed)
     }

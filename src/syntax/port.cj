@@ -89,7 +89,7 @@ public func AssertAllHaveSameWidth<T>(
  * @param xs
  * @param i The desired width
  */
-public func AssertAllHaveWidth<T>(xs : Array<T>, i : Int64) : Unit
+public func AssertAllHaveWidth<T>(xs : Collection<T>, i : Int64) : Unit
     where T <: HasWidth & ToString
 {
     AssertAllElementsHaveSameParameter<T, Int64>(
@@ -108,7 +108,7 @@ public func AssertAllHaveWidth<T>(xs : Array<T>, i : Int64) : Unit
 public func AssertElementsHaveSameWidths<T, U>(
     xs : Array<T>, ys : Array<U>, excluding!: HashSet<Int64> = HashSet(),
     start!: Int64 = 0, end!: Int64 = xs.size
-) : Array<Int64>
+) : Unit
     where T <: HasWidth & ToString, U <: HasWidth & ToString
 {
     AssertElementsHaveParameters<T, U, Int64>(

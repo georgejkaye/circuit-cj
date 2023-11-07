@@ -29,7 +29,6 @@ func GetAllPermutations<V>(
     } else {
         let smaller = GetAllPermutations(elements, width - 1)
         let current = ArrayList<Signal<V>>()
-        println("There will be ${smaller.size * elements.size} permutations of width ${width}")
         Array<Signal<V>>(smaller.size * elements.size){
             i : Int64 =>
                 let elemToAppend = elementsArray[i / smaller.size]
@@ -260,7 +259,7 @@ public struct FiniteLattice<V>
      */
     public func EnumerateInputs(
         ports : Array<Port>,
-        fixed!: HashMap<Int64, Array<Signal<V>>> = HashMap()
+        fixed!: HashMap<Int64, HashSet<Signal<V>>> = HashMap()
     ) : Array<Array<Signal<V>>> {
         // First compute all the possible permutations for each input wire
         // inputPowers[i] is the array of possible signals along wire i
@@ -268,9 +267,9 @@ public struct FiniteLattice<V>
             { p : Port, i : Int64 =>
                 match(fixed.get(i)){
                     case None     => EnumerateSignals(p.GetWidth())
-                    case Some(fx) => fx
+                    case Some(fx) => Array(fx)
                 }
-            }, ports
+        }, ports
         )
         // We need to return an array containing each possible permutation
         // of elements in inputPowers. To do this, we generate an array in which

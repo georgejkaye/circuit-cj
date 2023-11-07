@@ -59,7 +59,7 @@ public struct Signal<V> where V <: ValueSymbol<V>
 }
 extend Signal<V> <: ToString {
     public func toString() : String {
-        "${values}"
+        concatStrings({ v : V => "${v}" }, this.values, delimiter: "")
     }
 }
 extend Signal<V> <: Equatable<Signal<V>> {
