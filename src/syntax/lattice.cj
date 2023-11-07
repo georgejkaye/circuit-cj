@@ -16,25 +16,26 @@ package syntax
  * @return A list of all the permutations of length i
  */
 func GetAllPermutations<V>(
-    elements: HashSet<V>,
-    i: Int64
-): Array<Array<V>>
-    where V <: Equatable<V> & Hashable & ToString
+    elements: HashSet<V>, width: Int64
+): Array<Signal<V>>
+    where V <: ValueSymbol<V>
 {
-    if (i == 0) {
-        Array<Array<V>>()
-    } else if (i == 1) {
-        mapCollection({ v : V => [v] }, elements)
+    // Assign an arbitrary order to the elements
+    let elementsArray = Array(elements)
+    if (width == 0) {
+        Array<Signal<V>>()
+    } else if (width == 1) {
+        mapCollection({ v : V => Signal([v]) }, elements)
     } else {
-        let smaller = GetAllPermutations(elements, i - 1)
-        let current = ArrayList<Array<V>>()
-        for (perm in smaller) {
-            for (elem in elements) {
-                let extended = append(perm, elem)
-                current.append(extended.toArray())
-            }
+        let smaller = GetAllPermutations(elements, width - 1)
+        let current = ArrayList<Signal<V>>()
+        println("There will be ${smaller.size * elements.size} permutations of width ${width}")
+        Array<Signal<V>>(smaller.size * elements.size){
+            i : Int64 =>
+                let elemToAppend = elementsArray[i / smaller.size]
+                let smallerToExtend = smaller[i % smaller.size]
+                Signal(append(smallerToExtend.GetValues(), elemToAppend))
         }
-        current.toArray()
     }
 }
 /**
@@ -217,7 +218,7 @@ public struct FiniteLattice<V>
     let bot : V
     let top : V
     // We cache powers since we often access the same ones a lot
-    let cachedPowers = HashMap<Int64, Array<Array<V>>>()
+    let cachedPowers = HashMap<Int64, Array<Signal<V>>>()
     // The longest chain in the lattice is used for computing fixpoints
     let longestChain : Int64
     public init (elements : HashSet<V>) {
@@ -240,7 +241,7 @@ public struct FiniteLattice<V>
      * @param i The width of the powers to enumerate
      * @return A list of powers of elements in this lattice
      */
-    public func EnumeratePowers(i: Int64): Array<Array<V>> {
+    public func EnumerateSignals(i: Int64): Array<Signal<V>> {
         match (this.cachedPowers.get(i)) {
             case Some(s) => s
             case None =>
@@ -259,15 +260,15 @@ public struct FiniteLattice<V>
      */
     public func EnumerateInputs(
         ports : Array<Port>,
-        fixed!: HashMap<Int64, Array<V>> = HashMap()
+        fixed!: HashMap<Int64, Array<Signal<V>>> = HashMap()
     ) : Array<Array<Signal<V>>> {
         // First compute all the possible permutations for each input wire
         // inputPowers[i] is the array of possible signals along wire i
         let inputPowers = mapi(
             { p : Port, i : Int64 =>
                 match(fixed.get(i)){
-                    case None     => EnumeratePowers(p.GetWidth())
-                    case Some(fx) => [fx]
+                    case None     => EnumerateSignals(p.GetWidth())
+                    case Some(fx) => fx
                 }
             }, ports
         )
@@ -298,7 +299,7 @@ public struct FiniteLattice<V>
                         } else {
                             (i / divisors[j]) % totalPerms
                         }
-                        Signal(possiblePowers[combinationIndex])
+                        possiblePowers[combinationIndex]
                 }
         }
     }
