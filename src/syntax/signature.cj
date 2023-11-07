@@ -88,7 +88,7 @@ public struct Annihilator<V, G> <: ToString
 {
     public Annihilator(
         public let gate : G,
-        public let input : Array<V>,
+        public let input : Signal<V>,
         public let index : Int64,
         public let output : Array<Signal<V>>
     ){}
@@ -119,7 +119,7 @@ public struct Identifier<V, G> <: ToString
 {
     public Identifier(
         public let gate : G,
-        public let input : Array<V>,
+        public let input : Signal<V>,
         public let index : Int64
     ){}
     public func toString() {
@@ -183,13 +183,13 @@ func GetAnnihilatorAndIdentifierRules<V, G>(
             let port = gate.GetInputPort(i)
             // Check every possible input on this wire
             let possibleInputsOnThisWire =
-                latticeStructure.EnumeratePowers(port.GetWidth())
+                latticeStructure.EnumerateSignals(port.GetWidth())
             for(fixedInput in possibleInputsOnThisWire) {
                 // Check every possible input on the other wires
                 let possibleInputsOnAllWires =
                     latticeStructure.EnumerateInputs(
                         gate.GetInputPorts(),
-                        fixed: HashMap([(i, fixedInput)])
+                        fixed: HashMap([(i, [fixedInput])])
                     )
                 /**
                  * Given an array of inputs and outputs, check to see if
@@ -301,7 +301,6 @@ public struct Blackbox<V, G>
  * circuit.
  */
 public class Signature<V, G>
-    <: HasName & ToString
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let uniqueId : Int64 = GetNextId()
@@ -396,6 +395,28 @@ public class Signature<V, G>
         this.latticeStructure.bot
     }
     /**
+     * Enumerate all the signals of a given width.
+     *
+     * @param width
+     * @return An array of signals of given width
+     */
+    public func EnumerateSignals(width : Int64) : Array<Signal<V>> {
+        this.latticeStructure.EnumerateSignals(width)
+    }
+    /**
+     * Enumerate all the inputs that could be applied to a given array of ports.
+     * Optionally some ports can be restricted to a given array of signals.
+     *
+     * @param width
+     * @param fixed A hash map of input indices to the signal it is fixed at
+     * @return An array of signals of given width
+     */
+    public func EnumerateInputs(
+        ports : Array<Port>, fixed!: HashMap<Int64, Array<Signal<V>>> = HashMap()
+    ) : Array<Array<Signal<V>>> {
+        this.latticeStructure.EnumerateInputs(ports, fixed: fixed)
+    }
+    /**
      * @param i
      * @return Get the longest chain in the lattice for powers of length i
      */
@@ -407,12 +428,6 @@ public class Signature<V, G>
     }
     public func GetIdentities() : Array<Identifier<V, G>> {
         this.identities
-    }
-    public func GetName() : String {
-        this.name
-    }
-    public func toString() : String {
-        this.GetName()
     }
     /**
      * Add a blackbox to this signature.
@@ -431,5 +446,15 @@ public class Signature<V, G>
             this.blackboxes.put(bb)
             bb
         }
+    }
+}
+extend Signature<V, G> <: HasName {
+    public func GetName() : String {
+        this.name
+    }
+}
+extend Signature<V, G> <: ToString {
+    public func toString() : String {
+        this.GetName()
     }
 }
