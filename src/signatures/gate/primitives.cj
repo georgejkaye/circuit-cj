@@ -81,11 +81,11 @@ extend GateLevelPrimitive <: Specifiable {
     }
     // This should use the default implementation but it doesn't
     public func GetCoarity() : Int64 {
-        this.GetInputPorts().size
+        this.GetOutputPorts().size
     }
     // This should use the default implementation but it doesn't
     public func GetOutputPort(i : Int64) : Port {
-        this.GetInputPorts()[i]
+        this.GetOutputPorts()[i]
     }
 }
 extend GateLevelPrimitive <:
