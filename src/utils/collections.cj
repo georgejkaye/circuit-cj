@@ -320,6 +320,13 @@ public func concatStrings(
 public func longest<T, U>(xss : Array<U>) : Int64 where U <: Collection<T> {
     max(xss, { i, xs => xs.size })
 }
+/**
+ * Given an array of pairs (x, n), create an array of each element x repeated n
+ * times.
+ *
+ * @param ts
+ * @return the array
+ */
 public func ElementNumberArrayToArray<T>(ts : Array<(T, Int64)>) : Array<T> {
     let length = Sum(ts, { tx => tx[1] })
     Array<T>(length, {
@@ -333,4 +340,32 @@ public func ElementNumberArrayToArray<T>(ts : Array<(T, Int64)>) : Array<T> {
             }
             return ts[ts.size - 1][0]
     })
+}
+/**
+ * Given an array of arrays xs_0, xs_1, ..., create an array of all the ways
+ * elements can be picked from each array, for example:
+ *
+ * [[0,1], [0,1,2]] -> [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2]]
+ *
+ * @param ts
+ * @return the array of combinations
+ */
+public func GetAllCombinations<T>(xss : Array<Array<T>>) : Array<Array<T>> {
+    AssertNonEmpty(xss)
+    let subCombinations = Array<Int64>(xss.size){ i =>
+        fold_left({ acc, cur => acc * cur.size }, 1, xss, start: i )
+    }
+    Array<Array<T>>(subCombinations[0]){ i : Int64 =>
+        let comb = Array<T>(xss.size){ j : Int64 =>
+            let divisor = if(j == xss.size - 1){
+                1
+            } else {
+                subCombinations[j+1]
+            }
+            let modulo = xss[j].size
+            let element = (i / divisor) % modulo
+            xss[j][element]
+        }
+        comb
+    }
 }
