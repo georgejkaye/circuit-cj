@@ -502,7 +502,10 @@ extend Evaluator<V,G> {
         let labelLength = this.longestPortName + 4
         let inputWaves = DrawWaveformsForPortArray(
             this.GetInputHistoryPerPort(),
-            { t => Some(t) },
+            { t => match(t){
+                case DEFINITE(s) => Some(s)
+                case _ => None
+            }},
             { i => this.GetInput(i).GetWidth() },
             { i => this.GetInput(i).GetNameString() },
             labelLength: labelLength,
@@ -515,7 +518,11 @@ extend Evaluator<V,G> {
         let getSignalFromOutput = {
             op : OutputData<V, G> =>
                 match(op.term) {
-                    case BASE(s) => Some(s)
+                    case BASE(ci) =>
+                        match(ci){
+                            case DEFINITE(s) => Some(s)
+                            case _ => None<Signal<V>>
+                        }
                     case _ => None<Signal<V>>
                 }
         }

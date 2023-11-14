@@ -8,6 +8,68 @@
  */
 package rewrite
 /**
+ * Given an array of signals, get a string representing them as arguments to a
+ * circuit, i.e. a string of the form (s1, s2, s3, ...)
+ *
+ * @param vs The array
+ * @return The signa
+ */
+public func GetArgumentString<V>(
+    vs : Array<CycleInput<V>>,
+    printFn!: (CycleInput<V>) -> String = { ci => ci.GetName() }
+) : String
+    where V <: ValueSymbol<V>
+{
+    arrayToString(
+        vs, { s, _ => printFn(s) }, openingBracket: "(", closingBracket: ")",
+        delimiter: ", "
+    )
+}
+public func GetOutputString<V>(
+    vs : Array<Option<CycleInput<V>>>,
+    printFn!: (CycleInput<V>) -> String = { ci => ci.GetName() }
+) : String
+    where V <: ValueSymbol<V>
+{
+    arrayToString(
+        vs, { opt, _ =>
+            match(opt){
+                case None => "?"
+                case Some(s) => printFn(s)
+            }
+        }, openingBracket: "(", closingBracket: ")", delimiter: ","
+    )
+}
+/**
+ * Get a comma separated string of arguments represented in decimal
+ *
+ * @param args
+ * @param signed
+ * @return The argument string in decimal
+ */
+public func GetArgumentString<V>(
+    args : Array<CycleInput<V>>, signed!: Bool
+) : String
+    where V <: ValueSymbol<V> & Decimal<V>
+{
+    GetArgumentString(
+        args, printFn: {
+            ci : CycleInput<V> => GetDecimalNameFromCycleInput(ci, signed)
+        }
+    )
+}
+public func GetOutputString<V>(
+    vs : Array<Option<CycleInput<V>>>, signed!: Bool
+) : String
+    where V <: ValueSymbol<V> & Decimal<V>
+{
+    GetOutputString<V>(
+        vs, printFn: {
+            ci : CycleInput<V> => GetDecimalNameFromCycleInput(ci, signed)
+        }
+    )
+}
+/**
  * Enum of function-like things that can be in the output after partial
  * evaluation
  */
@@ -51,13 +113,13 @@ extend Function<V, G> <: Specifiable {
  * Enum of things that can be in the output after partial evaluation.
  */
 public enum OutputTerm<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
-    | BASE(Signal<V>)
+    | BASE(CycleInput<V>)
     | JOIN(OutputTerm<V, G>, OutputTerm<V, G>)
     | FUNCTION(Function<V, G>, Array<OutputTerm<V, G>>, Int64)
     | BUNDLE(Array<OutputTerm<V, G>>, Array<Int64>, Int64)
 }
 extend OutputTerm<V, G> <: ToString {
-    func GetString(signalFn : (Signal<V>) -> String) : String {
+    func GetString(signalFn : (CycleInput<V>) -> String) : String {
         func GetMultiInputString(
             op : String, inputs : Array<OutputTerm<V, G>>,
             coarity : Int64, i : Int64
@@ -89,14 +151,27 @@ extend OutputTerm<V, G> <: ToString {
         GetString()
     }
 }
+func GetDecimalNameFromCycleInput<V>(
+    ci : CycleInput<V>, signed : Bool
+) : String where V <: ValueSymbol<V> & Decimal<V> {
+    match(ci){
+        case DEFINITE(s) => s.GetDecimalName(signed: signed)
+        case PARTIAL(p) => p.GetDecimalName(signed: signed)
+    }
+}
+func GetDecimalNameFromSignal<V>(
+    s : Signal<V>, signed : Bool
+) : String where V <: ValueSymbol<V> & Decimal<V> {
+    let num = V.SignalToDec(s, signed: signed)
+    match(num) {
+        case None => s.GetName()
+        case Some(n) => "${n}"
+    }
+}
 extend OutputTerm<V, G> where V <: Decimal<V> {
     public func GetString(signed!: Bool) : String {
-        let fn = { s : Signal<V> =>
-            let num = V.SignalToDec(s, signed: signed)
-            match(num) {
-                case None => s.GetName()
-                case Some(n) => "${n}"
-            }
+        let fn = { ci : CycleInput<V> =>
+            GetDecimalNameFromCycleInput(ci, signed)
         }
         GetString(fn)
     }
@@ -168,9 +243,11 @@ func GetOutputTerm<V, G>(
             let edge = ec.GetEdge()
             let output = match(edge.GetLabel()) {
                 case VALUE(v) =>
-                    BASE<V, G>(Signal([v]))
+                    BASE<V, G>(DEFINITE(Signal([v])))
                 case SIGNAL(s) =>
-                    BASE<V, G>(s)
+                    BASE<V, G>(DEFINITE(s))
+                case PARTIAL(pi) =>
+                    BASE<V, G>(PARTIAL(pi))
                 case BUNDLER(ms, ns) =>
                     MakeBundlerOutput(ec, ns, computed)
                 case JOIN(w) =>
@@ -249,14 +326,14 @@ public struct InputOutput<V, G> <: ToString
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public InputOutput(
-        public let input : Array<Signal<V>>,
+        public let input : Array<CycleInput<V>>,
         public let output : Array<OutputData<V, G>>
     ){}
     public func toString() : String {
         "${GetArgumentString(this.input)} -> " +
             "${GetOutputTermString<V, G>(this.output)}"
     }
-    public func GetInput() : Array<Signal<V>> {
+    public func GetInput() : Array<CycleInput<V>> {
         this.input
     }
     public func GetOutput() : Array<OutputData<V, G>> {
@@ -281,17 +358,17 @@ extend InputOutput<V, G> where V <: Decimal<V> {
 public struct InputOutputHistory<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    public let inputHistoryPerTick : ArrayList<Array<Signal<V>>>
+    public let inputHistoryPerTick : ArrayList<Array<CycleInput<V>>>
     public let outputHistoryPerTick : ArrayList<Array<OutputData<V, G>>>
     public let inputOutputHistoryPerTick : ArrayList<InputOutput<V, G>>
-    public let inputHistoryPerPort : Array<ArrayList<Signal<V>>>
+    public let inputHistoryPerPort : Array<ArrayList<CycleInput<V>>>
     public let outputHistoryPerPort : Array<ArrayList<OutputData<V, G>>>
     public init(inputs : Int64, outputs : Int64) {
         this.inputHistoryPerTick = ArrayList()
         this.outputHistoryPerTick = ArrayList()
         this.inputOutputHistoryPerTick = ArrayList()
         this.inputHistoryPerPort =
-            Array(inputs){ i => ArrayList<Signal<V>>() }
+            Array(inputs){ i => ArrayList<CycleInput<V>>() }
         this.outputHistoryPerPort =
             Array(outputs){ i => ArrayList<OutputData<V, G>>() }
     }
@@ -309,7 +386,7 @@ public struct InputOutputHistory<V, G>
  */
 func GetInputOutputString<V, G> (
     ios : Collection<InputOutput<V, G>>,
-    inputFn : (Array<Signal<V>>) -> String,
+    inputFn : (Array<CycleInput<V>>) -> String,
     outputFn : (Array<OutputData<V, G>>) -> String
 ) : String  where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
     let lines = ArrayList<String>()
@@ -357,7 +434,7 @@ func GetInputOutputString<V, G> (
  * Allow evaluator to expose its history and get the pretty string
  */
 extend Evaluator<V, G> {
-    public func GetInputHistoryPerPort() : Array<ArrayList<Signal<V>>> {
+    public func GetInputHistoryPerPort() : Array<ArrayList<CycleInput<V>>> {
         this.history.inputHistoryPerPort
     }
     public func GetOutputHistoryPerPort() : Array<ArrayList<OutputData<V, G>>> {

@@ -8,6 +8,37 @@
  */
 package rewrite
 /**
+ * Inputs we can provide to perform a cycle
+ */
+public enum CycleInput<V> where V <: ValueSymbol<V> {
+    | DEFINITE(Signal<V>)
+    | PARTIAL(VariableSignal<V>)
+}
+extend CycleInput<V> <: HasWidth {
+    public func GetWidth() {
+        match(this) {
+            case DEFINITE(s) => s.GetWidth()
+            case PARTIAL(pi) => pi.GetWidth()
+        }
+    }
+}
+extend CycleInput<V> <: HasName {
+    public func GetName() : String {
+        match(this) {
+            case DEFINITE(s) => s.GetName()
+            case PARTIAL(pi) => pi.GetName()
+        }
+    }
+}
+extend CycleInput<V> <: ToString {
+    public func toString() : String {
+        match(this) {
+            case DEFINITE(s) => "definitely ${s.GetName()}"
+            case PARTIAL(p) => "maybe ${p.GetName()}"
+        }
+    }
+}
+/**
  * Detach the current wires from the state registers.
  *
  * @param coreEdge
@@ -54,7 +85,7 @@ func SplitCurrentState<V, G>(
 func GetCoreSourceVertices<V, G>(
     coreEdge : Edge<V, G>,
     numberOfStateWires : Int64,
-    inputSignals : Array<Signal<V>>,
+    inputSignals : Array<CycleInput<V>>,
     splitStateVertices : Array<(Vertex<V, G>, Vertex<V, G>)>,
     rewriteStartingElements : HashSet<TraversalElement<V, G>>
 ) : Array<Vertex<V, G>>
@@ -62,33 +93,43 @@ func GetCoreSourceVertices<V, G>(
     Array<Vertex<V, G>>(
         coreEdge.GetArity(),
         { i : Int64 =>
-            // This is a vertex from the state
-            // We grab the existing state  vertex
+            // Check which partition of sources this belongs to
             if(i < numberOfStateWires) {
+                // This is a vertex from the state
+                // We grab the existing state vertex
                 splitStateVertices[i][0]
-            // This is a vertex from the inputs
-            // We create the signal edge and grab its target
             } else {
+                // This is a vertex from the inputs
+                // We create the input edge and grab its target
                 // Get the signal
-                let signal = inputSignals[i - numberOfStateWires]
-                // Make a label
-                let signalLabel = GetSignalLabel<V, G>(signal)
-
-                let signalVertex = Vertex<V, G>(signal.GetWidth(), None)
+                let input = inputSignals[i - numberOfStateWires]
+                let (inputLabel, inputSubgraph) =
+                    match(input) {
+                        case DEFINITE(signal) =>
+                            // Make a label
+                            let signalLabel = GetSignalLabel<V, G>(signal)
+                            let signalSubgraph = if(signal.GetWidth() == 1) {
+                                None<InterfacedHypergraph<V, G>>
+                            } else {
+                                MakeSignal<V, G>(signal)
+                            }
+                            (signalLabel, signalSubgraph)
+                        case PARTIAL(pi) =>
+                            let partialLabel = Label<V, G>.PARTIAL(pi)
+                            let partialSubgraph =
+                                None<InterfacedHypergraph<V, G>>
+                            (partialLabel, partialSubgraph)
+                    }
+                let inputTarget = Vertex<V, G>(input.GetWidth(), None)
                 // Create the signal
-                let signalSubgraph = if(signal.GetWidth() == 1) {
-                    None<InterfacedHypergraph<V, G>>
-                } else {
-                    MakeSignal<V, G>(signal)
-                }
-                let signalEdge = Edge(
-                    signalLabel, Array<Vertex<V, G>>(), [signalVertex],
-                    signalSubgraph, coreEdge.GetGraph()
+                let inputEdge = Edge(
+                    inputLabel, Array<Vertex<V, G>>(), [inputTarget],
+                    inputSubgraph, coreEdge.GetGraph()
                 )
                 // The target of this edge will need to be traversed
                 // during rewriting
-                rewriteStartingElements.put(VERTEX(signalVertex))
-                signalVertex
+                rewriteStartingElements.put(VERTEX(inputTarget))
+                inputTarget
             }
         }
     )
@@ -167,7 +208,7 @@ public func GetCoreTargetVertices<V, G>(
             if(i < numberOfStateWires) {
                 splitStateVertices[i][1]
             } else {
-                latestInstantVertices[i]
+                latestInstantVertices[i - numberOfStateWires]
             }
     }
 }
@@ -202,7 +243,7 @@ func GetOutputData<V, G>(
  */
 func UpdateInputOutputHistory<V, G>(
     graph : InterfacedHypergraph<V, G>,
-    inputSignals : Array<Signal<V>>,
+    inputSignals : Array<CycleInput<V>>,
     outputSubgraphs : Array<InterfacedHypergraph<V, G>>,
     history : InputOutputHistory<V, G>
 ) : Unit where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
@@ -270,7 +311,7 @@ func CollapseOutputs<V, G>(
  * @param latestDelayVertices
  */
 func PerformCycle<V, G>(
-    graph : InterfacedHypergraph<V, G>, inputSignals : Array<Signal<V>>,
+    graph : InterfacedHypergraph<V, G>, inputSignals : Array<CycleInput<V>>,
     signature : Signature<V, G>, coreEdge : Edge<V, G>,
     numberOfStateWires : Int64, latestInstantVertices : Array<Vertex<V, G>>,
     latestDelayVertices : Array<Vertex<V, G>>,
@@ -324,6 +365,17 @@ func PerformCycle<V, G>(
     )
 }
 extend Evaluator<V, G> {
+    public func PerformCycle(
+        inputs : Array<CycleInput<V>>, debug!: Bool = false
+    ) : Unit {
+        PerformCycle<V, G>(
+            this.graph, inputs, this.sig, this.coreEdge,
+            this.numberOfStateWires, this.latestInstantVertices,
+            this.latestDelayVertices, this.history, debug
+        )
+        // We're done!
+        this.currentCycle++
+    }
     /**
      * Perform a cycle using this evaluator for some given input signals.
      *
@@ -333,13 +385,8 @@ extend Evaluator<V, G> {
     public func PerformCycle(
         signals : Array<Signal<V>>, debug!: Bool = false
     ) : Unit {
-        PerformCycle<V, G>(
-            this.graph, signals, this.sig, this.coreEdge,
-            this.numberOfStateWires, this.latestInstantVertices,
-            this.latestDelayVertices, this.history, debug
-        )
-        // We're done!
-        this.currentCycle++
+        let inputs = map({ s : Signal<V> => DEFINITE(s) }, signals)
+        PerformCycle(inputs, debug: debug)
     }
     /**
      * Perform a cycle using this evaluator for some given input values.
