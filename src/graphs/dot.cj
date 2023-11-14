@@ -465,20 +465,7 @@ func DrawEdgeNode<V, G>(
                 signalStyle
             }
         case PARTIAL(p) =>
-            match(p.partialType) {
-                case FIXED(s) =>
-                    if(s.IsAll(V.GetDisconnected())) {
-                        bottomStyle
-                    } else if(s.GetWidth() == 1) {
-                        valueStyle
-                    } else {
-                        signalStyle
-                    }
-                case VARIABLE(ss) =>
-                    variableStyle
-                case UNKNOWN =>
-                    unknownStyle
-            }
+            variableStyle
         case REGISTER(_) =>
             registerStyle
         case OPEN_WAVEFORM(_) =>

@@ -76,6 +76,14 @@ public interface Decimal<V>
         }
     }
 }
+public func GetDecimalName<V>(v : V, signed!: Bool) : String
+    where V <: Decimal<V>
+{
+    match(V.SignalToDec(Signal([v]), signed: signed)){
+        case Some(d) => "${d}"
+        case None => "${v}"
+    }
+}
 /**
  * Given a signal, attempt to convert it to decimal and return it as a string;
  * if it fails, return the string of the original signal instead.
@@ -92,33 +100,23 @@ public func MaybeDecimalToString<V>(signal : Signal<V>, signed: Bool) : String
         case Some(n) => "${n}"
     }
 }
-/**
- * Get a comma separated string of arguments represented in decimal
- *
- * @param args
- * @param signed
- * @return The argument string in decimal
- */
-public func GetArgumentString<V>(
-    args : Array<Signal<V>>, signed!: Bool
-) : String
-    where V <: ValueSymbol<V> & Decimal<V>
-{
-    GetArgumentString(args, printFn: { s => MaybeDecimalToString(s, signed) })
-}
-public func GetOutputString<V>(
-    vs : Array<Option<Signal<V>>>, signed!: Bool
-) : String
-    where V <: ValueSymbol<V> & Decimal<V>
-{
-    GetOutputString(vs, printFn: { s => MaybeDecimalToString(s, signed)})
-}
 extend Signal<V> where V <: Decimal<V> & ValueSymbol<V> {
     public func GetDecimalName(signed!: Bool) : String {
         match(V.SignalToDec(this, signed: signed)){
             case Some(n) => "${n}"
             case None => this.GetName()
         }
+    }
+}
+extend VariableSignal<V> where V <: Decimal<V> & ValueSymbol<V> {
+    public func GetDecimalName(signed!: Bool) : String {
+        collectionToString(
+            this.GetPotentialSignals(),
+            { s : Signal<V>, _ : Int64 =>
+                s.GetDecimalName(signed: signed)
+            },
+            openingBracket: "{", closingBracket: "}", delimiter: "/"
+        )
     }
 }
 extend Waveform<V> where V <: Decimal<V> & ValueSymbol<V> {
@@ -141,9 +139,11 @@ extend Label<V, G>
     public func GetDecimalName(signed!: Bool) : String {
         match(this){
             case VALUE(v) =>
-                "${v}"
+                GetDecimalName(v, signed: signed)
             case SIGNAL(s) =>
                 s.GetDecimalName(signed: signed)
+            case PARTIAL(p) =>
+                p.GetDecimalName(signed: signed)
             case REGISTER(s) =>
                 "${s.GetDecimalName(signed: signed)} ::"
             case CLOSED_WAVEFORM(wf) =>

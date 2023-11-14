@@ -573,7 +573,7 @@ public func Apply<V, G>(
  * @return The circuit with the given arguments applied
  */
 public func Apply<V, G>(
-    f : InterfacedHypergraph<V, G>, inputs : Array<PartialInput<V>>
+    f : InterfacedHypergraph<V, G>, inputs : Array<VariableSignal<V>>
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -582,11 +582,11 @@ public func Apply<V, G>(
         inputs.size, { i => None<Wire<V, G>> }
     )
     let argOutputs = mapi({
-        pi : PartialInput<V>, i : Int64 =>
+        pi : VariableSignal<V>, i : Int64 =>
             Some(UseEdgeWithNewOutputs(
                 PARTIAL(pi), Array<Vertex<V, G>>(), None, None
             )[0])
     }, inputs)
-    let argStrings = map({ pi : PartialInput<V> => Some(pi.GetName()) }, inputs)
+    let argStrings = map({ pi : VariableSignal<V> => Some(pi.GetName()) }, inputs)
     Apply(f, argInputs, argOutputs, argStrings)
 }

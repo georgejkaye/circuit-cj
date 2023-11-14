@@ -21,7 +21,7 @@ public enum Label<V, G>
     // A collection of values 0 -> n
     | SIGNAL(Signal<V>)
     // A partially specified input
-    | PARTIAL(PartialInput<V>)
+    | PARTIAL(VariableSignal<V>)
     // A join of a signal and a delay
     | REGISTER(Signal<V>)
     // A sequence of signals over time
@@ -92,8 +92,8 @@ extend Label<V, G>
                 [Port(1)]
             case SIGNAL(spec) =>
                 spec.GetOutputPorts()
-            case PARTIAL(w) =>
-                [Port(w.GetWidth())]
+            case PARTIAL(ws) =>
+                [Port(ws.GetWidth())]
             case REGISTER(signal) =>
                 [Port(signal.GetWidth())]
             case OPEN_WAVEFORM(wf) =>
@@ -123,8 +123,8 @@ extend Label<V, G>
                 "${v}"
             case SIGNAL(spec) =>
                 spec.GetName()
-            case PARTIAL(p) =>
-                p.GetName()
+            case PARTIAL(ps) =>
+                ps.GetName()
             case REGISTER(signal) =>
                 "${signal.GetName()} ::"
             case OPEN_WAVEFORM(wf) =>
@@ -222,6 +222,14 @@ extend Label<V, G>
         match(this) {
             case VALUE(_) => true
             case SIGNAL(_) => true
+            case _ => false
+        }
+    }
+    public func IsCycleInput() : Bool {
+        match(this) {
+            case VALUE(_) => true
+            case SIGNAL(_) => true
+            case PARTIAL(_) => true
             case _ => false
         }
     }
