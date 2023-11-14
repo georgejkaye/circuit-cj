@@ -259,7 +259,7 @@ func ApplyPreconditions<V, G>(e : Edge<V, G>) : Bool
         match(v.GetInEdge()){
             case None => return false
             case Some(ec) =>
-                if(!ec.GetEdge().GetLabel().IsSignal()) {
+                if(!ec.GetEdge().GetLabel().IsCycleInput()) {
                     return false
                 }
         }
@@ -333,19 +333,18 @@ func MakeValueOrSignal<V, G>(
     Edge(label, Array<Vertex<V, G>>(), targets, graph, owner)
 }
 /**
- * Given an edge, its argument edges and an array of array of output values,
- * replace it with edges corresponding to each signal
+ * Replace this edge and its arguments with some outputs.
  *
  * @param signature
- * @param f The graph we are rewriting in
- * @param e The edge to replace
- * @param results
-    The array of array of values corresponding to the result of computation
- * @return A pair of hash sets (next elements, removed elements)
+ * @param f
+ * @param e
+ * @param args
+ * @param outputs
  */
- func ReplaceGateWithOutputs<V, G>(
+func ReplaceGateWithOutputs<V, G>(
     signature : Signature<V, G>, f : InterfacedHypergraph<V, G>,
-    e : Edge<V, G>, args : Array<Option<Edge<V, G>>>, results : Array<Signal<V>>
+    e : Edge<V, G>, args : Array<Option<Edge<V, G>>>,
+    outputs : Array<CycleInput<V>>
 ) : HashSet<TraversalElement<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -362,22 +361,47 @@ func MakeValueOrSignal<V, G>(
         RemoveVertex(v, f)
     }
     // Create a new value or signal edge for each of the output values
-    for(i in 0..results.size) {
-        let result = results[i]
-        // Get a value or signal label accordingly
-        let signalLabel = GetSignalLabel<V, G>(result)
-        // Get the subgraph corresponding to the signal, or None if it has
-        // size 1 (it is a raw value)
-        let signalGraph = MakeSignal<V, G>(result)
-        // Create the edge using the remaining target of the original edge
+    forEach<CycleInput<V>>({ output : CycleInput<V>, i : Int64 =>
+        let (label, subgraph) = match(output) {
+            case DEFINITE(signal) =>
+                if(signal.GetWidth() == 1) {(
+                    Label<V, G>.VALUE(signal.GetBit(0)),
+                    None<InterfacedHypergraph<V, G>>
+                )} else {(
+                    Label<V, G>.SIGNAL(signal),
+                    Some(MakeSignal<V, G>(signal))
+                )}
+            case PARTIAL(pi) =>
+                (Label<V, G>.PARTIAL(pi), None<InterfacedHypergraph<V, G>>)
+        }
         let target = e.GetTarget(i)
         let newEdge = Edge(
-            signalLabel, Array<Vertex<V, G>>(), [target],
-            Some(signalGraph), Some(f.GetGraph())
+            label, Array<Vertex<V, G>>(), [target],
+            subgraph, Some(f.GetGraph())
         )
         nextEdges.put(EDGE(newEdge))
-    }
+    }, outputs)
     nextEdges
+}
+/**
+ * Replace this edge and its arguments with some outputs.
+ *
+ * @param signature
+ * @param f
+ * @param e
+ * @param args
+ * @param outputs
+ */
+func ReplaceGateWithOutputs<V, G>(
+    signature : Signature<V, G>, f : InterfacedHypergraph<V, G>,
+    e : Edge<V, G>, args : Array<Option<Edge<V, G>>>,
+    outputs : Array<Signal<V>>
+) : HashSet<TraversalElement<V, G>>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    ReplaceGateWithOutputs(
+        signature, f, e, args, map({ s => DEFINITE(s) }, outputs)
+    )
 }
 /**
  * Get the rewrite rule for applying a gate to some arguments, using the
@@ -397,7 +421,7 @@ func GetPrimitiveRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
                 let prim = e.GetLabel().GetPrimitive()
                 let function = signature.GetGate(prim)
                 GetApplyRule(
-                    signature, { vss : Array<Signal<V>> => function(vss)}, e, f
+                    signature, { vss : Array<Signal<V>> => function(vss) }, e, f
                 )
         }
     )
@@ -710,6 +734,10 @@ func GetCompositeRule<V, G>(signature : Signature<V, G>)
         }
     )
 }
+enum SingleBit<V> where V <: ValueSymbol<V> {
+    | VALUE(V)
+    | PARTIAL(VariableValue<V>)
+}
 /**
  * Get a value bundle rule, where the values applied to a bundle are transformed
  * into appropriate width signals.
@@ -723,57 +751,103 @@ func GetValueBundleRule<V, G>(signature : Signature<V, G>)
     RewriteRule<V, G>(
         "bundle",
         BUNDLE,
-        {
-            e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
-                if(!ApplyPreconditions(e)){
-                    None
-                } else {
-                    let newElements = HashSet<TraversalElement<V, G>>()
-                    let values = ArrayList<V>()
-                    // Remove the bundle edge
-                    RemoveEdge(e, f)
-                    // Get all the individual values in an array
-                    for(v in e.GetSources()){
-                        // Precondition enforces there must be an in edge
-                        let valueEdge = v.GetInEdge().getOrThrow().GetEdge()
-                        match(valueEdge.GetLabel()) {
-                            case VALUE(v) =>
-                                values.append(v)
-                            case SIGNAL(signal) =>
-                                values.appendAll(signal.GetValues())
-                            case _ => ()
-                        }
-                        // Remove the old value edges and their vertices
-                        RemoveEdge(valueEdge, f)
-                        RemoveVertex(v, f)
-                    }
-                    // Create a new signal edge for each output of the bundle
-                    for(v in e.GetTargets()) {
-                        let width = v.GetWidth()
-                        let newEdge = if(width == 1) {
-                            let value = values.remove(0)
-                            Edge(
-                                Label.VALUE(value), Array<Vertex<V, G>>(),
-                                [v], None, f.GetGraph()
+        { e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
+            if(!ApplyPreconditions(e)){
+                None
+            } else {
+                let (bundlerInputs, bundlerOutputs) =
+                    e.GetLabel().GetBundlerSpec()
+                let totalValues = Sum(bundlerInputs)
+                let values = ArrayList<SingleBit<V>>(totalValues)
+                // Remove the bundle edge
+                RemoveEdge(e, f)
+                // Get all the individual values in an array
+                forEach({ v : Vertex<V, G>, i : Int64 =>
+                    // Precondition enforces there must be an in edge
+                    let valueEdge = v.GetInEdge().getOrThrow().GetEdge()
+                    match(valueEdge.GetLabel()) {
+                        case VALUE(v) =>
+                            values.append(VALUE(v))
+                        case SIGNAL(signal) =>
+                            forEach(
+                                { v : V , _ =>
+                                    values.append(VALUE(v))
+                                }, signal.GetValues()
                             )
-                        } else {
-                            // Pop an appropriate number of values off the
-                            // complete arraylist of all values
-                            let wireValues = Array<V>(width){
-                                i : Int64 => values.remove(0)
+                        case PARTIAL(pi) =>
+                            forEach(
+                                { pv : VariableValue<V>, _ =>
+                                    values.append(PARTIAL(pv))
+                                }, pi.GetValues()
+                            )
+                        case _ => ()
+                    }
+                    // Remove the old value edges and their vertices
+                    RemoveEdge(valueEdge, f)
+                    RemoveVertex(v, f)
+                }, e.GetSources())
+                let valuesArray = values.toArray()
+                // Create a new signal edge for each output of the bundle
+                let newElements = HashSet<TraversalElement<V, G>>()
+                forEach<Vertex<V, G>>({ v : Vertex<V, G>, i : Int64 =>
+                    let start = Sum(bundlerOutputs, end: i)
+                    let values = valuesArray.sliceArray(
+                        start: start, end: start + v.GetWidth()
+                    )
+                    let IsAllDefinite = fold_left(
+                        { acc, cur => acc && match(cur) {
+                            case VALUE(_) => true
+                            case PARTIAL(_) => false
+                        }}, true, values
+                    )
+                    let (label, subgraph) = if(IsAllDefinite) {
+                        if(values.size == 1) {
+                            let value = values[0]
+                            match(value){
+                                case VALUE(v) => (
+                                    Label<V,G>.VALUE(v),
+                                    None<InterfacedHypergraph<V, G>>
+                                )
+                                case _ => throw Exception()
                             }
-                            let signal = Signal(wireValues)
-                            // Make the signal subgraph
-                            let signalGraph = MakeSignal<V, G>(signal)
-                            Edge(
-                                SIGNAL(signal), Array<Vertex<V, G>>(),
-                                [v], signalGraph, f.GetGraph()
+                        } else {
+                            let signalValues = map(
+                                { bit : SingleBit<V> => match(bit) {
+                                    case VALUE(v) => v
+                                    case _ => throw Exception()
+                                }}, values
+                            )
+                            let signal = Signal(signalValues)
+                            (
+                                Label<V, G>.SIGNAL(signal),
+                                Some(MakeSignal<V, G>(signal))
                             )
                         }
-                        newElements.put(EDGE(newEdge))
+                    } else {
+                        let partialValues = map(
+                            { bit : SingleBit<V> => match(bit) {
+                                case PARTIAL(p) => p
+                                case VALUE(v) => VariableValue<V>(
+                                    Variable<V>(
+                                        HashSet([Signal([v])])
+                                    ), 0
+                                )
+                            }}, values
+                        )
+                        let partialSignal = VariableSignal(partialValues)
+                        (
+                            Label<V,G>.PARTIAL(partialSignal),
+                            None<InterfacedHypergraph<V, G>>
+                        )
                     }
-                    Some(newElements)
-                }
+                    let newEdge = Edge(
+                        label, Array<Vertex<V, G>>(),
+                        [v], subgraph, f.GetGraph()
+                    )
+                    newElements.put(EDGE(newEdge))
+                }, e.GetTargets())
+                Some(newElements)
+            }
         }
     )
 }
@@ -924,7 +998,7 @@ func GetForkBlackboxRule<V, G>(blackBoxTracker : HashMap<Edge<V, G>, Int64>)
  * @return Some(signal edge, vertex) if conditions met, None otherwise
  */
 func ArgumentIsUnsharedTrigger<V, G>(
-    e : Edge<V, G>, i : Int64, desired : Array<V>
+    e : Edge<V, G>, i : Int64, desired : Signal<V>
 ) : Option<(Edge<V, G>, Vertex<V, G>)>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -935,7 +1009,9 @@ func ArgumentIsUnsharedTrigger<V, G>(
             case Some(ec) =>
                 let edge = ec.GetEdge()
                 let label = edge.GetLabel()
-                if(!label.IsSignal() || label.GetValueArray() != desired) {
+                if(!label.IsSignal() ||
+                    label.GetValueArray() != desired.GetValues()
+                ) {
                     None
                 } else {
                     Some((edge, vertex))

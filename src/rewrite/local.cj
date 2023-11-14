@@ -63,7 +63,8 @@ func AttemptRewriteRule<V, G>(
 func AttemptAllRewriteRules<V, G>(
     edge : Edge<V, G>, f : InterfacedHypergraph<V, G>,
     signature : Signature<V, G>, copyBlackBoxes!: Bool = false,
-    allInstantaneous!: Bool = false, debug!: Bool = false, draw!: Bool = false
+    allInstantaneous!: Bool = false, partial!: Bool = false,
+    debug!: Bool = false, draw!: Bool = false
 ) : Option<HashSet<TraversalElement<V, G>>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -84,6 +85,8 @@ func AttemptAllRewriteRules<V, G>(
         case VALUE(_) =>
             AddRule(GetForkRule())
         case SIGNAL(_) =>
+            AddRule(GetForkRule())
+        case PARTIAL(_) =>
             AddRule(GetForkRule())
         case BUNDLER(_, _) =>
             AddRule(GetValueBundleRule(signature))
