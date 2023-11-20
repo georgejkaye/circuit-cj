@@ -358,30 +358,51 @@ public func ElementNumberArrayToArray<T>(ts : Array<(T, Int64)>) : Array<T> {
     })
 }
 /**
- * Given an array of arrays xs_0, xs_1, ..., create an array of all the ways
- * elements can be picked from each array, for example:
+ * Given a function that maps Ts to W-arrays, and a hashmap that maps Us to Ts,
+ * create an array in which each element is a hash map from Us to Ws,
+ * representing a different way of picking the elements in the W-arrays.
+ * For example:
  *
- * [[0,1], [0,1,2]] -> [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2]]
+ * [a: [0,1], b: [0,1,2]] ->
+ * [[a: 0, b: 0],[a: 0, b: 1],[a: 0, b: 2],[a: 1, b: 0],[a: 1, b: 1],
+ *  [a: 1, b: 2]]
  *
  * @param ts
  * @return the array of combinations
  */
-public func GetAllCombinations<T>(xss : Array<Array<T>>) : Array<Array<T>> {
+public func GetAllCombinations<T,U,W>(
+    xss : HashMap<U, T>, fn : (T) -> HashSet<W>
+) : Array<HashMap<U, W>>
+    where U <: Hashable & Equatable<U>, W <: Hashable & Equatable<W>
+{
     AssertNonEmpty(xss)
+    let fixedMap = HashMap<U, Array<W>>()
+    forEach<(U, T)>({ kv : (U, T), i : Int64 =>
+        let (k, v) = kv
+        fixedMap.put(k, fn(v).toArray())
+    }, xss)
+    let fixedMapArray = fixedMap.toArray()
     let subCombinations = Array<Int64>(xss.size){ i =>
-        fold_left({ acc, cur => acc * cur.size }, 1, xss, start: i )
+        fold_left({
+            acc, cur =>
+                let (_, v) = cur
+                acc * v.size
+        }, 1, fixedMapArray, start: i )
     }
-    Array<Array<T>>(subCombinations[0]){ i : Int64 =>
-        let comb = Array<T>(xss.size){ j : Int64 =>
-            let divisor = if(j == xss.size - 1){
+    Array<HashMap<U, W>>(subCombinations[0]){ i : Int64 =>
+        let comb = HashMap<U, W>(fixedMapArray.size)
+        forEach<(U, Array<W>)>({
+            kv : (U, Array<W>), j : Int64 =>
+            let (k, ws) = kv
+            let divisor = if(j == fixedMapArray.size - 1){
                 1
             } else {
                 subCombinations[j+1]
             }
-            let modulo = xss[j].size
+            let modulo = ws.size
             let element = (i / divisor) % modulo
-            xss[j][element]
-        }
+            comb.put(k, ws[element])
+        }, fixedMapArray)
         comb
     }
 }
