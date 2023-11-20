@@ -59,7 +59,10 @@ public func GetVariable<V>(signals : HashSet<Signal<V>>) : CycleInput<V>
         let width = AssertAllHaveSameWidth(signals)
         let pvv = Variable(signals)
         let values = Array<VariableValue<V>>(width){ i : Int64 =>
-            VariableValue(pvv, i)
+            VariableValue(
+                HashSet([pvv]),
+                { ss : HashMap<Int64, Signal<V>> => ss[0].GetBit(i) }
+            )
         }
         PARTIAL(VariableSignal(values))
     }

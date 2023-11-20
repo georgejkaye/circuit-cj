@@ -480,42 +480,65 @@ public func GetPotentialOutputs<V, G>(
     partialInputs : Array<CycleInput<V>>,
     applyFn : (Array<Signal<V>>) -> Array<Signal<V>>,
     inputPorts : Array<Port>, outputPorts : Array<Port>
-) : Array<HashSet<Signal<V>>>
+) : Array<CycleInput<V>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     AssertElementsHaveSameWidths(partialInputs, inputPorts)
     // Establish the ranges of the inputs
-    let restrictedInputs = HashMap<Int64, HashSet<Signal<V>>>()
-    forEach<CycleInput<V>>({
-        ci : CycleInput<V>, i : Int64 =>
-            let restrictedAtThisIndex = HashSet<Signal<V>>()
-            match(ci) {
-                case DEFINITE(s) =>
-                    restrictedAtThisIndex.put(s)
-                case PARTIAL(p) =>
-                    restrictedAtThisIndex.putAll(p.GetPotentialSignals())
+    let dependentVariables = HashMap<Int64, Variable<V>>()
+    for(input in partialInputs){
+        match(input){
+            case DEFINITE(_) => ()
+            case PARTIAL(s) =>
+                dependentVariables.putAll(s.GetDependentVariables())
+        }
+    }
+    let dependentVariableArray = dependentVariables.toArray()
+    let variableApplyFn = {
+        assignment : HashMap<Int64, Signal<V>> =>
+            applyFn(
+                map<CycleInput<V>, Signal<V>>({
+                    partialInput : CycleInput<V> =>
+                        match(partialInput) {
+                            case DEFINITE(s) => s
+                            case PARTIAL(p) =>
+                                let values = map<VariableValue<V>, V>(
+                                    { v : VariableValue<V> =>
+                                        v.GetVariableFn()(assignment)
+                                    }, p.GetValues()
+                                )
+                                Signal(values)
+                        }
+                    }, partialInputs
+                )
+            )
+    }
+    let potentialAssignments = GetAllCombinations(
+        dependentVariables, { dv : Variable<V> => dv.possibleSignals }
+    )
+    let outputs = mapi(
+        { p : Port, portNo : Int64 =>
+            VariableSignal(
+                Array<VariableValue<V>>(p.GetWidth(), {
+                    bit : Int64 => VariableValue<V>(
+                        dependentVariables,
+                        { assg : HashMap<Int64, Signal<V>> =>
+                            variableApplyFn(assg)[portNo].GetBit(bit)
+                        }
+                    )
+                })
+            )
+        }, outputPorts
+    )
+    map({
+        s : VariableSignal<V> =>
+            let potentialSignals = s.GetPotentialSignals()
+            if(potentialSignals.size == 1){
+                DEFINITE(potentialSignals.iterator().next().getOrThrow())
+            } else {
+                PARTIAL(s)
             }
-            restrictedInputs.put(i, restrictedAtThisIndex)
-    }, partialInputs)
-    // Get all the arrays of inputs
-    let potentialInputs =
-        signature.EnumerateInputs(inputPorts, fixed: restrictedInputs)
-    // Initialise the array of outputs: the ith element of this array is the
-    // hash set of outputs that may arise on the ith output wire.
-    let outputsPerPort = Array<HashSet<Signal<V>>>(outputPorts.size, {
-        i : Int64 => HashSet<Signal<V>>(potentialInputs.size)
-    })
-    // For each input, compute the outputs and put the result of each port
-    // onto the appropriate hash set
-    forEach({
-        inputs : Array<Signal<V>>, _ : Int64 =>
-            let outputs = applyFn(inputs)
-            forEach<Signal<V>>({
-                output : Signal<V>, i : Int64 =>
-                    outputsPerPort[i].put(output)
-            }, outputs)
-    }, potentialInputs)
-    outputsPerPort
+    }, outputs)
 }
 func GetPartialApplyRule<V, G>(
     signature : Signature<V, G>,
@@ -545,9 +568,8 @@ func GetPartialApplyRule<V, G>(
             signature, partialInputs, applyFn,
             e.GetInputPorts(), e.GetOutputPorts()
         )
-        let cycleInputs = map(GetVariable<V>, potentialOutputs)
         let nextEdges = ReplaceGateWithOutputs(
-            signature, f, e, argumentEdges, cycleInputs
+            signature, f, e, argumentEdges, potentialOutputs
         )
         Some(nextEdges)
     } catch (e : NoneValueException) {
@@ -851,13 +873,13 @@ func GetValueBundleRule<V, G>(signature : Signature<V, G>)
                     let values = valuesArray.sliceArray(
                         start: start, end: start + v.GetWidth()
                     )
-                    let IsAllDefinite = fold_left(
+                    let isAllDefinite = fold_left(
                         { acc, cur => acc && match(cur) {
                             case VALUE(_) => true
                             case PARTIAL(_) => false
                         }}, true, values
                     )
-                    let (label, subgraph) = if(IsAllDefinite) {
+                    let (label, subgraph) = if(isAllDefinite) {
                         if(values.size == 1) {
                             let value = values[0]
                             match(value){
@@ -884,11 +906,13 @@ func GetValueBundleRule<V, G>(signature : Signature<V, G>)
                         let partialValues = map(
                             { bit : SingleBit<V> => match(bit) {
                                 case PARTIAL(p) => p
-                                case VALUE(v) => VariableValue<V>(
-                                    Variable<V>(
-                                        HashSet([Signal([v])])
-                                    ), 0
-                                )
+                                case VALUE(v) =>
+                                    let newVariable =
+                                        Variable<V>(HashSet([Signal([v])]))
+                                    VariableValue<V>(
+                                        HashSet([newVariable]),
+                                        { ss => ss[0].GetBit(0) }
+                                    )
                             }}, values
                         )
                         let partialSignal = VariableSignal(partialValues)
