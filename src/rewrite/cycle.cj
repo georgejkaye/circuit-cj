@@ -8,37 +8,6 @@
  */
 package rewrite
 /**
- * Inputs we can provide to perform a cycle
- */
-public enum CycleInput<V> where V <: ValueSymbol<V> {
-    | DEFINITE(Signal<V>)
-    | PARTIAL(VariableSignal<V>)
-}
-extend CycleInput<V> <: HasWidth {
-    public func GetWidth() {
-        match(this) {
-            case DEFINITE(s) => s.GetWidth()
-            case PARTIAL(pi) => pi.GetWidth()
-        }
-    }
-}
-extend CycleInput<V> <: HasName {
-    public func GetName() : String {
-        match(this) {
-            case DEFINITE(s) => s.GetName()
-            case PARTIAL(pi) => pi.GetName()
-        }
-    }
-}
-extend CycleInput<V> <: ToString {
-    public func toString() : String {
-        match(this) {
-            case DEFINITE(s) => "definitely ${s.GetName()}"
-            case PARTIAL(p) => "maybe ${p.GetName()}"
-        }
-    }
-}
-/**
  * Detach the current wires from the state registers.
  *
  * @param coreEdge

@@ -584,7 +584,8 @@ public func Apply<V, G>(
     let argOutputs = mapi({
         pi : VariableSignal<V>, i : Int64 =>
             Some(UseEdgeWithNewOutputs(
-                PARTIAL(pi), Array<Vertex<V, G>>(), None, None
+                Label<V,G>.PARTIAL(pi), Array<Vertex<V, G>>(),
+                None, f.GetGraph()
             )[0])
     }, inputs)
     let argStrings = map({ pi : VariableSignal<V> => Some(pi.GetName()) }, inputs)

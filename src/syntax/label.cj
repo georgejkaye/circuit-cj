@@ -233,6 +233,15 @@ extend Label<V, G>
             case _ => false
         }
     }
+    public func GetCycleInput() : CycleInput<V> {
+        match(this) {
+            case VALUE(v) => CycleInput<V>.DEFINITE(Signal(v))
+            case SIGNAL(s) => CycleInput<V>.DEFINITE(s)
+            case PARTIAL(p) => CycleInput<V>.PARTIAL(p)
+            case _ => throw IncompatibleVariantException(this, "CycleInput")
+        }
+    }
+
     /**
      * @param v a value symbol
      * @return Whether thie value or signal label only contains this symbol
