@@ -278,7 +278,7 @@ func ApplyPreconditions<V, G>(e : Edge<V, G>) : Bool
  */
 func GetArgs<V, G>(
     e : Edge<V, G>
-) : (Array<Option<Edge<V, G>>>, Array<Option<Array<V>>>)
+) : (Array<Option<Edge<V, G>>>, Array<Option<CycleInput<V>>>)
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let argumentEdges = map({
@@ -288,7 +288,7 @@ func GetArgs<V, G>(
                         case None => None<Edge<V, G>>
                         case Some(ec) =>
                             let edge = ec.GetEdge()
-                            if(edge.GetLabel().IsSignal()) {
+                            if(edge.GetLabel().IsCycleInput()) {
                                 Some(edge)
                             } else {
                                 None<Edge<V, G>>
@@ -302,8 +302,8 @@ func GetArgs<V, G>(
     let argumentValues = map({
             arg : Option<Edge<V, G>> =>
                 match(arg) {
-                    case None => None<Array<V>>
-                    case Some(e) => Some(e.GetLabel().GetValueArray())
+                    case None => None<CycleInput<V>>
+                    case Some(e) => Some(e.GetLabel().GetCycleInput())
                 }
         }, argumentEdges
     )
@@ -420,7 +420,7 @@ func GetPrimitiveRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
                 let prim = e.GetLabel().GetPrimitive()
                 let function = signature.GetGate(prim)
-                GetApplyRule(
+                GetPartialApplyRule<V, G>(
                     signature, { vss : Array<Signal<V>> => function(vss) }, e, f
                 )
         }
@@ -475,22 +475,79 @@ func GetStubRule<V, G>() : RewriteRule<V, G>
         }
     )
 }
-func GetApplyRule<V, G>(
-        signature : Signature<V, G>,
-        applyFn : (Array<Signal<V>>) -> Array<Signal<V>>,
-        e : Edge<V, G>, f : InterfacedHypergraph<V, G>
+public func GetPotentialOutputs<V, G>(
+    signature : Signature<V, G>,
+    partialInputs : Array<CycleInput<V>>,
+    applyFn : (Array<Signal<V>>) -> Array<Signal<V>>,
+    inputPorts : Array<Port>, outputPorts : Array<Port>
+) : Array<HashSet<Signal<V>>>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    AssertElementsHaveSameWidths(partialInputs, inputPorts)
+    // Establish the ranges of the inputs
+    let restrictedInputs = HashMap<Int64, HashSet<Signal<V>>>()
+    forEach<CycleInput<V>>({
+        ci : CycleInput<V>, i : Int64 =>
+            let restrictedAtThisIndex = HashSet<Signal<V>>()
+            match(ci) {
+                case DEFINITE(s) =>
+                    restrictedAtThisIndex.put(s)
+                case PARTIAL(p) =>
+                    restrictedAtThisIndex.putAll(p.GetPotentialSignals())
+            }
+            restrictedInputs.put(i, restrictedAtThisIndex)
+    }, partialInputs)
+    // Get all the arrays of inputs
+    let potentialInputs =
+        signature.EnumerateInputs(inputPorts, fixed: restrictedInputs)
+    // Initialise the array of outputs: the ith element of this array is the
+    // hash set of outputs that may arise on the ith output wire.
+    let outputsPerPort = Array<HashSet<Signal<V>>>(outputPorts.size, {
+        i : Int64 => HashSet<Signal<V>>(potentialInputs.size)
+    })
+    // For each input, compute the outputs and put the result of each port
+    // onto the appropriate hash set
+    forEach({
+        inputs : Array<Signal<V>>, _ : Int64 =>
+            let outputs = applyFn(inputs)
+            forEach<Signal<V>>({
+                output : Signal<V>, i : Int64 =>
+                    outputsPerPort[i].put(output)
+            }, outputs)
+    }, potentialInputs)
+    outputsPerPort
+}
+func GetPartialApplyRule<V, G>(
+    signature : Signature<V, G>,
+    applyFn : (Array<Signal<V>>) -> Array<Signal<V>>,
+    e : Edge<V, G>, f : InterfacedHypergraph<V, G>
 ) : Option<HashSet<TraversalElement<V, G>>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let (argumentEdges, argumentSignals) = GetArgs(e)
     try {
-        let concreteSignals = map<Option<Array<V>>, Signal<V>>(
-            { v : Option<Array<V>> => Signal(v.getOrThrow()) },
-            argumentSignals
+        let inputEdges = Array<Option<Edge<V, G>>>(
+            e.GetArity(), { i => None<Edge<V, G>>}
         )
-        let resultSignals = applyFn(concreteSignals)
+        let partialInputs = map(
+            { oe : Option<Edge<V, G>> =>
+                let e = oe.getOrThrow()
+                match(e.GetLabel()) {
+                    case VALUE(v) => DEFINITE(Signal([v]))
+                    case SIGNAL(s) => DEFINITE(s)
+                    case PARTIAL(pi) => CycleInput<V>.PARTIAL(pi)
+                    // This shouldn't happen
+                    case _ => throw Exception()
+                }
+            }, argumentEdges
+        )
+        let potentialOutputs = GetPotentialOutputs(
+            signature, partialInputs, applyFn,
+            e.GetInputPorts(), e.GetOutputPorts()
+        )
+        let cycleInputs = map(GetVariable<V>, potentialOutputs)
         let nextEdges = ReplaceGateWithOutputs(
-            signature, f, e, argumentEdges, resultSignals
+            signature, f, e, argumentEdges, cycleInputs
         )
         Some(nextEdges)
     } catch (e : NoneValueException) {
@@ -512,7 +569,7 @@ func GetJoinRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
         NJOIN,
         {
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
-                GetApplyRule(
+                GetPartialApplyRule<V, G>(
                     signature, {
                         vss : Array<Signal<V>> =>
                             [signature.Join(vss[0], vss[1])]
