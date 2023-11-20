@@ -58,9 +58,22 @@ extend Variable<V> <: Equatable<Variable<V>> {
  */
 public struct VariableValue<V> where V <: ValueSymbol<V> {
     public VariableValue(
-        public let variable : Variable<V>,
-        public let index : Int64
+        let dependentVariables : HashMap<Int64, Variable<V>>,
+        let variableFn : (HashMap<Int64, Signal<V>>) -> V
     ){}
+    public init(
+        dependentVariables : HashSet<Variable<V>>,
+        variableFn : (HashMap<Int64, Signal<V>>) -> V
+    ){
+        this.dependentVariables = HashMap()
+        for(variable in dependentVariables) {
+            this.dependentVariables.put(variable.id, variable)
+        }
+        this.variableFn = variableFn
+    }
+    public func GetVariableFn() : (HashMap<Int64, Signal<V>>) -> V {
+        this.variableFn
+    }
 }
 extend VariableValue<V> <: HasWidth {
     public func GetWidth() : Int64 {
@@ -69,20 +82,12 @@ extend VariableValue<V> <: HasWidth {
 }
 extend VariableValue<V> <: ToString {
     public func toString() : String {
-        "${this.variable.toString()}[${this.index}]"
+        "depends on ${this.dependentVariables}"
     }
 }
 extend VariableValue<V> <: HasName {
     public func GetName() : String {
         this.toString()
-    }
-}
-extend VariableValue<V> <: Equatable<VariableValue<V>> {
-    public operator func ==(rhs : VariableValue<V>) : Bool {
-        this.variable == rhs.variable && this.index == rhs.index
-    }
-    public operator func !=(rhs : VariableValue<V>) : Bool {
-        !(this == rhs)
     }
 }
 /**
@@ -93,37 +98,12 @@ extend VariableValue<V> <: Equatable<VariableValue<V>> {
  */
 func GetDependentVariables<V>(
     values : Array<VariableValue<V>>
-) : HashSet<Variable<V>> where V <: ValueSymbol<V> {
-    let dependentVariables = HashSet<Variable<V>>()
+) : HashMap<Int64, Variable<V>> where V <: ValueSymbol<V> {
+    let dependentVariables = HashMap<Int64, Variable<V>>()
     for(value in values) {
-        let variable = value.variable
-        dependentVariables.put(variable)
+        dependentVariables.putAll(value.dependentVariables)
     }
     dependentVariables
-}
-/**
- * Given a set of variables, generate all the combinations they can be
- * concretely instantiated to. Since we assign an arbitrary order to the
- * variables in the set, we also create a map from variable ids to their place
- * in the order.
- *
- * @param dependentVariables
- * @return (the combinations, the variable id map)
- */
-func GetSignalCombinations<V>(
-    dependentVariables : HashSet<Variable<V>>
-) : (Array<Array<Signal<V>>>, HashMap<Int64, Int64>)
-    where V <: ValueSymbol<V>
-{
-    let dependentVariablesArray = dependentVariables.toArray()
-    let dependentVariableMap = HashMap<Int64, Int64>()
-    let signalArray = mapi(
-        { dvs : Variable<V>, i : Int64 =>
-            dependentVariableMap.put(dvs.id, i)
-            dvs.possibleSignals.toArray()
-        }, dependentVariablesArray
-    )
-    (GetAllCombinations(signalArray), dependentVariableMap)
 }
 /**
  * Given an array of varaible values and an assignment of a set of variables,
@@ -136,15 +116,11 @@ func GetSignalCombinations<V>(
  */
 func ComputePotentialSignal<V>(
     variableValues : Array<VariableValue<V>>,
-    assignment : Array<Signal<V>>,
-    dependentVariablesMap : HashMap<Int64, Int64>
+    assignment : HashMap<Int64, Signal<V>>
 ) : Signal<V> where V <: ValueSymbol<V> {
-    let values = mapi(
+    let values = mapi<VariableValue<V>, V>(
         { pv : VariableValue<V>, i : Int64 =>
-            let id = pv.variable.id
-            let variableIndex =
-                dependentVariablesMap.get(id).getOrThrow()
-            assignment[variableIndex].GetBit(pv.index)
+            pv.variableFn(assignment)
         }, variableValues
     )
     Signal(values)
@@ -154,7 +130,7 @@ func ComputePotentialSignal<V>(
  */
 public struct VariableSignal<V> where V <: ValueSymbol<V> {
     // The set of variables that this signal depends on
-    let dependentVariables : HashSet<Variable<V>>
+    let dependentVariables : HashMap<Int64, Variable<V>>
     // The set of signals that this variable could be instantiated to
     let potentialSignals : HashSet<Signal<V>> = HashSet()
     public VariableSignal(
@@ -163,17 +139,20 @@ public struct VariableSignal<V> where V <: ValueSymbol<V> {
         let dependentVariables = GetDependentVariables(variableValues)
         this.dependentVariables = dependentVariables
         // Assign an arbitrary order to the shifting variables
-        let (combinations, dependentVariablesMap) =
-            GetSignalCombinations(dependentVariables)
-        for(assg in combinations) {
-            let signal = ComputePotentialSignal(
-                variableValues, assg, dependentVariablesMap
+        let combinations =
+            GetAllCombinations(
+                dependentVariables, { v : Variable<V> => v.possibleSignals }
             )
+        for(assg in combinations) {
+            let signal = ComputePotentialSignal(variableValues, assg)
             potentialSignals.put(signal)
         }
     }
     public func GetValues() : Array<VariableValue<V>> {
         this.variableValues
+    }
+    public func GetDependentVariables() :  HashMap<Int64, Variable<V>> {
+        this.dependentVariables
     }
     public func GetPotentialSignals() : HashSet<Signal<V>> {
         this.potentialSignals
@@ -195,14 +174,6 @@ extend VariableSignal<V> <: ToString {
 extend VariableSignal<V> <: HasName {
     public func GetName() : String {
         this.toString()
-    }
-}
-extend VariableSignal<V> <: Equatable<VariableSignal<V>> {
-    public operator func ==(rhs : VariableSignal<V>) : Bool {
-        this.variableValues == rhs.GetValues()
-    }
-    public operator func !=(rhs : VariableSignal<V>) : Bool {
-        !(this == rhs)
     }
 }
 /**

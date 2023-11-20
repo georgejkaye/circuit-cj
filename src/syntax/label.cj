@@ -163,7 +163,7 @@ extend Label<V, G>
                 case _ => false
             }
             case PARTIAL(p) => match(rhs) {
-                case PARTIAL(q) => p == q
+                case PARTIAL(q) => false
                 case _ => false
             }
             case REGISTER(s) => match(rhs) {
