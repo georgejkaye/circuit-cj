@@ -83,6 +83,22 @@ public func concat<T, U>(xss : Array<Array<T>>, f : (T) -> U) : Array<U> {
             throw UnreachableCodeException()
     })
 }
+public func concat<T, U>(xs : Array<T>, f : (T) -> Array<U>) : Array<U> {
+    Array(Sum(xs, { xs => f(xs).size }), {
+        i =>
+            var j = i
+            var elm = 0
+            for(x in xs){
+                elm++
+                let array = f(x)
+                if(j < array.size) {
+                    return array[j]
+                }
+                j -= array.size
+            }
+            throw UnreachableCodeException()
+    })
+}
 
 public interface ExtraArrayUtils<T> {
     func sliceArray(start!: Int64, end!: Int64) : Array<T>
