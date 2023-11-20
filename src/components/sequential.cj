@@ -91,6 +91,22 @@ public func UseSignal<V, G>(v : V, i : Int64) : Wire<V, G>
     let array : Array<V> = Array<V>(i, {i : Int64 => v})
     UseSignal(Signal(array))
 }
+public func UseVariableSignal<V, G>(vs : VariableSignal<V>) : Wire<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    UseEdgeWithNewOutputs<V, G, Vertex<V, G>>(
+        Label<V, G>.PARTIAL(vs), Array<Vertex<V, G>>(),
+        None<InterfacedHypergraph<V, G>>, None<Hypergraph<V, G>>
+    )[0]
+}
+public func UseCycleInput<V, G>(ci : CycleInput<V>) : Wire<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    match(ci) {
+        case DEFINITE(s) => UseSignal(s)
+        case PARTIAL(p) => UseVariableSignal(p)
+    }
+}
 /**
  * Use a delay component for a given duration
  *
@@ -144,7 +160,7 @@ public func UseDelays<V, G>(
  * @return The output wire of the register
  */
 public func UseSimpleRegister<V, G>(
-    initial!: Signal<V>, input!: Wire<V, G>
+    initial!: CycleInput<V>, input!: Wire<V, G>
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -210,12 +226,31 @@ public func DelayGuardedFeedback<V, G>(
  * @param initial The initial signal of the register
  */
 public func RegisterGuardedFeedback<V, G>(
-    outgoing : Wire<V, G>, incoming: Wire<V, G>, initial!: Signal<V>
+    outgoing : Wire<V, G>, incoming: Wire<V, G>, initial!: CycleInput<V>
 ) : Wire<V, G>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>{
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
     let register = UseSimpleRegister(initial: initial, input: outgoing)
     PerformFeedback(register, incoming, false)
     register
+}
+/**
+ * Create a feedback loop guarded by a simple register: join a wire to a wire
+ * that is not connected to anything on the left, and insert a register with a
+ * given initial signal on the loop
+ *
+ * @param input The input to the register
+ * @param incoming The wire to feed back to
+ * @param initial The initial signal of the register
+ */
+public func RegisterGuardedFeedback<V, G>(
+    outgoing : Wire<V, G>, incoming: Wire<V, G>, initial!: V
+) : Wire<V, G>
+     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    RegisterGuardedFeedback(
+        outgoing, incoming, initial: DEFINITE(Signal([initial]))
+    )
 }
 /**
  * Use a waveform
@@ -274,12 +309,12 @@ func UseInfiniteWaveform<V, G>(waveform!: Waveform<V>) : Wire<V, G>
  * @return The simple register circuit
  */
 public func MakeSimpleRegister<V, G>(
-    initial : Signal<V>
+    initial : CycleInput<V>
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let width = initial.GetWidth()
-    let signal = UseSignal<V, G>(initial)
+    let signal = UseCycleInput<V, G>(initial)
     let input = UseWire<V, G>(width)
     let delay = UseDelay(input)
     let join = UseJoin(signal, delay)
@@ -308,7 +343,7 @@ func MakeOpenWaveform<V, G>(
         let j = waveformLength - i - 1
         let register =
             UseSimpleRegister(
-                initial: waveform.GetSignalAtTick(j), input:currentWire
+                initial: DEFINITE(waveform.GetSignalAtTick(j)), input:currentWire
             )
         currentWire = register
     }
@@ -386,6 +421,9 @@ public interface SignalUser<V, G>
     }
     func UseInfiniteWaveform(waveform!: Waveform<V>) : Wire<V, G> {
         UseInfiniteWaveform<V, G>(waveform: waveform)
+    }
+    func UseCycleInput(ci : CycleInput<V>) : Wire<V, G> {
+        UseCycleInput<V, G>(ci)
     }
 }
 extend Signature<V, G> <: SignalUser<V, G>

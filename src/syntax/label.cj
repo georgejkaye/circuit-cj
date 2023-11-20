@@ -23,7 +23,7 @@ public enum Label<V, G>
     // A partially specified input
     | PARTIAL(VariableSignal<V>)
     // A join of a signal and a delay
-    | REGISTER(Signal<V>)
+    | REGISTER(CycleInput<V>)
     // A sequence of signals over time
     | OPEN_WAVEFORM(Waveform<V>)
     // A sequence of signals over time, capped with a disconnect
@@ -167,7 +167,7 @@ extend Label<V, G>
                 case _ => false
             }
             case REGISTER(s) => match(rhs) {
-                case REGISTER(t) => s == t
+                case REGISTER(t) => false
                 case _ => false
             }
             case OPEN_WAVEFORM(wf1) => match(rhs) {
@@ -275,7 +275,13 @@ extend Label<V, G>
         match(this) {
             case VALUE(v) => Signal(v)
             case SIGNAL(spec) => spec
-            case REGISTER(signal) => signal
+            case REGISTER(ci) => match(ci) {
+                case DEFINITE(s) => s
+                case PARTIAL(p) =>
+                    throw IncompatibleVariantException(
+                        this, "VALUE/SIGNAL/REGISTER"
+                    )
+            }
             case _ =>
                 throw IncompatibleVariantException(
                     this, "VALUE/SIGNAL/REGISTER"
@@ -289,7 +295,10 @@ extend Label<V, G>
         match(this) {
             case VALUE(v) => Some(Signal(v))
             case SIGNAL(spec) => Some(spec)
-            case REGISTER(signal) => Some(signal)
+            case REGISTER(ci) => match(ci) {
+                case DEFINITE(s) => Some(s)
+                case _ => None
+            }
             case _ => None
         }
     }

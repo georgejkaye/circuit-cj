@@ -236,7 +236,7 @@ public func UseSimpleRegister<V, G>(
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
     let signal = V.DecToSignal(initial, width: width, signed: signed)
-    UseSimpleRegister(initial: signal, input: input)
+    UseSimpleRegister(initial: DEFINITE(signal), input: input)
 }
 /**
  * Perform register guarded feedback with an initial value converted from a
@@ -255,5 +255,5 @@ public func RegisterGuardedFeedback<V, G>(
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
     let signal = V.DecToSignal(initial, width: input.GetWidth(), signed: signed)
-    RegisterGuardedFeedback(input, incoming, initial: signal)
+    RegisterGuardedFeedback(input, incoming, initial: DEFINITE(signal))
 }

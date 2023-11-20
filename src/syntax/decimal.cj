@@ -119,6 +119,14 @@ extend VariableSignal<V> where V <: Decimal<V> & ValueSymbol<V> {
         )
     }
 }
+extend CycleInput<V> where V <: Decimal<V> & ValueSymbol<V> {
+    public func GetDecimalName(signed!: Bool) : String {
+        match(this) {
+            case DEFINITE(s) => s.GetDecimalName(signed: signed)
+            case PARTIAL(v) => v.GetDecimalName(signed: signed)
+        }
+    }
+}
 extend Waveform<V> where V <: Decimal<V> & ValueSymbol<V> {
     public func GetDecimalName(signed!: Bool) : String {
         arrayToString(
