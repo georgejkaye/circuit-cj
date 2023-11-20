@@ -20,6 +20,15 @@ public func GetFixed<V>(signal : Signal<V>) : CycleInput<V>
     DEFINITE(signal)
 }
 /**
+ * Get a fixed cycle input, an input that is known to be a particular value.
+ *
+ * @param signal
+ * @return The fixed cycle input
+ */
+public func GetFixed<V>(v : V) : CycleInput<V> where V <: ValueSymbol<V> {
+    GetFixed(Signal(v))
+}
+/**
  * Get a fixed cycle input, an input that is known to be a particular signal.
  *
  * @param input
@@ -27,10 +36,10 @@ public func GetFixed<V>(signal : Signal<V>) : CycleInput<V>
  * @param signed
  * @retrn The fixed cycle input for this number
  */
-public func GetFixed<V>(
-    input : Int64, width!: Int64, signed!: Bool
+public func GetFixed<V, G>(
+    sig: Signature<V, G>, input : Int64, width!: Int64, signed!: Bool
 ) : CycleInput<V>
-    where V <: ValueSymbol<V> & Decimal<V>
+    where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
     GetFixed(V.DecToSignal(input, width: width, signed: signed))
 }
@@ -56,6 +65,17 @@ public func GetVariable<V>(signals : HashSet<Signal<V>>) : CycleInput<V>
     }
 }
 /**
+ * Get a variable cycle input, an input that could be multiple values.
+ *
+ * @param signals
+ * @return The variable cycle input
+ */
+public func GetVariable<V>(values : HashSet<V>) : CycleInput<V>
+    where V <: ValueSymbol<V>
+{
+    GetVariable(HashSet(mapCollection({ v => Signal(v) }, values)))
+}
+/**
  * Get a variable cycle input, an input that could be multiple signals.
  *
  * @param inputs
@@ -63,10 +83,10 @@ public func GetVariable<V>(signals : HashSet<Signal<V>>) : CycleInput<V>
  * @param signed
  * @return The variable cycle input
  */
-public func GetVariable<V>(
-    inputs : HashSet<Int64>, width!: Int64, signed!: Bool
+public func GetVariable<V, G>(
+    sig : Signature<V, G>, inputs : HashSet<Int64>, width!: Int64, signed!: Bool
 ) : CycleInput<V>
-    where V <: ValueSymbol<V> & Decimal<V>
+    where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
     let signalArray = mapCollection<Int64, Signal<V>>(
         { i : Int64 => V.DecToSignal(i, width: width, signed: signed)},
@@ -84,7 +104,9 @@ public func GetVariable<V>(
  * @param width
  * @return The unknown cycle input
  */
-public func GetUnknown<V, G>(sig : Signature<V, G>, width: Int64) : CycleInput<V>
+public func GetUnknown<V, G>(
+    sig : Signature<V, G>, width: Int64
+) : CycleInput<V>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let signals = sig.EnumerateSignals(width)
