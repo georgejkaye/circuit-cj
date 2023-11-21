@@ -333,17 +333,16 @@ func MakeValueOrSignal<V, G>(
     Edge(label, Array<Vertex<V, G>>(), targets, graph, owner)
 }
 /**
- * Replace this edge and its arguments with some outputs.
+ * Replace this edge and its arguments with some output cycle input edges.
  *
- * @param signature
  * @param f
  * @param e
  * @param args
  * @param outputs
  */
 func ReplaceGateWithOutputs<V, G>(
-    signature : Signature<V, G>, f : InterfacedHypergraph<V, G>,
-    e : Edge<V, G>, args : Array<Option<Edge<V, G>>>,
+    f : InterfacedHypergraph<V, G>, e : Edge<V, G>,
+    args : Array<Option<Edge<V, G>>>,
     outputs : Array<CycleInput<V>>
 ) : HashSet<TraversalElement<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
@@ -384,23 +383,22 @@ func ReplaceGateWithOutputs<V, G>(
     nextEdges
 }
 /**
- * Replace this edge and its arguments with some outputs.
+ * Replace this edge and its arguments with some output signal edges.
  *
- * @param signature
  * @param f
  * @param e
  * @param args
  * @param outputs
  */
 func ReplaceGateWithOutputs<V, G>(
-    signature : Signature<V, G>, f : InterfacedHypergraph<V, G>,
+    f : InterfacedHypergraph<V, G>,
     e : Edge<V, G>, args : Array<Option<Edge<V, G>>>,
     outputs : Array<Signal<V>>
 ) : HashSet<TraversalElement<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     ReplaceGateWithOutputs(
-        signature, f, e, args, map({ s => DEFINITE(s) }, outputs)
+        f, e, args, map({ s => DEFINITE(s) }, outputs)
     )
 }
 /**
@@ -420,9 +418,7 @@ func GetPrimitiveRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
                 let prim = e.GetLabel().GetPrimitive()
                 let function = signature.GetGate(prim)
-                GetPartialApplyRule<V, G>(
-                    signature, { vss : Array<Signal<V>> => function(vss) }, e, f
-                )
+                ExecuteApplyRule<V, G>(function , e, f)
         }
     )
 }
@@ -475,16 +471,127 @@ func GetStubRule<V, G>() : RewriteRule<V, G>
         }
     )
 }
-public func GetPotentialOutputs<V, G>(
-    signature : Signature<V, G>,
+/**
+ * Given an array of signals and an apply function, get the output signals
+ *
+ * @param signals
+ * @param applyFn
+ * @return The output cycle inputs
+ */
+func DefiniteApply<V>(
+    signals : Array<Signal<V>>,
+    applyFn : (Array<Signal<V>>) -> Array<Signal<V>>
+) : Array<CycleInput<V>>
+    where V <: ValueSymbol<V>
+{
+    let outputSignals = applyFn(signals)
+    map({ s : Signal<V> => DEFINITE(s) }, outputSignals)
+}
+func GetVariableValueForPortBit<V>(
+    dependentVariables : HashMap<Int64, Variable<V>>,
+    variableApplyFn : (HashMap<Int64, Signal<V>>) -> Array<Signal<V>>,
+    portNo: Int64, bit : Int64
+) : VariableValue<V> where V <: ValueSymbol<V> {
+    VariableValue<V>(
+        dependentVariables,
+        { assg : HashMap<Int64, Signal<V>> =>
+            variableApplyFn(assg)[portNo].GetBit(bit)
+        }
+    )
+}
+/**
+ * Given a variable signal, check to see if it induces exactly one
+ * signal; if it does, create a definite cycle input; otherwise create a
+ * variable one.
+ *
+ * @param signal
+ * @return Appropriate cycle input
+ */
+func AssignDefiniteOrVariable<V>(
+    signal : VariableSignal<V>
+) : CycleInput<V> where V <: ValueSymbol<V> {
+    let potentialSignals = signal.GetPotentialSignals()
+    if(potentialSignals.size == 1){
+        DEFINITE(potentialSignals.iterator().next().getOrThrow())
+    } else {
+        CycleInput<V>.PARTIAL(signal)
+    }
+}
+/**
+ * For a port, get the cycle input it will output based on some dependent
+ * variables and an apply function.
+ *
+ * @param port
+ * @param portNo
+ * @param dependentVariables
+ * @param variableApplyFn
+ * @return
+ */
+func GetCycleInputForPort<V>(
+    port : Port, portNo : Int64,
+    dependentVariables : HashMap<Int64, Variable<V>>,
+    variableApplyFn : (HashMap<Int64, Signal<V>>) -> Array<Signal<V>>
+) : CycleInput<V> where V <: ValueSymbol<V> {
+    let signal = VariableSignal(
+        Array<VariableValue<V>>(port.GetWidth(), {
+            bit : Int64 =>
+            GetVariableValueForPortBit(
+                dependentVariables, variableApplyFn, portNo, bit
+            )
+        })
+    )
+    AssignDefiniteOrVariable(signal)
+}
+
+/**
+ * Given an array of cycle inputs, their dependent variables, and an apply
+ * function, get the possible output signals
+ *
+ * @param partialInputs
+ * @param dependentVariables
+ * @param applyFn
+ * @param outputPorts
+ * @return The output cycle inputs
+ */
+public func VariableApply<V>(
+    partialInputs : Array<CycleInput<V>>,
+    dependentVariables : HashMap<Int64, Variable<V>>,
+    applyFn : (Array<Signal<V>>) -> Array<Signal<V>>,
+    outputPorts : Array<Port>
+) : Array<CycleInput<V>>
+    where V <: ValueSymbol<V>
+{
+    let dependentVariableArray = dependentVariables.toArray()
+    // Get the function from an assignment of the dependent variables to
+    // the output signals created for this assignment
+    let variableApplyFn = {
+        assignment : HashMap<Int64, Signal<V>> =>
+            applyFn(
+                map({ partialInput : CycleInput<V> =>
+                    GetSignalForAssignment(assignment, partialInput)
+                }, partialInputs)
+            )
+    }
+    mapi(
+        { p : Port, portNo : Int64 => GetCycleInputForPort(
+            p, portNo, dependentVariables, variableApplyFn
+        )}, outputPorts
+    )
+}
+/**
+ * Given an array of cycle inputs and an apply function, get all the potential
+ * cycle inputs that could be produced by the function.
+ *
+ * @param partialInputs
+ * @param applyFn
+ * @param outputPorts
+ * @return The array of possible outputs for each output port
+ */
+public func GetPotentialOutputs<V>(
     partialInputs : Array<CycleInput<V>>,
     applyFn : (Array<Signal<V>>) -> Array<Signal<V>>,
-    inputPorts : Array<Port>, outputPorts : Array<Port>
-) : Array<CycleInput<V>>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
-{
-    AssertElementsHaveSameWidths(partialInputs, inputPorts)
-    // Establish the ranges of the inputs
+    outputPorts : Array<Port>
+) : Array<CycleInput<V>> where V <: ValueSymbol<V> {
     let dependentVariables = HashMap<Int64, Variable<V>>()
     for(input in partialInputs){
         match(input){
@@ -493,83 +600,42 @@ public func GetPotentialOutputs<V, G>(
                 dependentVariables.putAll(s.GetDependentVariables())
         }
     }
-    let dependentVariableArray = dependentVariables.toArray()
-    let variableApplyFn = {
-        assignment : HashMap<Int64, Signal<V>> =>
-            applyFn(
-                map<CycleInput<V>, Signal<V>>({
-                    partialInput : CycleInput<V> =>
-                        match(partialInput) {
-                            case DEFINITE(s) => s
-                            case PARTIAL(p) =>
-                                let values = map<VariableValue<V>, V>(
-                                    { v : VariableValue<V> =>
-                                        v.GetVariableFn()(assignment)
-                                    }, p.GetValues()
-                                )
-                                Signal(values)
-                        }
-                    }, partialInputs
-                )
-            )
+    // If there are no dependent variables, this signal is fixed
+    if(dependentVariables.size == 0) {
+        DefiniteApply(map(GetDefinite<V>, partialInputs), applyFn)
+    } else {
+        VariableApply(partialInputs, dependentVariables, applyFn, outputPorts)
     }
-    let potentialAssignments = GetAllCombinations(
-        dependentVariables, { dv : Variable<V> => dv.possibleSignals }
-    )
-    let outputs = mapi(
-        { p : Port, portNo : Int64 =>
-            VariableSignal(
-                Array<VariableValue<V>>(p.GetWidth(), {
-                    bit : Int64 => VariableValue<V>(
-                        dependentVariables,
-                        { assg : HashMap<Int64, Signal<V>> =>
-                            variableApplyFn(assg)[portNo].GetBit(bit)
-                        }
-                    )
-                })
-            )
-        }, outputPorts
-    )
-    map({
-        s : VariableSignal<V> =>
-            let potentialSignals = s.GetPotentialSignals()
-            if(potentialSignals.size == 1){
-                DEFINITE(potentialSignals.iterator().next().getOrThrow())
-            } else {
-                PARTIAL(s)
-            }
-    }, outputs)
 }
-func GetPartialApplyRule<V, G>(
-    signature : Signature<V, G>,
+/**
+ * Execute the apply rule for a given apply function and edge.
+ * The apply rule takes the arguments of a primitive and, if they are all
+ * (potentially variable) signals, replaces the edge with the (potentially
+ * variable) output of the apply function.
+ *
+ * @param applyFn
+ * @param e
+ * @param f
+ */
+func ExecuteApplyRule<V, G>(
     applyFn : (Array<Signal<V>>) -> Array<Signal<V>>,
     e : Edge<V, G>, f : InterfacedHypergraph<V, G>
 ) : Option<HashSet<TraversalElement<V, G>>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let (argumentEdges, argumentSignals) = GetArgs(e)
+    // If one of the edges or signals is None, this will abort rule application
     try {
-        let inputEdges = Array<Option<Edge<V, G>>>(
-            e.GetArity(), { i => None<Edge<V, G>>}
-        )
         let partialInputs = map(
             { oe : Option<Edge<V, G>> =>
-                let e = oe.getOrThrow()
-                match(e.GetLabel()) {
-                    case VALUE(v) => DEFINITE(Signal([v]))
-                    case SIGNAL(s) => DEFINITE(s)
-                    case PARTIAL(pi) => CycleInput<V>.PARTIAL(pi)
-                    // This shouldn't happen
-                    case _ => throw Exception()
-                }
+                oe.getOrThrow().GetLabel().GetCycleInput()
             }, argumentEdges
         )
         let potentialOutputs = GetPotentialOutputs(
-            signature, partialInputs, applyFn,
-            e.GetInputPorts(), e.GetOutputPorts()
+            partialInputs, applyFn, e.GetOutputPorts()
         )
         let nextEdges = ReplaceGateWithOutputs(
-            signature, f, e, argumentEdges, potentialOutputs
+            f, e, argumentEdges, potentialOutputs
         )
         Some(nextEdges)
     } catch (e : NoneValueException) {
@@ -591,9 +657,8 @@ func GetJoinRule<V, G>(signature : Signature<V, G>) : RewriteRule<V, G>
         NJOIN,
         {
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
-                GetPartialApplyRule<V, G>(
-                    signature, {
-                        vss : Array<Signal<V>> =>
+                ExecuteApplyRule<V, G>(
+                    { vss : Array<Signal<V>> =>
                             [signature.Join(vss[0], vss[1])]
                     }, e, f
                 )
@@ -999,7 +1064,7 @@ func GetBottomRule<V, G>(signature : Signature<V, G>)
                         Signal(signature.GetBottom(), e.GetTarget(i).GetWidth())
                 }
                 ReplaceGateWithOutputs<V, G>(
-                    signature, f, e, argumentEdges, bottoms
+                    f, e, argumentEdges, bottoms
                 )
             }
         }
