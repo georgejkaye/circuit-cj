@@ -375,34 +375,37 @@ public func GetAllCombinations<T,U,W>(
 ) : Array<HashMap<U, W>>
     where U <: Hashable & Equatable<U>, W <: Hashable & Equatable<W>
 {
-    AssertNonEmpty(xss)
-    let fixedMap = HashMap<U, Array<W>>()
-    forEach<(U, T)>({ kv : (U, T), i : Int64 =>
-        let (k, v) = kv
-        fixedMap.put(k, fn(v).toArray())
-    }, xss)
-    let fixedMapArray = fixedMap.toArray()
-    let subCombinations = Array<Int64>(xss.size){ i =>
-        fold_left({
-            acc, cur =>
-                let (_, v) = cur
-                acc * v.size
-        }, 1, fixedMapArray, start: i )
-    }
-    Array<HashMap<U, W>>(subCombinations[0]){ i : Int64 =>
-        let comb = HashMap<U, W>(fixedMapArray.size)
-        forEach<(U, Array<W>)>({
-            kv : (U, Array<W>), j : Int64 =>
-            let (k, ws) = kv
-            let divisor = if(j == fixedMapArray.size - 1){
-                1
-            } else {
-                subCombinations[j+1]
-            }
-            let modulo = ws.size
-            let element = (i / divisor) % modulo
-            comb.put(k, ws[element])
-        }, fixedMapArray)
-        comb
+    if(xss.size == 0) {
+        Array<HashMap<U, W>>()
+    } else {
+        let fixedMap = HashMap<U, Array<W>>()
+        forEach<(U, T)>({ kv : (U, T), i : Int64 =>
+            let (k, v) = kv
+            fixedMap.put(k, fn(v).toArray())
+        }, xss)
+        let fixedMapArray = fixedMap.toArray()
+        let subCombinations = Array<Int64>(xss.size){ i =>
+            fold_left({
+                acc, cur =>
+                    let (_, v) = cur
+                    acc * v.size
+            }, 1, fixedMapArray, start: i )
+        }
+        Array<HashMap<U, W>>(subCombinations[0]){ i : Int64 =>
+            let comb = HashMap<U, W>(fixedMapArray.size)
+            forEach<(U, Array<W>)>({
+                kv : (U, Array<W>), j : Int64 =>
+                let (k, ws) = kv
+                let divisor = if(j == fixedMapArray.size - 1){
+                    1
+                } else {
+                    subCombinations[j+1]
+                }
+                let modulo = ws.size
+                let element = (i / divisor) % modulo
+                comb.put(k, ws[element])
+            }, fixedMapArray)
+            comb
+        }
     }
 }
