@@ -279,9 +279,9 @@ public func snds<T, U>(xs : Array<(T, U)>) : Array<U> {
     map({ pair : (T, U) => pair[1] }, xs)
 }
 /**
- * Call a function for each element of a collection, but discard its output.
+ * Call a function for each element of a collection.
  *
- * @param f (element, index) -> output (discarded)
+ * @param f (element, index) -> unit
  * @param xs
  * @param start
  * @param end
@@ -297,5 +297,19 @@ public func forEach<T>(
     for(i in start..end) {
         let x = iter.next().getOrThrow()
         f(x, i)
+    }
+}
+/**
+ * Call a function for each index in a range.
+ *
+ * @param f (index) -> unit
+ * @param start
+ * @param end
+ */
+public func forEach(
+    f : (Int64) -> Unit, start!: Int64 = 0, end!: Int64
+) : Unit {
+    for (i in start..end) {
+        f(i)
     }
 }
