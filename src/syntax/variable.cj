@@ -12,14 +12,17 @@ package syntax
  */
 public struct Variable<V> where V <: ValueSymbol<V> {
     static var nextId : Int64 = 0
-    public let id : Int64
-    public let width : Int64
+    let id : Int64
+    let width : Int64
     public Variable(
         public let possibleSignals : HashSet<Signal<V>>
     ){
         this.id = nextId
         this.width = AssertAllHaveSameWidth(possibleSignals)
         nextId++
+    }
+    public func GetId() : Int64 {
+        this.id
     }
 }
 extend Variable<V> <: Hashable {
@@ -157,6 +160,19 @@ public struct VariableSignal<V> where V <: ValueSymbol<V> {
     public func GetPotentialSignals() : HashSet<Signal<V>> {
         this.potentialSignals
     }
+    /**
+     * Given an assignment of variables, produce the signal for this assignment.
+     *
+     * @param assignment
+     */
+    public func GetSignalForAssignment(
+        assignment : HashMap<Int64, Signal<V>>
+    ) : Signal<V> {
+        let values = map({
+            v : VariableValue<V> => v.GetVariableFn()(assignment)
+        }, this.variableValues)
+        Signal(values)
+    }
 }
 extend VariableSignal<V> <: HasWidth {
     public func GetWidth() : Int64 {
@@ -206,4 +222,31 @@ extend CycleInput<V> <: ToString {
             case PARTIAL(p) => "maybe ${p.GetName()}"
         }
     }
+}
+extend CycleInput<V> {
+    public func GetDefinite() : Signal<V> {
+        match(this) {
+            case DEFINITE(s) => s
+            case PARTIAL(_) =>
+                throw IncompatibleVariantException(this, "DEFINITE")
+        }
+    }
+    public func GetSignalForAssignment(
+        assignment : HashMap<Int64, Signal<V>>
+    ) : Signal<V> {
+        match(this) {
+            case DEFINITE(s) => s
+            case PARTIAL(p) => p.GetSignalForAssignment(assignment)
+        }
+    }
+}
+public func GetDefinite<V>(ci : CycleInput<V>) : Signal<V>
+    where V <: ValueSymbol<V>
+{
+    ci.GetDefinite()
+}
+public func GetSignalForAssignment<V>(
+    assignment : HashMap<Int64, Signal<V>>, ci : CycleInput<V>
+) : Signal<V> where V <: ValueSymbol<V> {
+    ci.GetSignalForAssignment(assignment)
 }
