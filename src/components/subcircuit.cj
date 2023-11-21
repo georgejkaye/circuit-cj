@@ -30,7 +30,7 @@ public func MakeSubcircuit<V, G>(
         AssertHasNoInEdge(iv.GetVertex())
     }
     let inputOwner = MergeHypergraphs(inputs)
-    let outputOwner = MergeHypergraphs(outputs)
+    let outputOwner = MergeHypergraphs(outputs, initial: inputOwner)
     let owner = match(outputOwner) {
         case None => Hypergraph<V, G>()
         case Some(f) => f
