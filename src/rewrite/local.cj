@@ -29,7 +29,7 @@ func AttemptRewriteRule<V, G>(
     match(rule.Rewrite(e, f)) {
         case None => None
         case Some(result) =>
-            Debug("Rewrote ${e} with ${rule.name}")
+            Debug("Rewrote ${e} with ${rule.GetName()}")
             if(draw) {
                 let fileName =
                     "rewrite-${totalRewrites}-${e.GetId()}-${rule.GetName()}"

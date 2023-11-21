@@ -1,16 +1,15 @@
 /**
- * rewrite/index.cj
+ * rewrite/rules/index.cj
  *
- * Imports for rewrite package
+ * Imports for rewrite.rules package
  *
  * @author George Kaye
  * @since 0.3
  */
-package rewrite
+package rewrite.rules
 import syntax.*
 import debug.*
 import graphs.*
 import utils.*
 import components.*
-import rewrite.rules.*
 from std import collection.{ArrayList, HashSet, HashMap}
