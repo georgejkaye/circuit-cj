@@ -61,7 +61,7 @@ public func GetVariable<V>(signals : HashSet<Signal<V>>) : CycleInput<V>
         let values = Array<VariableValue<V>>(width){ i : Int64 =>
             VariableValue(
                 HashSet([pvv]),
-                { ss : HashMap<Int64, Signal<V>> => ss[0].GetBit(i) }
+                { ss : HashMap<Int64, Signal<V>> => ss[pvv.GetId()].GetBit(i) }
             )
         }
         PARTIAL(VariableSignal(values))
