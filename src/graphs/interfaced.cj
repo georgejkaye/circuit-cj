@@ -10,7 +10,7 @@ package graphs
 /**
  * An interface vertex is a pair of a vertex and an optional name.
  */
-public class InterfaceVertex<V, G> <: HasPort & ContainsVertex<V, G>
+public class InterfaceVertex<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public InterfaceVertex(
@@ -23,12 +23,32 @@ public class InterfaceVertex<V, G> <: HasPort & ContainsVertex<V, G>
     ){
         this(vertex, name: Some(name))
     }
-    public operator func ==(rhs : HasPort) : Bool {
+}
+extend InterfaceVertex<V, G> <: Equatable<InterfaceVertex<V, G>> {
+    public operator func ==(rhs : InterfaceVertex<V, G>) : Bool {
         this.GetWidth() == rhs.GetWidth() && this.GetName() == rhs.GetName()
     }
-    public operator func !=(rhs : HasPort) : Bool {
+    public operator func !=(rhs : InterfaceVertex<V, G>) : Bool {
         !(this == rhs)
     }
+}
+extend InterfaceVertex<V, G> <: HasWidth {
+    public func GetWidth() : Int64 {
+        this.vertex.GetWidth()
+    }
+}
+extend InterfaceVertex<V, G> <: HasOptionalName {
+    public func GetName() : Option<String> {
+        this.name
+    }
+    public func GetNameString() : String {
+        match(this.GetName()) {
+            case Some(n) => n
+            case None => ""
+        }
+    }
+}
+extend InterfaceVertex<V, G> <: ToString {
     public func toString() : String {
         let nameString = match (this.name) {
             case None => ""
@@ -36,14 +56,19 @@ public class InterfaceVertex<V, G> <: HasPort & ContainsVertex<V, G>
         }
         "${vertex}${nameString}"
     }
-    public func GetWidth() : Int64 {
-        this.vertex.GetWidth()
-    }
-    public func GetName() : Option<String> {
-        this.name
-    }
+}
+extend InterfaceVertex<V, G> <: HasPort {}
+extend InterfaceVertex<V, G> <: ContainsVertex<V, G> {
     public func GetVertex() : Vertex<V, G> {
         this.vertex
+    }
+}
+extend InterfaceVertex<V, G> <: HasGraph<V, G> {
+    public func GetGraph() : Hypergraph<V, G> {
+        this.vertex.GetGraph()
+    }
+    public func SetGraph(f : Hypergraph<V, G>) : Unit {
+        this.vertex.SetGraph(f)
     }
 }
 /**
@@ -51,11 +76,10 @@ public class InterfaceVertex<V, G> <: HasPort & ContainsVertex<V, G>
  * and outputs.
  */
 public class InterfacedHypergraph<V, G>
-    <: Identifiable<InterfacedHypergraph<V, G>> & ToString &
-            Specifiable & HasName
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let uniqueId : Int64 = GetNextId()
+    static let counter = Counter()
+    let id = counter.GetNext()
     // The hypergraph being interfaced
     let f : Hypergraph<V, G>
     // Input vertices
@@ -148,30 +172,11 @@ public class InterfacedHypergraph<V, G>
             )
         )
     }
-    public operator func ==(right: InterfacedHypergraph<V, G>) : Bool {
-        this.GetId() == right.GetId()
-    }
-    public operator func !=(right : InterfacedHypergraph<V, G>) : Bool {
-        this.GetId() != right.GetId()
-    }
-    public func toString() : String {
-        let string = f.toString()
-        let inputString = PrintWidthArray(this.GetInputs())
-        let outputString = PrintWidthArray(this.GetOutputs())
-        "${string} (${inputString} -> ${outputString})"
-    }
-    public func toLongString() : String {
-        let string = f.toLongString()
-        "${string}\ninputs ${this.inputs}\noutputs ${this.outputs}"
-    }
     public func GetId() : Int64 {
-        this.uniqueId
+        this.id
     }
     public func GetLabel() : Label<V, G> {
         this.label
-    }
-    public func GetGraph() : Hypergraph<V, G> {
-        this.f
     }
     public func GetVertices() : HashSet<Vertex<V, G>> {
         this.f.GetVertices()
@@ -284,18 +289,6 @@ public class InterfacedHypergraph<V, G>
             case Some(ps) => ps
         }
     }
-    public func GetArity() : Int64 {
-        this.inputs.size
-    }
-    public func GetCoarity() : Int64 {
-        this.outputs.size
-    }
-    public func GetInputPorts() : Array<Port> {
-        map({ iv : InterfaceVertex<V, G> => iv.ToPort() }, this.inputs )
-    }
-    public func GetOutputPorts() : Array<Port> {
-        map({ iv : InterfaceVertex<V, G> => iv.ToPort() }, this.outputs )
-    }
     /**
      * Perform operations associated with changing a vertex in an interface
      *
@@ -365,9 +358,6 @@ public class InterfacedHypergraph<V, G>
     }
     public func IsCombinational() : Bool {
         this.f.IsCombinational()
-    }
-    public func GetName() : String {
-        this.label.GetName()
     }
     public func AddEdge(e : Edge<V, G>) : Unit {
         this.f.AddEdge(e)
@@ -531,13 +521,55 @@ public class InterfacedHypergraph<V, G>
         (mergedVertices, newEdge, newGraph)
     }
 }
-public interface HasInterfacedGraph<V, G> <: HasGraph<V, G>
+
+extend InterfacedHypergraph<V, G> <: Hashable {
+    public func hashCode() : Int64 {
+        this.id
+    }
+}
+extend InterfacedHypergraph<V, G> <: Equatable<InterfacedHypergraph<V, G>> {
+    public operator func ==(right: InterfacedHypergraph<V, G>) : Bool {
+        this.GetId() == right.GetId()
+    }
+    public operator func !=(right : InterfacedHypergraph<V, G>) : Bool {
+        this.GetId() != right.GetId()
+    }
+}
+extend InterfacedHypergraph<V, G> <: ToString {
+    public func toString() : String {
+        let string = f.toString()
+        let inputString = PrintWidthArray(this.GetInputs())
+        let outputString = PrintWidthArray(this.GetOutputs())
+        "${string} (${inputString} -> ${outputString})"
+    }
+    public func toLongString() : String {
+        let string = f.toLongString()
+        "${string}\ninputs ${this.inputs}\noutputs ${this.outputs}"
+    }
+}
+extend InterfacedHypergraph<V, G> <: Specifiable {
+    public func GetArity() : Int64 {
+        this.inputs.size
+    }
+    public func GetCoarity() : Int64 {
+        this.outputs.size
+    }
+    public func GetInputPorts() : Array<Port> {
+        map({ iv : InterfaceVertex<V, G> => iv.ToPort() }, this.inputs )
+    }
+    public func GetOutputPorts() : Array<Port> {
+        map({ iv : InterfaceVertex<V, G> => iv.ToPort() }, this.outputs )
+    }
+}
+extend InterfacedHypergraph<V, G> <: HasName {
+    public func GetName() : String {
+        this.label.GetName()
+    }
+}
+public interface HasInterfacedGraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     func GetInterfacedGraph() : InterfacedHypergraph<V, G>
-    func GetGraph() : Hypergraph<V, G> {
-        this.GetInterfacedGraph().GetGraph()
-    }
     func GetInput(i : Int64) : InterfaceVertex<V, G> {
         this.GetInterfacedGraph().GetInput(i)
     }
@@ -548,6 +580,11 @@ public interface HasInterfacedGraph<V, G> <: HasGraph<V, G>
 extend InterfacedHypergraph<V, G> <: HasInterfacedGraph<V, G> {
     public func GetInterfacedGraph() : InterfacedHypergraph<V, G> {
         this
+    }
+}
+extend InterfacedHypergraph<V, G> <: HasGraph<V, G> {
+    public func GetGraph() : Hypergraph<V, G> {
+        this.f
     }
 }
 public func AssertHasInputs<V, G>(

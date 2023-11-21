@@ -35,14 +35,13 @@ public func numToUppercaseLetter(n : Int64) : String {
 public class Specification
      <: Specifiable & HasName & Equatable<Specification> & Hashable & ToString
 {
-    let id : Int64
+    static let counter = Counter()
+    let id = counter.GetNext()
     public Specification(
         let name : String,
         let inputPorts : Array<Port>,
         let outputPorts : Array<Port>
-    ){
-        this.id = GetNextId()
-    }
+    ){}
     public func GetName() : String {
         this.name
     }

@@ -303,7 +303,8 @@ public struct Blackbox<V, G>
 public class Signature<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let uniqueId : Int64 = GetNextId()
+    static let counter = Counter()
+    let uniqueId = counter.GetNext()
     public let annihilators : Array<Annihilator<V, G>>
     public let identities : Array<Identifier<V, G>>
     let blackboxes : HashSet<Blackbox<V, G>> = HashSet<Blackbox<V, G>>()

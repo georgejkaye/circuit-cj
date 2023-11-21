@@ -44,11 +44,10 @@ func CheckSpecCompatibility<V, G>(
  * an optional subgraph representing the internal construction.
  */
 public class Edge<V, G>
-    <: Specifiable & Identifiable<Edge<V, G>> &
-        ToString & HasGraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let id : Int64 = GetNextId()
+    static let counter = Counter()
+    let id = counter.GetNext()
     let label : Label<V, G>
     let sources : Array<Vertex<V, G>>
     let targets : Array<Vertex<V, G>>
@@ -90,33 +89,6 @@ public class Edge<V, G>
         // Add this edge to its new owner
         this.owner.AddEdge(this)
     }
-    public func toString() : String {
-        "e${this.GetId()} (${label.GetName()})"
-    }
-    public func toLongString() : String {
-        "e${this.GetId()} (${label.GetName()}) ~ ${sources} ~ ${targets}"
-    }
-    public operator func ==(right: Edge<V, G>) : Bool {
-        this.GetId() == right.GetId()
-    }
-    public operator func !=(right : Edge<V, G>) : Bool {
-        this.GetId() != right.GetId()
-    }
-    public func GetInputPorts() : Array<Port> {
-        this.label.GetInputPorts()
-    }
-    public func GetArity() : Int64 {
-        this.sources.size
-    }
-    public func GetOutputPorts() : Array<Port> {
-        this.label.GetOutputPorts()
-    }
-    public func GetCoarity() : Int64 {
-        this.targets.size
-    }
-    public func hashCode() : Int64 {
-        this.id
-    }
     public func GetId() : Int64 {
         this.id
     }
@@ -145,29 +117,6 @@ public class Edge<V, G>
     }
     public func ForEachTarget(f : (Vertex<V, G>, Int64) -> Unit) : Unit {
         ForEachVertex(this.targets, f)
-    }
-    public func GetGraph() : Hypergraph<V, G> {
-        this.owner
-    }
-    public func SetOwner(f : Hypergraph<V, G>) : Unit {
-        if(this.owner != f){
-            let oldOwner = this.owner
-            this.owner = f
-            oldOwner.RemoveEdge(this)
-            // Need to move the sources and targets from the old owner to the
-            // new owner: removing the edge from the graph also removes it
-            // from the vertices' tentacles
-            for(i in 0..this.GetArity()) {
-                let v = this.GetSource(i).GetVertex()
-                v.SetOwner(f)
-                v.AddOutEdge(this, i)
-            }
-            for(i in 0..this.GetCoarity()) {
-                let v = this.GetTarget(i).GetVertex()
-                v.SetOwner(f)
-                v.SetInEdge(this, i)
-            }
-        }
     }
     /**
      * Generic function for setting a vertex as the ith source or target.
@@ -385,5 +334,65 @@ public class Edge<V, G>
             map({ t => owner.AddNewVertex(t.GetWidth()) }, this.GetTargets()),
             owner
         )
+    }
+}
+extend Edge<V, G> <: Hashable {
+    public func hashCode() : Int64 {
+        this.id
+    }
+}
+extend Edge<V, G> <: Equatable<Edge<V, G>> {
+    public operator func ==(right: Edge<V, G>) : Bool {
+        this.GetId() == right.GetId()
+    }
+    public operator func !=(right : Edge<V, G>) : Bool {
+        this.GetId() != right.GetId()
+    }
+}
+extend Edge<V, G> <: ToString {
+    public func toString() : String {
+        "e${this.GetId()} (${label.GetName()})"
+    }
+    public func toLongString() : String {
+        "e${this.GetId()} (${label.GetName()}) ~ ${sources} ~ ${targets}"
+    }
+}
+extend Edge<V, G> <: Specifiable {
+    public func GetInputPorts() : Array<Port> {
+        this.label.GetInputPorts()
+    }
+    // public func GetArity() : Int64 {
+    //     this.sources.size
+    // }
+    public func GetOutputPorts() : Array<Port> {
+        this.label.GetOutputPorts()
+    }
+    // public func GetCoarity() : Int64 {
+    //     this.targets.size
+    // }
+}
+extend Edge<V, G> <: HasGraph<V, G> {
+    public func GetGraph() : Hypergraph<V, G> {
+        this.owner
+    }
+    public func SetGraph(f : Hypergraph<V, G>) : Unit {
+        if(this.owner != f){
+            let oldOwner = this.owner
+            this.owner = f
+            oldOwner.RemoveEdge(this)
+            // Need to move the sources and targets from the old owner to the
+            // new owner: removing the edge from the graph also removes it
+            // from the vertices' tentacles
+            for(i in 0..this.GetArity()) {
+                let v = this.GetSource(i).GetVertex()
+                v.SetGraph(f)
+                v.AddOutEdge(this, i)
+            }
+            for(i in 0..this.GetCoarity()) {
+                let v = this.GetTarget(i).GetVertex()
+                v.SetGraph(f)
+                v.SetInEdge(this, i)
+            }
+        }
     }
 }

@@ -117,6 +117,9 @@ extend EdgeConnection<V, G> <: HasGraph<V, G> {
     public func GetGraph() : Hypergraph<V, G> {
         this.edge.GetGraph()
     }
+    public func SetGraph(f : Hypergraph<V, G>) {
+        this.edge.SetGraph(f)
+    }
 }
 public func SliceTentacle<V, G>(
     ec : EdgeConnection<V, G>
@@ -133,19 +136,23 @@ public enum InterfaceType {
     | INPUT
     | OUTPUT
 }
-extend InterfaceType <: ToString & Hashable & Equatable<InterfaceType> {
+extend InterfaceType <: ToString {
     public func toString() : String {
         match(this) {
             case INPUT => "input"
             case OUTPUT => "output"
         }
     }
+}
+extend InterfaceType <: Hashable {
     public func hashCode() : Int64 {
         match(this) {
             case INPUT => 0
             case OUTPUT => 1
         }
     }
+}
+extend InterfaceType <: Equatable<InterfaceType> {
     public operator func ==(rhs : InterfaceType) : Bool {
         this.hashCode() == rhs.hashCode()
     }
@@ -158,21 +165,27 @@ extend InterfaceType <: ToString & Hashable & Equatable<InterfaceType> {
  * on a graph.
  */
 public struct InterfaceElement<V, G>
-    <: Hashable & ToString & Equatable<InterfaceElement<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let id : Int64 = GetNextId()
+    static let counter = Counter()
+    let id = counter.GetNext()
     public InterfaceElement(
         public let graph : InterfacedHypergraph<V, G>,
         public let index : Int64,
         public let interfaceType : InterfaceType
     ){}
+}
+extend InterfaceElement<V, G> <: Hashable {
     public func hashCode() : Int64 {
         this.id
     }
+}
+extend InterfaceElement<V, G> <: ToString {
     public func toString() : String {
         "${this.graph.GetName()} ${this.interfaceType}::${this.index}"
     }
+}
+extend InterfaceElement<V, G> <: Equatable<InterfaceElement<V, G>> {
     public operator func ==(rhs : InterfaceElement<V, G>) : Bool {
         this.graph == rhs.graph &&
             this.index == rhs.index &&
@@ -194,12 +207,11 @@ public enum TentacleType<V, G>
  * arbitrary number of edges, which represents forking wires.
  */
 public class Vertex<V, G>
-    <: Identifiable<Vertex<V, G>> & ToString & HasWidth &
-            HasPort & HasOptionalName & HasGraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let width : Int64
-    let id : Int64 = GetNextId()
+    static let counter = Counter()
+    let id = counter.GetNext()
     let name : Option<String>
     var inEdge : Option<EdgeConnection<V, G>> = None
     var outEdges : HashSet<EdgeConnection<V, G>> = HashSet()
@@ -219,36 +231,15 @@ public class Vertex<V, G>
         this.name = name
         this.owner.AddVertex(this)
     }
-    public func hashCode() : Int64 {
-        this.id
-    }
-    public func toString() : String {
-        "v${this.GetId()}"
-    }
-    public func toLongString() : String {
-        "v${this.GetId()}, in ${this.GetInEdge()}, out ${this.GetOutEdges()}"
-    }
-    public operator func ==(right: Vertex<V, G>) : Bool {
-        this.GetId() == right.GetId()
-    }
-    public operator func !=(right : Vertex<V, G>) : Bool {
-        this.GetId() != right.GetId()
-    }
-    public func GetName() : Option<String> {
-        this.name
-    }
-    // Why is this required? It should use the default implementation
-    public func GetNameString() : String {
-        match(this.GetName()) {
-            case None => ""
-            case Some(n) => n
-        }
-    }
+    // // Why is this required? It should use the default implementation
+    // public func GetNameString() : String {
+    //     match(this.GetName()) {
+    //         case None => ""
+    //         case Some(n) => n
+    //     }
+    // }
     public func GetId() : Int64 {
         this.id
-    }
-    public func GetWidth() : Int64 {
-        this.width
     }
     public func GetInEdge() : Option<EdgeConnection<V, G>> {
         this.inEdge
@@ -346,23 +337,6 @@ public class Vertex<V, G>
     public func RemoveOutEdge(e : Edge<V, G>, i : Int64) : Unit {
         this.outEdges.remove(EdgeConnection(e, i, SOURCE))
         this.PostAlterOutEdges()
-    }
-    public func GetGraph() : Hypergraph<V, G> {
-        this.owner
-    }
-    public func SetOwner(f : Hypergraph<V, G>) : Unit {
-        if(this.owner != f){
-            let oldOwner = this.owner
-            this.owner = f
-            match(this.GetInEdge()) {
-                case None => ()
-                case Some(ec) => ec.GetEdge().SetOwner(f)
-            }
-            for(ec in HashSet(this.GetOutEdges())) {
-                ec.GetEdge().SetOwner(f)
-            }
-            oldOwner.RemoveVertex(this)
-        }
     }
     public func GetInterfacedInputs() : HashSet<InterfaceElement<V, G>> {
         this.interfacedInputs
@@ -483,16 +457,71 @@ public class Vertex<V, G>
         (leftVertex, rightVertex)
     }
 }
+extend Vertex<V, G> <: Hashable {
+    public func hashCode() : Int64 {
+        this.id
+    }
+}
+extend Vertex<V, G> <: Equatable<Vertex<V, G>> {
+    public operator func ==(right: Vertex<V, G>) : Bool {
+        this.GetId() == right.GetId()
+    }
+    public operator func !=(right : Vertex<V, G>) : Bool {
+        this.GetId() != right.GetId()
+    }
+}
+extend Vertex<V, G> <: ToString {
+    public func toString() : String {
+        "v${this.GetId()}"
+    }
+    public func toLongString() : String {
+        "v${this.GetId()}, in ${this.GetInEdge()}, out ${this.GetOutEdges()}"
+    }
+}
+extend Vertex<V, G> <: HasWidth {
+    public func GetWidth() : Int64 {
+        this.width
+    }
+}
+extend Vertex<V, G> <: HasOptionalName {
+    public func GetName() : Option<String> {
+        this.name
+    }
+    public func GetNameString() : String {
+        match(this.name) {
+            case Some(n) => n
+            case None => ""
+        }
+    }
+}
+extend Vertex<V, G> <: HasPort {}
+extend Vertex<V, G> <: HasGraph<V, G> {
+    public func GetGraph() : Hypergraph<V, G> {
+        this.owner
+    }
+    public func SetGraph(f : Hypergraph<V, G>) : Unit {
+        if(this.owner != f){
+            let oldOwner = this.owner
+            this.owner = f
+            match(this.GetInEdge()) {
+                case None => ()
+                case Some(ec) => ec.GetEdge().SetGraph(f)
+            }
+            for(ec in HashSet(this.GetOutEdges())) {
+                ec.GetEdge().SetGraph(f)
+            }
+            oldOwner.RemoveVertex(this)
+        }
+    }
+}
+
 /**
  * Interface for structures that have vertex-like properties
  */
-public interface ContainsVertex<V, G> <: HasGraph<V, G>
+public interface ContainsVertex<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     func GetVertex() : Vertex<V, G>
-    func GetGraph() : Hypergraph<V, G> {
-        this.GetVertex().GetGraph()
-    }
 }
 extend Vertex<V, G> <: ContainsVertex<V, G> {
     public func GetVertex() : Vertex<V, G> {

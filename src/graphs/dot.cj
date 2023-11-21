@@ -706,7 +706,7 @@ func DrawInterface<V, G>(
     } else {
         (vertices, Array<InterfaceVertex<V, G>>())
     }
-    DrawBoxNode(
+    DrawBoxNode<V, G, InterfaceVertex<V, G>, InterfaceVertex<V, G>, InterfaceVertex<V, G>, InterfaceVertex<V, G>>(
         interfaceName, interfaceStyle, leftVertices, leftVertices, None<String>,
         rightVertices, rightVertices, elementContent, connectionContent, debug
     )

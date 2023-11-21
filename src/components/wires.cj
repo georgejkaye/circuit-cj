@@ -13,11 +13,10 @@ package components
  * A wire has an id and a mutable vertex
  */
 public class Wire<V, G>
-    <: Identifiable<Wire<V, G>> & ToString & ContainsVertex<V, G> &
-        HasWidth & HasOptionalName & HasGraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let id : Int64 = GetNextId()
+    static let counter = Counter()
+    let id = counter.GetNext()
     var vertex : Vertex<V, G>
     public init(v : Vertex<V, G>) {
         this.vertex = v
@@ -26,23 +25,8 @@ public class Wire<V, G>
         let owner = v.GetGraph()
         this.vertex = v
     }
-    public func GetName() : Option<String> {
-        this.vertex.GetName()
-    }
     public func GetId() : Int64 {
         this.id
-    }
-    public func GetWidth() : Int64 {
-        this.vertex.GetWidth()
-    }
-    public func toString() : String {
-        "w${this.id} - ${this.vertex}"
-    }
-    public func GetVertex() : Vertex<V, G> {
-        this.vertex
-    }
-    public func GetGraph() : Hypergraph<V, G> {
-        this.vertex.GetGraph()
     }
     /**
      * Get the least significant bit (bit 0) of a wire.
@@ -122,6 +106,42 @@ public class Wire<V, G>
             let ws = Split(this, [i, 1, width - i - 1])
             ws[1]
         }
+    }
+}
+extend Wire<V, G> <: ToString {
+    public func toString() : String {
+        "${this.vertex}"
+    }
+}
+extend Wire<V, G> <: ContainsVertex<V, G> {
+    public func GetVertex() : Vertex<V, G> {
+        this.vertex.GetVertex()
+    }
+}
+extend Wire<V, G> <: HasWidth {
+    public func GetWidth() : Int64 {
+        this.vertex.GetWidth()
+    }
+}
+extend Wire<V, G> <: HasOptionalName {
+    public func GetName() : Option<String> {
+        this.vertex.GetName()
+    }
+}
+extend Wire<V, G> <: Equatable<Wire<V, G>> {
+    public operator func ==(rhs : Wire<V, G>) {
+        this.GetWidth() == rhs.GetWidth() && this.GetName() == rhs.GetName()
+    }
+    public operator func !=(rhs : Wire<V, G>) {
+        !(this == rhs)
+    }
+}
+extend Wire<V, G> <: HasGraph<V, G> {
+    public func GetGraph() : Hypergraph<V, G> {
+        this.vertex.GetGraph()
+    }
+    public func SetGraph(f : Hypergraph<V, G>) {
+        this.vertex.SetGraph(f)
     }
 }
 public interface ContainsWire<V, G> <: HasWidth & ContainsVertex<V, G>
@@ -277,7 +297,7 @@ public func MergeWires<V, G>(
 public func Split<V, G, T>(w : T, vs : Array<Int64>) : Array<Wire<V, G>>
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
-        T <: ContainsWire<V, G> & ToString
+        T <: ContainsWire<V, G> & ToString & HasGraph<V, G>
 {
     AssertHasWidth(w, Sum(vs))
     UseEdgeWithNewOutputs<V, G, T>(
@@ -297,7 +317,7 @@ public func Split<V, G, T>(w : T, vs : Array<Int64>) : Array<Wire<V, G>>
 public func SplitAt<V, G, T>(w : T, left: Int64) : (Wire<V, G>, Wire<V, G>)
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
-        T <: ContainsWire<V, G> & ToString
+        T <: ContainsWire<V, G> & ToString & HasGraph<V, G>
 {
     let r = w.GetWire().GetWidth() - left
     let split = Split(w, [left, r])
@@ -313,7 +333,7 @@ public func SplitAt<V, G, T>(w : T, left: Int64) : (Wire<V, G>, Wire<V, G>)
 public func SplitInto<V, G, T>(w : T, into: Int64) : Array<Wire<V, G>>
         where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
-        T <: ContainsWire<V, G> & ToString
+        T <: ContainsWire<V, G> & ToString & HasGraph<V, G>
 {
     let width = AssertMultipleOf(w.GetWidth(), into)
     Split(w, Array<Int64>(into, { _ => width }))
@@ -327,7 +347,7 @@ public func SplitInto<V, G, T>(w : T, into: Int64) : Array<Wire<V, G>>
 public func SplitAll<V, G, T>(w : T) : Array<Wire<V, G>>
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
-        T <: ContainsWire<V, G> & ToString
+        T <: ContainsWire<V, G> & ToString & HasGraph<V, G>
 {
     if(w.GetWidth() == 1) {
         [w.GetWire()]
@@ -345,7 +365,7 @@ public func SplitAll<V, G, T>(w : T) : Array<Wire<V, G>>
 public func Combine<V, G, T>(ws : Array<T>) : Wire<V, G>
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
-        T <: ContainsWire<V, G> & ToString
+        T <: ContainsWire<V, G> & ToString & HasGraph<V, G>
 {
     AssertLengthIsGreaterThanOrEqualTo(ws, 1)
     if(ws.size == 1) {
@@ -370,7 +390,7 @@ public func Combine<V, G, T>(ws : Array<T>) : Wire<V, G>
 public func Combine<V, G, T>(lhs : T, rhs : T) : Wire<V, G>
     where
         V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>,
-        T <: ContainsWire<V, G> & ToString
+        T <: ContainsWire<V, G> & ToString & HasGraph<V, G>
 {
     Combine<V, G, T>([lhs, rhs])
 }
@@ -392,8 +412,6 @@ public func Replicate<V, G>(a : Wire<V, G>, w : Int64) : Wire<V, G>
  * used to specify the names of interface ports on a subcircuit
  */
 public class InterfaceWire<V, G>
-    <: ContainsWire<V, G> & ToString & ContainsVertex<V, G> &
-        HasPort & HasGraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public InterfaceWire(
@@ -411,31 +429,49 @@ public class InterfaceWire<V, G>
     ){
         this(w, None<String>)
     }
-    public func GetWire() : Wire<V, G> {
-        this.wire
-    }
+}
+extend InterfaceWire<V, G> <: ContainsVertex<V, G> {
     public func GetVertex() : Vertex<V, G> {
         this.wire.GetVertex()
     }
-    public func toString() : String {
-        "${this.wire} (${name})"
+}
+extend InterfaceWire<V, G> <: ContainsWire<V, G> {
+    public func GetWire() : Wire<V, G> {
+        this.wire
     }
-    public func GetWidth() : Int64 {
-        this.wire.GetWidth()
-    }
-    public func GetName() : Option<String> {
-        this.name
-    }
-    public operator func ==(rhs : HasPort) {
-        this.wire.GetWidth() == rhs.GetWidth() && this.name == rhs.GetName()
-    }
-    public operator func !=(rhs : HasPort) {
-        !(this == rhs)
-    }
+}
+extend InterfaceWire<V, G> <: HasGraph<V, G> {
     public func GetGraph() : Hypergraph<V, G> {
         this.wire.GetGraph()
     }
+    public func SetGraph(f : Hypergraph<V, G>) : Unit {
+        this.wire.SetGraph(f)
+    }
 }
+extend InterfaceWire<V, G> <: ToString {
+    public func toString() : String {
+        "${this.wire} (${this.name})"
+    }
+}
+extend InterfaceWire<V, G> <: HasWidth {
+    public func GetWidth() : Int64 {
+        this.wire.GetWidth()
+    }
+}
+extend InterfaceWire<V, G> <: HasOptionalName {
+    public func GetName() : Option<String> {
+        this.wire.GetName()
+    }
+    public func GetNameString() : String {
+        match(this.GetName()) {
+            case None => ""
+            case Some(n) => n
+        }
+    }
+}
+extend InterfaceWire<V, G> <: HasPort {}
+
+
 /**
  * Create an array of named wires, given arrays of wires and names.
  *

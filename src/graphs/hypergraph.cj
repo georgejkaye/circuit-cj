@@ -76,10 +76,11 @@ extend TentacleOrigin<V, G> <: HasWidth & ToString {
  * A hypergraph contains a set of (hyper)edges and vertices.
  * These hypergraphs are not interfaced.
  */
-public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
+public class Hypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let id : Int64 = GetNextId()
+    static let counter = Counter()
+    let id = counter.GetNext()
     let name : String = "hg${id}"
     let vertices : HashSet<Vertex<V, G>>
     let edges : HashSet<Edge<V, G>>
@@ -116,11 +117,11 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
             case Some(ecs) => ecs
         }
         for(e in edges) {
-            e.SetOwner(this)
+            e.SetGraph(this)
             this.AddEdgeToHypergraphData(e)
         }
         for(v in vertices) {
-            v.SetOwner(this)
+            v.SetGraph(this)
             this.AddVertexToHypergraphData(v)
         }
     }
@@ -130,8 +131,8 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
     public init () {
         this(HashSet<Vertex<V, G>>(), HashSet<Edge<V, G>>())
     }
-        public func toString() : String {
-        this.GetName()
+    public func GetId() {
+        this.id
     }
     public func toLongString() : String {
         let vertexString = this.vertices.toString()
@@ -173,18 +174,6 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
         )
         "h${this.id}\nV = ${vertexString}\nE = ${edgeString}"
     }
-    public func GetId() : Int64 {
-        this.id
-    }
-    public func GetName() : String {
-        "hg${this.id}"
-    }
-    public operator func ==(right: Hypergraph<V, G>) : Bool {
-        this.GetId() == right.GetId()
-    }
-    public operator func !=(right : Hypergraph<V, G>) : Bool {
-        this.GetId() != right.GetId()
-    }
     public func GetVertices() : HashSet<Vertex<V, G>> {
         this.vertices
     }
@@ -192,7 +181,7 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
         this.vertices.contains(v)
     }
     public func AddVertex(v : Vertex<V, G>) : Unit {
-        v.SetOwner(this)
+        v.SetGraph(this)
         this.vertices.put(v)
         this.AddVertexToHypergraphData(v)
     }
@@ -303,7 +292,7 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
     }
     public func AddEdge(e : Edge<V, G>) : Unit {
         this.edges.put(e)
-        e.SetOwner(this)
+        e.SetGraph(this)
         AddEdgeToHypergraphData(e)
         for(v in e.GetSources()) {
             this.AddVertex(v)
@@ -744,6 +733,29 @@ public class Hypergraph<V, G> <: Identifiable<Hypergraph<V, G>> & ToString
      */
     public func MergeHypergraphs(b : HasGraph<V, G>) : Unit {
         this.MergeHypergraphs(b.GetGraph())
+    }
+}
+extend Hypergraph<V, G> <: Hashable {
+    public func hashCode() : Int64 {
+        this.id
+    }
+}
+extend Hypergraph<V, G> <: Equatable<Hypergraph<V, G>> {
+    public operator func ==(rhs : Hypergraph<V, G>) {
+        this.id == rhs.GetId()
+    }
+    public operator func !=(rhs : Hypergraph<V, G>) {
+        !(this == rhs)
+    }
+}
+extend Hypergraph<V, G> <: ToString {
+    public func toString() : String {
+        this.GetName()
+    }
+}
+extend Hypergraph<V, G> <: HasName {
+    public func GetName() : String {
+        "hg${this.id}"
     }
 }
 /**
