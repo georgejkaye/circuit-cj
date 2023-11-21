@@ -68,6 +68,17 @@ public func GetVariable<V>(signals : HashSet<Signal<V>>) : CycleInput<V>
     }
 }
 /**
+ * Get a variable cycle input, an input that could be multiple signals.
+ *
+ * @param signals
+ * @return The variable cycle input
+ */
+ public func GetVariable<V>(signals : Array<Signal<V>>) : CycleInput<V>
+    where V <: ValueSymbol<V>
+{
+    GetVariable(HashSet(signals))
+}
+/**
  * Get a variable cycle input, an input that could be multiple values.
  *
  * @param signals
@@ -77,6 +88,17 @@ public func GetVariable<V>(values : HashSet<V>) : CycleInput<V>
     where V <: ValueSymbol<V>
 {
     GetVariable(HashSet(mapCollection({ v => Signal(v) }, values)))
+}
+/**
+ * Get a variable cycle input, an input that could be multiple values.
+ *
+ * @param signals
+ * @return The variable cycle input
+ */
+public func GetVariable<V>(values : Array<V>) : CycleInput<V>
+    where V <: ValueSymbol<V>
+{
+    GetVariable(map({ v => Signal(v) }, values))
 }
 /**
  * Get a variable cycle input, an input that could be multiple signals.
@@ -97,6 +119,21 @@ public func GetVariable<V, G>(
     )
     let signals = HashSet(signalArray)
     GetVariable(signals)
+}
+/**
+ * Get a variable cycle input, an input that could be multiple signals.
+ *
+ * @param inputs
+ * @param width
+ * @param signed
+ * @return The variable cycle input
+ */
+public func GetVariable<V, G>(
+    sig : Signature<V, G>, inputs : Array<Int64>, width!: Int64, signed!: Bool
+) : CycleInput<V>
+    where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
+{
+    GetVariable(sig, HashSet(inputs), width: width, signed: signed)
 }
 /**
  * Get an unknown cycle input, an input that could be anything.
