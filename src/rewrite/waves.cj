@@ -10,13 +10,13 @@
 package rewrite
 // Components for drawing waveforms
 let defaultComponentLength = 8
-let offSignalString = ("", ' ')
-let onSignalString = ("", '─')
-let highToLowUpString = ("┐", ' ')
-let highToLowDownString = ("└", '─')
-let lowToHighUpString = ("┌", '─')
-let lowToHighDownString = ("┘", ' ')
-let upDownString = ("|", ' ')
+let offSignalString = ("", " ")
+let onSignalString = ("", "─")
+let highToLowUpString = ("┐", " ")
+let highToLowDownString = ("└", "─")
+let lowToHighUpString = ("┌", "─")
+let lowToHighDownString = ("┘", " ")
+let upDownString = ("|", " ")
 /**
  * Get a colour code to be interpreted by a command that can understand and
  * intepret the relevant escape sequences.
@@ -55,9 +55,9 @@ func GetNewline(escaped : Bool) : String {
  * @param length The length to pad to
  * @return The padded string
  */
-func GetAndPadWaveSymbol(symbols : (String, Char), length : Int64) : String {
+func GetAndPadWaveSymbol(symbols : (String, String), length : Int64) : String {
     let (firstChar, padChar) = symbols
-    firstChar.padRight(length, paddingChar: padChar)
+    firstChar.padRight(length, padding: padChar)
 }
 /**
  * Attempt to get the waveform level at a given tick of the clock of a waveform
@@ -93,7 +93,7 @@ func GetLevel<V, T>(
  * @param activeLevel The level is currently powered on
  * @return The string for the level
  */
-func StableSignal(drawingLevel : Int64, activeLevel : Int64) : (String, Char) {
+func StableSignal(drawingLevel : Int64, activeLevel : Int64) : (String, String) {
     if(drawingLevel != activeLevel) {
         offSignalString
     } else {
@@ -112,7 +112,7 @@ func StableSignal(drawingLevel : Int64, activeLevel : Int64) : (String, Char) {
  */
 func GoingUpSignal(
     drawingLevel : Int64, activeLevel : Int64, previousActiveLevel : Int64
-) : (String, Char) {
+) : (String, String) {
     // The waveform needs to go up
     if(drawingLevel == previousActiveLevel) {
         lowToHighDownString
@@ -139,7 +139,7 @@ func GoingUpSignal(
  */
 func GoingDownSignal(
     drawingLevel : Int64, activeLevel : Int64, previousActiveLevel : Int64
-) : (String, Char) {
+) : (String, String) {
     // The waveform needs to go down
     if(drawingLevel == previousActiveLevel) {
         highToLowUpString
@@ -241,7 +241,7 @@ func DrawWaveformLevel<V, T>(
     let colour = if(coloured) { waveColour } else { "" }
     let prefix = if(currentPhysicalDrawingLevel == 0) {
         if(waveformName.size > maxNameLength) {
-            waveformName.substring(0, maxNameLength)
+            waveformName[0..maxNameLength]
         } else if (waveformName.size == maxNameLength) {
             waveformName
         } else {
@@ -282,12 +282,12 @@ func DrawPortOverviewForTick<V, T>(
     let symbols = if(isStartOfSignal) {
         let signalDisplay = signalDisplayFn(maybeSignal)
         if(signalDisplay.size >= componentLength) {
-            ("|", '*')
+            ("|", "*")
         } else {
-            ("|${signalDisplay}", ' ')
+            ("|${signalDisplay}", " ")
         }
     } else {
-        ("", ' ')
+        ("", " ")
     }
     GetAndPadWaveSymbol(symbols, componentLength)
 }
@@ -344,14 +344,14 @@ func DrawPortHeader<V, T>(
     let waveformLength = ticks.size * componentLength
     let lineLength = longestPortName + waveformLength
     let firstLine =
-        "${actualSignalName} ".padRight(lineLength, paddingChar: '─')
+        "${actualSignalName} ".padRight(lineLength, padding: "─")
     let labelLines = if(!drawLabels) {
         ""
     } else {
         let secondLine = DrawPortOverview(
             ticks, signalFn, longestPortName, signalDisplayFn, componentLength
         )
-        let thirdLine = "".padRight(lineLength, paddingChar: '─')
+        let thirdLine = "".padRight(lineLength, padding: "─")
         "${newline}${secondLine}${newline}${thirdLine}"
     }
     "${firstLine}${labelLines}"
@@ -388,7 +388,7 @@ func DrawWaveformsForPort<V, T>(
         signalHeading
     } else {
         let rows = fold_left(
-            { acc, currentLine =>
+            { acc, currentLine : Int64 =>
                 // We want to draw the msb at the top and work down
                 let currentBit = width - (currentLine / linesPerValue) - 1
                 let currentPhysicalDrawingLevel = currentLine % linesPerValue
@@ -405,7 +405,7 @@ func DrawWaveformsForPort<V, T>(
                 "${acc}${newline}${rowString}"
             }, "${signalHeading}", end: totalLines
         )
-        "${rows}${newline}${"".padRight(lineLength, paddingChar: '─')}"
+        "${rows}${newline}${"".padRight(lineLength, padding: "─")}"
     }
 }
 /**

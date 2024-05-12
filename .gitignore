@@ -11,8 +11,10 @@ module-resolve.json
 # Output files
 bin/
 build/
+target/
 circuits/
 dot/
+.cache
 *.out
 *.bc
 *.gcno

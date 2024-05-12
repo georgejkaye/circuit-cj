@@ -66,7 +66,7 @@ public func concat<T>(xs : Array<T>, ys : Array<T>) : Array<T> {
     concat(xs, { t => t }, ys, { t => t})
 }
 public func concat<T>(xss : Array<Array<T>>) : Array<T> {
-    concat(xss, { t => t })
+    concat(xss, { t : T => t })
 }
 public func concat<T, U>(xss : Array<Array<T>>, f : (T) -> U) : Array<U> {
     Array(Sum(xss, { xs => xs.size }), {

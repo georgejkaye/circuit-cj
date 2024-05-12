@@ -1,0 +1,13 @@
+[dependencies]
+
+[package]
+  cjc-version = "0.51.4"
+  compile-option = ""
+  description = "nothing here"
+  link-option = ""
+  name = "circuitscj"
+  output-type = "executable"
+  src-dir = "src"
+  target-dir = ""
+  version = "1.0.0"
+  package-configuration = {}

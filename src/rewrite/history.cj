@@ -413,7 +413,7 @@ func GetInputOutputString<V, G> (
     lines.append(headerLine)
     // Write a dividing line between header and content
     let underlineLength = max(headerLine.size, totalLength)
-    let headerUnderline = "".padRight(underlineLength, paddingChar: '=')
+    let headerUnderline = "".padRight(underlineLength, padding: "=")
     lines.append(headerUnderline)
     // Write the input output for each element in the collection
     let iter = ios.iterator()

@@ -920,7 +920,7 @@ func WriteDotFile(
 ) : Unit {
     let fs = File("${fileName}.dot", CreateOrTruncate(false))
     Debug("Writing dot file ${fileName}.dot")
-    fs.write(dotString.toUtf8Array())
+    fs.write(dotString.toArray())
     fs.close()
 }
 /**
@@ -962,7 +962,7 @@ func WriteDotToFile<V, G, T>(
  * @param debug
  * @param expandSignals
  */
- func WriteDotToFile<V, G, T>(
+func WriteDotToFile<V, G, T>(
     f : T, fileName: String, depth: Int64, debug: Bool,
     expandSignals: Bool
 ) : Unit

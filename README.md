@@ -10,7 +10,7 @@ In particular, we want to be able to perform the following things:
 
 ## Compiling
 
-The library compiles with Cangjie version `0.39.4`.
+The library compiles with Cangjie version `0.51.4`.
 
 ```
 cjpm build
