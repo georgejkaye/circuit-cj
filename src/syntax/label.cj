@@ -461,6 +461,18 @@ extend Label<V, G>
             case _ => false
         }
     }
+    public func IsPartial() : Bool {
+        match(this) {
+            case PARTIAL(_) => true
+            case _ => false
+        }
+    }
+    public func GetVariableSignal() : VariableSignal<V> {
+        match (this) {
+            case PARTIAL(s) => return s
+            case _ => throw IncompatibleVariantException(this, "PARTIAL")
+        }
+    }
     public func GetVariant() : String {
         match(this) {
             case VALUE(_) => "VALUE"

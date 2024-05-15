@@ -12,7 +12,7 @@ package rewrite.rules
  * a rewrite attempt
  */
 public enum EntryPoint {
-    | VALUE | PRIMITIVE | NJOIN | ENHANCED | SUBGRAPH | ANY | BUNDLE | BLACKBOX
+    | VALUE | PRIMITIVE | NJOIN | ENHANCED | SUBGRAPH | ANY | BUNDLE | BLACKBOX | PARTIAL
 }
 /**
  * A rewrite rule consists of a name, an 'entry point' which is the class of
@@ -51,6 +51,7 @@ public struct RewriteRule<V, G>
             case SUBGRAPH => label.IsComposite()
             case BUNDLE => label.IsBundler()
             case BLACKBOX => label.IsBlackBox()
+            case PARTIAL => label.IsPartial()
         }
     }
     /**

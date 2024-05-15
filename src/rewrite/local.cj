@@ -88,6 +88,7 @@ func AttemptAllRewriteRules<V, G>(
             AddRule(GetForkRule())
         case PARTIAL(_) =>
             AddRule(GetForkRule())
+            AddRule(GetUniquePartialRule())
         case BUNDLER(_, _) =>
             AddRule(GetValueBundleRule(signature))
         case JOIN(_) =>
