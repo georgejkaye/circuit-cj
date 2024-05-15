@@ -77,7 +77,7 @@ extend Evaluator<V, G> <: DecimalDrawable
         expandSignals!: Bool = false
     ) : Unit {
         this.GetInterfacedGraph().WriteDotToFile(
-            file, depth: depth, signed: signed, debug: debug
+            file, depth: depth, signed: signed, debug: debug, expandSignals: expandSignals
         )
     }
 }

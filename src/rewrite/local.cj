@@ -33,7 +33,7 @@ func AttemptRewriteRule<V, G>(
             if(draw) {
                 let fileName =
                     "rewrite-${totalRewrites}-${e.GetId()}-${rule.GetName()}"
-                f.WriteDotToFile("dot/${fileName}", depth: 0, debug: debug)
+                f.WriteDotToFile("dot/${fileName}", depth: 1, debug: debug)
             }
             totalRewrites++
             Some(result)
@@ -152,6 +152,10 @@ public func RewriteCombinational<V, G>(
 ) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
+    if(draw) {
+        let filename = "before-rewrite"
+        f.WriteDotToFile("dot/${filename}", depth: 1, debug: debug)
+    }
     let visitedSources = HashMap<Edge<V, G>, HashSet<Vertex<V, G>>>()
     let actionAtEdge = {
         e : Edge<V, G>, data : TraversalData<V, G> =>

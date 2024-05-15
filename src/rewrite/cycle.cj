@@ -284,7 +284,7 @@ func PerformCycle<V, G>(
     signature : Signature<V, G>, coreEdge : Edge<V, G>,
     numberOfStateWires : Int64, latestInstantVertices : Array<Vertex<V, G>>,
     latestDelayVertices : Array<Vertex<V, G>>,
-    history : InputOutputHistory<V, G>, debug : Bool
+    history : InputOutputHistory<V, G>, debug : Bool, draw!: Bool = false
 ) : Unit where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
     // Can only perform a cycle for the right number of inputs
     AssertHasInputs(graph, inputSignals.size)
@@ -323,7 +323,7 @@ func PerformCycle<V, G>(
     // instantaneous rules
     RewriteCombinational(
         signature, graph, rewriteStartingElements, rewriteEndingElements,
-        copyBlackBoxes: true, allInstantaneous: true, debug: debug
+        copyBlackBoxes: true, allInstantaneous: true, debug: debug, draw: draw
     )
     let outputSubgraphs = CollapseOutputs(
         currentJoinEdges, graph.GetLabel(), history.GetCurrentTick()
@@ -335,12 +335,12 @@ func PerformCycle<V, G>(
 }
 extend Evaluator<V, G> {
     public func PerformCycle(
-        inputs : Array<CycleInput<V>>, debug!: Bool = false
+        inputs : Array<CycleInput<V>>, debug!: Bool = false,  draw!: Bool = false
     ) : Unit {
         PerformCycle<V, G>(
             this.graph, inputs, this.sig, this.coreEdge,
             this.numberOfStateWires, this.latestInstantVertices,
-            this.latestDelayVertices, this.history, debug
+            this.latestDelayVertices, this.history, debug, draw: draw
         )
         // We're done!
         this.currentCycle++
@@ -352,10 +352,10 @@ extend Evaluator<V, G> {
      * @param debug
      */
     public func PerformCycle(
-        signals : Array<Signal<V>>, debug!: Bool = false
+        signals : Array<Signal<V>>, debug!: Bool = false, draw!: Bool = false
     ) : Unit {
         let inputs = map({ s : Signal<V> => DEFINITE(s) }, signals)
-        PerformCycle(inputs, debug: debug)
+        PerformCycle(inputs, debug: debug, draw: draw)
     }
     /**
      * Perform a cycle using this evaluator for some given input values.
@@ -363,10 +363,10 @@ extend Evaluator<V, G> {
      * @param values The array of input values to process
      */
     public func PerformCycle(
-        values : Array<V>, debug!: Bool = false
+        values : Array<V>, debug!: Bool = false, draw!: Bool = false
     ) : Unit {
         let inputSignals = map({ v : V => Signal(v) }, values)
-        this.PerformCycle(inputSignals)
+        this.PerformCycle(inputSignals, debug: debug, draw: draw)
     }
     /**
      * Perform a cycle using this evaluator for a given input signal.
@@ -375,10 +375,10 @@ extend Evaluator<V, G> {
      * @param debug
      */
     public func PerformCycle(
-        signal : Signal<V>, debug!: Bool = false
+        signal : Signal<V>, debug!: Bool = false, draw!: Bool = false
     ) : Unit {
         AssertHasInputs(this.graph, 1)
-        this.PerformCycle([signal], debug: debug)
+        this.PerformCycle([signal], debug: debug, draw: draw)
     }
     /**
      * Perform a cycle using this evaluator for a given input value.
@@ -387,10 +387,10 @@ extend Evaluator<V, G> {
      * @param debug
      */
     public func PerformCycle(
-        value : V, debug!: Bool = false
+        value : V, debug!: Bool = false, draw!: Bool = false
     ) : Unit {
         AssertHasInputs(this.graph, 1)
-        this.PerformCycle(Signal(value), debug: debug)
+        this.PerformCycle(Signal(value), debug: debug, draw: draw)
     }
     /**
      * Perform several cycles using this evaluator for a given array of signals
@@ -400,10 +400,10 @@ extend Evaluator<V, G> {
      *                  subsequent tick of the clock
      */
     public func PerformCycles(
-        signalsPerTick: Array<Array<Signal<V>>>, debug!: Bool = false
+        signalsPerTick: Array<Array<Signal<V>>>, debug!: Bool = false, draw!: Bool = false
     ) : Unit {
         for(signals in signalsPerTick) {
-            this.PerformCycle(signals, debug: debug)
+            this.PerformCycle(signals, debug: debug, draw: draw)
         }
     }
     /**
@@ -414,9 +414,9 @@ extend Evaluator<V, G> {
      *                  subsequent tick of the clock
      */
     public func PerformCycles(
-        valuesPerTick: Array<Array<V>>, debug!: Bool = false) : Unit {
+        valuesPerTick: Array<Array<V>>, debug!: Bool = false, draw!: Bool = false) : Unit {
         for(values in valuesPerTick) {
-            this.PerformCycle(values, debug: debug)
+            this.PerformCycle(values, debug: debug, draw: draw)
         }
     }
     /**
@@ -426,9 +426,9 @@ extend Evaluator<V, G> {
      * @param waveforms The array of waveforms for each input port
      */
     public func PerformCycles(
-        waveforms: Array<Waveform<V>>, debug!: Bool = false) : Unit {
+        waveforms: Array<Waveform<V>>, debug!: Bool = false, draw!: Bool = false) : Unit {
         let signalsPerTick = ArrayOfInputsToArrayOfTicks(waveforms)
-        PerformCycles(signalsPerTick)
+        PerformCycles(signalsPerTick, debug: debug, draw: draw)
     }
     /**
      * Perform several cycles using this evaluator for a waveform to provide to
@@ -437,10 +437,10 @@ extend Evaluator<V, G> {
      * @param waveforms The array of waveforms for each input port
      */
     public func PerformCycles(
-        waveform: Waveform<V>, debug!: Bool = false
+        waveform: Waveform<V>, debug!: Bool = false, draw!: Bool = false
     ) : Unit {
         AssertHasInputs(this.graph, 1)
-        PerformCycles([waveform])
+        PerformCycles([waveform], debug: debug, draw: draw)
     }
     /**
      * Perform several cycles using this evaluator, with the same inputs
@@ -450,11 +450,11 @@ extend Evaluator<V, G> {
      * @param ticks The number of cycles to perform
      */
     public func PerformCycles(
-        signals: Array<Signal<V>>, ticks!: Int64, debug!: Bool = false
+        signals: Array<Signal<V>>, ticks!: Int64, debug!: Bool = false, draw!: Bool = false
     ) : Unit {
         AssertHasInputs(this.graph, signals.size)
         for(_ in 0..ticks) {
-            PerformCycle(signals, debug: debug)
+            PerformCycle(signals, debug: debug, draw: draw)
         }
     }
     /**
@@ -465,11 +465,11 @@ extend Evaluator<V, G> {
      * @param ticks The number of cycles to perform
      */
     public func PerformCycles(
-        values: Array<V>, ticks!: Int64, debug!: Bool = false
+        values: Array<V>, ticks!: Int64, debug!: Bool = false, draw!: Bool = false
     ) : Unit {
         AssertHasInputs(this.graph, values.size)
         for(_ in 0..ticks) {
-            PerformCycle(values, debug: debug)
+            PerformCycle(values, debug: debug, draw: draw)
         }
     }
 }
@@ -483,7 +483,7 @@ extend Evaluator<V, G> where V <: Decimal<V> {
      * @param debug
      */
     public func PerformCycle(
-        inputs : Array<Int64>, signed!: Bool, debug!: Bool = false
+        inputs : Array<Int64>, signed!: Bool, debug!: Bool = false, draw!: Bool = false
     ) : Unit {
         AssertHasInputs(this.graph, inputs.size)
         let inputSignals = mapi(
@@ -494,7 +494,7 @@ extend Evaluator<V, G> where V <: Decimal<V> {
             },
             inputs
         )
-        this.PerformCycle(inputSignals)
+        this.PerformCycle(inputSignals, debug: debug, draw: draw)
     }
     /**
      * Perform a cycle using this evaluator given a number to be interpreted as
@@ -505,10 +505,10 @@ extend Evaluator<V, G> where V <: Decimal<V> {
      * @param debug
      */
     public func PerformCycle(
-        input: Int64, signed!: Bool, debug!: Bool = false
+        input: Int64, signed!: Bool, debug!: Bool = false, draw!: Bool = false
     ) : Unit {
         AssertHasInputs(this.graph, 1)
-        this.PerformCycle([input], signed: signed)
+        this.PerformCycle([input], signed: signed, debug: debug, draw: draw)
     }
     /**
      * Perform multiple cycles using this evaluator given numbers to be
@@ -521,11 +521,11 @@ extend Evaluator<V, G> where V <: Decimal<V> {
      */
     public func PerformCycles(
         inputs : Array<Int64>, signed!: Bool, ticks!: Int64,
-        debug!: Bool = false
+        debug!: Bool = false, draw!: Bool = false
     ) : Unit {
         AssertHasInputs(this.graph, inputs.size)
         for(_ in 0..ticks) {
-            PerformCycle(inputs, signed: signed, debug: debug)
+            PerformCycle(inputs, signed: signed, debug: debug, draw: draw)
         }
     }
     /**
@@ -538,11 +538,11 @@ extend Evaluator<V, G> where V <: Decimal<V> {
      * @param debug
      */
     public func PerformCycles(
-        input : Int64, signed!: Bool, ticks!: Int64, debug!: Bool = false
+        input : Int64, signed!: Bool, ticks!: Int64, debug!: Bool = false, draw!: Bool = false
     ) : Unit {
         AssertHasInputs(this.graph, 1)
         for(_ in 0..ticks) {
-            PerformCycle(input, signed: signed, debug: debug)
+            PerformCycle(input, signed: signed, debug: debug, draw: draw)
         }
     }
 }
