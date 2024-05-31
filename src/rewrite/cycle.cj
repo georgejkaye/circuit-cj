@@ -400,7 +400,7 @@ extend Evaluator<V, G> {
      *                  subsequent tick of the clock
      */
     public func PerformCycles(
-        signalsPerTick: Array<Array<Signal<V>>>, debug!: Bool = false, draw!: Bool = false
+        signalsPerTick: Array<Array<CycleInput<V>>>, debug!: Bool = false, draw!: Bool = false
     ) : Unit {
         for(signals in signalsPerTick) {
             this.PerformCycle(signals, debug: debug, draw: draw)

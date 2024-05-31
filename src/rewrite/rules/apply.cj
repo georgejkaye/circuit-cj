@@ -7,7 +7,29 @@
  * @since 0.3
  */
 package rewrite.rules
-
+func GetArgEdges<V, G>(
+    e : Edge<V, G>
+) : Array<Option<Edge<V, G>>>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    map({
+        v : Vertex<V, G> =>
+            if(v.GetOutEdges().size == 1) {
+                match(v.GetInEdge()) {
+                    case None => None<Edge<V, G>>
+                    case Some(ec) =>
+                        let edge = ec.GetEdge()
+                        if(edge.GetLabel().IsArgument()) {
+                            Some(edge)
+                        } else {
+                            None<Edge<V, G>>
+                        }
+                }
+            } else {
+                None<Edge<V, G>>
+            }
+    }, e.GetSources())
+}
 /**
  * Assuming that the apply preconditions above are met, get the argument edges
  * of a given edge and the values stored within these edges.
@@ -23,24 +45,7 @@ func GetArgs<V, G>(
 ) : (Array<Option<Edge<V, G>>>, Array<Option<CycleInput<V>>>)
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let argumentEdges = map({
-            v : Vertex<V, G> =>
-                if(v.GetOutEdges().size == 1) {
-                    match(v.GetInEdge()) {
-                        case None => None<Edge<V, G>>
-                        case Some(ec) =>
-                            let edge = ec.GetEdge()
-                            if(edge.GetLabel().IsCycleInput()) {
-                                Some(edge)
-                            } else {
-                                None<Edge<V, G>>
-                            }
-                    }
-                } else {
-                    None<Edge<V, G>>
-                }
-        }, e.GetSources()
-    )
+    let argumentEdges = GetArgEdges(e)
     let argumentValues = map({
             arg : Option<Edge<V, G>> =>
                 match(arg) {
@@ -50,6 +55,20 @@ func GetArgs<V, G>(
         }, argumentEdges
     )
     (argumentEdges, argumentValues)
+}
+func GetWaveformArgs<V, G>(
+    argumentEdges : Array<Option<Edge<V, G>>>
+) : Array<Option<Waveform<V>>>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    map({
+        arg : Option<Edge<V, G>> =>
+            match(arg) {
+                case None => None<Waveform<V>>
+                case Some(e) => Some(e.GetLabel().GetWaveform())
+            }
+        }, argumentEdges
+    )
 }
 /**
  * Given an array of signals and an apply function, get the output signals
@@ -196,6 +215,28 @@ public func GetPotentialOutputs<V>(
         VariableApply(partialInputs, dependentVariables, applyFn, outputPorts)
     }
 }
+func GetValueOutputEdge<V, G>(
+    f : InterfacedHypergraph<V, G>, outputs : Array<CycleInput<V>>
+) : Array<(Label<V, G>, Option<InterfacedHypergraph<V, G>>)>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+// Create a new value or signal edge for each of the output values
+    map({
+        output : CycleInput<V> =>
+            match(output) {
+                case DEFINITE(signal) =>
+                    if(signal.GetWidth() == 1) {(
+                        Label<V, G>.VALUE(signal.GetBit(0)),
+                        None<InterfacedHypergraph<V, G>>
+                    )} else {(
+                        Label<V, G>.SIGNAL(signal),
+                        Some(MakeSignal<V, G>(signal))
+                    )}
+                case PARTIAL(pi) =>
+                    (Label<V, G>.PARTIAL(pi), None<InterfacedHypergraph<V, G>>)
+        }
+    }, outputs)
+}
 /**
  * Replace this edge and its arguments with some output cycle input edges.
  *
@@ -207,7 +248,7 @@ public func GetPotentialOutputs<V>(
 func ReplaceGateWithOutputs<V, G>(
     f : InterfacedHypergraph<V, G>, e : Edge<V, G>,
     args : Array<Option<Edge<V, G>>>,
-    outputs : Array<CycleInput<V>>
+    outputs : Array<(Label<V, G>, Option<InterfacedHypergraph<V, G>>)>
 ) : HashSet<TraversalElement<V, G>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -223,47 +264,40 @@ func ReplaceGateWithOutputs<V, G>(
     for(v in e.GetSources()) {
         RemoveVertex(v, f)
     }
-    // Create a new value or signal edge for each of the output values
-    forEach<CycleInput<V>>({ output : CycleInput<V>, i : Int64 =>
-        let (label, subgraph) = match(output) {
-            case DEFINITE(signal) =>
-                if(signal.GetWidth() == 1) {(
-                    Label<V, G>.VALUE(signal.GetBit(0)),
-                    None<InterfacedHypergraph<V, G>>
-                )} else {(
-                    Label<V, G>.SIGNAL(signal),
-                    Some(MakeSignal<V, G>(signal))
-                )}
-            case PARTIAL(pi) =>
-                (Label<V, G>.PARTIAL(pi), None<InterfacedHypergraph<V, G>>)
-        }
-        let target = e.GetTarget(i)
-        let newEdge = Edge(
-            label, Array<Vertex<V, G>>(), [target],
-            subgraph, Some(f.GetGraph())
-        )
-        nextEdges.put(EDGE(newEdge))
-    }, outputs)
+    forEach<(Label<V, G>, Option<InterfacedHypergraph<V, G>>)>(
+        { lf, i : Int64 =>
+            let (label, subgraph) = lf
+            let target = e.GetTarget(i)
+            let newEdge = Edge(
+                label, Array<Vertex<V, G>>(), [target],
+                subgraph, Some(f.GetGraph())
+            )
+            nextEdges.put(EDGE(newEdge))
+        }, outputs
+    )
     nextEdges
 }
-/**
- * Replace this edge and its arguments with some output signal edges.
- *
- * @param f
- * @param e
- * @param args
- * @param outputs
- */
-func ReplaceGateWithOutputs<V, G>(
-    f : InterfacedHypergraph<V, G>,
-    e : Edge<V, G>, args : Array<Option<Edge<V, G>>>,
-    outputs : Array<Signal<V>>
-) : HashSet<TraversalElement<V, G>>
-    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+func gcd(a : Int64, b : Int64) : Int64 {
+    if(a == 0) {
+        b
+    } else if (b == 0) {
+        a
+    } else {
+        let quotient = a / b
+        let remainder = a % b
+        gcd(quotient, remainder)
+    }
+}
+func lcm(a : Int64, b : Int64) : Int64 {
+    (a * b) / gcd(a, b)
+}
+func GetJointWaveform<V>(ws : Array<Waveform<V>>) : Array<Array<CycleInput<V>>>
+    where V <: ValueSymbol<V>
 {
-    ReplaceGateWithOutputs(
-        f, e, args, map({ s => DEFINITE(s) }, outputs)
-    )
+    let wsLcm = fold_left({ acc, cur => lcm(acc, cur.GetLength())}, ws[0].GetLength(), ws)
+    Array<Array<CycleInput<V>>>(wsLcm, {i =>
+        map({ w : Waveform<V> => w.GetSignalAtTick(i, true)}, ws)
+    })
 }
 /**
  * Execute the apply rule for a given apply function and edge.
@@ -275,13 +309,13 @@ func ReplaceGateWithOutputs<V, G>(
  * @param e
  * @param f
  */
-func ExecuteApplyRule<V, G>(
+func ExecuteApplyValueRule<V, G>(
     applyFn : (Array<Signal<V>>) -> Array<Signal<V>>,
-    e : Edge<V, G>, f : InterfacedHypergraph<V, G>
+    e : Edge<V, G>, f : InterfacedHypergraph<V, G>,
+    argumentEdges : Array<Option<Edge<V, G>>>
 ) : Option<HashSet<TraversalElement<V, G>>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    let (argumentEdges, argumentSignals) = GetArgs(e)
     // If one of the edges or signals is None, this will abort rule application
     try {
         let partialInputs = map(
@@ -292,11 +326,72 @@ func ExecuteApplyRule<V, G>(
         let potentialOutputs = GetPotentialOutputs(
             partialInputs, applyFn, e.GetOutputPorts()
         )
-        let nextEdges = ReplaceGateWithOutputs(
-            f, e, argumentEdges, potentialOutputs
+        let outputEdgeDetails = GetValueOutputEdge(f, potentialOutputs)
+        let nextEdges = ReplaceGateWithOutputs<V, G>(
+            f, e, argumentEdges, outputEdgeDetails
         )
         Some(nextEdges)
     } catch (e : NoneValueException) {
+        None
+    }
+}
+func ExecuteApplyInfiniteWaveformRule<V, G>(
+    applyFn: (Array<Signal<V>>) -> Array<Signal<V>>,
+    e : Edge<V, G>, f : InterfacedHypergraph<V, G>,
+    argumentEdges : Array<Option<Edge<V, G>>>
+) : Option<HashSet<TraversalElement<V, G>>>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    let argumentWaveforms = GetWaveformArgs(argumentEdges)
+    try {
+        let inputsPerTick = GetJointWaveform(map({ wopt => wopt.getOrThrow() }, argumentWaveforms))
+        let outputs = map(
+            { inputs : Array<CycleInput<V>> => GetPotentialOutputs(inputs, applyFn, e.GetOutputPorts()) },
+            inputsPerTick
+        )
+        let potentialWaveforms = map({ output => Waveform(output) }, outputs)
+        let edgeDetails = map(
+            { wave : Waveform<V> =>
+                (Label<V, G>.INFINITE_WAVEFORM(wave), Some(MakeInfiniteWaveform<V, G>(waveform: wave)))
+            }, potentialWaveforms
+        )
+        let nextEdges = ReplaceGateWithOutputs<V, G>(
+            f, e, argumentEdges, edgeDetails
+        )
+        nextEdges
+    } catch (e : NoneValueException) {
+        None
+    }
+}
+func ArgumentsAreAllCycleInputs<V, G>(args : Array<Option<Edge<V, G>>>) : Bool
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    fold_left({ acc, cur => acc && match(cur) {
+        case None => false
+        case Some(e) => e.GetLabel().IsCycleInput()
+    }}, true, args)
+}
+func ArgumentsAreAllInfiniteWaveforms<V, G>(args : Array<Option<Edge<V, G>>>) : Bool
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    fold_left({ acc, cur =>
+        acc && match(cur) {
+            case None => false
+            case Some(e) => e.GetLabel().IsInfiniteWaveform()
+    }}, true, args)
+}
+func ExecuteApplyRule<V, G>(
+    applyFn: (Array<Signal<V>>) -> Array<Signal<V>>,
+    e : Edge<V, G>, f : InterfacedHypergraph<V, G>
+) : Option<HashSet<TraversalElement<V, G>>>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    let argumentEdges = GetArgEdges(e)
+    if(ArgumentsAreAllCycleInputs(argumentEdges)) {
+        ExecuteApplyValueRule(applyFn, e, f, argumentEdges)
+    } else if (ArgumentsAreAllInfiniteWaveforms(argumentEdges)) {
+        ExecuteApplyInfiniteWaveformRule(applyFn, e, f, argumentEdges)
+    } else {
         None
     }
 }
@@ -362,12 +457,13 @@ public func GetBottomRule<V, G>(signature : Signature<V, G>)
             } else {
                 let (argumentEdges, argumentValues) = GetArgs(e)
                 // Get appropriate width bottoms for each target of the edge
-                let bottoms = Array<Signal<V>>(e.GetCoarity()){
+                let bottoms = Array<CycleInput<V>>(e.GetCoarity()){
                     i : Int64 =>
-                        Signal(signature.GetBottom(), e.GetTarget(i).GetWidth())
+                        DEFINITE(Signal(signature.GetBottom(), e.GetTarget(i).GetWidth()))
                 }
+                let edgeDetails = GetValueOutputEdge(f, bottoms)
                 ReplaceGateWithOutputs<V, G>(
-                    f, e, argumentEdges, bottoms
+                    f, e, argumentEdges, edgeDetails
                 )
             }
         }

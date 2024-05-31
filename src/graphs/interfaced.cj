@@ -206,6 +206,12 @@ public class InterfacedHypergraph<V, G>
     public func GetSequentialEdges() : HashSet<Edge<V, G>> {
         this.f.GetSequentialEdges()
     }
+    public func IsFeedback(ec : EdgeConnection<V, G>) : Bool {
+        this.f.IsFeedback(ec)
+    }
+    public func IsFeedback(e : Edge<V, G>, i : Int64) : Bool {
+        this.f.IsFeedback(e, i)
+    }
     /**
      * Add a vertex to a set of traversal elements based on a given
      * traversal direction.

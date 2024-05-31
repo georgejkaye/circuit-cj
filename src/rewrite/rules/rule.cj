@@ -44,7 +44,7 @@ public struct RewriteRule<V, G>
         let label = e.GetLabel()
         match(this.entryPoint) {
             case ANY => true
-            case VALUE => label.IsSignal()
+            case VALUE => label.IsSignal() || label.IsWaveform()
             case PRIMITIVE => label.IsPrimitive()
             case NJOIN => label.IsJoin()
             case ENHANCED => label.IsEnhanced()

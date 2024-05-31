@@ -65,7 +65,7 @@ extend Label<V, G>
             case REGISTER(signal) =>
                 [Port(signal.GetWidth())]
             case OPEN_WAVEFORM(wf) =>
-                [Port(wf.GetSignalAtTick(0).GetWidth())]
+                [Port(wf.GetSignalAtTick(0, false).GetWidth())]
             case CLOSED_WAVEFORM(wf) =>
                 []
             case INFINITE_WAVEFORM(wf) =>
@@ -97,11 +97,11 @@ extend Label<V, G>
             case REGISTER(signal) =>
                 [Port(signal.GetWidth())]
             case OPEN_WAVEFORM(wf) =>
-                [Port(wf.GetSignalAtTick(0).GetWidth())]
+                [Port(wf.GetSignalAtTick(0, false).GetWidth())]
             case CLOSED_WAVEFORM(wf) =>
-                [Port(wf.GetSignalAtTick(0).GetWidth())]
+                [Port(wf.GetSignalAtTick(0, false).GetWidth())]
             case INFINITE_WAVEFORM(wf) =>
-                [Port(wf.GetSignalAtTick(0).GetWidth())]
+                [Port(wf.GetSignalAtTick(0, true).GetWidth())]
             case BUNDLER(ms, ns) =>
                 map({ i : Int64 => Port(i)}, ns)
             case JOIN(w) =>
@@ -222,6 +222,16 @@ extend Label<V, G>
         match(this) {
             case VALUE(_) => true
             case SIGNAL(_) => true
+            case _ => false
+        }
+    }
+    public func IsArgument() : Bool {
+        match(this) {
+            case VALUE(_) => true
+            case SIGNAL(_) => true
+            case PARTIAL(_) => true
+            case CLOSED_WAVEFORM(_) => true
+            case INFINITE_WAVEFORM(_) => true
             case _ => false
         }
     }
@@ -385,6 +395,12 @@ extend Label<V, G>
         match(this) {
             case OPEN_WAVEFORM(_) => true
             case CLOSED_WAVEFORM(_) => true
+            case INFINITE_WAVEFORM(_) => true
+            case _ => false
+        }
+    }
+    public func IsInfiniteWaveform() : Bool {
+        match(this) {
             case INFINITE_WAVEFORM(_) => true
             case _ => false
         }

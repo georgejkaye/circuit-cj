@@ -22,7 +22,7 @@ var totalRewrites = 0
 func AttemptRewriteRule<V, G>(
     signature : Signature<V, G>, e : Edge<V, G>,
     rule : RewriteRule<V, G>, f : InterfacedHypergraph<V, G>,
-    draw!: Bool = false, debug!: Bool = false
+    draw!: Bool = false, debug!: Bool = false, depth!: Int64 = 0
 ) : Option<HashSet<TraversalElement<V, G>>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -33,7 +33,7 @@ func AttemptRewriteRule<V, G>(
             if(draw) {
                 let fileName =
                     "rewrite-${totalRewrites}-${e.GetId()}-${rule.GetName()}"
-                f.WriteDotToFile("dot/${fileName}", depth: 1, debug: debug)
+                f.WriteDotToFile("dot/${fileName}", depth: depth, debug: debug)
             }
             totalRewrites++
             Some(result)
@@ -64,7 +64,7 @@ func AttemptAllRewriteRules<V, G>(
     edge : Edge<V, G>, f : InterfacedHypergraph<V, G>,
     signature : Signature<V, G>, copyBlackBoxes!: Bool = false,
     allInstantaneous!: Bool = false, partial!: Bool = false,
-    debug!: Bool = false, draw!: Bool = false
+    debug!: Bool = false, draw!: Bool = false, depth!: Int64 = 0
 ) : Option<HashSet<TraversalElement<V, G>>>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -85,6 +85,10 @@ func AttemptAllRewriteRules<V, G>(
         case VALUE(_) =>
             AddRule(GetForkRule())
         case SIGNAL(_) =>
+            AddRule(GetForkRule())
+        case CLOSED_WAVEFORM(_) =>
+            AddRule(GetForkRule())
+        case INFINITE_WAVEFORM(_) =>
             AddRule(GetForkRule())
         case PARTIAL(_) =>
             AddRule(GetForkRule())
@@ -117,7 +121,7 @@ func AttemptAllRewriteRules<V, G>(
     for(rule in validRules) {
         match(
             AttemptRewriteRule(
-                signature, edge, rule, f, debug: debug, draw: draw
+                signature, edge, rule, f, debug: debug, draw: draw, depth: depth
             )
         ){
             case None => ()
@@ -149,13 +153,13 @@ public func RewriteCombinational<V, G>(
     startingElements : HashSet<TraversalElement<V, G>>,
     endingElements : HashSet<TraversalElement<V, G>>,
     copyBlackBoxes!: Bool = false, allInstantaneous!: Bool = false,
-    debug!: Bool = false, draw!: Bool = false
+    debug!: Bool = false, draw!: Bool = false, depth!: Int64 = 0
 ) : Unit
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     if(draw) {
         let filename = "before-rewrite"
-        f.WriteDotToFile("dot/${filename}", depth: 1, debug: debug)
+        f.WriteDotToFile("dot/${filename}", depth: depth, debug: debug)
     }
     let visitedSources = HashMap<Edge<V, G>, HashSet<Vertex<V, G>>>()
     let actionAtEdge = {
@@ -181,10 +185,12 @@ public func RewriteCombinational<V, G>(
                 case Some(result) => result
                 case None =>
                     let nextElements = HashSet<TraversalElement<V, G>>()
-                    for(v in e.GetTargets()) {
-                        let te = VERTEX(v)
-                        if(!endingElements.contains(te)) {
-                            nextElements.put(te)
+                    if(!e.GetLabel().IsDelay()){
+                        for(v in e.GetTargets()) {
+                            let te = VERTEX(v)
+                            if(!endingElements.contains(te)) {
+                                nextElements.put(te)
+                            }
                         }
                     }
                     nextElements
@@ -194,9 +200,13 @@ public func RewriteCombinational<V, G>(
         v : Vertex<V, G>, data : TraversalData<V, G> =>
         let nextElements = HashSet<TraversalElement<V, G>>()
         for(ec in v.GetOutEdges()) {
-            let te = EDGE(ec.GetEdge())
-            if(!endingElements.contains(te)){
-                nextElements.put(te)
+            // Don't traverse through feedback connections for now
+            // This might block rewrites!
+            if(!f.IsFeedback(ec)) {
+                let te = EDGE(ec.GetEdge())
+                if(!endingElements.contains(te)){
+                    nextElements.put(te)
+                }
             }
         }
         nextElements

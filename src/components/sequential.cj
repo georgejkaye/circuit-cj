@@ -278,7 +278,7 @@ func UseOpenWaveform<V, G>(
 ) : Wire<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
-    UseOpenWaveform(waveform: Waveform([signal]), input: input)
+    UseOpenWaveform(waveform: Waveform([DEFINITE(signal)]), input: input)
 }
 /**
  * Use a closed waveform
@@ -343,7 +343,7 @@ func MakeOpenWaveform<V, G>(
         let j = waveformLength - i - 1
         let register =
             UseSimpleRegister(
-                initial: DEFINITE(waveform.GetSignalAtTick(j)), input:currentWire
+                initial: waveform.GetSignalAtTick(j, false), input:currentWire
             )
         currentWire = register
     }
@@ -378,7 +378,7 @@ func MakeClosedWaveform<V, G>(
  * @param signals The signals that make up the waveform
  * @return The circuit containing the infinite waveform
  */
-func MakeInfiniteWaveform<V, G>(
+public func MakeInfiniteWaveform<V, G>(
     waveform!: Waveform<V>
 ) : InterfacedHypergraph<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>

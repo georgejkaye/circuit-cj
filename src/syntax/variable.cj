@@ -192,6 +192,14 @@ extend VariableSignal<V> <: HasName {
         this.toString()
     }
 }
+extend VariableSignal<V> <: Equatable<VariableSignal<V>> {
+    public operator func ==(rhs : VariableSignal<V>) {
+        this.dependentVariables == rhs.dependentVariables
+    }
+    public operator func !=(rhs : VariableSignal<V>) {
+        !(this == rhs)
+    }
+}
 /**
  * Inputs we can provide to perform a cycle
  */
@@ -221,6 +229,23 @@ extend CycleInput<V> <: ToString {
             case DEFINITE(s) => "definitely ${s.GetName()}"
             case PARTIAL(p) => "maybe ${p.GetName()}"
         }
+    }
+}
+extend CycleInput<V> <: Equatable<CycleInput<V>> {
+    public operator func ==(rhs : CycleInput<V>) : Bool {
+        match(this) {
+            case DEFINITE(s) => match(rhs) {
+                case DEFINITE(t) => s == t
+                case _ => false
+            }
+            case PARTIAL(p) => match(rhs) {
+                case PARTIAL(q) => p == q
+                case _ => false
+            }
+        }
+    }
+    public operator func !=(rhs : CycleInput<V>) : Bool {
+        !(this == rhs)
     }
 }
 extend CycleInput<V> {

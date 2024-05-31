@@ -138,6 +138,23 @@ public func GetJoinUnitRightRule<V, G>(signature : Signature<V, G>)
 {
     GetJoinUnitRule(signature, 1, "r")
 }
+func WaveformIsAllTrigger<V>(w : Waveform<V>, desired : Signal<V>) : Bool
+    where V <: ValueSymbol<V>
+{
+    fold_left(
+        { acc : Bool, ci : CycleInput<V> => acc && match(ci) {
+            case DEFINITE(s) => s == desired
+            case PARTIAL(s) =>
+                if(s.GetPotentialSignals().size == 1) {
+                    let iter = s.GetPotentialSignals().iterator()
+                    iter.next().getOrThrow() == desired
+                } else {
+                    false
+                }
+            }
+        }, true, w.GetSignals()
+    )
+}
 /**
  * Check whether a given source of an edge connects to a signal edge with given
  * values that is not shared between multiple edges.
@@ -149,7 +166,7 @@ public func GetJoinUnitRightRule<V, G>(signature : Signature<V, G>)
  */
 func ArgumentIsUnsharedTrigger<V, G>(
     e : Edge<V, G>, i : Int64, desired : Signal<V>
-) : Option<(Edge<V, G>, Vertex<V, G>)>
+) : Option<(Edge<V, G>, Vertex<V, G>, Bool)>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     let vertex = e.GetSource(i)
@@ -159,12 +176,19 @@ func ArgumentIsUnsharedTrigger<V, G>(
             case Some(ec) =>
                 let edge = ec.GetEdge()
                 let label = edge.GetLabel()
-                if(!label.IsSignal() ||
+                if(label.IsInfiniteWaveform()) {
+                    let wf = label.GetWaveform()
+                    if(WaveformIsAllTrigger(wf, desired)) {
+                        Some((edge, vertex, true))
+                    } else {
+                        None
+                    }
+                } else if(!label.IsSignal() ||
                     label.GetValueArray() != desired.GetValues()
                 ) {
                     None
                 } else {
-                    Some((edge, vertex))
+                    Some((edge, vertex, false))
                 }
         }
     } else {
@@ -222,7 +246,7 @@ public func GetAnnihiliationRule<V, G>(
                 // Check the value at the annihiliation index
                 match(ArgumentIsUnsharedTrigger(e, ann.index, ann.input)) {
                     case None => None
-                    case Some((signalEdge, vertex)) =>
+                    case Some((signalEdge, vertex, isWaveform)) =>
                         let nextElements = HashSet<TraversalElement<V, G>>()
                         // Remove the annihilating edge
                         RemoveEdge(signalEdge, f)
@@ -240,9 +264,21 @@ public func GetAnnihiliationRule<V, G>(
                         let targets = e.GetTargets()
                         forEach<Signal<V>>({
                             s : Signal<V>, i : Int64 =>
-                                let resultEdge = MakeValueOrSignal(
+                                let resultEdge = if(isWaveform) {
+                                    let waveform = Waveform(s)
+                                    let subgraph = MakeInfiniteWaveform<V, G>(
+                                        waveform: waveform
+                                    )
+                                    Edge(
+                                        Label<V, G>.INFINITE_WAVEFORM(waveform),
+                                        Array<Vertex<V, G>>(), [targets[i]],
+                                        subgraph, f.GetGraph()
+                                    )
+                                } else {
+                                    MakeValueOrSignal(
                                     s, [targets[i]], f.GetGraph()
-                                )
+                                    )
+                                }
                                 nextElements.put(EDGE(resultEdge))
                         }, ann.output)
                         Some(nextElements)
@@ -303,7 +339,7 @@ public func GetIdentifierRule<V, G>(
                 let index = ide.index
                 match(ArgumentIsUnsharedTrigger(e, index, ide.input)) {
                     case None => None
-                    case Some((signalEdge, vertex)) =>
+                    case Some((signalEdge, vertex, isWaveform)) =>
                         let nextElements = HashSet<TraversalElement<V, G>>()
                         // Remove the gate edge
                         RemoveEdge(e, f)

@@ -131,12 +131,7 @@ extend Waveform<V> where V <: Decimal<V> & ValueSymbol<V> {
     public func GetDecimalName(signed!: Bool) : String {
         arrayToString(
             this.GetSignals(),
-            { s : Signal<V>, _ : Int64 =>
-                match(V.SignalToDec(s, signed: signed)){
-                    case Some(n) => "${n}"
-                    case None => s.GetName()
-                }
-            },
+            { s : CycleInput<V>, _ : Int64 => s.GetDecimalName(signed: signed)},
             openingBracket: "", closingBracket: "", delimiter: "::"
         )
     }
@@ -181,7 +176,7 @@ public func BuildWaveform<V> (
         { v : Int64 => V.DecToSignal(v, width: width, signed: signed)},
         signals
     )
-    Waveform(actualSignals)
+    Waveform(map({s => DEFINITE(s) }, actualSignals))
 }
 /**
  * Given an array of pairs of numbers and durations, convert them into a
@@ -200,7 +195,7 @@ public func BuildWaveform<V>(
             (V.DecToSignal(signal[0], width: width, signed: signed), signal[1])
         }, signals
     )
-    BuildWaveform<V>(actualSignals)
+    BuildWaveform<V>(map({ signal => (DEFINITE(signal[0]), signal[1])}, actualSignals))
 }
 extend Signature<V, G>
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>

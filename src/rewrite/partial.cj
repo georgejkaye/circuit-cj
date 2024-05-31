@@ -152,3 +152,43 @@ public func GetUnknown<V, G>(
     let signals = sig.EnumerateSignals(width)
     GetVariable(HashSet(signals))
 }
+
+public func GetUnspecified<V, G>(
+    sig : Signature<V, G>
+) : Option<CycleInput<V>>
+        where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
+{
+    None<CycleInput<V>>
+}
+
+public func PartiallyEvaluate<V, G>(
+    sig : Signature<V, G>,
+    cycleInputs : Array<Option<CycleInput<V>>>,
+    f : InterfacedHypergraph<V, G>, draw!: Bool = false, debug!: Bool = false, depth!: Int64 = 0
+) : InterfacedHypergraph<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
+    let newF = f.Clone()
+    let preInputs = ArrayList<InterfaceWire<V, G>>()
+    let preOutputs = ArrayList<Wire<V, G>>()
+    for(i in 0..f.GetArity()) {
+        let input = cycleInputs[i]
+        match(input) {
+            case Some(ci) =>
+                let waveform = sig.UseInfiniteWaveform(waveform: Waveform(ci))
+                preOutputs.append(waveform)
+            case None =>
+                let wire = sig.UseWire(f.GetInput(i).GetWidth())
+                let iw = InterfaceWire(wire, f.GetInput(i).GetName())
+                preInputs.append(iw)
+                preOutputs.append(wire)
+        }
+    }
+    let outputs = UseSubcircuit(f, preOutputs.toArray())
+    let prepended = MakeSubcircuit(
+        preInputs.toArray(), mapi({ w : Wire<V, G>, i : Int64 => InterfaceWire(w, f.GetOutput(i).GetName())}, outputs), f.GetName()
+    )
+    RewriteCombinational(
+      sig, prepended, prepended.GetLeftmostTraversalElements(), prepended.GetRightmostTraversalElements(),
+      copyBlackBoxes: false, allInstantaneous: false, draw: draw, depth: depth, debug: debug
+    )
+    prepended
+}
