@@ -28,7 +28,7 @@ public func CyclicCombinational(delays!: Bool) {
     } else {
         muxa
     }
-    let fbb = belnapSignature.AddBlackbox("F", [Port(1, "A")], [Port(1, "Z")])
+    let fbb = belnapSignature.AddBlackbox("f", [Port(1, "A")], [Port(1, "Z")])
     let f = UseBlackbox(fbb, [muxaWire])[0]
     // Bottom half of the circuit
     let muxb = UseMux2(s0: c, i0: f, i1: x)
@@ -37,7 +37,7 @@ public func CyclicCombinational(delays!: Bool) {
     } else {
         muxb
     }
-    let gbb = belnapSignature.AddBlackbox("G", [Port(1, "A")], [Port(1, "Z")])
+    let gbb = belnapSignature.AddBlackbox("g", [Port(1, "A")], [Port(1, "Z")])
     let g = UseBlackbox(gbb, [muxbWire])[0]
     Feedback(g, feedback)
     // Final multiplexer
@@ -48,8 +48,8 @@ public func CyclicCombinational(delays!: Bool) {
         muxc
     }
     MakeSubcircuit(
-        [InterfaceWire(x, "x"), InterfaceWire(c, "c")],
-        [InterfaceWire(muxcWire, "z")],
+        [InterfaceWire(x, "X"), InterfaceWire(c, "C")],
+        [InterfaceWire(muxcWire, "Z")],
         "cyclic_combinational"
     )
 }
