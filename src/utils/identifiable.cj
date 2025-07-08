@@ -7,7 +7,7 @@
  * @author George Kaye
  * @since 0.2
  */
-package utils
+package circuitcj.utils
 /**
  * Global ids for objects
  */

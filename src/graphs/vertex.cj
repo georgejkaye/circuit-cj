@@ -4,7 +4,7 @@
  * @author George Kaye
  * @since 0.2
  */
-package graphs
+package circuitcj.graphs
 /**
  * The two ways a vertex can be viewed.
  * (A given vertex may be a source and a target simultaneously)

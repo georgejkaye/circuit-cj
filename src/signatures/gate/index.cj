@@ -6,19 +6,19 @@
  * @author George Kaye
  * @since 0.3
  */
-package signatures.gate
-from std import math.{floor, log, ceil, abs, log2}
-from std import collection.HashSet
-import utils.{
+package circuitcj.signatures.gate
+import std.math.{floor, log, ceil, abs, log2}
+import std.collection.HashSet
+import circuitcj.utils.{
     AssertStrictlyPositive, AssertPowerOf, AssertNonNegative,
     AssertGreaterThanOrEqualTo, concat, pow
 }
-import syntax.*
-import graphs.{Hypergraph, InterfacedHypergraph}
-import components.*
-import components.constructions.*
+import circuitcj.syntax.*
+import circuitcj.graphs.{Hypergraph, InterfacedHypergraph}
+import circuitcj.components.*
+import circuitcj.components.constructions.*
 /**
- * package type aliases
+ * package circuitcj.type aliases
  */
 public type BelnapWire = Wire<GateLevelValue, GateLevelPrimitive>
 public type BelnapInterfaceWire =

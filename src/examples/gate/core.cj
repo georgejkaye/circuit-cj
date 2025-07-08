@@ -1,3 +1,3 @@
-package examples.gate
+package circuitcj.examples.gate
 
-import components.constructions.*
+import circuitcj.components.constructions.*

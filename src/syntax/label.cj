@@ -7,9 +7,9 @@
  * @author George Kaye
  * @since 0.2
  */
-package syntax
-import utils.*
-from std import collection.ArrayList
+package circuitcj.syntax
+import circuitcj.utils.*
+import std.collection.ArrayList
 /**
  * Enum for the different types of generators
  */

@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package signatures.gate
+package circuitcj.signatures.gate
 /**
  * Bitwise buf
  *

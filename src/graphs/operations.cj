@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.2
  */
-package graphs
+package circuitcj.graphs
 /**
  * Depending on a flag, clone an interfaced hypergraph, or just get a
  * tuple of its underlying graph and its interfaced

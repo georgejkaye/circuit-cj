@@ -6,8 +6,8 @@
  * @author George Kaye
  * @since 0.3
  */
-package rewrite
-import graphs.InterfacedHypergraph
+package circuitcj.rewrite
+import circuitcj.graphs.InterfacedHypergraph
 /**
  * Get a fixed cycle input, an input that is known to be a particular signal.
  *

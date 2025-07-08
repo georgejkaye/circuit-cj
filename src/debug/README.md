@@ -1,6 +1,6 @@
 # `debug` package
 
-This package contains debug functions.
+This package circuitcj.contains debug functions.
 
 ## Files
 

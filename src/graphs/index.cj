@@ -6,9 +6,9 @@
  * @author George Kaye
  * @since 0.3
  */
-package graphs
-from std import fs.*
-from std import collection.{ArrayList,HashMap}
-import debug.*
-import utils.*
-import syntax.*
+package circuitcj.graphs
+import std.fs.*
+import std.collection.{ArrayList,HashMap}
+import circuitcj.debug.*
+import circuitcj.utils.*
+import circuitcj.syntax.*

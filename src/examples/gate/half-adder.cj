@@ -7,7 +7,7 @@
  * @author George Kaye
  * @since 0.1
  */
-package examples.gate
+package circuitcj.examples.gate
 /**
  * @return half adder circuit
  */

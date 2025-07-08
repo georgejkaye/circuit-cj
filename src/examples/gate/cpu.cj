@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.2
  */
-package examples.gate
+package circuitcj.examples.gate
 /**
  * Create an ALU with the following modes:
  *

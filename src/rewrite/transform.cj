@@ -7,7 +7,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package rewrite
+package circuitcj.rewrite
 
 ////////////////////////////////////////////////////////////////////////////////
 //                      Conversion to Mealy form                              //

@@ -7,7 +7,7 @@
  * @author George Kaye
  * @since 0.1
  */
-package examples.gate
+package circuitcj.examples.gate
 /**
  * Compute a partial product: if b0 is high, then return a, otherwise return
  * zero.

@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.2
  */
-package components
+package circuitcj.components
 /**
  * Make a subcircuit with some (optionally named) input and
  * output wires. This circuit can then be used in other subcircuits,

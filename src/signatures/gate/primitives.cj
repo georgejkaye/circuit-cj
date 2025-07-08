@@ -1,4 +1,4 @@
-package signatures.gate
+package circuitcj.signatures.gate
 /**
  * Enum of Belnap gates
  */

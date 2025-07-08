@@ -4,7 +4,7 @@
  * Functions for 'shortcut' rules: rules that can be triggered if a certain
  * input to an edge holds a property.
  */
-package rewrite.rules
+package circuitcj.rewrite.rules
 /**
  * Check if a specific argument to an edge is a signal in which all the elements
  * are a specific value.

@@ -9,7 +9,7 @@
  * @version 1.0
  * @since 2022-06-21
  */
-package examples.gate
+package circuitcj.examples.gate
 /**
  * Create a full adder
  * @return A full adder subcircuit

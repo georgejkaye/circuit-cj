@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.1
  */
-package components
+package circuitcj.components
 /**
  * Make a subcircuit containing a signal
  *

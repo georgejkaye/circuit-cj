@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package components.constructions
+package circuitcj.components.constructions
 /**
  * Perform a ripple, an operation that starts with an accumulator bundle and
  * successively apply an operation to the accumulator and a data bundle,

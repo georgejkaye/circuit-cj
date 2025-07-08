@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package components.constructions
+package circuitcj.components.constructions
 /**
  * Ripple(map)s can be performed from TOP_TO_BOTTOM or BOTTOM_TO_TOP.
  * The conventions for the interfaces are as follows.

@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.2
  */
-package syntax
+package circuitcj.syntax
 /**
  * Interface for things with a width
  */

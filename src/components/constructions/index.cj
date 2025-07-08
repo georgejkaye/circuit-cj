@@ -3,14 +3,14 @@
  *
  * Imports and shared functions for constructions package.
  */
-package components.constructions
+package circuitcj.components.constructions
 
-from std import collection.ArrayList
+import std.collection.ArrayList
 
-import syntax.*
-import utils.*
-import graphs.*
-import components.*
+import circuitcj.syntax.*
+import circuitcj.utils.*
+import circuitcj.graphs.*
+import circuitcj.components.*
 
 /**
  * Given a function that transforms arrays of wires into a single wire,

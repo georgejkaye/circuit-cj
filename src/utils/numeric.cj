@@ -6,11 +6,11 @@
  * @author George Kaye
  * @since 0.2
  */
-package utils
+package circuitcj.utils
 
-from std import collection.ArrayList
-from std import collection.HashMap
-from std import math.pow
+import std.collection.ArrayList
+import std.collection.HashMap
+import std.math.pow
 /**
  * Given an array of objects which have some numeric property, compute the sum
  * of these numbers, optionally from some start and end index.

@@ -5,12 +5,12 @@
  * @since 0.1
  */
 
-package graphs
+package circuitcj.graphs
 
 
-from std import collection.ArrayList
-from std import collection.HashMap
-from std import collection.HashSet
+import std.collection.ArrayList
+import std.collection.HashMap
+import std.collection.HashSet
 /**
  * Types of ways a hypergraph can be malformed
  */

@@ -4,9 +4,10 @@
  * @author George Kaye
  * @since 0.2
  */
-package utils
-from std import collection.HashSet
-from std import math.{log, floor}
+package circuitcj.utils
+import std.collection.HashSet
+import std.math.{log, floor}
+import circuitcj.debug.{ErrorMsg,TodoMessage}
 /**
  * Types of paramaters to assert conditions about. Used to make debugging
  * messages clearer.

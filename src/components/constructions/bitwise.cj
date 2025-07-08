@@ -6,8 +6,8 @@
  * @author George Kaye
  * @since 0.2
  */
-package components.constructions
-from std import collection.HashSet
+package circuitcj.components.constructions
+import std.collection.HashSet
 /**
  * Given an array of inputs and a bundle width w such that so that the array is
  * partitioned into n bundles of width w:

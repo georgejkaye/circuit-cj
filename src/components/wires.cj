@@ -8,7 +8,7 @@
  * @author George Kaye
  * @since 0.2
  */
-package components
+package circuitcj.components
 /**
  * A wire has an id and a mutable vertex
  */

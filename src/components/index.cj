@@ -6,10 +6,10 @@
  * @author George Kaye
  * @since 0.3
  */
-package components
+package circuitcj.components
 
-from std import collection.{HashSet, ArrayList}
+import std.collection.{HashSet, ArrayList}
 
-import syntax.*
-import graphs.*
-import utils.*
+import circuitcj.syntax.*
+import circuitcj.graphs.*
+import circuitcj.utils.*

@@ -7,7 +7,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package rewrite
+package circuitcj.rewrite
 
 /**
  * Class for evaluating circuits given inputs at each tick of the clock

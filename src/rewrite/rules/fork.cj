@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package rewrite.rules
+package circuitcj.rewrite.rules
 /**
  * Check if the targets of an edge have the same number of outedges, so we
  * can apply a fork-like rule.

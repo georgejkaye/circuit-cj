@@ -7,7 +7,7 @@
  * @author George Kaye
  * @since 0.1
  */
-package examples.gate
+package circuitcj.examples.gate
 
 /**
  * Naive fibonacci circuit to compute the nth fibonacci number

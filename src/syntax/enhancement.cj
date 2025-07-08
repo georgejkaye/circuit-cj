@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package syntax
+package circuitcj.syntax
 /**
  * An enhancement is a primitive adapted for higher width wires or more inputs
  */

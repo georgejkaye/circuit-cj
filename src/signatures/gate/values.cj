@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package signatures.gate
+package circuitcj.signatures.gate
 /**
  * Enum of Belnap values (four valued logic)
  */

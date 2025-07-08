@@ -7,7 +7,7 @@
  * @author George Kaye
  * @since 0.1
  */
-package examples.gate
+package circuitcj.examples.gate
 public func Accumulator(width!: Int64, initial!: Int64) : Circuit_ {
     // Declare the input wire
     let input = sig.UseWire(width)

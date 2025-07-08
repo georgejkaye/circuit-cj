@@ -6,12 +6,12 @@
  * @author George Kaye
  * @since 0.3
  */
-package examples.gate
-import components.*
-import signatures.gate.*
-import utils.*
-import syntax.*
-import graphs.*
+package circuitcj.examples.gate
+import circuitcj.components.*
+import circuitcj.signatures.gate.*
+import circuitcj.utils.*
+import circuitcj.syntax.*
+import circuitcj.graphs.*
 // Signature elements
 public type Value = GateLevelValue
 public type Gate = GateLevelPrimitive

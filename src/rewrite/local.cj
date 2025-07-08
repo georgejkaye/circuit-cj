@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package rewrite
+package circuitcj.rewrite
 var totalRewrites = 0
 /**
  * Given a rewrite rule, try to apply it to a given edge.

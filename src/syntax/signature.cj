@@ -6,9 +6,10 @@
  * @author George Kaye
  * @since 0.3
  */
-package syntax
-from std import collection.HashSet, collection.HashMap
-import debug.*
+package circuitcj.syntax
+import std.collection.{ArrayList,HashSet,HashMap}
+import circuitcj.debug.*
+import circuitcj.utils.{foldi_left}
 /**
  * Interface for symbols that represent values.
  *

@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package signatures.gate
+package circuitcj.signatures.gate
 public func MakeSRNorLatch(
     delay1!: Int64 = 0, delay2!: Int64 = 0
 ) : BelnapInterfacedCircuit {

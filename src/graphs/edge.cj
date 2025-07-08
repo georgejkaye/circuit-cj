@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.2
  */
-package graphs
+package circuitcj.graphs
 /**
  * Check that two arrays, for inputs and outputs, agree
  * with the input and outputs defined in a given specification

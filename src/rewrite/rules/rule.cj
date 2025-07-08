@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package rewrite.rules
+package circuitcj.rewrite.rules
 /**
  * Entry point to a rewrite rule: the category of label that triggers
  * a rewrite attempt

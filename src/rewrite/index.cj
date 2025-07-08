@@ -6,11 +6,11 @@
  * @author George Kaye
  * @since 0.3
  */
-package rewrite
-import syntax.*
-import debug.*
-import graphs.*
-import utils.*
-import components.*
-import rewrite.rules.*
-from std import collection.{ArrayList, HashSet, HashMap}
+package circuitcj.rewrite
+import circuitcj.syntax.*
+import circuitcj.debug.*
+import circuitcj.graphs.*
+import circuitcj.utils.*
+import circuitcj.components.*
+import circuitcj.rewrite.rules.*
+import std.collection.{ArrayList, HashSet, HashMap}

@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package signatures.gate
+package circuitcj.signatures.gate
 /**
 * Perform an unsigned extension on a wire, i.e. add a false as its msb
 * @param w The input wire

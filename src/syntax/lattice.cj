@@ -7,7 +7,21 @@
  * @author George Kaye
  * @since 0.3
  */
-package syntax
+package circuitcj.syntax
+import std.collection.{ArrayList,HashMap,HashSet}
+import circuitcj.utils.{
+    AssertElementInCollection,
+    AssertLengthIsGreaterThanOrEqualTo,
+    AssertSameLength,
+    append,
+    fold_left,
+    fold_left2,
+    mapCollection,
+    mapi,
+    map2,
+    max,
+    min,
+    Product}
 /**
  * Given a set of elements, compute all the permutations of a given length.
  *

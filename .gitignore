@@ -22,3 +22,5 @@ dot/
 *.o
 *.cj.o
 *.dep
+default.bchir2
+main

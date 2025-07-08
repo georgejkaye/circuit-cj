@@ -6,7 +6,8 @@
  * @author George Kaye
  * @since 0.2
  */
-package utils
+package circuitcj.utils
+import std.collection.{ArrayList, HashMap, HashSet}
 /**
  * Given an array and an element, create a new array with the contents of the
  * first array preceeded by the new element.
@@ -105,7 +106,7 @@ public interface ExtraArrayUtils<T> {
     func partition(at : Int64) : (Array<T>, Array<T>)
 }
 
-extend Array<T> <: ExtraArrayUtils<T> {
+extend<T> Array<T> <: ExtraArrayUtils<T> {
     public func sliceArray(
         start!: Int64 = 0, end!: Int64 = this.size
     ) : Array<T> {

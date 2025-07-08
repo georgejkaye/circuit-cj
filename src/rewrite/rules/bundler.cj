@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package rewrite.rules
+package circuitcj.rewrite.rules
 enum SingleBit<V> where V <: ValueSymbol<V> {
     | VALUE(V)
     | PARTIAL(VariableValue<V>)

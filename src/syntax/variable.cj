@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package syntax
+package circuitcj.syntax
 /**
  * A variable that could be multiple signals.
  */

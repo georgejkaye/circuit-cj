@@ -7,7 +7,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package components
+package circuitcj.components
 /**
  * Make a signal circuit for a signal converted from a decimal number.
  *

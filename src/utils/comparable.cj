@@ -6,8 +6,8 @@
  * @author George Kaye
  * @since 0.2
  */
-package utils
-from std import math.MathExtension
+package circuitcj.utils
+import std.math.MathExtension
 /**
  * Get the maximum element in a collection of elements which can be mapped to
  * comparables, given some minimum threshold

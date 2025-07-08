@@ -4,7 +4,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package syntax
+package circuitcj.syntax
 /**
  * Interface for value sets that can be interpreted as decimal values.
  */
@@ -100,7 +100,7 @@ public func MaybeDecimalToString<V>(signal : Signal<V>, signed: Bool) : String
         case Some(n) => "${n}"
     }
 }
-extend Signal<V> where V <: Decimal<V> & ValueSymbol<V> {
+extend<V> Signal<V> where V <: Decimal<V> & ValueSymbol<V> {
     public func GetDecimalName(signed!: Bool) : String {
         match(V.SignalToDec(this, signed: signed)){
             case Some(n) => "${n}"
@@ -108,7 +108,7 @@ extend Signal<V> where V <: Decimal<V> & ValueSymbol<V> {
         }
     }
 }
-extend VariableSignal<V> where V <: Decimal<V> & ValueSymbol<V> {
+extend<V> VariableSignal<V> where V <: Decimal<V> & ValueSymbol<V> {
     public func GetDecimalName(signed!: Bool) : String {
         collectionToString(
             this.GetPotentialSignals(),
@@ -119,7 +119,7 @@ extend VariableSignal<V> where V <: Decimal<V> & ValueSymbol<V> {
         )
     }
 }
-extend CycleInput<V> where V <: Decimal<V> & ValueSymbol<V> {
+extend<V> CycleInput<V> where V <: Decimal<V> & ValueSymbol<V> {
     public func GetDecimalName(signed!: Bool) : String {
         match(this) {
             case DEFINITE(s) => s.GetDecimalName(signed: signed)
@@ -127,7 +127,7 @@ extend CycleInput<V> where V <: Decimal<V> & ValueSymbol<V> {
         }
     }
 }
-extend Waveform<V> where V <: Decimal<V> & ValueSymbol<V> {
+extend<V> Waveform<V> where V <: Decimal<V> & ValueSymbol<V> {
     public func GetDecimalName(signed!: Bool) : String {
         arrayToString(
             this.GetSignals(),
@@ -136,7 +136,7 @@ extend Waveform<V> where V <: Decimal<V> & ValueSymbol<V> {
         )
     }
 }
-extend Label<V, G>
+extend<V,G> Label<V, G>
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public func GetDecimalName(signed!: Bool) : String {
@@ -197,7 +197,7 @@ public func BuildWaveform<V>(
     )
     BuildWaveform<V>(map({ signal => (DEFINITE(signal[0]), signal[1])}, actualSignals))
 }
-extend Signature<V, G>
+extend<V, G> Signature<V, G>
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     /**

@@ -6,5 +6,5 @@
  * @author George Kaye
  * @since 0.2
  */
-package utils
-import debug.*
+package circuitcj.utils
+import circuitcj.debug.*

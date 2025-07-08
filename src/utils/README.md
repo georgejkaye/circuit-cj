@@ -1,6 +1,6 @@
 # `utils` package
 
-This package contains helper functions used throughout the module.
+This package circuitcj.contains helper functions used throughout the module.
 
 ## Files
 

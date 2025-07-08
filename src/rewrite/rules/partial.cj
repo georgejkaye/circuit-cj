@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package rewrite.rules
+package circuitcj.rewrite.rules
 public func GetUniquePartialRule<V, G>() : RewriteRule<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {

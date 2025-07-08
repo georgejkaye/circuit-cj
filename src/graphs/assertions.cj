@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.2
  */
-package graphs
+package circuitcj.graphs
 /**
  * Given two vertex-like objects, assert that between them they have at most
  * one in edge.

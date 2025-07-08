@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.1
  */
-package debug
+package circuitcj.debug
 /** Whether the debug messages are printed */
 var debugMessages = false
 /**

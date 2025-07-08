@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package syntax
+package circuitcj.syntax
 public enum WaveformType {
     | OPEN | CLOSED | INFINITE
 }

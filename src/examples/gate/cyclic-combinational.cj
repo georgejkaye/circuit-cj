@@ -8,7 +8,7 @@
  * @author George Kaye
  * @since 0.1
  */
-package examples.gate
+package circuitcj.examples.gate
 /**
  * Create a cyclic combinational circuit, either with or without delays.
  *

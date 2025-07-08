@@ -6,9 +6,9 @@
  * @author George Kaye
  * @since 0.2
  */
-package utils
-from std import math.abs
-from std import collection.HashSet
+package circuitcj.utils
+import std.math.abs
+import std.collection.HashSet
 /**
  * Given some initial value init, a function (acc1, cur) -> (acc2, b), and an
  * collection xs, begin computing

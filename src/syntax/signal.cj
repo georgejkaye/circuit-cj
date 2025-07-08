@@ -6,7 +6,8 @@
  * @author George Kaye
  * @since 0.2
  */
-package syntax
+package circuitcj.syntax
+import circuitcj.utils.{AssertNonEmpty, AssertLengthIsLessThanOrEqualTo, arrayToString, concatStrings, fold_right}
 /**
  * A signal is an array of values.
  */
@@ -56,12 +57,12 @@ public struct Signal<V> where V <: ValueSymbol<V>
         true
     }
 }
-extend Signal<V> <: ToString {
+extend<V> Signal<V> <: ToString {
     public func toString() : String {
         concatStrings({ v : V => "${v}" }, this.values, delimiter: "")
     }
 }
-extend Signal<V> <: Equatable<Signal<V>> {
+extend<V> Signal<V> <: Equatable<Signal<V>> {
     public operator func ==(rhs : Signal<V>) : Bool {
         this.values == rhs.values
     }
@@ -69,7 +70,7 @@ extend Signal<V> <: Equatable<Signal<V>> {
         !(this == rhs)
     }
 }
-extend Signal<V> <: Hashable {
+extend<V> Signal<V> <: Hashable {
     public func hashCode() : Int64 {
         /**
          * Kind of a hack, but it will probably work for everything anyone is
@@ -83,17 +84,17 @@ extend Signal<V> <: Hashable {
         string.hashCode()
     }
 }
-extend Signal<V> <: HasName {
+extend<V> Signal<V> <: HasName {
     public func GetName() : String {
         fold_right({acc : String, v : V => "${acc}${v}"}, "", values)
     }
 }
-extend Signal<V> <: HasWidth {
+extend<V> Signal<V> <: HasWidth {
     public func GetWidth() : Int64 {
         this.values.size
     }
 }
-extend Signal<V> <: Specifiable {
+extend<V> Signal<V> <: Specifiable {
     public func GetInputPorts() : Array<Port> {
         []
     }

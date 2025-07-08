@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package components
+package circuitcj.components
 /**
  * Use a primitive gate
  *

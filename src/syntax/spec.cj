@@ -7,7 +7,7 @@
  * @author George Kaye
  * @since 0.2
  */
-package syntax
+package circuitcj.syntax
 /**
  * Convert a given decimal ASCII code to a string
  *

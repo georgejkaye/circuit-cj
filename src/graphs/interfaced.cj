@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.2
  */
-package graphs
+package circuitcj.graphs
 /**
  * An interface vertex is a pair of a vertex and an optional name.
  */

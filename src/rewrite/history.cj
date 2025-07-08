@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package rewrite
+package circuitcj.rewrite
 /**
  * Given an array of signals, get a string representing them as arguments to a
  * circuit, i.e. a string of the form (s1, s2, s3, ...)

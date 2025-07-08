@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package components.constructions
+package circuitcj.components.constructions
 /**
  * Make a circuit that ripples a given primitive over some inputs, i.e. the
  * primitive will be applied to each input wire one at a time in succession

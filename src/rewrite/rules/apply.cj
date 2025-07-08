@@ -6,7 +6,7 @@
  * @author George Kaye
  * @since 0.3
  */
-package rewrite.rules
+package circuitcj.rewrite.rules
 func GetArgEdges<V, G>(
     e : Edge<V, G>
 ) : Array<Option<Edge<V, G>>>
