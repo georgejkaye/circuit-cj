@@ -9,7 +9,7 @@
 package circuitcj.syntax
 import std.collection.{ArrayList,HashSet,HashMap}
 import circuitcj.debug.*
-import circuitcj.utils.{foldi_left}
+import circuitcj.utils.{foldi_left,IncompatibleParameterException,fold_left,GetNextId}
 /**
  * Interface for symbols that represent values.
  *
@@ -450,12 +450,12 @@ public class Signature<V, G>
         }
     }
 }
-extend Signature<V, G> <: HasName {
+extend<V, G> Signature<V, G> <: HasName {
     public func GetName() : String {
         this.name
     }
 }
-extend Signature<V, G> <: ToString {
+extend<V, G> Signature<V, G> <: ToString {
     public func toString() : String {
         this.GetName()
     }

@@ -7,6 +7,9 @@
  * @since 0.3
  */
 package circuitcj.rewrite
+import std.collection.{HashSet}
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol,CycleInput,Label,Signature,Signal,Waveform,Decimal}
+import circuitcj.graphs.{Edge,TraversalElement,Vertex,InterfacedHypergraph,Hypergraph,TentacleOrigin}
 /**
  * Detach the current wires from the state registers.
  *
@@ -333,7 +336,7 @@ func PerformCycle<V, G>(
         graph, inputSignals, outputSubgraphs, history
     )
 }
-extend Evaluator<V, G> {
+extend<V, G> Evaluator<V, G> {
     public func PerformCycle(
         inputs : Array<CycleInput<V>>, debug!: Bool = false,  draw!: Bool = false
     ) : Unit {
@@ -473,7 +476,7 @@ extend Evaluator<V, G> {
         }
     }
 }
-extend Evaluator<V, G> where V <: Decimal<V> {
+extend<V, G> Evaluator<V, G> where V <: Decimal<V> {
     /**
      * Perform a cycle using this evaluator given numbers to be interpreted as
      * signals.

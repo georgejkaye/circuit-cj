@@ -7,6 +7,11 @@
  * @since 0.3
  */
 package circuitcj.rewrite.rules
+import std.collection.{HashSet}
+import circuitcj.utils.{fold_left}
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol,Signal,Signature,HasWidth,Label}
+import circuitcj.graphs.{Edge,InterfacedHypergraph,TraversalElement,Vertex,Hypergraph}
+import circuitcj.components.{MakeSignal}
 /**
  * Entry point to a rewrite rule: the category of label that triggers
  * a rewrite attempt

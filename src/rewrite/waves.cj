@@ -484,7 +484,7 @@ public func DrawWaveformsForPortArray<V, T>(
 /**
  * Let evaluators draw waveform diagrams
  */
-extend Evaluator<V,G> {
+extend<V, G> Evaluator<V,G> {
     /**
      * Draw the waveform diagram for the input output history of an evaluator
      *
@@ -594,7 +594,7 @@ public func DrawWaveformsForPortArray<V, T>(
         coloured: coloured
     )
 }
-extend Evaluator<V, G> where V <: Decimal<V> {
+extend<V, G> Evaluator<V, G> where V <: Decimal<V> {
     public func DrawWaveformDiagram(
         signed!: Bool, componentLength!: Int64 = defaultComponentLength,
         coloured!: Bool = false

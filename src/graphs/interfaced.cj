@@ -7,6 +7,9 @@
  * @since 0.2
  */
 package circuitcj.graphs
+import std.collection.{HashMap,HashSet,ArrayList}
+import circuitcj.utils.{map,GetNextId,Identifiable,concat,AssertHasLength}
+import circuitcj.syntax.{Specifiable,ValueSymbol,PrimitiveSymbol,HasPort,HasWidth,HasName,Label,Specification,Port,PrintWidthArray}
 /**
  * An interface vertex is a pair of a vertex and an optional name.
  */
@@ -551,7 +554,7 @@ public interface HasInterfacedGraph<V, G> <: HasGraph<V, G>
         this.GetInterfacedGraph().GetOutput(i)
     }
 }
-extend InterfacedHypergraph<V, G> <: HasInterfacedGraph<V, G> {
+extend<V, G> InterfacedHypergraph<V, G> <: HasInterfacedGraph<V, G> {
     public func GetInterfacedGraph() : InterfacedHypergraph<V, G> {
         this
     }

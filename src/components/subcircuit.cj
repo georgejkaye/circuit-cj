@@ -7,6 +7,9 @@
  * @since 0.2
  */
 package circuitcj.components
+import circuitcj.utils.{map}
+import circuitcj.syntax.{Specification,ValueSymbol,PrimitiveSymbol,Label,Port,AssertElementsHaveSameWidths,AssertHasWidthAtLeast,AssertHasArity,AssertHasCoarity}
+import circuitcj.graphs.{InterfacedHypergraph,AssertHasNoInEdge,MergeHypergraphs,Hypergraph,InterfaceVertex}
 /**
  * Make a subcircuit with some (optionally named) input and
  * output wires. This circuit can then be used in other subcircuits,

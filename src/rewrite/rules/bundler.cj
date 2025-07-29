@@ -7,6 +7,11 @@
  * @since 0.3
  */
 package circuitcj.rewrite.rules
+import std.collection.{ArrayList,HashSet}
+import circuitcj.utils.{forEach,map,Sum,ExtraArrayUtils,fold_left}
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol,VariableValue,Label,Signature,Signal,VariableSignal,Variable}
+import circuitcj.graphs.{Edge,InterfacedHypergraph,Vertex,TraversalElement}
+import circuitcj.components.{MakeSignal}
 enum SingleBit<V> where V <: ValueSymbol<V> {
     | VALUE(V)
     | PARTIAL(VariableValue<V>)
@@ -158,7 +163,7 @@ public func GetValueBundleRule<V, G>(signature : Signature<V, G>)
         BUNDLE,
         { e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
             if(!ApplyPreconditions(e)){
-                None
+                None<HashSet<TraversalElement<V, G>>>
             } else {
                 let (bundlerInputs, bundlerOutputs) =
                     e.GetLabel().GetBundlerSpec()

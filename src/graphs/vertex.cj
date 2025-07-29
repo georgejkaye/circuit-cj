@@ -5,6 +5,9 @@
  * @since 0.2
  */
 package circuitcj.graphs
+import std.collection.HashSet
+import circuitcj.utils.{GetNextId,Identifiable}
+import circuitcj.syntax.{HasPort,HasName,HasWidth,ValueSymbol,PrimitiveSymbol,HasOptionalName}
 /**
  * The two ways a vertex can be viewed.
  * (A given vertex may be a source and a target simultaneously)
@@ -76,7 +79,7 @@ public struct EdgeConnection<V, G>
         (leftVertex, rightVertex)
     }
 }
-extend EdgeConnection<V, G> <: ToString {
+extend<V, G> EdgeConnection<V, G> <: ToString {
     public func toString() : String {
         let initial = match(this.vertexType) {
             case SOURCE => "s"
@@ -85,7 +88,7 @@ extend EdgeConnection<V, G> <: ToString {
         "${edge}.${initial}${index}"
     }
 }
-extend EdgeConnection<V, G> <: Equatable<EdgeConnection<V, G>> {
+extend<V, G> EdgeConnection<V, G> <: Equatable<EdgeConnection<V, G>> {
     public operator func ==(right: EdgeConnection<V, G>) : Bool {
         this.edge == right.edge && this.index == right.index
     }
@@ -93,7 +96,7 @@ extend EdgeConnection<V, G> <: Equatable<EdgeConnection<V, G>> {
         !(this == right)
     }
 }
-extend EdgeConnection<V, G> <: Hashable {
+extend<V, G> EdgeConnection<V, G> <: Hashable {
     public func hashCode() : Int64 {
         // This won't be unique if we have something with more than 100000
         // sources or targets, but that's fairly unlikely
@@ -104,7 +107,7 @@ extend EdgeConnection<V, G> <: Hashable {
         }
     }
 }
-extend EdgeConnection<V, G> <: HasWidth {
+extend<V, G> EdgeConnection<V, G> <: HasWidth {
     public func GetWidth() : Int64 {
         let t = match(vertexType) {
             case SOURCE => edge.GetSource(index)
@@ -113,7 +116,7 @@ extend EdgeConnection<V, G> <: HasWidth {
         t.GetWidth()
     }
 }
-extend EdgeConnection<V, G> <: HasGraph<V, G> {
+extend<V, G> EdgeConnection<V, G> <: HasGraph<V, G> {
     public func GetGraph() : Hypergraph<V, G> {
         this.edge.GetGraph()
     }
@@ -494,7 +497,7 @@ public interface ContainsVertex<V, G> <: HasGraph<V, G>
         this.GetVertex().GetGraph()
     }
 }
-extend Vertex<V, G> <: ContainsVertex<V, G> {
+extend<V, G> Vertex<V, G> <: ContainsVertex<V, G> {
     public func GetVertex() : Vertex<V, G> {
         this
     }

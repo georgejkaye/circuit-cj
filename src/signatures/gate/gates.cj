@@ -7,6 +7,7 @@
  * @since 0.3
  */
 package circuitcj.signatures.gate
+import circuitcj.components.constructions.{MakeBitwiseRippleMap,MakeBitwiseMap,UseBitwiseMapPrimitive,UseBitwiseRippleBinaryPrimitive,UseRippleBinaryPrimitive}
 /**
  * Bitwise buf
  *

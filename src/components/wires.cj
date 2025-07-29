@@ -9,6 +9,9 @@
  * @since 0.2
  */
 package circuitcj.components
+import circuitcj.utils.{Identifiable,GetNextId,AssertEqual,map,mapi,AssertStrictlyPositive,AssertNonEmpty,AssertMultipleOf,AssertLengthIsGreaterThanOrEqualTo,Sum,AssertSameLength,map2}
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol,HasName,HasOptionalName,HasWidth,HasPort,Signature,Label,Port,Decimal,AssertAllHaveSameWidth,AssertHasWidthAtLeast,AssertHasWidth}
+import circuitcj.graphs.{ContainsVertex,HasGraph,Vertex,Hypergraph,InterfacedHypergraph,Drawable,DecimalDrawable,MergeHypergraphs}
 /**
  * A wire has an id and a mutable vertex
  */
@@ -129,7 +132,7 @@ public interface ContainsWire<V, G> <: HasWidth & ContainsVertex<V, G>
 {
     func GetWire() : Wire<V, G>
 }
-extend Wire<V, G> <: ContainsWire<V, G> {
+extend<V, G> Wire<V, G> <: ContainsWire<V, G> {
     public func GetWire() : Wire<V, G> {
         this
     }
@@ -188,7 +191,7 @@ public interface WireUser<V, G>
         UseWires<V, G>(widths)
     }
 }
-extend Signature<V, G> <: WireUser<V, G>
+extend<V, G> Signature<V, G> <: WireUser<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {}
 /**
@@ -474,7 +477,7 @@ public func NameWires<V, G>(
         { i : Int64 => InterfaceWire(wires[i], f(i)) }
     )
 }
-extend Wire<V, G> <: Drawable<V, G> {
+extend<V, G> Wire<V, G> <: Drawable<V, G> {
     public func WriteDotToFile(
         file : String, depth!: Int64 = 0,
         debug!: Bool = false, expandSignals!: Bool = false
@@ -484,7 +487,7 @@ extend Wire<V, G> <: Drawable<V, G> {
         )
     }
 }
-extend Wire<V, G> <: DecimalDrawable where V <: Decimal<V> {
+extend<V, G> Wire<V, G> <: DecimalDrawable where V <: Decimal<V> {
     public func WriteDotToFile(
         file : String, depth!: Int64 = 0, signed!: Bool, debug!: Bool = false,
         expandSignals!: Bool = false

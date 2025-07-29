@@ -7,6 +7,10 @@
  * @since 0.2
  */
 package circuitcj.graphs
+import std.collection.HashSet
+import circuitcj.debug.Debug
+import circuitcj.utils.{map,AssertHasLength}
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol}
 /**
  * Strategies for traversing a graph
  */
@@ -24,7 +28,7 @@ public enum TraversalElement<V, G>
     | EDGE(Edge<V, G>)
     | VERTEX(Vertex<V, G>)
 }
-extend TraversalElement<V, G>
+extend<V, G> TraversalElement<V, G>
     <: Hashable & Equatable<TraversalElement<V, G>> &
             ToString & HasGraph<V, G>
 {

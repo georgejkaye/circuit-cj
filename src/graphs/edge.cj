@@ -7,6 +7,9 @@
  * @since 0.2
  */
 package circuitcj.graphs
+import std.collection.{HashMap,HashSet}
+import circuitcj.utils.{Identifiable,GetNextId,AssertElementsHaveParameters,map,AssertHasLength}
+import circuitcj.syntax.{Specifiable, ValueSymbol, PrimitiveSymbol, Port, Label}
 /**
  * Check that two arrays, for inputs and outputs, agree
  * with the input and outputs defined in a given specification

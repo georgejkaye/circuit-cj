@@ -7,6 +7,8 @@
  * @since 0.2
  */
 package circuitcj.syntax
+import std.collection.HashSet
+import circuitcj.utils.{AssertHasParameter,AssertHasParameterGreaterThanOrEqualTo,AssertAllElementsHaveSameParameter,AssertAllSameLength,AssertElementsHaveParameters,AssertBothSameParameter,map,arrayToString,max}
 /**
  * Interface for things with a width
  */

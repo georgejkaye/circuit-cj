@@ -7,6 +7,7 @@
  * @since 0.3
  */
 package circuitcj.signatures.gate
+import circuitcj.components.{WireUser,Feedback,MakeSubcircuit,UseSubcircuit_2,InterfaceWire,UseWire}
 public func MakeSRNorLatch(
     delay1!: Int64 = 0, delay2!: Int64 = 0
 ) : BelnapInterfacedCircuit {

@@ -7,6 +7,10 @@
  * @since 0.3
  */
 package circuitcj.rewrite.rules
+import std.collection.{HashSet,HashMap,ArrayList}
+import circuitcj.utils.{map}
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol}
+import circuitcj.graphs.{Edge,InterfacedHypergraph,TentacleType,TraversalElement,Vertex}
 /**
  * Check if the targets of an edge have the same number of outedges, so we
  * can apply a fork-like rule.
@@ -129,7 +133,7 @@ public func GetForkRule<V, G>() : RewriteRule<V, G>
         {
             e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
             if(!ForkCondition(e, f)){
-                None
+                None<HashSet<TraversalElement<V, G>>>
             } else {
                 let tentacleTargets = GetOutgoingTentacles(f, e, 0)
                 let tentacleTargetsPerEdge = map(

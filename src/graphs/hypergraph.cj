@@ -11,6 +11,9 @@ package circuitcj.graphs
 import std.collection.ArrayList
 import std.collection.HashMap
 import std.collection.HashSet
+import circuitcj.debug.Debug
+import circuitcj.utils.{Identifiable,GetNextId,AssertElementsHaveParameters,map,AssertHasLength,unsafeGet,snds,fsts,fold_left,foldi_left}
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol,HasWidth,Label,Specification,Port}
 /**
  * Types of ways a hypergraph can be malformed
  */
@@ -26,7 +29,7 @@ public enum WellformednessIssue<V, G>
     | SourceNotInGraph(Edge<V, G>, Int64, Vertex<V, G>)
     | TargetNotInGraph(Edge<V, G>, Int64, Vertex<V, G>)
 }
-extend WellformednessIssue<V, G> <: ToString {
+extend<V, G> WellformednessIssue<V, G> <: ToString {
     public func toString() : String {
         match(this) {
             case InputNotAssigned(i) =>
@@ -58,7 +61,7 @@ public enum TentacleOrigin<V, G>
     | FROM_EDGE(EdgeConnection<V, G>)
     | FROM_VERTEX(Vertex<V, G>)
 }
-extend TentacleOrigin<V, G> <: HasWidth & ToString {
+extend<V, G> TentacleOrigin<V, G> <: HasWidth & ToString {
     public func GetWidth() : Int64 {
         match(this) {
             case FROM_EDGE(ec) => ec.GetWidth()

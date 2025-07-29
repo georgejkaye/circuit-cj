@@ -7,6 +7,11 @@
  * @since 0.3
  */
 package circuitcj.rewrite.rules
+import std.collection.{HashMap,HashSet}
+import circuitcj.utils.{map,mapi,forEach,fold_left}
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol,CycleInput,Waveform,Signal,Variable,VariableSignal,Port,VariableValue,Label,Signature,Identifier,GetSignalForAssignment,GetDefinite,HasWidth}
+import circuitcj.graphs.{Edge,Vertex,InterfacedHypergraph,TraversalElement}
+import circuitcj.components.{MakeSignal,MakeInfiniteWaveform}
 func GetArgEdges<V, G>(
     e : Edge<V, G>
 ) : Array<Option<Edge<V, G>>>

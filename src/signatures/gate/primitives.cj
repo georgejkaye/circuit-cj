@@ -1,4 +1,5 @@
 package circuitcj.signatures.gate
+import circuitcj.syntax.{Signal,HasName,Specifiable,Port,ValueSymbol,PrimitiveSymbol}
 /**
  * Enum of Belnap gates
  */

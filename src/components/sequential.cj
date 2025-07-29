@@ -7,6 +7,10 @@
  * @since 0.1
  */
 package circuitcj.components
+import std.collection.{ArrayList}
+import circuitcj.utils.{map,AssertNonNegative,fold_left,mapi,forEach,concatStrings,AssertHasLength}
+import circuitcj.syntax.{Signal,ValueSymbol,PrimitiveSymbol,VariableSignal,Port,CycleInput,Waveform,Signature,WaveformType,Label,AssertBothSameWidth,HasWidth,HasName,Specification,AssertElementsHaveSameWidths}
+import circuitcj.graphs.{InterfacedHypergraph,Vertex,Hypergraph,AssertHasNoInEdge,AssertHasNoInEdge,MergeHypergraphs}
 /**
  * Make a subcircuit containing a signal
  *
@@ -426,7 +430,7 @@ public interface SignalUser<V, G>
         UseCycleInput<V, G>(ci)
     }
 }
-extend Signature<V, G> <: SignalUser<V, G>
+extend<V, G> Signature<V, G> <: SignalUser<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {}
 /**

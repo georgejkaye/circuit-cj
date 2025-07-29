@@ -5,6 +5,11 @@
  * @since 0.3
  */
 package circuitcj.components.constructions
+import std.collection.HashSet
+import circuitcj.utils.{map,concat,map2,AssertLengthMultipleOf}
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol,HasPort,Label,Port,Specification}
+import circuitcj.components.{Wire,UseSubcircuit,UseWire,InterfaceWire,MakeSubcircuit}
+import circuitcj.graphs.{InterfaceVertex, InterfacedHypergraph}
 /**
  * Perform a map, an operation that applies an operation in parallel to
  * multiple bundles.

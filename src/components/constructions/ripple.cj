@@ -7,6 +7,9 @@
  * @since 0.3
  */
 package circuitcj.components.constructions
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol,HasPort,Label}
+import circuitcj.components.{Wire}
+import circuitcj.graphs.{InterfacedHypergraph}
 /**
  * Perform a ripple, an operation that starts with an accumulator bundle and
  * successively apply an operation to the accumulator and a data bundle,

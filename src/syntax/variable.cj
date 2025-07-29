@@ -7,6 +7,10 @@
  * @since 0.3
  */
 package circuitcj.syntax
+
+import std.collection.{HashSet,HashMap}
+
+import circuitcj.utils.{collectionToString,arrayToString,map,GetAllCombinations,IncompatibleVariantException,mapi}
 /**
  * A variable that could be multiple signals.
  */
@@ -25,12 +29,12 @@ public struct Variable<V> where V <: ValueSymbol<V> {
         this.id
     }
 }
-extend Variable<V> <: Hashable {
+extend<V> Variable<V> <: Hashable {
     public func hashCode() : Int64 {
         this.id
     }
 }
-extend Variable<V> <: ToString {
+extend<V> Variable<V> <: ToString {
     public func toString() : String {
         let setString = collectionToString(
             this.possibleSignals, openingBracket: "{", closingBracket: "}"
@@ -38,17 +42,17 @@ extend Variable<V> <: ToString {
         "v${this.id}: ${setString}"
     }
 }
-extend Variable<V> <: HasName {
+extend<V> Variable<V> <: HasName {
     public func GetName() : String {
         this.toString()
     }
 }
-extend Variable<V> <: HasWidth {
+extend<V> Variable<V> <: HasWidth {
     public func GetWidth() : Int64 {
         this.width
     }
 }
-extend Variable<V> <: Equatable<Variable<V>> {
+extend<V> Variable<V> <: Equatable<Variable<V>> {
     public operator func ==(rhs : Variable<V>) {
         this.id == rhs.id
     }
@@ -78,17 +82,17 @@ public struct VariableValue<V> where V <: ValueSymbol<V> {
         this.variableFn
     }
 }
-extend VariableValue<V> <: HasWidth {
+extend<V> VariableValue<V> <: HasWidth {
     public func GetWidth() : Int64 {
         1
     }
 }
-extend VariableValue<V> <: ToString {
+extend<V> VariableValue<V> <: ToString {
     public func toString() : String {
         "depends on ${this.dependentVariables}"
     }
 }
-extend VariableValue<V> <: HasName {
+extend<V> VariableValue<V> <: HasName {
     public func GetName() : String {
         this.toString()
     }
@@ -174,12 +178,12 @@ public struct VariableSignal<V> where V <: ValueSymbol<V> {
         Signal(values)
     }
 }
-extend VariableSignal<V> <: HasWidth {
+extend<V> VariableSignal<V> <: HasWidth {
     public func GetWidth() : Int64 {
         this.variableValues.size
     }
 }
-extend VariableSignal<V> <: ToString {
+extend<V> VariableSignal<V> <: ToString {
     public func toString() : String {
         collectionToString(
             this.GetPotentialSignals(), openingBracket: "{",
@@ -187,12 +191,12 @@ extend VariableSignal<V> <: ToString {
         )
     }
 }
-extend VariableSignal<V> <: HasName {
+extend<V> VariableSignal<V> <: HasName {
     public func GetName() : String {
         this.toString()
     }
 }
-extend VariableSignal<V> <: Equatable<VariableSignal<V>> {
+extend<V> VariableSignal<V> <: Equatable<VariableSignal<V>> {
     public operator func ==(rhs : VariableSignal<V>) {
         this.dependentVariables == rhs.dependentVariables
     }
@@ -207,7 +211,7 @@ public enum CycleInput<V> where V <: ValueSymbol<V> {
     | DEFINITE(Signal<V>)
     | PARTIAL(VariableSignal<V>)
 }
-extend CycleInput<V> <: HasWidth {
+extend<V> CycleInput<V> <: HasWidth {
     public func GetWidth() {
         match(this) {
             case DEFINITE(s) => s.GetWidth()
@@ -215,7 +219,7 @@ extend CycleInput<V> <: HasWidth {
         }
     }
 }
-extend CycleInput<V> <: HasName {
+extend<V> CycleInput<V> <: HasName {
     public func GetName() : String {
         match(this) {
             case DEFINITE(s) => s.GetName()
@@ -223,7 +227,7 @@ extend CycleInput<V> <: HasName {
         }
     }
 }
-extend CycleInput<V> <: ToString {
+extend<V> CycleInput<V> <: ToString {
     public func toString() : String {
         match(this) {
             case DEFINITE(s) => "definitely ${s.GetName()}"
@@ -231,7 +235,7 @@ extend CycleInput<V> <: ToString {
         }
     }
 }
-extend CycleInput<V> <: Equatable<CycleInput<V>> {
+extend<V> CycleInput<V> <: Equatable<CycleInput<V>> {
     public operator func ==(rhs : CycleInput<V>) : Bool {
         match(this) {
             case DEFINITE(s) => match(rhs) {
@@ -248,7 +252,7 @@ extend CycleInput<V> <: Equatable<CycleInput<V>> {
         !(this == rhs)
     }
 }
-extend CycleInput<V> {
+extend<V> CycleInput<V> {
     public func GetDefinite() : Signal<V> {
         match(this) {
             case DEFINITE(s) => s

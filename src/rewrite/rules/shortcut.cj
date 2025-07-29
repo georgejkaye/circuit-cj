@@ -5,6 +5,11 @@
  * input to an edge holds a property.
  */
 package circuitcj.rewrite.rules
+import std.collection.HashSet
+import circuitcj.utils.{fold_left,forEach}
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol,Signature,Waveform,Signal,CycleInput,Annihilator,Identifier,GetSignalForAssignment,GetDefinite,HasWidth,Label}
+import circuitcj.graphs.{Edge,InterfacedHypergraph,TraversalElement,Vertex}
+import circuitcj.components.{MakeInfiniteWaveform}
 /**
  * Check if a specific argument to an edge is a signal in which all the elements
  * are a specific value.
@@ -241,11 +246,11 @@ public func GetAnnihiliationRule<V, G>(
         { e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
             // Check this is the right gate
             if(e.GetLabel().GetPrimitive() != ann.gate){
-                None
+                None<HashSet<TraversalElement<V, G>>>
             } else {
                 // Check the value at the annihiliation index
                 match(ArgumentIsUnsharedTrigger(e, ann.index, ann.input)) {
-                    case None => None
+                    case None => None<HashSet<TraversalElement<V, G>>>
                     case Some((signalEdge, vertex, isWaveform)) =>
                         let nextElements = HashSet<TraversalElement<V, G>>()
                         // Remove the annihilating edge
@@ -334,7 +339,7 @@ public func GetIdentifierRule<V, G>(
         { e : Edge<V, G>, f : InterfacedHypergraph<V, G> =>
             // Check this is the right gate
             if(e.GetLabel().GetPrimitive() != ide.gate){
-                None
+                None<HashSet<TraversalElement<V, G>>>
             } else {
                 let index = ide.index
                 match(ArgumentIsUnsharedTrigger(e, index, ide.input)) {

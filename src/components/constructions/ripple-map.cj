@@ -7,6 +7,11 @@
  * @since 0.3
  */
 package circuitcj.components.constructions
+import std.collection.ArrayList
+import circuitcj.utils.{AssertHasLength,concat,ExtraArrayUtils,prepend,append,map,map2,AssertLessThanOrEqualTo}
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol,Port,HasPort,Label,HasWidth,HasOptionalName,Signature,Specification}
+import circuitcj.components.{Wire,InterfaceWire,MakeSubcircuit,UseWire,UseSubcircuit}
+import circuitcj.graphs.{InterfacedHypergraph,InterfaceVertex}
 /**
  * Ripple(map)s can be performed from TOP_TO_BOTTOM or BOTTOM_TO_TOP.
  * The conventions for the interfaces are as follows.

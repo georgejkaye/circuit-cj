@@ -7,6 +7,8 @@
  * @since 0.2
  */
 package circuitcj.graphs
+import circuitcj.utils.{map,AssertHasLength}
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol}
 /**
  * Depending on a flag, clone an interfaced hypergraph, or just get a
  * tuple of its underlying graph and its interfaced

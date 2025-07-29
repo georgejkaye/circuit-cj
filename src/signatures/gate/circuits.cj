@@ -7,6 +7,12 @@
  * @since 0.3
  */
 package circuitcj.signatures.gate
+import std.collection.{HashSet}
+import std.math.{floor, log}
+import circuitcj.utils.{AssertStrictlyPositive,AssertPowerOf,concat}
+import circuitcj.syntax.{AssertBothSameWidth,AssertAllHaveSameWidth,AssertHasWidth}
+import circuitcj.components.{Combine,DecimalSignalUser,WireUser,MakeSubcircuit,UseSubcircuit_1,UseSubcircuit_2,InterfaceWire,UseWire}
+import circuitcj.components.constructions.{MakeBitwiseRippleMap,MakeBitwiseMap}
 /**
 * Perform an unsigned extension on a wire, i.e. add a false as its msb
 * @param w The input wire

@@ -7,6 +7,7 @@
  * @since 0.3
  */
 package circuitcj.rewrite
+import circuitcj.syntax.{CycleInput,ValueSymbol,PrimitiveSymbol,Decimal,EnhancedPrimitive,Blackbox,Specification}
 /**
  * Given an array of signals, get a string representing them as arguments to a
  * circuit, i.e. a string of the form (s1, s2, s3, ...)
@@ -81,7 +82,7 @@ public enum Function<V, G>
     | BLACKBOX(Blackbox<V, G>)
     | COMPOSITE(Specification)
 }
-extend Function<V, G> <: ToString {
+extend<V, G> Function<V, G> <: ToString {
     public func toString() : String {
         match(this) {
             case PRIMITIVE(g) => g.GetName()
@@ -91,7 +92,7 @@ extend Function<V, G> <: ToString {
         }
     }
 }
-extend Function<V, G> <: Specifiable {
+extend<V, G> Function<V, G> <: Specifiable {
     public func GetInputPorts() : Array<Port> {
         match(this) {
             case PRIMITIVE(g) => g.GetInputPorts()
@@ -168,7 +169,7 @@ func GetDecimalNameFromSignal<V>(
         case Some(n) => "${n}"
     }
 }
-extend OutputTerm<V, G> where V <: Decimal<V> {
+extend<V, G> OutputTerm<V, G> where V <: Decimal<V> {
     public func GetString(signed!: Bool) : String {
         let fn = { ci : CycleInput<V> =>
             GetDecimalNameFromCycleInput(ci, signed)
@@ -340,7 +341,7 @@ public struct InputOutput<V, G> <: ToString
         this.output
     }
 }
-extend InputOutput<V, G> where V <: Decimal<V> {
+extend<V, G> InputOutput<V, G> where V <: Decimal<V> {
     public func GetDecimalString(signed : Bool) : String {
         let outputString = collectionToString(
             this.output,
@@ -433,7 +434,7 @@ func GetInputOutputString<V, G> (
 /**
  * Allow evaluator to expose its history and get the pretty string
  */
-extend Evaluator<V, G> {
+extend<V, G> Evaluator<V, G> {
     public func GetInputHistoryPerPort() : Array<ArrayList<CycleInput<V>>> {
         this.history.inputHistoryPerPort
     }
@@ -454,7 +455,7 @@ extend Evaluator<V, G> {
 /**
  * Allow evaluation using decimal values
  */
-extend Evaluator<V, G> where V <: Decimal<V> {
+extend<V, G> Evaluator<V, G> where V <: Decimal<V> {
     public func GetInputOutputHistoryString(signed!: Bool) : String {
         GetInputOutputString(
             this.history.inputOutputHistoryPerTick,

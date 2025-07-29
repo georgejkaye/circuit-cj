@@ -7,6 +7,10 @@
  * @since 0.3
  */
 package circuitcj.components.constructions
+import circuitcj.utils.{AssertEqual,map2,AssertGreaterThanOrEqualTo,AssertLengthIsGreaterThanOrEqualTo,AssertHasLength,prepend,append,map}
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol,Port,Signature,Specification,AssertAllHaveSameWidth,Label}
+import circuitcj.graphs.{InterfacedHypergraph,InterfaceVertex}
+import circuitcj.components.{Wire,UseSubcircuit,UsePrimitive}
 /**
  * Make a circuit that ripples a given primitive over some inputs, i.e. the
  * primitive will be applied to each input wire one at a time in succession

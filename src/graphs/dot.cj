@@ -7,6 +7,11 @@
  * @since 0.1
  */
 package circuitcj.graphs
+import std.fs.File
+import std.collection.{ArrayList, HashSet}
+import circuitcj.debug.Debug
+import circuitcj.utils.{fold_left,GetNextId}
+import circuitcj.syntax.{Decimal,ValueSymbol,PrimitiveSymbol,Label,HasPort}
 /**
  * Get the options for the entire graph. If debug is enabled then the graph
  * will have a grey background so the debug info can show up.
@@ -995,7 +1000,7 @@ func WriteDotToFile<V, G, T>(
         debug, expandSignals
     )
 }
-extend Hypergraph<V, G> <: HasDot<V, G>
+extend<V, G> Hypergraph<V, G> <: HasDot<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public func GetDotString(
@@ -1014,7 +1019,7 @@ extend Hypergraph<V, G> <: HasDot<V, G>
         ConvertStringIndentListToString(dotLines)
     }
 }
-extend InterfacedHypergraph<V, G> <: HasDot<V, G>
+extend<V, G> InterfacedHypergraph<V, G> <: HasDot<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public func GetDotString(
@@ -1047,7 +1052,8 @@ public interface Drawable<V, G>
         file : String, depth!: Int64, debug!: Bool, expandSignals!: Bool
     ) : Unit
 }
-extend InterfacedHypergraph<V, G> <: Drawable<V, G> {
+extend<V, G> InterfacedHypergraph<V, G> <: Drawable<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
     public func WriteDotToFile(
         file: String, depth!: Int64 = 0, debug!: Bool = false,
         expandSignals!: Bool = false
@@ -1055,7 +1061,8 @@ extend InterfacedHypergraph<V, G> <: Drawable<V, G> {
         WriteDotToFile(this, file, depth, debug, expandSignals)
     }
 }
-extend Hypergraph<V, G> <: Drawable<V, G> {
+extend<V, G> Hypergraph<V, G> <: Drawable<V, G>
+    where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
     public func WriteDotToFile(
         file: String, depth!: Int64 = 0, debug!: Bool = false,
         expandSignals!: Bool = false
@@ -1081,7 +1088,7 @@ public interface DecimalDrawable {
         expandSignals!: Bool
     ) : Unit
 }
-extend Hypergraph<V, G> <: DecimalDrawable
+extend<V, G> Hypergraph<V, G> <: DecimalDrawable
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public func WriteDotToFile(
@@ -1093,7 +1100,7 @@ extend Hypergraph<V, G> <: DecimalDrawable
         )
     }
 }
-extend InterfacedHypergraph<V, G> <: DecimalDrawable
+extend<V, G> InterfacedHypergraph<V, G> <: DecimalDrawable
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public func WriteDotToFile(

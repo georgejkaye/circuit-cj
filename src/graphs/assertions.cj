@@ -7,6 +7,8 @@
  * @since 0.2
  */
 package circuitcj.graphs
+import circuitcj.utils.{AssertIsNone,AssertEmpty,AssertNotEqual,AssertAllElementsHaveSameParameter,AssertLengthIsGreaterThanOrEqualTo,AssertHasParameter,AssertAllElementsHaveParameter,AssertElementsHaveParameters}
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol,Port}
 /**
  * Given two vertex-like objects, assert that between them they have at most
  * one in edge.

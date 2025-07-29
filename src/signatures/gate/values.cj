@@ -7,6 +7,10 @@
  * @since 0.3
  */
 package circuitcj.signatures.gate
+import std.collection.{HashSet}
+import std.math.{abs,ceil,log2,pow}
+import circuitcj.utils.{AssertStrictlyPositive,AssertPowerOf,AssertNonNegative,AssertGreaterThanOrEqualTo}
+import circuitcj.syntax.{HasName,ValueSymbol,PrimitiveSymbol,Signal,Waveform,Decimal,FiniteLattice,HasWidth}
 /**
  * Enum of Belnap values (four valued logic)
  */
@@ -165,7 +169,7 @@ extend GateLevelValue <: Decimal<GateLevelValue> {
             match(bit) {
                 case NONE => return None
                 case FALSE => ()
-                case TRUE => x += pow(2, exponent)
+                case TRUE => x += Int64(pow(Float64(2), Float64(exponent)))
                 case BOTH => return None
             }
         }
@@ -236,7 +240,5 @@ let gateLevelLatticeStructure = FiniteLattice(
 public func GenerateClock(
     period!: Int64, duty!: Float64 = 0.5, cycles!: Int64
 ) : Waveform<GateLevelValue> {
-    GenerateClock(
-        period: period, cycles: cycles, duty: duty, high: TRUE, low: FALSE
-    )
+    GenerateClock(period: period, cycles: cycles, duty: duty)
 }

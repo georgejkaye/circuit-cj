@@ -8,6 +8,8 @@
  * @since 0.3
  */
 package circuitcj.rewrite
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol,Signature,Decimal,EnhancedPrimitive,Blackbox}
+import circuitcj.graphs.{InterfacedHypergraph,Edge,Vertex,HasInterfacedGraph,Drawable,DecimalDrawable}
 
 /**
  * Class for evaluating circuits given inputs at each tick of the clock
@@ -52,12 +54,12 @@ public class Evaluator<V, G>
             InputOutputHistory(this.graph.GetArity(), this.graph.GetCoarity())
     }
 }
-extend Evaluator<V, G> <: HasInterfacedGraph<V, G> {
+extend<V, G> Evaluator<V, G> <: HasInterfacedGraph<V, G> {
     public func GetInterfacedGraph() : InterfacedHypergraph<V, G> {
         this.graph
     }
 }
-extend Evaluator<V, G> <: Drawable<V, G>
+extend<V, G> Evaluator<V, G> <: Drawable<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public func WriteDotToFile(
@@ -69,7 +71,7 @@ extend Evaluator<V, G> <: Drawable<V, G>
         )
     }
 }
-extend Evaluator<V, G> <: DecimalDrawable
+extend<V, G> Evaluator<V, G> <: DecimalDrawable
     where V <: Decimal<V> & ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
     public func WriteDotToFile(

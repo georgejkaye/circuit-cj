@@ -7,6 +7,8 @@
  * @since 0.3
  */
 package circuitcj.syntax
+import std.collection.ArrayList
+import circuitcj.utils.{max,map,ElementNumberArrayToArray,arrayToString,AssertLengthIsGreaterThanOrEqualTo,AssertLessThan,Sum}
 public enum WaveformType {
     | OPEN | CLOSED | INFINITE
 }

@@ -7,6 +7,7 @@
  * @since 0.3
  */
 package circuitcj.syntax
+import circuitcj.debug.ErrorMsg
 /**
  * An enhancement is a primitive adapted for higher width wires or more inputs
  */

@@ -7,6 +7,9 @@
  * @since 0.3
  */
 package circuitcj.components
+import circuitcj.utils.{map,AssertEqual,mapi}
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol,HasName,HasWidth,Label,Blackbox,Port,CycleInput,AssertAllHaveSameWidth,AssertAllHaveWidth}
+import circuitcj.graphs.{InterfacedHypergraph}
 /**
  * Use a primitive gate
  *

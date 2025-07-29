@@ -5,6 +5,7 @@
  * @since 0.3
  */
 package circuitcj.syntax
+import circuitcj.utils.{collectionToString,arrayToString,map}
 /**
  * Interface for value sets that can be interpreted as decimal values.
  */

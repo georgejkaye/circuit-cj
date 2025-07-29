@@ -8,6 +8,10 @@
  */
 package circuitcj.components.constructions
 import std.collection.HashSet
+import circuitcj.utils.{AssertGreaterThanOrEqualTo,AssertMultipleOf,mapi,Sum,AssertAllSameLength,AssertLessThanOrEqualTo,AssertAllElementsMultiplesOf,map,map2,concat,ExtraArrayUtils}
+import circuitcj.syntax.{HasWidth,ValueSymbol,PrimitiveSymbol,HasPort,Label,Port,AssertAllHaveSameWidth,Specification,AssertBothSameWidth,AssertElementsHaveSameWidths}
+import circuitcj.components.{Wire,SplitInto,Combine,MakeSubcircuit,UseWire,InterfaceWire,UseSubcircuit}
+import circuitcj.graphs.{InterfacedHypergraph,InterfaceVertex}
 /**
  * Given an array of inputs and a bundle width w such that so that the array is
  * partitioned into n bundles of width w:

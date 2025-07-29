@@ -8,6 +8,7 @@
  * @since 0.2
  */
 package circuitcj.syntax
+import circuitcj.utils.{GetNextId}
 /**
  * Convert a given decimal ASCII code to a string
  *
@@ -15,7 +16,7 @@ package circuitcj.syntax
  * @return The corresponding ascii character as a string
  */
 public func ASCIIToString(n : UInt32) : String {
-    let char = Char(n)
+    let char = Rune(n)
     String([char])
 }
 /**

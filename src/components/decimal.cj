@@ -8,6 +8,9 @@
  * @since 0.3
  */
 package circuitcj.components
+import circuitcj.utils.{AssertIsNone,AssertEmpty,AssertNotEqual,AssertAllElementsHaveSameParameter}
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol,Signal,HasName,HasWidth,Decimal,BuildWaveform,Signature}
+import circuitcj.graphs.{InterfacedHypergraph}
 /**
  * Make a signal circuit for a signal converted from a decimal number.
  *
@@ -215,7 +218,7 @@ public interface DecimalSignalUser<V, G>
         )
     }
 }
-extend Signature<V, G> <: DecimalSignalUser<V, G>
+extend<V,G> Signature<V, G> <: DecimalSignalUser<V, G>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {}
 /**

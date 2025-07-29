@@ -7,6 +7,9 @@
  * @since 0.3
  */
 package circuitcj.rewrite.rules
+import std.collection.{HashSet}
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol}
+import circuitcj.graphs.{Edge,InterfacedHypergraph,TraversalElement}
 public func GetUniquePartialRule<V, G>() : RewriteRule<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -24,7 +27,7 @@ public func GetUniquePartialRule<V, G>() : RewriteRule<V, G>
                     let edge = MakeValueOrSignal(signal, [target], f.GetGraph())
                     Some(HashSet([EDGE(edge)]))
                 } else {
-                    None
+                    None<HashSet<TraversalElement<V, G>>>
                 }
         }
     )
