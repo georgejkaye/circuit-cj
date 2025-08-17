@@ -7,6 +7,10 @@
  * @since 0.2
  */
 package circuitcj.examples.gate
+import circuitcj.utils.{TodoException}
+import circuitcj.syntax.{Port}
+import circuitcj.components.{WireUser,Replicate,MakeSubcircuit,InterfaceWire,UseBlackbox,SplitAt,UseSubcircuit,UseSubcircuit_1,UseSubcircuit_2,Combine,Feedback,SplitAll,DecimalSignalUser}
+import circuitcj.signatures.gate.{UseNot,UseNor,UseXor,UseAnd,UseRippleAdder,UseMux4,belnapSignature,UseOr,UseBuf,UseMux2}
 /**
  * Create an ALU with the following modes:
  *

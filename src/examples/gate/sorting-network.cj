@@ -8,6 +8,11 @@
  * @since 0.1
  */
 package circuitcj.examples.gate
+import circuitcj.utils.{AssertHasLength}
+import circuitcj.syntax.{Port}
+import circuitcj.components.{UseBlackbox,WireUser,UseSubcircuit,MakeSubcircuit,NameWires}
+import circuitcj.components.constructions.{RippleMap}
+import circuitcj.signatures.gate.{belnapSignature}
 /**
  * A sorting comparator black box component
  *

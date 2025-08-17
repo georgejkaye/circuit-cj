@@ -7,7 +7,10 @@
  * @since 0.3
  */
 package circuitcj.rewrite
-import circuitcj.syntax.{CycleInput,ValueSymbol,PrimitiveSymbol,Decimal,EnhancedPrimitive,Blackbox,Specification}
+import std.collection.{ArrayList,HashMap}
+import circuitcj.utils.{arrayToString,map,concatStrings,IncompatibleVariantException,collectionToString,fold_left,max}
+import circuitcj.syntax.{CycleInput,ValueSymbol,PrimitiveSymbol,Decimal,EnhancedPrimitive,Blackbox,Specification,Specifiable,Port,Signal,HasName}
+import circuitcj.graphs.{EdgeConnection,Vertex,InterfacedHypergraph}
 /**
  * Given an array of signals, get a string representing them as arguments to a
  * circuit, i.e. a string of the form (s1, s2, s3, ...)
@@ -119,7 +122,7 @@ public enum OutputTerm<V, G> where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, 
     | FUNCTION(Function<V, G>, Array<OutputTerm<V, G>>, Int64)
     | BUNDLE(Array<OutputTerm<V, G>>, Array<Int64>, Int64)
 }
-extend OutputTerm<V, G> <: ToString {
+extend<V, G> OutputTerm<V, G> <: ToString {
     func GetString(signalFn : (CycleInput<V>) -> String) : String {
         func GetMultiInputString(
             op : String, inputs : Array<OutputTerm<V, G>>,
@@ -369,9 +372,9 @@ public struct InputOutputHistory<V, G>
         this.outputHistoryPerTick = ArrayList()
         this.inputOutputHistoryPerTick = ArrayList()
         this.inputHistoryPerPort =
-            Array(inputs){ i => ArrayList<CycleInput<V>>() }
+            Array(inputs){ _ => ArrayList<CycleInput<V>>() }
         this.outputHistoryPerPort =
-            Array(outputs){ i => ArrayList<OutputData<V, G>>() }
+            Array(outputs){ _ => ArrayList<OutputData<V, G>>() }
     }
     public func GetCurrentTick() : Int64 {
         return inputOutputHistoryPerTick.size

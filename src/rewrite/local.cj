@@ -7,6 +7,12 @@
  * @since 0.3
  */
 package circuitcj.rewrite
+import std.collection.{HashSet,ArrayList,HashMap}
+import circuitcj.debug.{Debug}
+import circuitcj.utils.{mapCollection,map}
+import circuitcj.syntax.{Signature,PrimitiveSymbol,ValueSymbol,Variable}
+import circuitcj.graphs.{InterfacedHypergraph,TraversalElement,Edge,Vertex,TraversalData,Drawable,Traverse}
+import circuitcj.rewrite.rules.{RewriteRule,GetStubRule,GetBottomRule,GetForkRule,GetUniquePartialRule,GetValueBundleRule,GetJoinRule,GetPrimitiveRule,GetAnnihilationRule,GetIdentifierRule,GetCompositeRule,GetCopyBlackboxRule,GetForkBlackboxRule}
 var totalRewrites = 0
 /**
  * Given a rewrite rule, try to apply it to a given edge.
@@ -20,7 +26,7 @@ var totalRewrites = 0
  *                 next elements to traverse
  */
 func AttemptRewriteRule<V, G>(
-    signature : Signature<V, G>, e : Edge<V, G>,
+    _ : Signature<V, G>, e : Edge<V, G>,
     rule : RewriteRule<V, G>, f : InterfacedHypergraph<V, G>,
     draw!: Bool = false, debug!: Bool = false, depth!: Int64 = 0
 ) : Option<HashSet<TraversalElement<V, G>>>
@@ -101,7 +107,7 @@ func AttemptAllRewriteRules<V, G>(
             AddRule(GetPrimitiveRule(signature))
             if(allInstantaneous) {
                 for(ann in signature.GetAnnihilators()) {
-                    AddRule(GetAnnihiliationRule(ann))
+                    AddRule(GetAnnihilationRule(ann))
                 }
                 for(ide in signature.GetIdentities()) {
                     AddRule(GetIdentifierRule(ide))
@@ -163,7 +169,7 @@ public func RewriteCombinational<V, G>(
     }
     let visitedSources = HashMap<Edge<V, G>, HashSet<Vertex<V, G>>>()
     let actionAtEdge = {
-        e : Edge<V, G>, data : TraversalData<V, G> =>
+        e : Edge<V, G>, _ : TraversalData<V, G> =>
             // Only rewrite or proceed from this edge if its sources have
             // all been traversed
             let visitedSet = match(visitedSources.get(e)) {
@@ -197,7 +203,7 @@ public func RewriteCombinational<V, G>(
                 }
     }
     let actionAtVertex = {
-        v : Vertex<V, G>, data : TraversalData<V, G> =>
+        v : Vertex<V, G>, _ : TraversalData<V, G> =>
         let nextElements = HashSet<TraversalElement<V, G>>()
         for(ec in v.GetOutEdges()) {
             // Don't traverse through feedback connections for now

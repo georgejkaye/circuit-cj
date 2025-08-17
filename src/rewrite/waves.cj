@@ -8,6 +8,10 @@
  * @since 0.3
  */
 package circuitcj.rewrite
+import std.collection.{ArrayList}
+import circuitcj.utils.{mapi,concatStrings,fold_left,max,concatStrings}
+import circuitcj.syntax.{Signal,ValueSymbol,Decimal,GetSignalLabel,HasWidth,HasName}
+import circuitcj.components.{MakeSignal}
 // Components for drawing waveforms
 let defaultComponentLength = 8
 let offSignalString = ("", " ")
@@ -439,7 +443,7 @@ func DefaultLabelLengthForPortArray<T>(
 {
     max(
         signals,
-        { i, t =>
+        { i, _ =>
             let name = nameFn(i)
             let width = "[${widthFn(i)}]"
             name.size + width.size + 4
@@ -578,7 +582,7 @@ public func DrawWaveformsForPortArray<V, T>(
     labelLength!: Int64 =
         max(
         signals,
-            { i, t =>
+            { i, _ =>
                 let name = nameFn(i)
                 let width = "[${widthFn(i)}]"
                 name.size + width.size + 4

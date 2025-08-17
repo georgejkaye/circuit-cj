@@ -8,6 +8,8 @@
  * @since 0.1
  */
 package circuitcj.examples.gate
+import circuitcj.components.{WireUser,MakeSubcircuit,InterfaceWire}
+import circuitcj.signatures.gate.{UseAnd,UseXor}
 /**
  * @return half adder circuit
  */

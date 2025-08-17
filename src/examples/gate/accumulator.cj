@@ -8,6 +8,8 @@
  * @since 0.1
  */
 package circuitcj.examples.gate
+import circuitcj.components.{WireUser,DecimalSignalUser,RegisterGuardedFeedback,MakeSubcircuit,InterfaceWire}
+import circuitcj.signatures.gate.{UseRippleAdder}
 public func Accumulator(width!: Int64, initial!: Int64) : Circuit_ {
     // Declare the input wire
     let input = sig.UseWire(width)

@@ -7,7 +7,11 @@
  * @since 0.3
  */
 package circuitcj.rewrite
+import std.collection.{HashSet,HashMap,ArrayList}
+import circuitcj.utils.{mapCollection,map,mapi,IncompatibleVariantException}
 import circuitcj.graphs.InterfacedHypergraph
+import circuitcj.syntax.{CycleInput,Signal,ValueSymbol,Decimal,PrimitiveSymbol,Signature,VariableValue,AssertAllHaveSameWidth,Variable,Waveform,Label,VariableSignal}
+import circuitcj.components.{InterfaceWire,Wire,SignalUser,WireUser,UseSubcircuit,MakeSubcircuit}
 /**
  * Get a fixed cycle input, an input that is known to be a particular signal.
  *
@@ -37,7 +41,7 @@ public func GetFixed<V>(v : V) : CycleInput<V> where V <: ValueSymbol<V> {
  * @retrn The fixed cycle input for this number
  */
 public func GetFixed<V, G>(
-    sig: Signature<V, G>, input : Int64, width!: Int64, signed!: Bool
+    _: Signature<V, G>, input : Int64, width!: Int64, signed!: Bool
 ) : CycleInput<V>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -64,7 +68,7 @@ public func GetVariable<V>(signals : HashSet<Signal<V>>) : CycleInput<V>
                 { ss : HashMap<Int64, Signal<V>> => ss[pvv.GetId()].GetBit(i) }
             )
         }
-        PARTIAL(VariableSignal(values))
+        CycleInput<V>.PARTIAL(VariableSignal(values))
     }
 }
 /**
@@ -109,7 +113,7 @@ public func GetVariable<V>(values : Array<V>) : CycleInput<V>
  * @return The variable cycle input
  */
 public func GetVariable<V, G>(
-    sig : Signature<V, G>, inputs : HashSet<Int64>, width!: Int64, signed!: Bool
+    _ : Signature<V, G>, inputs : HashSet<Int64>, width!: Int64, signed!: Bool
 ) : CycleInput<V>
     where V <: ValueSymbol<V> & Decimal<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -154,7 +158,7 @@ public func GetUnknown<V, G>(
 }
 
 public func GetUnspecified<V, G>(
-    sig : Signature<V, G>
+    _ : Signature<V, G>
 ) : Option<CycleInput<V>>
         where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>
 {
@@ -169,7 +173,7 @@ public func PartiallyEvaluate<V, G>(
     let newF = f.Clone()
     let preInputs = ArrayList<InterfaceWire<V, G>>()
     let preOutputs = ArrayList<Wire<V, G>>()
-    for(i in 0..f.GetArity()) {
+    for(i in 0..newF.GetArity()) {
         let input = cycleInputs[i]
         match(input) {
             case Some(ci) =>
@@ -182,9 +186,9 @@ public func PartiallyEvaluate<V, G>(
                 preOutputs.append(wire)
         }
     }
-    let outputs = UseSubcircuit(f, preOutputs.toArray())
+    let outputs = UseSubcircuit(newF, preOutputs.toArray())
     let prepended = MakeSubcircuit(
-        preInputs.toArray(), mapi({ w : Wire<V, G>, i : Int64 => InterfaceWire(w, f.GetOutput(i).GetName())}, outputs), f.GetName()
+        preInputs.toArray(), mapi({ w : Wire<V, G>, i : Int64 => InterfaceWire(w, newF.GetOutput(i).GetName())}, outputs), newF.GetName()
     )
     RewriteCombinational(
       sig, prepended, prepended.GetLeftmostTraversalElements(), prepended.GetRightmostTraversalElements(),

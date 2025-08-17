@@ -9,6 +9,9 @@
  * @since 0.1
  */
 package circuitcj.examples.gate
+import circuitcj.syntax.{Port}
+import circuitcj.components.{UseDelay,UseBlackbox,Feedback,MakeSubcircuit,DecimalSignalUser,UseSubcircuit_1,MakeSubcircuit,WireUser,InterfaceWire}
+import circuitcj.signatures.gate.{UseMux2,belnapSignature}
 /**
  * Create a cyclic combinational circuit, either with or without delays.
  *

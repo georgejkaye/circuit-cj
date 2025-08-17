@@ -8,6 +8,8 @@
  * @since 0.1
  */
 package circuitcj.examples.gate
+import circuitcj.components.{DecimalSignalUser,SignalUser,UseSubcircuit_1,MakeSubcircuit,WireUser,InterfaceWire}
+import circuitcj.signatures.gate.{UseRippleAdder,UseAnd,UseXor}
 
 /**
  * Naive fibonacci circuit to compute the nth fibonacci number

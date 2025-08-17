@@ -235,7 +235,7 @@ func RemoveEdgeAndAddStubs<V, G>(
  * @param ann The annihilator to make a rule for
  * @return The annihilation rewrite rule
  */
-public func GetAnnihiliationRule<V, G>(
+public func GetAnnihilationRule<V, G>(
     ann : Annihilator<V, G>
 ) : RewriteRule<V, G>
     where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G>

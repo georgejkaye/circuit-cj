@@ -8,7 +8,8 @@
  * @since 0.3
  */
 package circuitcj.rewrite
-import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol,Signature,Decimal,EnhancedPrimitive,Blackbox}
+import circuitcj.utils.{max,arrayToString}
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol,Signature,Decimal,EnhancedPrimitive,Blackbox,GetLongestNameLength,HasName}
 import circuitcj.graphs.{InterfacedHypergraph,Edge,Vertex,HasInterfacedGraph,Drawable,DecimalDrawable}
 
 /**

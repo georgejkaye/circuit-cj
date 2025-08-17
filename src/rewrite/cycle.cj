@@ -8,8 +8,10 @@
  */
 package circuitcj.rewrite
 import std.collection.{HashSet}
-import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol,CycleInput,Label,Signature,Signal,Waveform,Decimal}
-import circuitcj.graphs.{Edge,TraversalElement,Vertex,InterfacedHypergraph,Hypergraph,TentacleOrigin}
+import circuitcj.utils.{map,mapi}
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol,CycleInput,Label,Signature,Signal,Waveform,Decimal,HasWidth,GetSignalLabel,ArrayOfInputsToArrayOfTicks}
+import circuitcj.graphs.{Edge,TraversalElement,Vertex,InterfacedHypergraph,Hypergraph,TentacleOrigin,AssertHasInputs}
+import circuitcj.components.{MakeSignal}
 /**
  * Detach the current wires from the state registers.
  *

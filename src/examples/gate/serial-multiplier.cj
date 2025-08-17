@@ -8,6 +8,8 @@
  * @since 0.1
  */
 package circuitcj.examples.gate
+import circuitcj.components.{DecimalSignalUser,WireUser,RegisterGuardedFeedback,MakeSubcircuit,InterfaceWire,Combine}
+import circuitcj.signatures.gate.{UseMux2,UseRippleAdder,UnsignedExtend}
 /**
  * Compute a partial product: if b0 is high, then return a, otherwise return
  * zero.

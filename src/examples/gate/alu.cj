@@ -10,6 +10,9 @@
  * @since 2022-06-21
  */
 package circuitcj.examples.gate
+import circuitcj.components.{WireUser,MakeSubcircuit,InterfaceWire,Replicate,UseSubcircuit_2,UseSubcircuit_3}
+import circuitcj.signatures.gate.{UseXor,UseAnd,UseOr,UseNot,UseMux2}
+import circuitcj.components.constructions.{MakeBitwiseRippleMap}
 /**
  * Create a full adder
  * @return A full adder subcircuit

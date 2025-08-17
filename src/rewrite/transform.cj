@@ -8,7 +8,11 @@
  * @since 0.3
  */
 package circuitcj.rewrite
-
+import std.collection.{HashSet,ArrayList}
+import circuitcj.utils.{IncompatibleVariantException}
+import circuitcj.syntax.{ValueSymbol,PrimitiveSymbol,Signal,Signature,Label,GetSignalLabel}
+import circuitcj.graphs.{Edge,InterfacedHypergraph,Vertex,TentacleOrigin,EdgeConnection,ContainsVertex}
+import circuitcj.components.{SignalUser}
 ////////////////////////////////////////////////////////////////////////////////
 //                      Conversion to Mealy form                              //
 ////////////////////////////////////////////////////////////////////////////////
@@ -124,7 +128,7 @@ func CreateBottomSignal<V, G>(
     graph : InterfacedHypergraph<V, G>, feedbackVertices : Array<Vertex<V, G>>,
     coreEdge : Edge<V, G>, index : Int64
 ) : Unit where V <: ValueSymbol<V>, G <: PrimitiveSymbol<V, G> {
-    let (left, right) = feedbackVertices[index].SplitVertex()
+    let (_, right) = feedbackVertices[index].SplitVertex()
     let bot = Edge(
         GetSignalLabel<V, G>(
             V.GetDisconnected(),
@@ -220,7 +224,7 @@ func EliminateInstantFeedback<V, G>(
     let coreEdges = HashSet([coreEdge])
     // For each iteration, connect the previous feedback outputs to a copied
     // core's feedback inputs
-    for(it in 0..iterations) {
+    for(_ in 0..iterations) {
         CopyCore(f, coreEdge, numberOfFeedbackWires, feedbackTargets, coreEdges)
     }
     // We don't need to have the cores collapsed any more
