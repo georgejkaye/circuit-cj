@@ -2,9 +2,6 @@
 .vscode/
 .gdb_history
 
-# Main test file
-src/main.cj
-
 # cpm
 module-resolve.json
 
