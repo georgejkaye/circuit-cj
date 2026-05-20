@@ -23,6 +23,10 @@ to compile the whole project from scratch each time.
 cjpm build --incremental
 ```
 
+An example `main.cj` file is provided for you to start creating circuits.
+This uses the Belnap signature to create a simple ripple adder,
+and draws its graph to the file `add-1.dot`.
+
 ## Documentation
 
 Documentation can be generated using [Sphinx](https://www.sphinx-doc.org/en/master/).
