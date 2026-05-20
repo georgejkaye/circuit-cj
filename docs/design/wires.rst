@@ -15,6 +15,7 @@ and ``NOT`` gates.
 .. code-block:: scala
 
     import circuitcj.signatures.gate.belnapSignature
+
     let sig = belnapSignature
 
 .. note::
@@ -32,6 +33,8 @@ Wires are parameterised by a ``width``, which determines how many bits flow
 through each wire.
 
 .. code-block:: scala
+
+    import circuitcj.components.{WireUser}
 
     let a = sig.UseWire(1)
     let b = sig.UseWire(8)
@@ -56,7 +59,7 @@ There are multiple ways wires can be split.
 
 .. code-block:: scala
 
-    // Split into consituent bits
+    // Split into constituent bits
     let a = sig.UseWire(8)
     let ws = Split(a)
 
@@ -123,7 +126,7 @@ One could use the `Split` functions to grab
     let a = sig.UseWire(4)
     let b = sig.UseWire(4)
 
-    let (lsbA, msbsA)= a.LsbAndMsbs()
+    let (lsbA, msbsA) = a.LsbAndMsbs()
     let (lsbsB, msbB) = b.LsbsAndMsb()
 
     let w1 = Combine(lsbA, msbB)

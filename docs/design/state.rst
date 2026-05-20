@@ -114,6 +114,8 @@ input from the previous cycle.
 
 .. code-block:: scala
 
+    import circuitcj.components.{UseDelay}
+
     let a = sig.UseWire(8)
     let d = UseDelay(a)
 
@@ -135,6 +137,8 @@ register: we don't always want to produce the disconnected value straight away!
 The simplest register in CircuitCJ is the join of a signal and a delay.
 
 .. code-block:: scala
+    import circuitcj.syntax.{Signal}
+    import circuitcj.components.{UseSimpleRegister}
 
     let a = sig.UseWire(4)
     let signal = Signal([TRUE, FALSE, TRUE, FALSE])
@@ -171,11 +175,12 @@ other.
 .. code-block:: scala
 
     import circuitcj.syntax.{Signal, Waveform}
+    import circuit.components.{SignalUser}
 
     let a = sig.UseWire(2)
     let v1 = Signal([TRUE, FALSE])
     let v2 = Signal([FALSE, TRUE])
-    let wf = UseOpenWaveform(waveform: Waveform([v1, v2]), input: a)
+    let wf = sig.UseOpenWaveform(waveform: Waveform([v1, v2]), input: a)
 
 At the highest depth, waveforms are drawn as a single block.
 
@@ -235,6 +240,7 @@ When designing circuits, we often want to feedback an output to some point
 earlier in the circuit, normally in the next cycle of execution.
 
 .. code-block:: scala
+    import circuitcj.components.{Feedback}
 
     let a = sig.UseWire(8)
     let b = sig.UseWire(8)
@@ -259,6 +265,7 @@ This can be done manually by combining the ``Delay`` functions above with the
 ``Feedback`` function, but functions are also provided to do this in one step.
 
 .. code-block:: scala
+    import circuitcj.components.{DelayGuardedFeedback}
 
     let a = sig.UseWire(8)
     let b = sig.UseWire(8)
@@ -270,6 +277,8 @@ This can be done manually by combining the ``Delay`` functions above with the
 .. image:: imgs/state/delay-guarded-feedback.svg
 
 .. code-block:: scala
+
+    import circuitcj.components.{RegisterGuardedFeedback}
 
     let a = sig.UseWire(2)
     let b = sig.UseWire(2)
@@ -292,6 +301,8 @@ Infinite waveforms
 By combining feedback with waveforms, we can create *infinite* waveforms.
 
 .. code-block:: scala
+
+    import circuit.components.{SignalUser}
 
     let v1 = Signal([TRUE, FALSE])
     let v2 = Signal([FALSE, TRUE])

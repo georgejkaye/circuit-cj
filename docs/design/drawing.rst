@@ -11,6 +11,7 @@ be rendered by `Graphviz <https://graphviz.org/>`_.
 
     import circuitcj.components.{MakeSubcircuit}
     import circuitcj.signatures.gate.{UseRippleAdder}
+    import circuitcj.graphs.{Drawable}
 
     // Make a circuit that outputs only the sum of a ripple adder
     let a = sig.UseWire(4)

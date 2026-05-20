@@ -18,11 +18,11 @@ To use a logic gate, we must specify the wires that will act as its inputs:
 
 .. code-block:: scala
 
-    import circuitcj.components.UseGate
+    import circuitcj.components.UsePrimitive
 
     let a = sig.UseWire(1)
     let b = sig.UseWire(1)
-    let and = UseGate(AND, [a, b])
+    let and = UsePrimitive(AND, [a, b])
 
 .. image:: imgs/primitives/and.svg
 
