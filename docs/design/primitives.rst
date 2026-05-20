@@ -18,7 +18,7 @@ To use a logic gate, we must specify the wires that will act as its inputs:
 
 .. code-block:: scala
 
-    import components.UseGate
+    import circuitcj.components.UseGate
 
     let a = sig.UseWire(1)
     let b = sig.UseWire(1)
@@ -30,7 +30,7 @@ In the Belnap signature we can also specify gates directly.
 
 .. code-block:: scala
 
-    import signatures.gate.{UseAnd, UseOr, UseNot}
+    import circuitcj.signatures.gate.{UseAnd, UseOr, UseNot}
 
     let and = UseAnd(a, b)
     let or = UseOr(a, b)
@@ -63,7 +63,7 @@ accidentally shadow our blackbox with a later one!
 
 .. code-block:: scala
 
-    import syntax.Port
+    import circuitcj.syntax.Port
 
     let bb = sig.AddBlackbox(
         "blackbox",
@@ -75,7 +75,7 @@ This blackbox can now be used like a normal primitive.
 
 .. code-block:: scala
 
-    import components.UseBlackbox
+    import circuitcj.components.UseBlackbox
 
     let a = sig.UseWire(2)
     let b = sig.UseWire(1)

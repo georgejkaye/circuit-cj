@@ -9,7 +9,7 @@ First, we will create a circuit and remind ourselves of what it looks like.
 
 .. code-block:: scala
 
-    import examples.gate.Accumulator
+    import circuitcj.examples.gate.Accumulator
 
     let sig = belnapSignature
     // Make a circuit

@@ -9,7 +9,8 @@ be rendered by `Graphviz <https://graphviz.org/>`_.
 
 .. code-block:: scala
 
-    import components.{MakeSubcircuit, UseRippleAdder}
+    import circuitcj.components.{MakeSubcircuit}
+    import circuitcj.signatures.gate.{UseRippleAdder}
 
     // Make a circuit that outputs only the sum of a ripple adder
     let a = sig.UseWire(4)
@@ -88,6 +89,6 @@ operations!
 
 .. code-block:: scala
 
-    or.WriteDotToFile("dot/after-or-2)
+    or.WriteDotToFile("dot/after-or-2")
 
 .. image:: imgs/drawing/after-or-2.svg

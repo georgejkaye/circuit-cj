@@ -170,7 +170,7 @@ other.
 
 .. code-block:: scala
 
-    import syntax.{Signal, Waveform}
+    import circuitcj.syntax.{Signal, Waveform}
 
     let a = sig.UseWire(2)
     let v1 = Signal([TRUE, FALSE])

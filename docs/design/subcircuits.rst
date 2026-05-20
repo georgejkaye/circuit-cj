@@ -17,8 +17,8 @@ This consists of designing a circuit and specifying its interface.
 
 .. code-block:: scala
 
-    import signatures.gate.{UseAnd, UseOr}
-    import components.{MakeSubcircuit, InterfaceWire}
+    import circuitcj.signatures.gate.{UseAnd, UseOr}
+    import circuitcj.components.{MakeSubcircuit, InterfaceWire}
 
     let a = sig.UseWire(2)
     let b = sig.UseWire(2)

@@ -14,7 +14,7 @@ and ``NOT`` gates.
 
 .. code-block:: scala
 
-    import signatures.gate.belnapSignature
+    import circuitcj.signatures.gate.belnapSignature
     let sig = belnapSignature
 
 .. note::
@@ -50,7 +50,7 @@ To split wires apart, use the ``Split`` functions in the ``components`` package.
 
 .. code-block:: scala
 
-    import components.Split
+    import circuitcj.components.Split
 
 There are multiple ways wires can be split.
 
@@ -90,7 +90,7 @@ one, *concatenating* their contents.
 
 .. code-block:: scala
 
-    import components.Combine
+    import circuitcj.components.Combine
 
     let a = sig.UseWire(4)
     let b = sig.UseWire(4)
