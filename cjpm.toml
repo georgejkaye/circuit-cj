@@ -6,7 +6,7 @@
   description = "nothing here"
   link-option = ""
   name = "circuitcj"
-  output-type = "static"
+  output-type = "executable"
   src-dir = ""
   target-dir = ""
   version = "1.0.0"
