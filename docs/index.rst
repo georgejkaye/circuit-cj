@@ -10,7 +10,6 @@ Welcome to CircuitCJ's documentation!
    simulation/index
    advanced/index
    examples/index
-   background/index
 
 Indices and tables
 ==================

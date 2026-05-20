@@ -9,7 +9,7 @@
 project = 'CircuitCJ'
 copyright = '2023, George Kaye <georgejkaye@gmail.com>'
 author = 'George Kaye <georgejkaye@gmail.com>'
-release = 'v0.3'
+release = '0.3.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

@@ -137,6 +137,7 @@ register: we don't always want to produce the disconnected value straight away!
 The simplest register in CircuitCJ is the join of a signal and a delay.
 
 .. code-block:: scala
+
     import circuitcj.syntax.{Signal}
     import circuitcj.components.{UseSimpleRegister}
 
@@ -240,6 +241,7 @@ When designing circuits, we often want to feedback an output to some point
 earlier in the circuit, normally in the next cycle of execution.
 
 .. code-block:: scala
+
     import circuitcj.components.{Feedback}
 
     let a = sig.UseWire(8)
@@ -265,6 +267,7 @@ This can be done manually by combining the ``Delay`` functions above with the
 ``Feedback`` function, but functions are also provided to do this in one step.
 
 .. code-block:: scala
+
     import circuitcj.components.{DelayGuardedFeedback}
 
     let a = sig.UseWire(8)
